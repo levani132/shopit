@@ -40,3 +40,18 @@ Thumbs.db
 
 .nx/cache
 .nx/workspace-data
+
+# Next.js
+.next
+out
+
+test-output
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Build outputs / Generated files
+static/
+output.html
