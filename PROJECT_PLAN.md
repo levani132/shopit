@@ -20,17 +20,18 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] Set up Git hooks (Husky + lint-staged)
 - [ ] Configure CI/CD pipeline (GitHub Actions)
 
-#### 1.2 Database Design
-- [ ] Design PostgreSQL schema
-- [ ] Set up Prisma ORM
-- [ ] Create migrations for core entities:
+#### 1.2 Database Design ✅
+- [x] Design MongoDB schema
+- [x] Set up Mongoose ODM with NestJS
+- [x] Create schemas for core entities:
   - Users (platform admins & store owners)
   - Stores (subdomain, settings, theme)
-  - Products (with variants, images, pricing)
+  - Products (with images, pricing, stock)
   - Categories & Subcategories
   - Posts (social media-like content)
   - Comments & Likes
   - Store Info Pages
+  - Refresh Tokens
 
 #### 1.3 Authentication & Authorization
 - [ ] Implement JWT-based authentication
@@ -165,7 +166,7 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] In-app notifications
 
 #### 7.3 Performance & Optimization
-- [ ] Redis caching
+- [ ] Redis caching (optional enhancement)
 - [ ] Database query optimization
 - [ ] Image lazy loading
 - [ ] SSR/SSG optimization
@@ -190,7 +191,7 @@ sellit/
 │   │   └── validators/         # Zod/class-validator schemas
 │   │
 │   ├── api/
-│   │   ├── database/           # Prisma client & migrations
+│   │   ├── database/           # Mongoose schemas & database module
 │   │   └── common/             # Common NestJS decorators, guards
 │   │
 │   └── ui/
@@ -214,8 +215,8 @@ sellit/
 
 #### Backend (NestJS)
 - **Framework**: NestJS
-- **Database**: PostgreSQL
-- **ORM**: Prisma
+- **Database**: MongoDB 7+
+- **ODM**: Mongoose
 - **Validation**: class-validator + class-transformer
 - **API Documentation**: Swagger/OpenAPI
 - **Authentication**: Passport.js + JWT
@@ -231,167 +232,217 @@ sellit/
 
 ## 📊 Database Schema (Core Entities)
 
+> **Note**: We use MongoDB with Mongoose ODM. Schemas are defined in `libs/api/database/src/lib/schemas/`.
+
 ### Users
-```prisma
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  name          String
-  role          UserRole  @default(STORE_OWNER)
-  stores        Store[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+```typescript
+// user.schema.ts
+@Schema({ timestamps: true, collection: 'users' })
+class User {
+  @Prop({ required: true, unique: true, lowercase: true })
+  email: string;
+
+  @Prop({ required: true })
+  password: string;
+
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ enum: UserRole, default: UserRole.STORE_OWNER })
+  role: UserRole;
 }
 
 enum UserRole {
-  PLATFORM_ADMIN
-  STORE_OWNER
+  PLATFORM_ADMIN = 'PLATFORM_ADMIN',
+  STORE_OWNER = 'STORE_OWNER',
 }
 ```
 
 ### Stores
-```prisma
-model Store {
-  id            String    @id @default(cuid())
-  subdomain     String    @unique
-  name          String
-  description   String?
-  coverImage    String?
-  profileImage  String?
-  accentColor   String    @default("#6366f1")
-  isActive      Boolean   @default(true)
-  
-  owner         User      @relation(fields: [ownerId], references: [id])
-  ownerId       String
-  
-  categories    Category[]
-  products      Product[]
-  posts         Post[]
-  infoPage      InfoPage?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+```typescript
+// store.schema.ts
+@Schema({ timestamps: true, collection: 'stores' })
+class Store {
+  @Prop({ required: true, unique: true, lowercase: true })
+  subdomain: string;
+
+  @Prop({ required: true })
+  name: string;
+
+  @Prop()
+  description?: string;
+
+  @Prop()
+  coverImage?: string;
+
+  @Prop()
+  profileImage?: string;
+
+  @Prop({ default: '#6366f1' })
+  accentColor: string;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'User', required: true })
+  ownerId: Types.ObjectId;
 }
 ```
 
 ### Products
-```prisma
-model Product {
-  id            String    @id @default(cuid())
-  name          String
-  description   String?
-  price         Decimal   @db.Decimal(10, 2)
-  salePrice     Decimal?  @db.Decimal(10, 2)
-  isOnSale      Boolean   @default(false)
-  images        String[]
-  stock         Int       @default(0)
-  isActive      Boolean   @default(true)
-  
-  store         Store     @relation(fields: [storeId], references: [id])
-  storeId       String
-  
-  category      Category? @relation(fields: [categoryId], references: [id])
-  categoryId    String?
-  
-  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
-  subcategoryId String?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+```typescript
+// product.schema.ts
+@Schema({ timestamps: true, collection: 'products' })
+class Product {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop()
+  description?: string;
+
+  @Prop({ required: true, min: 0 })
+  price: number;
+
+  @Prop({ min: 0 })
+  salePrice?: number;
+
+  @Prop({ default: false })
+  isOnSale: boolean;
+
+  @Prop({ type: [String], default: [] })
+  images: string[];
+
+  @Prop({ default: 0, min: 0 })
+  stock: number;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
+  storeId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Category' })
+  categoryId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Subcategory' })
+  subcategoryId?: Types.ObjectId;
 }
 ```
 
 ### Categories & Subcategories
-```prisma
-model Category {
-  id            String        @id @default(cuid())
-  name          String
-  slug          String
-  image         String?
-  order         Int           @default(0)
-  
-  store         Store         @relation(fields: [storeId], references: [id])
-  storeId       String
-  
-  subcategories Subcategory[]
-  products      Product[]
-  
-  @@unique([storeId, slug])
-}
+```typescript
+// category.schema.ts
+@Schema({ timestamps: true, collection: 'categories' })
+class Category {
+  @Prop({ required: true })
+  name: string;
 
-model Subcategory {
-  id            String    @id @default(cuid())
-  name          String
-  slug          String
-  order         Int       @default(0)
-  
-  category      Category  @relation(fields: [categoryId], references: [id])
-  categoryId    String
-  
-  products      Product[]
-  
-  @@unique([categoryId, slug])
+  @Prop({ required: true, lowercase: true })
+  slug: string;
+
+  @Prop()
+  image?: string;
+
+  @Prop({ default: 0 })
+  order: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
+  storeId: Types.ObjectId;
 }
+// Compound unique index: { storeId: 1, slug: 1 }
+
+// subcategory.schema.ts
+@Schema({ timestamps: true, collection: 'subcategories' })
+class Subcategory {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true, lowercase: true })
+  slug: string;
+
+  @Prop({ default: 0 })
+  order: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'Category', required: true })
+  categoryId: Types.ObjectId;
+}
+// Compound unique index: { categoryId: 1, slug: 1 }
 ```
 
 ### Posts (Social Feed)
-```prisma
-model Post {
-  id            String    @id @default(cuid())
-  content       String
-  images        String[]
-  
-  store         Store     @relation(fields: [storeId], references: [id])
-  storeId       String
-  
-  likes         PostLike[]
-  comments      PostComment[]
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+```typescript
+// post.schema.ts
+@Schema({ timestamps: true, collection: 'posts' })
+class Post {
+  @Prop({ required: true })
+  content: string;
+
+  @Prop({ type: [String], default: [] })
+  images: string[];
+
+  @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
+  storeId: Types.ObjectId;
+
+  @Prop({ default: 0 })
+  likesCount: number;
+
+  @Prop({ default: 0 })
+  commentsCount: number;
 }
 
-model PostLike {
-  id            String    @id @default(cuid())
-  visitorId     String    // Anonymous or user-based
-  
-  post          Post      @relation(fields: [postId], references: [id])
-  postId        String
-  
-  createdAt     DateTime  @default(now())
-  
-  @@unique([postId, visitorId])
-}
+// post-like.schema.ts
+@Schema({ timestamps: true, collection: 'post_likes' })
+class PostLike {
+  @Prop({ required: true })
+  visitorId: string; // Anonymous or user-based
 
-model PostComment {
-  id            String    @id @default(cuid())
-  content       String
-  authorName    String
-  authorEmail   String?
-  
-  post          Post      @relation(fields: [postId], references: [id])
-  postId        String
-  
-  createdAt     DateTime  @default(now())
+  @Prop({ type: Types.ObjectId, ref: 'Post', required: true })
+  postId: Types.ObjectId;
+}
+// Compound unique index: { postId: 1, visitorId: 1 }
+
+// post-comment.schema.ts
+@Schema({ timestamps: true, collection: 'post_comments' })
+class PostComment {
+  @Prop({ required: true })
+  content: string;
+
+  @Prop({ required: true })
+  authorName: string;
+
+  @Prop()
+  authorEmail?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Post', required: true })
+  postId: Types.ObjectId;
 }
 ```
 
 ### Info Page
-```prisma
-model InfoPage {
-  id            String    @id @default(cuid())
-  aboutContent  String?   @db.Text
-  contactEmail  String?
-  contactPhone  String?
-  address       String?
-  policies      String?   @db.Text
-  faq           Json?
-  
-  store         Store     @relation(fields: [storeId], references: [id])
-  storeId       String    @unique
-  
-  updatedAt     DateTime  @updatedAt
+```typescript
+// info-page.schema.ts
+@Schema({ timestamps: true, collection: 'info_pages' })
+class InfoPage {
+  @Prop()
+  aboutContent?: string;
+
+  @Prop()
+  contactEmail?: string;
+
+  @Prop()
+  contactPhone?: string;
+
+  @Prop()
+  address?: string;
+
+  @Prop()
+  policies?: string;
+
+  @Prop({ type: Object })
+  faq?: Record<string, string>;
+
+  @Prop({ type: Types.ObjectId, ref: 'Store', required: true, unique: true })
+  storeId: Types.ObjectId;
 }
 ```
 
@@ -446,8 +497,8 @@ model InfoPage {
 ### Prerequisites
 - Node.js 20+
 - npm 10+
-- PostgreSQL 15+
-- Docker (optional, for local development)
+- MongoDB 7+ (or use Docker)
+- Docker (recommended for local development)
 
 ### Quick Start
 ```bash
@@ -523,7 +574,7 @@ npx nx graph
 - [ ] Rate limiting
 - [ ] CORS configuration
 - [ ] Helmet.js for HTTP headers
-- [ ] SQL injection prevention (Prisma)
+- [ ] NoSQL injection prevention (Mongoose validation)
 - [ ] XSS prevention
 - [ ] CSRF protection
 - [ ] Secure file upload (type validation, size limits)
@@ -531,4 +582,4 @@ npx nx graph
 
 ---
 
-*Last Updated: December 19, 2025*
+*Last Updated: December 24, 2025*

@@ -23,7 +23,10 @@ npm install
 # Copy environment variables
 cp .env.example .env
 
-# Start infrastructure (MongoDB, Redis, MinIO)
+# Start infrastructure (MongoDB required, Redis & MinIO optional)
+docker-compose up -d mongodb
+
+# Or start all infrastructure including optional services
 docker-compose up -d
 
 # Start development servers
@@ -52,7 +55,7 @@ sellit/
 │   │   └── validators/         # Validation schemas
 │   │
 │   ├── api/
-│   │   ├── database/           # Prisma client & schema
+│   │   ├── database/           # Mongoose schemas & database module
 │   │   └── common/             # Common NestJS decorators, guards
 │   │
 │   └── ui/
