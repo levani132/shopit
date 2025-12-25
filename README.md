@@ -99,17 +99,20 @@ npx nx show project api         # Show project details
 ## 🏗️ Tech Stack
 
 ### Frontend
+
 - **Next.js 15** - React framework with App Router
 - **Tailwind CSS** - Utility-first CSS
 - **TypeScript** - Type safety
 
 ### Backend
+
 - **NestJS** - Progressive Node.js framework
 - **Mongoose** - MongoDB ODM
 - **MongoDB** - Database
 - **Redis** - Caching (optional)
 
 ### Infrastructure
+
 - **NX** - Monorepo management
 - **Docker** - Containerization
 - **MinIO** - S3-compatible storage
@@ -117,6 +120,7 @@ npx nx show project api         # Show project details
 ## 📖 Documentation
 
 See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for:
+
 - Detailed project roadmap
 - Database schema
 - API endpoints

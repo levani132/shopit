@@ -1,0 +1,84 @@
+{
+  "common": {
+    "startForFree": "Start for Free",
+    "learnMore": "Learn More",
+    "language": "Language",
+    "georgian": "ქართული",
+    "english": "English"
+  },
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "pricing": "Pricing",
+    "stores": "Stores",
+    "login": "Login",
+    "register": "Register"
+  },
+  "hero": {
+    "title": "Create Your Online Store in Minutes",
+    "subtitle": "SellIt empowers you to build a professional online store for free. Start selling today!",
+    "cta": "Start for Free",
+    "secondaryCta": "See How It Works",
+    "slides": {
+      "sell": "Sell Your Products",
+      "grow": "Grow Your Business",
+      "manage": "Manage Everything from One Place"
+    }
+  },
+  "featuredStores": {
+    "title": "Successful Stores",
+    "subtitle": "Check out the stores created by our users",
+    "emptyState": "Featured stores will appear here soon",
+    "viewStore": "View Store"
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "subtitle": "Just 3 simple steps to open your store",
+    "step1": {
+      "title": "Create Your Brand",
+      "description": "Choose your store name, upload logo and cover, pick your brand color"
+    },
+    "step2": {
+      "title": "Add Categories",
+      "description": "Create categories and subcategories to organize your products"
+    },
+    "step3": {
+      "title": "Add Products",
+      "description": "Upload products with photos, descriptions, and prices"
+    }
+  },
+  "analytics": {
+    "title": "Analyze Your Earnings",
+    "subtitle": "Get detailed statistics about sales, visitors, and revenue",
+    "features": {
+      "sales": "Sales Tracking",
+      "visitors": "Visitor Analytics",
+      "revenue": "Revenue Reports"
+    }
+  },
+  "footer": {
+    "description": "SellIt - A platform where anyone can create their own online store",
+    "product": {
+      "title": "Product",
+      "features": "Features",
+      "pricing": "Pricing",
+      "faq": "FAQ"
+    },
+    "company": {
+      "title": "Company",
+      "about": "About Us",
+      "contact": "Contact",
+      "blog": "Blog"
+    },
+    "legal": {
+      "title": "Legal",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy"
+    },
+    "copyright": "© {year} SellIt. All rights reserved."
+  },
+  "metadata": {
+    "title": "SellIt - Create Your Online Store",
+    "description": "Create a professional online store for free and start selling today. Simple, fast, and effective."
+  }
+}

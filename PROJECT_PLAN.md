@@ -11,6 +11,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 1: Foundation & Infrastructure (Week 1-2)
 
 #### 1.1 Project Setup ✅
+
 - [x] Initialize NX monorepo workspace
 - [x] Set up Next.js frontend application
 - [x] Set up NestJS backend application
@@ -21,6 +22,7 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] Configure CI/CD pipeline (GitHub Actions)
 
 #### 1.2 Database Design ✅
+
 - [x] Design MongoDB schema
 - [x] Set up Mongoose ODM with NestJS
 - [x] Create schemas for core entities:
@@ -34,6 +36,7 @@ A platform where users can create their own online stores with custom subdomains
   - Refresh Tokens
 
 #### 1.3 Authentication & Authorization
+
 - [ ] Implement JWT-based authentication
 - [ ] Set up refresh token rotation
 - [ ] Role-based access control (RBAC)
@@ -44,6 +47,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 2: Core Store Management (Week 3-4)
 
 #### 2.1 Store Creation & Configuration
+
 - [ ] Store registration flow
 - [ ] Subdomain validation & assignment
 - [ ] Store settings management:
@@ -54,12 +58,14 @@ A platform where users can create their own online stores with custom subdomains
   - [ ] Contact information
 
 #### 2.2 Category Management
+
 - [ ] CRUD for categories
 - [ ] CRUD for subcategories
 - [ ] Category ordering/sorting
 - [ ] Category icons/images
 
 #### 2.3 Product Management
+
 - [ ] CRUD for products
 - [ ] Product images (multiple, with primary)
 - [ ] Product variants (size, color, etc.)
@@ -72,6 +78,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 3: Store Frontend (Week 5-6)
 
 #### 3.1 Store Pages - Products
+
 - [ ] Product listing page with grid/list views
 - [ ] Category filtering sidebar
 - [ ] Product search functionality
@@ -80,6 +87,7 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] Add to cart functionality (future)
 
 #### 3.2 Store Pages - Posts (Social Feed)
+
 - [ ] Post creation with images
 - [ ] Post feed display
 - [ ] Like functionality
@@ -88,12 +96,14 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] Infinite scroll pagination
 
 #### 3.3 Store Pages - Info
+
 - [ ] About/Info page editor (Rich text)
 - [ ] Contact information display
 - [ ] Store policies (returns, shipping)
 - [ ] FAQ section
 
 #### 3.4 Store Theming
+
 - [ ] Dynamic theme generation from accent color
 - [ ] Cover photo display
 - [ ] Profile photo display
@@ -105,6 +115,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 4: Subdomain & Routing (Week 7)
 
 #### 4.1 Subdomain Handling
+
 - [ ] Subdomain detection middleware
 - [ ] Dynamic routing based on subdomain
 - [ ] Store data fetching by subdomain
@@ -112,6 +123,7 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] Custom 404 for non-existent stores
 
 #### 4.2 Deep Linking (for future app)
+
 - [ ] Universal links setup
 - [ ] App detection & redirect
 - [ ] Fallback to web
@@ -121,6 +133,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 5: Media & Storage (Week 8)
 
 #### 5.1 Image Management
+
 - [ ] Image upload service
 - [ ] Image optimization & resizing
 - [ ] CDN integration (Cloudflare/AWS)
@@ -128,6 +141,7 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] WebP/AVIF support
 
 #### 5.2 Storage Infrastructure
+
 - [ ] S3-compatible storage setup
 - [ ] Signed URLs for private content
 - [ ] Storage quotas per store
@@ -137,6 +151,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 6: Admin Dashboard (Week 9-10)
 
 #### 6.1 Store Owner Dashboard
+
 - [ ] Dashboard overview (stats, recent activity)
 - [ ] Product management interface
 - [ ] Category management interface
@@ -145,6 +160,7 @@ A platform where users can create their own online stores with custom subdomains
 - [ ] Analytics (views, engagement)
 
 #### 6.2 Platform Admin Dashboard
+
 - [ ] Store moderation
 - [ ] User management
 - [ ] Platform analytics
@@ -155,17 +171,20 @@ A platform where users can create their own online stores with custom subdomains
 ### Phase 7: Advanced Features (Week 11-12)
 
 #### 7.1 Search & Discovery
+
 - [ ] Full-text search (Elasticsearch/Meilisearch)
 - [ ] Store discovery page
 - [ ] Trending products
 - [ ] Featured stores
 
 #### 7.2 Notifications
+
 - [ ] Email notifications
 - [ ] Push notifications (web)
 - [ ] In-app notifications
 
 #### 7.3 Performance & Optimization
+
 - [ ] Redis caching (optional enhancement)
 - [ ] Database query optimization
 - [ ] Image lazy loading
@@ -176,6 +195,7 @@ A platform where users can create their own online stores with custom subdomains
 ## 🏗️ Technical Architecture
 
 ### Folder Structure
+
 ```
 sellit/
 ├── apps/
@@ -207,6 +227,7 @@ sellit/
 ### Technology Stack
 
 #### Frontend (Next.js 15+)
+
 - **Framework**: Next.js with App Router
 - **Styling**: Tailwind CSS + CSS Variables for theming
 - **State Management**: Zustand / TanStack Query
@@ -214,6 +235,7 @@ sellit/
 - **UI Components**: Radix UI / shadcn/ui
 
 #### Backend (NestJS)
+
 - **Framework**: NestJS
 - **Database**: MongoDB 7+
 - **ODM**: Mongoose
@@ -222,6 +244,7 @@ sellit/
 - **Authentication**: Passport.js + JWT
 
 #### Infrastructure
+
 - **Monorepo**: Nx
 - **Package Manager**: npm
 - **Testing**: Jest + Testing Library + Playwright
@@ -235,6 +258,7 @@ sellit/
 > **Note**: We use MongoDB with Mongoose ODM. Schemas are defined in `libs/api/database/src/lib/schemas/`.
 
 ### Users
+
 ```typescript
 // user.schema.ts
 @Schema({ timestamps: true, collection: 'users' })
@@ -259,6 +283,7 @@ enum UserRole {
 ```
 
 ### Stores
+
 ```typescript
 // store.schema.ts
 @Schema({ timestamps: true, collection: 'stores' })
@@ -290,6 +315,7 @@ class Store {
 ```
 
 ### Products
+
 ```typescript
 // product.schema.ts
 @Schema({ timestamps: true, collection: 'products' })
@@ -330,6 +356,7 @@ class Product {
 ```
 
 ### Categories & Subcategories
+
 ```typescript
 // category.schema.ts
 @Schema({ timestamps: true, collection: 'categories' })
@@ -370,6 +397,7 @@ class Subcategory {
 ```
 
 ### Posts (Social Feed)
+
 ```typescript
 // post.schema.ts
 @Schema({ timestamps: true, collection: 'posts' })
@@ -419,6 +447,7 @@ class PostComment {
 ```
 
 ### Info Page
+
 ```typescript
 // info-page.schema.ts
 @Schema({ timestamps: true, collection: 'info_pages' })
@@ -451,18 +480,21 @@ class InfoPage {
 ## 🔌 API Endpoints (Overview)
 
 ### Authentication
+
 - `POST /auth/register` - Register new store owner
 - `POST /auth/login` - Login
 - `POST /auth/refresh` - Refresh token
 - `POST /auth/logout` - Logout
 
 ### Stores
+
 - `GET /stores/:subdomain` - Get store by subdomain (public)
 - `POST /stores` - Create store
 - `PATCH /stores/:id` - Update store settings
 - `DELETE /stores/:id` - Delete store
 
 ### Products
+
 - `GET /stores/:storeId/products` - List products (with filters)
 - `GET /stores/:storeId/products/:id` - Get product detail
 - `POST /stores/:storeId/products` - Create product
@@ -470,12 +502,14 @@ class InfoPage {
 - `DELETE /stores/:storeId/products/:id` - Delete product
 
 ### Categories
+
 - `GET /stores/:storeId/categories` - List categories with subcategories
 - `POST /stores/:storeId/categories` - Create category
 - `PATCH /stores/:storeId/categories/:id` - Update category
 - `DELETE /stores/:storeId/categories/:id` - Delete category
 
 ### Posts
+
 - `GET /stores/:storeId/posts` - List posts (paginated)
 - `GET /stores/:storeId/posts/:id` - Get post with comments
 - `POST /stores/:storeId/posts` - Create post
@@ -483,10 +517,12 @@ class InfoPage {
 - `POST /stores/:storeId/posts/:id/comments` - Add comment
 
 ### Info Page
+
 - `GET /stores/:storeId/info` - Get info page
 - `PATCH /stores/:storeId/info` - Update info page
 
 ### Media
+
 - `POST /upload` - Upload image
 - `DELETE /upload/:id` - Delete image
 
@@ -495,12 +531,14 @@ class InfoPage {
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 20+
 - npm 10+
 - MongoDB 7+ (or use Docker)
 - Docker (recommended for local development)
 
 ### Quick Start
+
 ```bash
 # Install dependencies
 npm install
@@ -514,6 +552,7 @@ npx nx serve api    # Backend on http://localhost:3000
 ```
 
 ### Useful Commands
+
 ```bash
 # Generate new library
 npx nx g @nx/js:lib libs/shared/my-lib
@@ -536,18 +575,21 @@ npx nx graph
 ## 📝 Notes & Decisions
 
 ### Why Subdomains?
+
 - **Professional appearance**: store.sellit.com looks more professional
 - **SEO benefits**: Each store gets its own domain authority
 - **Easy sharing**: Simple, memorable URLs
 - **Future flexibility**: Easy migration to custom domains
 
 ### Why Separate Posts from Products?
+
 - **Engagement**: Social-like features encourage user interaction
 - **Updates**: Stores can share news, behind-the-scenes, announcements
 - **Marketing**: Product highlights, sales announcements
 - **Community**: Builds connection between store and customers
 
 ### Mobile App Considerations
+
 - API is designed to be mobile-friendly
 - Deep linking structure planned from start
 - Authentication supports mobile clients
@@ -557,14 +599,14 @@ npx nx graph
 
 ## 📅 Milestones
 
-| Milestone | Target Date | Description |
-|-----------|-------------|-------------|
-| M1 | Week 2 | Core infrastructure complete |
-| M2 | Week 4 | Store & product management |
-| M3 | Week 6 | Store frontend complete |
-| M4 | Week 8 | Subdomain routing + media |
-| M5 | Week 10 | Admin dashboard |
-| M6 | Week 12 | MVP Launch Ready |
+| Milestone | Target Date | Description                  |
+| --------- | ----------- | ---------------------------- |
+| M1        | Week 2      | Core infrastructure complete |
+| M2        | Week 4      | Store & product management   |
+| M3        | Week 6      | Store frontend complete      |
+| M4        | Week 8      | Subdomain routing + media    |
+| M5        | Week 10     | Admin dashboard              |
+| M6        | Week 12     | MVP Launch Ready             |
 
 ---
 
@@ -582,4 +624,4 @@ npx nx graph
 
 ---
 
-*Last Updated: December 24, 2025*
+_Last Updated: December 24, 2025_
