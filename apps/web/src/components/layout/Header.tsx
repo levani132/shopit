@@ -5,6 +5,7 @@ import { Link, usePathname } from '../../i18n/routing';
 import { useLocale } from 'next-intl';
 import { useState } from 'react';
 import { useTheme } from '../theme/ThemeProvider';
+import { ShopItLogo } from '../ui/ShopItLogo';
 
 export function Header() {
   const t = useTranslations();
@@ -16,11 +17,8 @@ export function Header() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, var(--accent-500), #9333ea)' }}>
-              <span className="text-white font-bold text-lg">S</span>
-            </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">ShopIt</span>
+          <Link href="/" className="flex items-center">
+            <ShopItLogo size="md" />
           </Link>
 
           {/* Desktop Navigation */}
