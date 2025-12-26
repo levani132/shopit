@@ -16,11 +16,11 @@
 @layer components {
   /* Custom button styles */
   .btn-primary {
-    @apply px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5;
+    @apply px-6 py-3 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold border border-gray-200 hover:border-gray-300;
+    @apply px-6 py-3 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all font-semibold border border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600;
   }
 }
 

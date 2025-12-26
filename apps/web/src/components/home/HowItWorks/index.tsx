@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '../../../i18n/routing';
 import { StepCard } from './StepCard';
 import { BrandIcon, CategoryIcon, ProductIcon } from './StepIcons';
+import { BrandColorProvider } from './BrandColorContext';
 
 const STEPS = [
   {
@@ -34,40 +35,42 @@ export function HowItWorks() {
   const tCommon = useTranslations('common');
 
   return (
-    <section id="how-it-works" className="py-20 bg-gray-50">
+    <section id="how-it-works" className="py-20 bg-gray-50 dark:bg-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
             {t('title')}
           </h2>
-          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             {t('subtitle')}
           </p>
         </div>
 
         {/* Steps */}
-        <div className="grid md:grid-cols-3 gap-8">
-          {STEPS.map((step, index) => (
-            <StepCard
-              key={step.key}
-              number={step.number}
-              stepKey={step.key}
-              title={t(`${step.key}.title`)}
-              description={t(`${step.key}.description`)}
-              icon={step.icon}
-              color={step.color}
-              bgColor={step.bgColor}
-              isLast={index === STEPS.length - 1}
-            />
-          ))}
-        </div>
+        <BrandColorProvider>
+          <div className="grid md:grid-cols-3 gap-8">
+            {STEPS.map((step, index) => (
+              <StepCard
+                key={step.key}
+                number={step.number}
+                stepKey={step.key}
+                title={t(`${step.key}.title`)}
+                description={t(`${step.key}.description`)}
+                icon={step.icon}
+                color={step.color}
+                bgColor={step.bgColor}
+                isLast={index === STEPS.length - 1}
+              />
+            ))}
+          </div>
+        </BrandColorProvider>
 
         {/* CTA */}
         <div className="text-center mt-16">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
           >
             {tCommon('startForFree')}
             <svg

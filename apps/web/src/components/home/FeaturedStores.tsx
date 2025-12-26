@@ -39,23 +39,23 @@ export function FeaturedStores() {
   const isEmpty = false; // Set to true to show empty state
 
   return (
-    <section id="featured-stores" className="py-20 bg-white">
+    <section id="featured-stores" className="py-20 bg-white dark:bg-zinc-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
             {t('title')}
           </h2>
-          <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
             {t('subtitle')}
           </p>
         </div>
 
         {isEmpty ? (
           /* Empty state */
-          <div className="text-center py-16 px-4 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200">
+          <div className="text-center py-16 px-4 rounded-2xl bg-gray-50 dark:bg-zinc-800 border-2 border-dashed border-gray-200 dark:border-zinc-700">
             <svg
-              className="w-16 h-16 mx-auto text-gray-400"
+              className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -67,7 +67,7 @@ export function FeaturedStores() {
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
               />
             </svg>
-            <p className="mt-4 text-gray-500 text-lg">{t('emptyState')}</p>
+            <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">{t('emptyState')}</p>
           </div>
         ) : (
           /* Stores grid */
@@ -82,7 +82,7 @@ export function FeaturedStores() {
         <div className="text-center mt-12">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
           >
             {tCommon('startForFree')}
             <svg
@@ -118,7 +118,7 @@ function StoreCard({ store }: { store: Store }) {
   const t = useTranslations('featuredStores');
 
   return (
-    <div className="group bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-xl transition-all duration-300">
+    <div className="group bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 hover:shadow-xl dark:hover:shadow-zinc-900/50 transition-all duration-300">
       {/* Cover image placeholder */}
       <div
         className="h-32 relative"
@@ -126,7 +126,7 @@ function StoreCard({ store }: { store: Store }) {
       >
         {/* Profile image placeholder */}
         <div
-          className="absolute -bottom-6 left-6 w-16 h-16 rounded-xl bg-white shadow-lg flex items-center justify-center text-2xl font-bold"
+          className="absolute -bottom-6 left-6 w-16 h-16 rounded-xl bg-white dark:bg-zinc-800 shadow-lg flex items-center justify-center text-2xl font-bold"
           style={{ color: store.accentColor }}
         >
           {store.name.charAt(0)}
@@ -135,10 +135,10 @@ function StoreCard({ store }: { store: Store }) {
 
       {/* Content */}
       <div className="p-6 pt-10">
-        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
           {store.name}
         </h3>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           {store.subdomain}.sellit.ge
         </p>
 
@@ -146,7 +146,7 @@ function StoreCard({ store }: { store: Store }) {
           href={`https://${store.subdomain}.sellit.ge`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
         >
           {t('viewStore')}
           <svg

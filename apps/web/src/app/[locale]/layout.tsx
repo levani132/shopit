@@ -5,6 +5,7 @@ import { routing } from '../../i18n/routing';
 import '../global.css';
 import { Header } from '../../components/layout/Header';
 import { Footer } from '../../components/layout/Footer';
+import { ThemeProvider } from '../../components/theme/ThemeProvider';
 
 type Params = Promise<{ locale: string }>;
 
@@ -43,13 +44,34 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
-      <body className="min-h-screen flex flex-col bg-white">
-        <NextIntlClientProvider messages={messages}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </NextIntlClientProvider>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme) {
+                    document.documentElement.classList.toggle('dark', theme === 'dark');
+                  } else {
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    document.documentElement.classList.toggle('dark', prefersDark);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="min-h-screen flex flex-col bg-white dark:bg-zinc-900 transition-colors">
+        <ThemeProvider>
+          <NextIntlClientProvider messages={messages}>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

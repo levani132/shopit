@@ -1,45 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-
-const BRAND_COLORS = [
-  {
-    hex: '#6366f1',
-    name: 'indigo',
-    gradient: 'from-indigo-400 to-purple-400',
-    lightGradient: 'from-indigo-200 to-purple-200',
-  },
-  {
-    hex: '#ec4899',
-    name: 'pink',
-    gradient: 'from-pink-400 to-rose-400',
-    lightGradient: 'from-pink-200 to-rose-200',
-  },
-  {
-    hex: '#10b981',
-    name: 'emerald',
-    gradient: 'from-emerald-400 to-teal-400',
-    lightGradient: 'from-emerald-200 to-teal-200',
-  },
-  {
-    hex: '#f59e0b',
-    name: 'amber',
-    gradient: 'from-amber-400 to-orange-400',
-    lightGradient: 'from-amber-200 to-orange-200',
-  },
-];
+import { useBrandColor } from './BrandColorContext';
 
 export function BrandPreview() {
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const selectedColor = BRAND_COLORS[selectedColorIndex];
+  const { selectedColor, setSelectedColorIndex, colors } = useBrandColor();
+  const selectedColorIndex = colors.findIndex(
+    (c) => c.hex === selectedColor.hex,
+  );
 
   return (
-    <div className="bg-gray-50 p-4">
+    <div className="bg-gray-50 dark:bg-zinc-900 p-4">
       <div className="space-y-3">
         {/* Store name input mock */}
-        <div className="bg-white rounded-lg p-3 border border-gray-200">
-          <div className="text-xs text-gray-400 mb-1">Store Name</div>
-          <div className="h-4 w-3/4 bg-gray-200 rounded" />
+        <div className="bg-white dark:bg-zinc-800 rounded-lg p-3 border border-gray-200 dark:border-zinc-700">
+          <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">
+            Store Name
+          </div>
+          <div className="h-4 w-3/4 bg-gray-200 dark:bg-zinc-700 rounded" />
         </div>
 
         {/* Logo and cover row - changes based on selected color */}
@@ -54,14 +31,14 @@ export function BrandPreview() {
 
         {/* Interactive color picker */}
         <div className="flex gap-3">
-          {BRAND_COLORS.map((color, index) => (
+          {colors.map((color, index) => (
             <button
               key={color.hex}
               onClick={() => setSelectedColorIndex(index)}
               className={`w-6 h-6 rounded-full transition-all duration-200 hover:scale-110 ${
                 index === selectedColorIndex
-                  ? 'ring-2 ring-offset-2 scale-110'
-                  : 'hover:ring-1 hover:ring-offset-1 hover:ring-gray-300'
+                  ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-800 scale-110'
+                  : 'hover:ring-1 hover:ring-offset-1 hover:ring-gray-300 dark:hover:ring-zinc-600'
               }`}
               style={{
                 backgroundColor: color.hex,

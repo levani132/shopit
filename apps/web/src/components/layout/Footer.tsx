@@ -6,7 +6,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-gray-900 dark:bg-zinc-950 text-gray-300 dark:text-gray-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand */}
@@ -83,8 +83,8 @@ export function Footer() {
         </div>
 
         {/* Bottom */}
-        <div className="border-t border-gray-800 mt-12 pt-8 text-center">
-          <p className="text-gray-500 text-sm">
+        <div className="border-t border-gray-800 dark:border-zinc-900 mt-12 pt-8 text-center">
+          <p className="text-gray-500 dark:text-gray-500 text-sm">
             {t('copyright', { year: currentYear })}
           </p>
         </div>

@@ -9,47 +9,47 @@ export function Analytics() {
     {
       key: 'sales',
       icon: SalesIcon,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
+      color: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-100 dark:bg-green-900/30',
     },
     {
       key: 'visitors',
       icon: VisitorsIcon,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-blue-100 dark:bg-blue-900/30',
     },
     {
       key: 'revenue',
       icon: RevenueIcon,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-purple-600 dark:text-purple-400',
+      bgColor: 'bg-purple-100 dark:bg-purple-900/30',
     },
   ];
 
   return (
-    <section className="py-20 bg-white overflow-hidden">
+    <section className="py-20 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Content */}
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
               {t('title')}
             </h2>
-            <p className="mt-4 text-lg text-gray-600">{t('subtitle')}</p>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">{t('subtitle')}</p>
 
             {/* Features list */}
             <div className="mt-8 space-y-4">
               {features.map((feature) => (
                 <div
                   key={feature.key}
-                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                 >
                   <div
                     className={`w-12 h-12 ${feature.bgColor} rounded-xl flex items-center justify-center`}
                   >
                     <feature.icon className={`w-6 h-6 ${feature.color}`} />
                   </div>
-                  <span className="text-lg font-medium text-gray-900">
+                  <span className="text-lg font-medium text-gray-900 dark:text-white">
                     {t(`features.${feature.key}`)}
                   </span>
                 </div>
@@ -60,7 +60,7 @@ export function Analytics() {
             <div className="mt-10">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
               >
                 {tCommon('startForFree')}
                 <svg
@@ -137,8 +137,8 @@ export function Analytics() {
             </div>
 
             {/* Floating decoration */}
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-indigo-100 rounded-full opacity-50 blur-xl" />
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-purple-100 rounded-full opacity-50 blur-xl" />
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-indigo-100 dark:bg-indigo-900 rounded-full opacity-50 dark:opacity-20 blur-xl" />
+            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-purple-100 dark:bg-purple-900 rounded-full opacity-50 dark:opacity-20 blur-xl" />
           </div>
         </div>
       </div>

@@ -27,10 +27,10 @@ export function StepCard({
     <div className="relative">
       {/* Connector line */}
       {!isLast && (
-        <div className="hidden md:block absolute top-16 left-1/2 w-full h-0.5 bg-gradient-to-r from-gray-200 to-gray-200" />
+        <div className="hidden md:block absolute top-16 left-1/2 w-full h-0.5 bg-gradient-to-r from-gray-200 dark:from-zinc-700 to-gray-200 dark:to-zinc-700" />
       )}
 
-      <div className="relative bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow">
+      <div className="relative bg-white dark:bg-zinc-800 rounded-2xl p-8 shadow-lg dark:shadow-zinc-900/50 hover:shadow-xl dark:hover:shadow-zinc-900/70 transition-shadow">
         {/* Step number badge */}
         <div
           className={`absolute -top-4 left-8 w-8 h-8 rounded-full bg-gradient-to-r ${color} text-white flex items-center justify-center font-bold text-sm shadow-lg`}
@@ -46,11 +46,11 @@ export function StepCard({
         </div>
 
         {/* Content */}
-        <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-        <p className="text-gray-600">{description}</p>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{title}</h3>
+        <p className="text-gray-600 dark:text-gray-300">{description}</p>
 
         {/* Visual preview - mockup of the step */}
-        <div className="mt-6 rounded-lg overflow-hidden border border-gray-200">
+        <div className="mt-6 rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700">
           <StepPreview stepNumber={number} />
         </div>
       </div>

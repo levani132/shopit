@@ -36,33 +36,33 @@ export function Hero() {
   }, [nextSlide]);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+    <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-100 rounded-full opacity-50 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-100 rounded-full opacity-50 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-100 dark:bg-indigo-900 rounded-full opacity-50 dark:opacity-20 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-100 dark:bg-purple-900 rounded-full opacity-50 dark:opacity-20 blur-3xl" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left side - Content */}
           <div className="text-center lg:text-left">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
               {t('title')}
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0">
+            <p className="mt-6 text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-xl mx-auto lg:mx-0">
               {t('subtitle')}
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link
                 href="/"
-                className="px-8 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5"
+                className="px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
               >
                 {t('cta')}
               </Link>
               <a
                 href="#how-it-works"
-                className="px-8 py-4 bg-white text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-semibold text-lg border border-gray-200 hover:border-gray-300"
+                className="px-8 py-4 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all font-semibold text-lg border border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600"
               >
                 {t('secondaryCta')}
               </a>
@@ -111,8 +111,8 @@ export function Hero() {
             </div>
 
             {/* Floating elements decoration */}
-            <div className="absolute -top-4 -right-4 w-20 h-20 bg-yellow-400 rounded-xl rotate-12 opacity-80" />
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-indigo-400 rounded-lg -rotate-12 opacity-80" />
+            <div className="absolute -top-4 -right-4 w-20 h-20 bg-yellow-400 dark:bg-yellow-500 rounded-xl rotate-12 opacity-80 dark:opacity-60" />
+            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-indigo-400 dark:bg-indigo-500 rounded-lg -rotate-12 opacity-80 dark:opacity-60" />
           </div>
         </div>
       </div>
