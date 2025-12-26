@@ -139,11 +139,11 @@ function StoreCard({ store }: { store: Store }) {
           {store.name}
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {store.subdomain}.sellit.ge
+          {store.subdomain}.shopit.ge
         </p>
 
         <a
-          href={`https://${store.subdomain}.sellit.ge`}
+          href={`https://${store.subdomain}.shopit.ge`}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"

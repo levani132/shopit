@@ -16,7 +16,7 @@
   },
   "hero": {
     "title": "Create Your Online Store in Minutes",
-    "subtitle": "SellIt empowers you to build a professional online store for free. Start selling today!",
+    "subtitle": "ShopIt empowers you to build a professional online store for free. Start selling today!",
     "cta": "Start for Free",
     "secondaryCta": "See How It Works",
     "slides": {
@@ -57,7 +57,7 @@
     }
   },
   "footer": {
-    "description": "SellIt - A platform where anyone can create their own online store",
+    "description": "ShopIt - A platform where anyone can create their own online store",
     "product": {
       "title": "Product",
       "features": "Features",
@@ -75,10 +75,10 @@
       "terms": "Terms of Service",
       "privacy": "Privacy Policy"
     },
-    "copyright": "© {year} SellIt. All rights reserved."
+    "copyright": "© {year} ShopIt. All rights reserved."
   },
   "metadata": {
-    "title": "SellIt - Create Your Online Store",
+    "title": "ShopIt - Create Your Online Store",
     "description": "Create a professional online store for free and start selling today. Simple, fast, and effective."
   }
 }

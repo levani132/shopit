@@ -1,4 +1,4 @@
-# SellIt 🛒
+# ShopIt 🛒
 
 A multi-vendor e-commerce platform where anyone can create their own online store with a custom subdomain.
 

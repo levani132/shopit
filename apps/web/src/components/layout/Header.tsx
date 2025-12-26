@@ -20,7 +20,7 @@ export function Header() {
             <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">S</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 dark:text-white">SellIt</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">ShopIt</span>
           </Link>
 
           {/* Desktop Navigation */}

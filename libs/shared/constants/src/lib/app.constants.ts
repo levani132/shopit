@@ -3,7 +3,7 @@
  */
 
 // Platform info
-export const APP_NAME = 'SellIt';
+export const APP_NAME = 'ShopIt';
 export const APP_DESCRIPTION = 'Create your own online store in minutes';
 export const APP_VERSION = '1.0.0';
 

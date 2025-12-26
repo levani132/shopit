@@ -1,4 +1,4 @@
-# SellIt - Multi-Vendor E-Commerce Platform
+# ShopIt - Multi-Vendor E-Commerce Platform
 
 ## 🎯 Project Vision
 
@@ -576,7 +576,7 @@ npx nx graph
 
 ### Why Subdomains?
 
-- **Professional appearance**: store.sellit.com looks more professional
+- **Professional appearance**: store.shopit.com looks more professional
 - **SEO benefits**: Each store gets its own domain authority
 - **Easy sharing**: Simple, memorable URLs
 - **Future flexibility**: Easy migration to custom domains
