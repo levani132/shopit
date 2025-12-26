@@ -4,6 +4,7 @@ interface ShopItLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showText?: boolean;
   variant?: 'auto' | 'light' | 'dark'; // auto = follows theme, light = for dark backgrounds, dark = for light backgrounds
+  useStoreAccent?: boolean; // Use store's accent color instead of global accent
   className?: string;
 }
 
@@ -42,6 +43,7 @@ export function ShopItLogo({
   size = 'md',
   showText = true,
   variant = 'auto',
+  useStoreAccent = false,
   className = '',
 }: ShopItLogoProps) {
   const { icon: iconSize, text: textSize, gap, handleStroke } = SIZES[size];
@@ -60,6 +62,10 @@ export function ShopItLogo({
   const handleWidth = iconSize * 0.5;
   const bagSize = iconSize * 0.85;
   const totalHeight = iconSize;
+
+  // Accent color CSS variable
+  const accentVar = useStoreAccent ? '--store-accent-500' : '--accent-500';
+  const accentVarDark = useStoreAccent ? '--store-accent-700' : '--accent-700';
 
   return (
     <div className={`flex items-center ${gap} ${className}`}>
@@ -96,8 +102,11 @@ export function ShopItLogo({
               x2="100%"
               y2="100%"
             >
-              <stop offset="0%" stopColor="var(--accent-500, #6366f1)" />
-              <stop offset="100%" stopColor="#9333ea" />
+              <stop offset="0%" stopColor={`var(${accentVar}, #6366f1)`} />
+              <stop
+                offset="100%"
+                stopColor={`var(${accentVarDark}, #9333ea)`}
+              />
             </linearGradient>
           </defs>
         </svg>
@@ -111,8 +120,7 @@ export function ShopItLogo({
             bottom: 0,
             left: '50%',
             transform: 'translateX(-50%)',
-            background:
-              'linear-gradient(to bottom right, var(--accent-500, #6366f1), #9333ea)',
+            background: `linear-gradient(to bottom right, var(${accentVar}, #6366f1), var(${accentVarDark}, #9333ea))`,
           }}
         >
           <span

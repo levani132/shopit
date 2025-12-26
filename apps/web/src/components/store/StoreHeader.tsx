@@ -48,7 +48,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
           <div className="flex items-center justify-between h-full">
             {/* ShopIt Logo */}
             <a href="https://shopit.ge" className="flex items-center">
-              <ShopItLogo size="sm" variant="light" />
+              <ShopItLogo size="sm" variant="light" useStoreAccent />
             </a>
 
             {/* Right side buttons */}
