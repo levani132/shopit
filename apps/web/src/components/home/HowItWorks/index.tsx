@@ -4,15 +4,14 @@ import { useTranslations } from 'next-intl';
 import { Link } from '../../../i18n/routing';
 import { StepCard } from './StepCard';
 import { BrandIcon, CategoryIcon, ProductIcon } from './StepIcons';
-import { BrandColorProvider } from './BrandColorContext';
 
 const STEPS = [
   {
     number: 1,
     key: 'step1',
     icon: BrandIcon,
-    color: 'from-indigo-500 to-purple-500',
-    bgColor: 'bg-indigo-50',
+    color: 'from-[var(--accent-500)] to-purple-500',
+    bgColor: 'bg-[var(--accent-50)]',
   },
   {
     number: 2,
@@ -48,29 +47,27 @@ export function HowItWorks() {
         </div>
 
         {/* Steps */}
-        <BrandColorProvider>
-          <div className="grid md:grid-cols-3 gap-8">
-            {STEPS.map((step, index) => (
-              <StepCard
-                key={step.key}
-                number={step.number}
-                stepKey={step.key}
-                title={t(`${step.key}.title`)}
-                description={t(`${step.key}.description`)}
-                icon={step.icon}
-                color={step.color}
-                bgColor={step.bgColor}
-                isLast={index === STEPS.length - 1}
-              />
-            ))}
-          </div>
-        </BrandColorProvider>
+        <div className="grid md:grid-cols-3 gap-8">
+          {STEPS.map((step, index) => (
+            <StepCard
+              key={step.key}
+              number={step.number}
+              stepKey={step.key}
+              title={t(`${step.key}.title`)}
+              description={t(`${step.key}.description`)}
+              icon={step.icon}
+              color={step.color}
+              bgColor={step.bgColor}
+              isLast={index === STEPS.length - 1}
+            />
+          ))}
+        </div>
 
         {/* CTA */}
         <div className="text-center mt-16">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             {tCommon('startForFree')}
             <svg

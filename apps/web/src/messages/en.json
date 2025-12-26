@@ -47,6 +47,10 @@
       "description": "Upload products with photos, descriptions, and prices"
     }
   },
+  "paymentMethods": {
+    "title": "Receive Payments Securely",
+    "subtitle": "Accept payments from any Georgian bank or PayPal"
+  },
   "analytics": {
     "title": "Analyze Your Earnings",
     "subtitle": "Get detailed statistics about sales, visitors, and revenue",

@@ -14,6 +14,15 @@ const intlMiddleware = createMiddleware(routing);
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Early return for files with extensions (e.g., .js, .json, .png, etc.)
+  // This prevents service workers and other static files from being treated as locales
+  if (pathname.includes('.') && !pathname.startsWith('/_next')) {
+    const lastSegment = pathname.split('/').pop() || '';
+    if (lastSegment.includes('.')) {
+      return new Response(null, { status: 404 });
+    }
+  }
+
   // Check if locale is already in the URL (e.g., /en/... or /ka/...)
   const pathnameHasLocale = routing.locales.some(
     (locale) => pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
@@ -69,5 +78,16 @@ export const config = {
   // - api routes
   // - _next (Next.js internals)
   // - static files (images, fonts, etc.)
-  matcher: ['/((?!api|_next|.*\\..*).*)'],
+  // - service worker files (sw.js, sw-new.js, etc.)
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - files with extensions (e.g., .js, .json, .png, etc.)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)',
+  ],
 };

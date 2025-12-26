@@ -1,7 +1,7 @@
 export function BrandIcon() {
   return (
     <svg
-      className="w-8 h-8 text-indigo-600"
+      className="w-8 h-8 text-[var(--accent-600)] dark:text-[var(--accent-400)]"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"

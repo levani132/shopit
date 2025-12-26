@@ -60,7 +60,7 @@ export function Analytics() {
             <div className="mt-10">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
               >
                 {tCommon('startForFree')}
                 <svg
@@ -119,8 +119,11 @@ export function Analytics() {
                     (height, i) => (
                       <div
                         key={i}
-                        className="flex-1 bg-gradient-to-t from-indigo-600 to-purple-500 rounded-t opacity-80 hover:opacity-100 transition-opacity"
-                        style={{ height: `${height}%` }}
+                        className="flex-1 rounded-t opacity-80 hover:opacity-100 transition-opacity"
+                        style={{ 
+                          background: 'linear-gradient(to top, var(--accent-600), #9333ea)',
+                          height: `${height}%`
+                        }}
                       />
                     ),
                   )}
@@ -137,7 +140,7 @@ export function Analytics() {
             </div>
 
             {/* Floating decoration */}
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-indigo-100 dark:bg-indigo-900 rounded-full opacity-50 dark:opacity-20 blur-xl" />
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-50 dark:opacity-20 blur-xl" style={{ backgroundColor: 'var(--accent-100)' }} />
             <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-purple-100 dark:bg-purple-900 rounded-full opacity-50 dark:opacity-20 blur-xl" />
           </div>
         </div>

@@ -39,7 +39,7 @@ export function Hero() {
     <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-900 dark:to-zinc-800">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-indigo-100 dark:bg-indigo-900 rounded-full opacity-50 dark:opacity-20 blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full opacity-50 dark:opacity-20 blur-3xl" style={{ backgroundColor: 'var(--accent-100)' }} />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-100 dark:bg-purple-900 rounded-full opacity-50 dark:opacity-20 blur-3xl" />
       </div>
 
@@ -56,7 +56,16 @@ export function Hero() {
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link
                 href="/"
-                className="px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
+                className="px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                style={{
+                  boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 20px 25px -5px color-mix(in srgb, var(--accent-300) 40%, transparent), 0 8px 10px -6px color-mix(in srgb, var(--accent-300) 40%, transparent)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)';
+                }}
               >
                 {t('cta')}
               </Link>
@@ -112,7 +121,7 @@ export function Hero() {
 
             {/* Floating elements decoration */}
             <div className="absolute -top-4 -right-4 w-20 h-20 bg-yellow-400 dark:bg-yellow-500 rounded-xl rotate-12 opacity-80 dark:opacity-60" />
-            <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-indigo-400 dark:bg-indigo-500 rounded-lg -rotate-12 opacity-80 dark:opacity-60" />
+            <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-lg -rotate-12 opacity-80 dark:opacity-60" style={{ backgroundColor: 'var(--accent-400)' }} />
           </div>
         </div>
       </div>

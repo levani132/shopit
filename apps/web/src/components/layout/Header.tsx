@@ -17,7 +17,7 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, var(--accent-500), #9333ea)' }}>
               <span className="text-white font-bold text-lg">S</span>
             </div>
             <span className="text-xl font-bold text-gray-900 dark:text-white">ShopIt</span>
@@ -76,7 +76,7 @@ export function Header() {
             </Link>
             <Link
               href="/"
-              className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors font-medium"
+              className="px-4 py-2 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-colors font-medium"
             >
               {t('common.startForFree')}
             </Link>
@@ -166,7 +166,7 @@ export function Header() {
               </Link>
               <Link
                 href="/"
-                className="px-4 py-2 bg-indigo-600 dark:bg-indigo-500 text-white rounded-lg hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-colors font-medium text-center"
+                className="px-4 py-2 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-colors font-medium text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t('common.startForFree')}
@@ -185,26 +185,25 @@ function LanguageSwitcher() {
   const locale = useLocale();
 
   return (
-    <div className="flex items-center gap-2 text-sm">
+    <div className="flex items-center gap-1 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
       <Link
         href={pathname}
         locale="ka"
-        className={`px-2 py-1 rounded transition-colors ${
+        className={`px-3 py-1.5 rounded-md transition-all font-medium ${
           locale === 'ka'
-            ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            ? 'bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
       >
         {t('georgian')}
       </Link>
-      <span className="text-gray-300 dark:text-gray-600">|</span>
       <Link
         href={pathname}
         locale="en"
-        className={`px-2 py-1 rounded transition-colors ${
+        className={`px-3 py-1.5 rounded-md transition-all font-medium ${
           locale === 'en'
-            ? 'bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 font-medium'
-            : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            ? 'bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
       >
         {t('english')}

@@ -2,6 +2,7 @@ import { setRequestLocale } from 'next-intl/server';
 import { Hero } from '../../components/home/Hero';
 import { FeaturedStores } from '../../components/home/FeaturedStores';
 import { HowItWorks } from '../../components/home/HowItWorks';
+import { PaymentMethods } from '../../components/home/PaymentMethods';
 import { Analytics } from '../../components/home/Analytics';
 
 type Params = Promise<{ locale: string }>;
@@ -17,6 +18,7 @@ export default async function HomePage({ params }: { params: Params }) {
       <Hero />
       <FeaturedStores />
       <HowItWorks />
+      <PaymentMethods />
       <Analytics />
     </>
   );

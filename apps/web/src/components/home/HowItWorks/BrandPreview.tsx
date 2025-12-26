@@ -1,11 +1,29 @@
 'use client';
 
-import { useBrandColor } from './BrandColorContext';
+import {
+  useAccentColor,
+  AccentColorName,
+} from '../../theme/AccentColorProvider';
+
+// Map of available accent colors for brand preview (subset of all accent colors)
+const BRAND_COLOR_OPTIONS: AccentColorName[] = [
+  'indigo',
+  'pink',
+  'emerald',
+  'amber',
+];
 
 export function BrandPreview() {
-  const { selectedColor, setSelectedColorIndex, colors } = useBrandColor();
-  const selectedColorIndex = colors.findIndex(
-    (c) => c.hex === selectedColor.hex,
+  const { accentColor, setAccentColor, availableColors } = useAccentColor();
+
+  // Filter to only show the 4 brand color options
+  const brandColors = availableColors.filter((color) =>
+    BRAND_COLOR_OPTIONS.includes(color.name),
+  );
+
+  // Find current selected index
+  const selectedIndex = brandColors.findIndex(
+    (c) => c.name === accentColor.name,
   );
 
   return (
@@ -22,28 +40,34 @@ export function BrandPreview() {
         {/* Logo and cover row - changes based on selected color */}
         <div className="flex gap-3">
           <div
-            className={`w-12 h-12 bg-gradient-to-br ${selectedColor.gradient} rounded-lg transition-all duration-300`}
+            className="w-12 h-12 rounded-lg transition-all duration-300"
+            style={{
+              background: `linear-gradient(to bottom right, var(--accent-400), #9333ea)`,
+            }}
           />
           <div
-            className={`flex-1 h-12 bg-gradient-to-r ${selectedColor.lightGradient} rounded-lg transition-all duration-300`}
+            className="flex-1 h-12 rounded-lg transition-all duration-300"
+            style={{
+              background: `linear-gradient(to right, var(--accent-200), #e9d5ff)`,
+            }}
           />
         </div>
 
         {/* Interactive color picker */}
         <div className="flex gap-3">
-          {colors.map((color, index) => (
+          {brandColors.map((color, index) => (
             <button
               key={color.hex}
-              onClick={() => setSelectedColorIndex(index)}
+              onClick={() => setAccentColor(color.name)}
               className={`w-6 h-6 rounded-full transition-all duration-200 hover:scale-110 ${
-                index === selectedColorIndex
+                index === selectedIndex
                   ? 'ring-2 ring-offset-2 dark:ring-offset-zinc-800 scale-110'
                   : 'hover:ring-1 hover:ring-offset-1 hover:ring-gray-300 dark:hover:ring-zinc-600'
               }`}
               style={{
                 backgroundColor: color.hex,
                 ['--tw-ring-color' as string]:
-                  index === selectedColorIndex ? color.hex : undefined,
+                  index === selectedIndex ? color.hex : undefined,
               }}
               aria-label={`Select ${color.name} color`}
             />

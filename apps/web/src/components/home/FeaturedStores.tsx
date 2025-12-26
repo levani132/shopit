@@ -82,7 +82,7 @@ export function FeaturedStores() {
         <div className="text-center mt-12">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 dark:bg-indigo-500 text-white rounded-xl hover:bg-indigo-700 dark:hover:bg-indigo-600 transition-all font-semibold text-lg shadow-lg shadow-indigo-200 dark:shadow-indigo-900/50 hover:shadow-xl hover:shadow-indigo-300 dark:hover:shadow-indigo-800/50 hover:-translate-y-0.5"
+            className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             {tCommon('startForFree')}
             <svg
@@ -135,7 +135,7 @@ function StoreCard({ store }: { store: Store }) {
 
       {/* Content */}
       <div className="p-6 pt-10">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors group-hover:text-[var(--accent-600)] dark:group-hover:text-[var(--accent-400)]">
           {store.name}
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -146,7 +146,7 @@ function StoreCard({ store }: { store: Store }) {
           href={`https://${store.subdomain}.shopit.ge`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+          className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:text-[var(--accent-700)] dark:hover:text-[var(--accent-300)] transition-colors"
         >
           {t('viewStore')}
           <svg

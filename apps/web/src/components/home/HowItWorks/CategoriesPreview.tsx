@@ -1,13 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useBrandColor } from './BrandColorContext';
 
 const INITIAL_CATEGORIES = ['Electronics', 'Clothing', 'Accessories'];
 
 export function CategoriesPreview() {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const { selectedColor } = useBrandColor();
 
   return (
     <div className="bg-gray-50 dark:bg-zinc-900 p-4">
@@ -18,14 +16,16 @@ export function CategoriesPreview() {
             onClick={() => setSelectedIndex(i)}
             className={`w-full text-left bg-white dark:bg-zinc-800 rounded-lg p-3 border transition-all duration-200 ${
               i === selectedIndex
-                ? `${selectedColor.border} ${selectedColor.borderDark} ${selectedColor.bgLight} ${selectedColor.bgLightDark} shadow-sm`
+                ? 'border-[var(--accent-300)] dark:border-[var(--accent-600)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/30 shadow-sm'
                 : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
             }`}
           >
             <div className="flex items-center gap-2">
               <div
                 className={`w-3 h-3 rounded transition-colors duration-200 ${
-                  i === selectedIndex ? `${selectedColor.bg} ${selectedColor.bgDark}` : 'bg-gray-300 dark:bg-zinc-600'
+                  i === selectedIndex
+                    ? 'bg-[var(--accent-500)] dark:bg-[var(--accent-500)]'
+                    : 'bg-gray-300 dark:bg-zinc-600'
                 }`}
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">{cat}</span>
