@@ -32,11 +32,12 @@ async function bootstrap() {
     })
   );
 
-  const port = process.env['API_PORT'] || process.env['PORT'] || 3001;
+  // PORT is set by cloud providers (Render, Railway, etc.) - prioritize it
+  const port = process.env['PORT'] || process.env['API_PORT'] || 3001;
   await app.listen(port);
 
   Logger.log(
-    `🚀 SellIt API is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 ShopIt API is running on: http://localhost:${port}/${globalPrefix}`
   );
 }
 
