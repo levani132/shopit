@@ -15,6 +15,7 @@ const MAIN_DOMAINS = [
   'www.shopit.ge',
   'shopit.com',
   'www.shopit.com',
+  'shopit-dev.vercel.app',
 ];
 
 // Create middleware with locale detection enabled
