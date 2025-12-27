@@ -17,8 +17,6 @@ export function StoreHeader({ store }: StoreHeaderProps) {
 
   // Handle scroll to hide/show top bar
   useEffect(() => {
-    let lastScrollY = 0;
-
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -28,8 +26,6 @@ export function StoreHeader({ store }: StoreHeaderProps) {
       } else {
         setTopBarVisible(true);
       }
-      
-      lastScrollY = currentScrollY;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
