@@ -16,20 +16,19 @@ const BRAND_COLORS: Record<string, string> = {
 
 export function Step2Details() {
   const t = useTranslations('register');
-  const { data, updateData, nextStep, prevStep, setUnblurredSections } = useRegistration();
+  const { data, updateData, nextStep, prevStep } = useRegistration();
   const [errors, setErrors] = useState<{ description?: string; authorName?: string }>({});
   const [animating, setAnimating] = useState(true);
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
 
-  // Animate unblurring header when entering this step
+  // Entry animation
   useEffect(() => {
     const timer = setTimeout(() => {
-      setUnblurredSections(['header']);
       setAnimating(false);
-    }, 300);
+    }, 100);
     return () => clearTimeout(timer);
-  }, [setUnblurredSections]);
+  }, []);
 
   const handleSubmit = () => {
     const newErrors: typeof errors = {};

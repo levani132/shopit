@@ -33,11 +33,13 @@ interface RegistrationContextType {
   step: number;
   data: RegistrationData;
   unblurredSections: ('header' | 'hero' | 'categories' | 'products' | 'footer')[];
+  isPreviewAnimating: boolean;
   setStep: (step: number) => void;
   updateData: (updates: Partial<RegistrationData>) => void;
   nextStep: () => void;
   prevStep: () => void;
   setUnblurredSections: (sections: typeof unblurredSections) => void;
+  setIsPreviewAnimating: (animating: boolean) => void;
 }
 
 const initialData: RegistrationData = {
@@ -68,6 +70,7 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [unblurredSections, setUnblurredSections] = useState<
     ('header' | 'hero' | 'categories' | 'products' | 'footer')[]
   >([]);
+  const [isPreviewAnimating, setIsPreviewAnimating] = useState(false);
 
   const updateData = useCallback((updates: Partial<RegistrationData>) => {
     setData((prev) => ({ ...prev, ...updates }));
@@ -87,11 +90,13 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
         step,
         data,
         unblurredSections,
+        isPreviewAnimating,
         setStep,
         updateData,
         nextStep,
         prevStep,
         setUnblurredSections,
+        setIsPreviewAnimating,
       }}
     >
       {children}

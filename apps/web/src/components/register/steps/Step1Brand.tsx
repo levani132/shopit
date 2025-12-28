@@ -16,9 +16,10 @@ const BRAND_COLORS = [
 
 export function Step1Brand() {
   const t = useTranslations('register');
-  const { data, updateData, nextStep } = useRegistration();
+  const { data, updateData, nextStep, setIsPreviewAnimating, setUnblurredSections } = useRegistration();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const accentColor = BRAND_COLORS.find((c) => c.name === data.brandColor)?.color || '#6366f1';
 
@@ -43,7 +44,21 @@ export function Step1Brand() {
       return;
     }
     setError(null);
-    nextStep();
+    setIsTransitioning(true);
+    
+    // Start the preview flying animation
+    setIsPreviewAnimating(true);
+    
+    // After animation starts, unblur the header
+    setTimeout(() => {
+      setUnblurredSections(['header']);
+    }, 200);
+    
+    // After animation completes, go to next step
+    setTimeout(() => {
+      setIsPreviewAnimating(false);
+      nextStep();
+    }, 600);
   };
 
   return (
@@ -70,7 +85,9 @@ export function Step1Brand() {
 
       {/* Brand Preview - Outside paper, looks like header preview */}
       <div
-        className="w-full max-w-sm mb-4 px-4 py-3 rounded-xl backdrop-blur-sm flex items-center gap-3 transition-all"
+        className={`w-full max-w-sm mb-4 px-4 py-3 rounded-xl backdrop-blur-sm flex items-center gap-3 transition-all duration-300 ${
+          isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
+        }`}
         style={{ backgroundColor: `${accentColor}20` }}
       >
         {data.logoPreview && !data.useInitialAsLogo ? (

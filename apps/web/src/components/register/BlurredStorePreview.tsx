@@ -56,11 +56,11 @@ const ACCENT_COLORS: Record<string, Record<string, string>> = {
 };
 
 export function BlurredStorePreview() {
-  const { data, step, unblurredSections } = useRegistration();
+  const { data, unblurredSections, isPreviewAnimating } = useRegistration();
   const colors = ACCENT_COLORS[data.brandColor] || ACCENT_COLORS.indigo;
 
-  const isUnblurred = (section: string) =>
-    unblurredSections.includes(section as (typeof unblurredSections)[number]);
+  const isHeaderUnblurred = unblurredSections.includes('header');
+  const isHeroUnblurred = unblurredSections.includes('hero');
 
   return (
     <div className="fixed inset-0 overflow-hidden">
@@ -86,86 +86,112 @@ export function BlurredStorePreview() {
         style={{ backgroundColor: colors['400'] }}
       />
 
-      {/* Simulated store preview - only visible when step > 1 and header is unblurred */}
-      {step >= 2 && (
-        <>
-          {/* Header section */}
-          <div
-            className={`absolute top-0 left-0 right-0 transition-all duration-700 ${
-              isUnblurred('header')
-                ? 'opacity-100 translate-y-0'
-                : 'opacity-0 -translate-y-4'
-            }`}
-          >
-            <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-lg">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
-                {/* Logo */}
-                <div className="flex items-center gap-3">
-                  {data.logoPreview && !data.useInitialAsLogo ? (
-                    <img
-                      src={data.logoPreview}
-                      alt="Store logo"
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg transition-colors duration-500"
-                      style={{ backgroundColor: colors['500'] }}
-                    >
-                      {(data.storeName || 'S').charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <span className="font-semibold text-gray-900 dark:text-white text-lg">
-                    {data.storeName || 'Your Store'}
-                  </span>
+      {/* Header - Always visible, blurred until step 2 */}
+      <div
+        className={`absolute top-0 left-0 right-0 transition-all duration-700 ease-out ${
+          isHeaderUnblurred ? 'blur-0' : 'blur-md'
+        }`}
+      >
+        <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm shadow-lg">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center">
+            {/* Logo - this is where the preview will animate to */}
+            <div className="flex items-center gap-3">
+              {data.logoPreview && !data.useInitialAsLogo ? (
+                <img
+                  src={data.logoPreview}
+                  alt="Store logo"
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg transition-colors duration-500"
+                  style={{ backgroundColor: colors['500'] }}
+                >
+                  {(data.storeName || 'S').charAt(0).toUpperCase()}
                 </div>
+              )}
+              <span className="font-semibold text-gray-900 dark:text-white text-lg">
+                {data.storeName || 'Your Store'}
+              </span>
+            </div>
 
-                {/* Nav */}
-                <nav className="hidden md:flex items-center gap-6 ml-10">
-                  <span className="text-gray-600 dark:text-gray-300">Products</span>
-                  <span className="text-gray-600 dark:text-gray-300">Categories</span>
-                  <span className="text-gray-600 dark:text-gray-300">About</span>
-                </nav>
+            {/* Nav */}
+            <nav className="hidden md:flex items-center gap-6 ml-10">
+              <span className="text-gray-600 dark:text-gray-300">Products</span>
+              <span className="text-gray-600 dark:text-gray-300">Categories</span>
+              <span className="text-gray-600 dark:text-gray-300">About</span>
+            </nav>
 
-                {/* Cart */}
-                <div className="ml-auto">
-                  <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                  </div>
-                </div>
+            {/* Cart */}
+            <div className="ml-auto">
+              <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Hero section */}
-          {isUnblurred('hero') && (
+      {/* Hero - Only visible after step 2 */}
+      <div
+        className={`absolute left-0 right-0 transition-all duration-700 ease-out ${
+          isHeroUnblurred ? 'blur-0 opacity-100' : 'blur-md opacity-50'
+        }`}
+        style={{ top: '64px' }}
+      >
+        <div
+          className="py-16 transition-colors duration-500"
+          style={{
+            background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)`,
+          }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              {data.storeName || 'Your Store Name'}
+            </h1>
+            <p className="text-lg text-white/90 mb-2 max-w-2xl mx-auto">
+              {data.description || 'Your store description will appear here...'}
+            </p>
+            {data.showAuthorName && data.authorName && (
+              <p className="text-white/70 text-sm">by {data.authorName}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Animated preview element - flies from center to header */}
+      {isPreviewAnimating && (
+        <div
+          className="fixed z-50 flex items-center gap-3 animate-fly-to-header"
+          style={{
+            // Starting position (center of screen, where the preview is in Step1)
+            '--start-x': 'calc(50vw - 100px)',
+            '--start-y': 'calc(50vh - 100px)',
+            // End position (header logo position)
+            '--end-x': '24px',
+            '--end-y': '12px',
+          } as React.CSSProperties}
+        >
+          {data.logoPreview && !data.useInitialAsLogo ? (
+            <img
+              src={data.logoPreview}
+              alt="Store logo"
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
             <div
-              className="absolute left-0 right-0 transition-all duration-700"
-              style={{ top: '64px' }}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
+              style={{ backgroundColor: colors['500'] }}
             >
-              <div
-                className="py-16 transition-colors duration-500"
-                style={{
-                  background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)`,
-                }}
-              >
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-                    {data.storeName || 'Your Store Name'}
-                  </h1>
-                  <p className="text-lg text-white/90 mb-2 max-w-2xl mx-auto">
-                    {data.description || 'Your store description will appear here...'}
-                  </p>
-                  {data.showAuthorName && data.authorName && (
-                    <p className="text-white/70 text-sm">by {data.authorName}</p>
-                  )}
-                </div>
-              </div>
+              {(data.storeName || 'S').charAt(0).toUpperCase()}
             </div>
           )}
-        </>
+          <span className="font-semibold text-white text-lg">
+            {data.storeName || 'Your Store'}
+          </span>
+        </div>
       )}
 
       {/* Floating shapes for visual interest */}
