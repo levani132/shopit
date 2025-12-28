@@ -98,6 +98,7 @@
     "logoWarning": "Having a brand logo can increase brand popularity and success.",
     "uploadLogo": "Upload Logo",
     "changeLogo": "Change Logo",
+    "logoFormatHint": "For best results, use PNG or SVG with transparent background",
     "remove": "Remove",
     "yourStoreName": "Your Store Name",
     "continue": "Continue",

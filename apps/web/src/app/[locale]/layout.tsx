@@ -61,7 +61,7 @@ export default async function LocaleLayout({
   const headersList = await headers();
   const pathname = headersList.get('x-pathname') || '';
   const shouldHideLayout = HIDE_LAYOUT_ROUTES.some((route) =>
-    pathname.includes(route)
+    pathname.includes(route),
   );
 
   return (

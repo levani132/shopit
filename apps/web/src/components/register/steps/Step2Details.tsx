@@ -27,7 +27,7 @@ export function Step2Details() {
     const timer = setTimeout(() => {
       setUnblurredSections(['header']);
       setAnimating(false);
-    }, 500);
+    }, 300);
     return () => clearTimeout(timer);
   }, [setUnblurredSections]);
 
@@ -51,47 +51,48 @@ export function Step2Details() {
   };
 
   return (
-    <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
+    <div className="relative z-10 min-h-screen flex flex-col items-center justify-center p-4 pt-20">
+      {/* Step indicator - Outside paper */}
+      <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center gap-2">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+            style={{ backgroundColor: accentColor }}
+          >
+            ✓
+          </div>
+          <div className="w-8 h-0.5" style={{ backgroundColor: accentColor }} />
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm"
+            style={{ backgroundColor: accentColor }}
+          >
+            2
+          </div>
+          <div className="w-8 h-0.5 bg-white/30" />
+          <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/20 text-white/60 font-bold text-sm">
+            3
+          </div>
+        </div>
+      </div>
+
+      {/* Main Form Card - Compact */}
       <div
-        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-8 w-full max-w-md transition-all duration-500 ${
+        className={`bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6 w-full max-w-sm transition-all duration-500 ${
           animating ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'
         }`}
       >
-        {/* Step indicator */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: accentColor }}
-            >
-              ✓
-            </div>
-            <div className="w-8 h-0.5" style={{ backgroundColor: accentColor }} />
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold"
-              style={{ backgroundColor: accentColor }}
-            >
-              2
-            </div>
-            <div className="w-8 h-0.5 bg-gray-300 dark:bg-zinc-700" />
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-300 dark:bg-zinc-700 text-gray-600 dark:text-gray-400 font-bold">
-              3
-            </div>
-          </div>
-        </div>
-
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white text-center mb-1">
           {t('describeYourStore')}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+        <p className="text-gray-500 dark:text-gray-400 text-center text-sm mb-5">
           {t('step2Description')}
         </p>
 
         {/* Store Description */}
-        <div className="mb-6">
+        <div className="mb-4">
           <label
             htmlFor="description"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
           >
             {t('storeDescription')} *
           </label>
@@ -100,22 +101,23 @@ export function Step2Details() {
             value={data.description}
             onChange={(e) => updateData({ description: e.target.value })}
             placeholder={t('enterDescription')}
-            rows={4}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
+            rows={3}
+            maxLength={300}
+            className="w-full px-3 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none text-sm"
           />
           {errors.description && (
-            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.description}</p>
           )}
-          <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1">
             {data.description.length}/300
           </p>
         </div>
 
         {/* Author Name */}
-        <div className="mb-6">
+        <div className="mb-4">
           <label
             htmlFor="authorName"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
           >
             {t('authorName')} *
           </label>
@@ -125,27 +127,27 @@ export function Step2Details() {
             value={data.authorName}
             onChange={(e) => updateData({ authorName: e.target.value })}
             placeholder={t('enterAuthorName')}
-            className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+            className="w-full px-3 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-sm"
           />
           {errors.authorName && (
-            <p className="text-red-500 text-sm mt-1">{errors.authorName}</p>
+            <p className="text-red-500 text-xs mt-1">{errors.authorName}</p>
           )}
         </div>
 
         {/* Show Author Toggle */}
-        <div className="mb-8">
-          <label className="flex items-center gap-3 cursor-pointer">
+        <div className="mb-5">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={data.showAuthorName}
               onChange={(e) => updateData({ showAuthorName: e.target.checked })}
-              className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             />
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {t('showAuthorOnHomepage')}
             </span>
           </label>
-          <p className="text-gray-500 dark:text-gray-400 text-xs mt-2 ml-8">
+          <p className="text-gray-400 dark:text-gray-500 text-xs mt-1 ml-6">
             {t('authorVisibilityNote')}
           </p>
         </div>
@@ -155,14 +157,14 @@ export function Step2Details() {
           <button
             type="button"
             onClick={prevStep}
-            className="flex-1 py-3 px-6 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition"
+            className="flex-1 py-2.5 px-4 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition text-sm"
           >
             {t('back')}
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="flex-1 py-3 px-6 text-white font-semibold rounded-lg transition-colors"
+            className="flex-1 py-2.5 px-4 text-white font-semibold rounded-lg transition-colors text-sm"
             style={{ backgroundColor: accentColor }}
           >
             {t('continue')}
@@ -172,4 +174,3 @@ export function Step2Details() {
     </div>
   );
 }
-
