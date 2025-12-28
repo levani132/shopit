@@ -81,7 +81,7 @@ export function FeaturedStores() {
         {/* CTA */}
         <div className="text-center mt-12">
           <Link
-            href="/"
+            href="/register"
             className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
             {tCommon('startForFree')}

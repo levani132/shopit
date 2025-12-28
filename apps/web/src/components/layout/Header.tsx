@@ -73,7 +73,7 @@ export function Header() {
               {t('nav.login')}
             </Link>
             <Link
-              href="/"
+              href="/register"
               className="px-4 py-2 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-colors font-medium"
             >
               {t('common.startForFree')}
@@ -163,7 +163,7 @@ export function Header() {
                 {t('nav.login')}
               </Link>
               <Link
-                href="/"
+                href="/register"
                 className="px-4 py-2 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-colors font-medium text-center"
                 onClick={() => setMobileMenuOpen(false)}
               >

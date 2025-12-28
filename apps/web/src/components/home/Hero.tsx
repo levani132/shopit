@@ -55,7 +55,7 @@ export function Hero() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Link
-                href="/"
+                href="/register"
                 className="px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
                 style={{
                   boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)',
