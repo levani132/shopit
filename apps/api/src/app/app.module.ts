@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { DatabaseModule } from '@sellit/api-database';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -22,6 +23,8 @@ import { AppService } from './app.service';
     }),
     // Database schemas
     DatabaseModule,
+    // Auth module
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
