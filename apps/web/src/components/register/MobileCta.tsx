@@ -15,7 +15,7 @@ const BRAND_COLORS: Record<string, string> = {
 
 export function MobileCta() {
   const t = useTranslations('register');
-  const { data, setShowMobileCta, nextStep, setUnblurredSections } =
+  const { data, setShowMobileCta, nextStep, prevStep, setUnblurredSections } =
     useRegistration();
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
@@ -29,6 +29,15 @@ export function MobileCta() {
     nextStep();
   };
 
+  const handleGoBack = () => {
+    // Hide the CTA overlay
+    setShowMobileCta(false);
+    // Re-blur to header only (step 2 state)
+    setUnblurredSections(['header']);
+    // Go back to step 2
+    prevStep();
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
       {/* Gradient fade effect at top */}
@@ -37,7 +46,13 @@ export function MobileCta() {
       {/* CTA Container */}
       <div className="bg-white dark:bg-zinc-900 px-4 pb-6 pt-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
         <p className="text-center text-gray-600 dark:text-gray-400 text-sm mb-4">
-          {t('mobileCtaText')}
+          {t('mobileCtaText')}{' '}
+          <button
+            onClick={handleGoBack}
+            className="underline text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            {t('orGoBack')}
+          </button>
         </p>
 
         <button
