@@ -50,15 +50,15 @@ export function Step1Brand() {
     setIsPreviewAnimating(true);
     setUnblurredSections(['header']);
     
-    // After animation completes (500ms), hide animated preview (header logo appears)
+    // Hide animated preview slightly BEFORE animation visually ends (creates seamless overlap)
     setTimeout(() => {
       setIsPreviewAnimating(false);
-    }, 500);
+    }, 480);
     
     // Then go to next step
     setTimeout(() => {
       nextStep();
-    }, 550);
+    }, 520);
   };
 
   return (

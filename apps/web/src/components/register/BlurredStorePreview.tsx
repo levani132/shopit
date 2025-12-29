@@ -407,8 +407,8 @@ export function BlurredStorePreview() {
           style={{
             '--start-x': 'calc(50vw - 80px)',
             '--start-y': 'calc(50vh - 120px)',
-            // End position matches the header: max-w-7xl centered + px-4 padding, after 40px top bar + centered in 64px header
-            '--end-x': 'max(calc((100vw - 80rem) / 2 + 16px), 16px)',
+            // End position: on wide screens use (100vw - 80rem)/2 + padding, on narrow screens just use padding
+            '--end-x': 'calc(max(0px, (100vw - 80rem) / 2) + 1rem)',
             '--end-y': '53px',
           } as React.CSSProperties}
         >
