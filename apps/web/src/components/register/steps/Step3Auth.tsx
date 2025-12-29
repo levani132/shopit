@@ -46,13 +46,13 @@ export function Step3Auth() {
     if (isMobile) {
       // On mobile, blur everything
       setUnblurredSections([]);
-    } else {
-      // On desktop, unblur header + hero
-      const timer = setTimeout(() => {
-        setUnblurredSections(['header', 'hero']);
-      }, 300);
-      return () => clearTimeout(timer);
+      return;
     }
+    // On desktop, unblur header + hero
+    const timer = setTimeout(() => {
+      setUnblurredSections(['header', 'hero']);
+    }, 300);
+    return () => clearTimeout(timer);
   }, [setUnblurredSections, isMobile]);
 
   const validateEmail = (email: string) => {
