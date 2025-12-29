@@ -264,25 +264,40 @@ export function BlurredStorePreview() {
           isHeroUnblurred ? 'blur-0' : 'blur-md'
         }`}
       >
-        {/* Background */}
-        <div
-          className="absolute inset-0 transition-colors duration-500"
-          style={{
-            background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)`,
-          }}
-        />
-
-        {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div
-            className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
-            style={{ backgroundColor: colors['300'] }}
-          />
-          <div
-            className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full opacity-20"
-            style={{ backgroundColor: colors['300'] }}
-          />
-        </div>
+        {/* Background - Cover Image or Gradient */}
+        {data.coverPreview && !data.useDefaultCover ? (
+          <>
+            <div className="absolute inset-0">
+              <img
+                src={data.coverPreview}
+                alt="Store cover"
+                className="w-full h-full object-cover"
+              />
+              {/* Overlay for text readability */}
+              <div className="absolute inset-0 bg-black/40" />
+            </div>
+          </>
+        ) : (
+          <>
+            <div
+              className="absolute inset-0 transition-colors duration-500"
+              style={{
+                background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)`,
+              }}
+            />
+            {/* Decorative elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
+                style={{ backgroundColor: colors['300'] }}
+              />
+              <div
+                className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full opacity-20"
+                style={{ backgroundColor: colors['300'] }}
+              />
+            </div>
+          </>
+        )}
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
           <div className="text-center">
