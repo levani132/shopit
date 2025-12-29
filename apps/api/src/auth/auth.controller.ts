@@ -32,6 +32,7 @@ import {
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { GoogleProfile } from './strategies/google.strategy';
+import { UploadService } from '../upload/upload.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -39,6 +40,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly uploadService: UploadService,
   ) {}
 
   @Post('register')
@@ -51,11 +53,20 @@ export class AuthController {
     @Body() dto: InitialRegisterDto,
     @UploadedFile() logoFile?: Express.Multer.File,
   ) {
-    // TODO: Upload logo to cloud storage and get URL
+    // Upload logo to S3 if provided
     let logoUrl: string | undefined;
     if (logoFile) {
-      // logoUrl = await this.uploadService.uploadFile(logoFile);
-      // For now, we'll skip file upload
+      try {
+        const uploadResult = await this.uploadService.uploadFile(logoFile, {
+          folder: 'logos',
+          maxSizeBytes: 2 * 1024 * 1024, // 2MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'],
+        });
+        logoUrl = uploadResult.url;
+      } catch (error) {
+        console.error('Failed to upload logo:', error);
+        // Continue without logo if upload fails
+      }
     }
 
     const result = await this.authService.register(dto, logoUrl);
