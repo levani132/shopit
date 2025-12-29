@@ -18,21 +18,38 @@ const BRAND_COLORS: Record<string, string> = {
 export function Step3Auth() {
   const t = useTranslations('register');
   const router = useRouter();
-  const { data, updateData, prevStep, setUnblurredSections } = useRegistration();
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const { data, updateData, prevStep, setUnblurredSections, setShowMobileCta } =
+    useRegistration();
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  }>({});
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
 
-  // Animate unblurring header + hero when entering this step
+  // Detect mobile
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setUnblurredSections(['header', 'hero']);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [setUnblurredSections]);
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Animate unblurring header + hero when entering this step (desktop only)
+  // On mobile, keep everything blurred since user already saw the preview
+  useEffect(() => {
+    if (!isMobile) {
+      const timer = setTimeout(() => {
+        setUnblurredSections(['header', 'hero']);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [setUnblurredSections, isMobile]);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -93,13 +110,23 @@ export function Step3Auth() {
   };
 
   const handleBack = () => {
-    // Re-blur hero when going back to step 2 (keep header unblurred)
-    setUnblurredSections(['header']);
-    prevStep();
+    if (isMobile) {
+      // On mobile, go back to showing the CTA overlay
+      setUnblurredSections(['header', 'hero']);
+      setShowMobileCta(true);
+    } else {
+      // On desktop, re-blur hero when going back to step 2 (keep header unblurred)
+      setUnblurredSections(['header']);
+      prevStep();
+    }
   };
 
   return (
-    <div className="relative z-10 min-h-screen flex flex-col items-center justify-end pb-6 px-4">
+    <div
+      className={`relative z-10 min-h-screen flex flex-col items-center px-4 ${
+        isMobile ? 'justify-center' : 'justify-end pb-6'
+      }`}
+    >
       {/* Step indicator */}
       <div className="flex items-center justify-center mb-4">
         <div className="flex items-center gap-2">
