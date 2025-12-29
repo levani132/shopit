@@ -16,6 +16,7 @@ export interface StoreData {
   description?: string;
   logo?: string;
   coverImage?: string;
+  useDefaultCover: boolean;
   brandColor: string;
   accentColor: string;
   useInitialAsLogo: boolean;

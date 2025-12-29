@@ -29,6 +29,9 @@ export class Store {
   @Prop({ default: false })
   useInitialAsLogo: boolean; // Use colored initial instead of logo
 
+  @Prop({ default: true })
+  useDefaultCover: boolean; // Use colored gradient as cover instead of image
+
   @Prop({ trim: true })
   authorName?: string; // Display name for the store owner
 

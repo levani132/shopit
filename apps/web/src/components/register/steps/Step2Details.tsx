@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
 
@@ -30,8 +30,44 @@ export function Step2Details() {
   }>({});
   const [animating, setAnimating] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
+
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        return;
+      }
+      // Validate file size (10MB max for covers)
+      if (file.size > 10 * 1024 * 1024) {
+        return;
+      }
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      updateData({
+        coverFile: file,
+        coverPreview: previewUrl,
+        useDefaultCover: false,
+      });
+    }
+  };
+
+  const handleRemoveCover = () => {
+    if (data.coverPreview) {
+      URL.revokeObjectURL(data.coverPreview);
+    }
+    updateData({
+      coverFile: null,
+      coverPreview: null,
+      useDefaultCover: true,
+    });
+    if (coverInputRef.current) {
+      coverInputRef.current.value = '';
+    }
+  };
 
   // Detect mobile
   useEffect(() => {
@@ -168,7 +204,7 @@ export function Step2Details() {
         </div>
 
         {/* Show Author Toggle */}
-        <div className="mb-5">
+        <div className="mb-4">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -183,6 +219,123 @@ export function Step2Details() {
           <p className="text-gray-400 dark:text-gray-500 text-xs mt-1 ml-6">
             {t('authorVisibilityNote')}
           </p>
+        </div>
+
+        {/* Cover Image Section */}
+        <div className="mb-5 pt-4 border-t border-gray-200 dark:border-zinc-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {t('coverImage')}
+          </label>
+
+          {/* Use Default Cover Toggle */}
+          <label className="flex items-center gap-2 cursor-pointer mb-3">
+            <input
+              type="checkbox"
+              checked={data.useDefaultCover}
+              onChange={(e) => {
+                updateData({ useDefaultCover: e.target.checked });
+                if (e.target.checked) {
+                  handleRemoveCover();
+                }
+              }}
+              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              {t('useDefaultCover')}
+            </span>
+          </label>
+
+          {/* Warning when using default cover */}
+          {data.useDefaultCover && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+              <div className="flex gap-2">
+                <svg
+                  className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  {t('defaultCoverWarning')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Cover Upload (hidden when using default) */}
+          {!data.useDefaultCover && (
+            <>
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleCoverChange}
+                className="hidden"
+                id="cover-upload"
+              />
+
+              {data.coverPreview ? (
+                <div className="relative rounded-lg overflow-hidden">
+                  <img
+                    src={data.coverPreview}
+                    alt="Cover preview"
+                    className="w-full h-24 object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveCover}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
+                  >
+                    <svg
+                      className="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="cover-upload"
+                  className="flex flex-col items-center justify-center h-24 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg cursor-pointer hover:border-gray-400 dark:hover:border-zinc-500 transition"
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-400 dark:text-gray-500 mb-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {t('uploadCover')}
+                  </span>
+                </label>
+              )}
+              <p className="text-gray-400 dark:text-gray-500 text-xs mt-1.5">
+                {t('coverFormatHint')}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Buttons */}

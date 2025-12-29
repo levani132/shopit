@@ -58,6 +58,19 @@ export class InitialRegisterDto {
   @IsBoolean()
   showAuthorName?: boolean;
 
+  @ApiPropertyOptional({ description: 'Use default colored cover' })
+  @IsOptional()
+  @IsBoolean()
+  useDefaultCover?: boolean;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Store cover image file',
+  })
+  @IsOptional()
+  coverFile?: Express.Multer.File;
+
   // Auth Information
   @ApiProperty({ example: 'user@example.com', description: 'Email address' })
   @IsNotEmpty({ message: 'Email is required' })
@@ -157,6 +170,11 @@ export class GoogleRegisterDto {
   @IsOptional()
   @IsBoolean()
   showAuthorName?: boolean;
+
+  @ApiPropertyOptional({ description: 'Use default colored cover' })
+  @IsOptional()
+  @IsBoolean()
+  useDefaultCover?: boolean;
 }
 
 /**

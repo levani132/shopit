@@ -20,6 +20,9 @@ export interface RegistrationData {
   description: string;
   authorName: string;
   showAuthorName: boolean;
+  useDefaultCover: boolean;
+  coverFile: File | null;
+  coverPreview: string | null;
 
   // Step 3: Auth
   email: string;
@@ -66,6 +69,9 @@ const initialData: RegistrationData = {
   description: '',
   authorName: '',
   showAuthorName: true,
+  useDefaultCover: true,
+  coverFile: null,
+  coverPreview: null,
   email: '',
   password: '',
   authMethod: null,

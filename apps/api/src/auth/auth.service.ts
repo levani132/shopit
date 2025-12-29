@@ -144,6 +144,7 @@ export class AuthService {
   async register(
     dto: InitialRegisterDto,
     logoUrl?: string,
+    coverUrl?: string,
   ): Promise<{ user: UserDocument; store: StoreDocument; accessToken: string }> {
     // Check if email already exists
     const existingUser = await this.userModel.findOne({ email: dto.email });
@@ -183,6 +184,8 @@ export class AuthService {
       accentColor: this.brandColorToHex(dto.brandColor),
       useInitialAsLogo: dto.useInitialAsLogo ?? false,
       logo: logoUrl,
+      coverImage: coverUrl,
+      useDefaultCover: dto.useDefaultCover ?? true,
       authorName: dto.authorName,
       showAuthorName: dto.showAuthorName ?? true,
       ownerId: user._id,
@@ -313,8 +316,10 @@ export class AuthService {
       googleId: string;
       useInitialAsLogo?: boolean;
       showAuthorName?: boolean;
+      useDefaultCover?: boolean;
     },
     logoUrl?: string,
+    coverUrl?: string,
   ): Promise<{ user: UserDocument; store: StoreDocument; accessToken: string }> {
     // Check if email already exists
     const existingUser = await this.userModel.findOne({ email: dto.email });
@@ -351,6 +356,8 @@ export class AuthService {
       accentColor: this.brandColorToHex(dto.brandColor),
       useInitialAsLogo: dto.useInitialAsLogo ?? false,
       logo: logoUrl,
+      coverImage: coverUrl,
+      useDefaultCover: dto.useDefaultCover ?? true,
       authorName: dto.authorName,
       showAuthorName: dto.showAuthorName ?? true,
       ownerId: user._id,

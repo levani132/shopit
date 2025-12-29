@@ -7,13 +7,17 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   Request,
   Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  FileInterceptor,
+  FileFieldsInterceptor,
+} from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
@@ -48,19 +52,34 @@ export class AuthController {
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Registration successful' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
-  @UseInterceptors(FileInterceptor('logoFile'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'logoFile', maxCount: 1 },
+      { name: 'coverFile', maxCount: 1 },
+    ]),
+  )
   async register(
     @Body() dto: InitialRegisterDto,
-    @UploadedFile() logoFile?: Express.Multer.File,
+    @UploadedFiles()
+    files?: {
+      logoFile?: Express.Multer.File[];
+      coverFile?: Express.Multer.File[];
+    },
   ) {
     // Upload logo to S3 if provided
     let logoUrl: string | undefined;
+    const logoFile = files?.logoFile?.[0];
     if (logoFile) {
       try {
         const uploadResult = await this.uploadService.uploadFile(logoFile, {
           folder: 'logos',
           maxSizeBytes: 2 * 1024 * 1024, // 2MB
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'],
+          allowedMimeTypes: [
+            'image/jpeg',
+            'image/png',
+            'image/svg+xml',
+            'image/webp',
+          ],
         });
         logoUrl = uploadResult.url;
       } catch (error) {
@@ -69,7 +88,24 @@ export class AuthController {
       }
     }
 
-    const result = await this.authService.register(dto, logoUrl);
+    // Upload cover to S3 if provided
+    let coverUrl: string | undefined;
+    const coverFile = files?.coverFile?.[0];
+    if (coverFile) {
+      try {
+        const uploadResult = await this.uploadService.uploadFile(coverFile, {
+          folder: 'covers',
+          maxSizeBytes: 10 * 1024 * 1024, // 10MB
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        });
+        coverUrl = uploadResult.url;
+      } catch (error) {
+        console.error('Failed to upload cover:', error);
+        // Continue without cover if upload fails
+      }
+    }
+
+    const result = await this.authService.register(dto, logoUrl, coverUrl);
 
     return {
       message: 'Registration successful',
@@ -85,6 +121,7 @@ export class AuthController {
         subdomain: result.store.subdomain,
         name: result.store.name,
         brandColor: result.store.brandColor,
+        coverImage: result.store.coverImage,
       },
       accessToken: result.accessToken,
     };
