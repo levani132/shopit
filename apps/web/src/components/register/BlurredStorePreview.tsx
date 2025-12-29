@@ -407,8 +407,9 @@ export function BlurredStorePreview() {
           style={{
             '--start-x': 'calc(50vw - 80px)',
             '--start-y': 'calc(50vh - 120px)',
-            '--end-x': '24px',
-            '--end-y': '52px',
+            // End position matches the header: max-w-7xl centered + px-4 padding, after 40px top bar + centered in 64px header
+            '--end-x': 'max(calc((100vw - 80rem) / 2 + 16px), 16px)',
+            '--end-y': '53px',
           } as React.CSSProperties}
         >
           {data.logoPreview && !data.useInitialAsLogo ? (
@@ -425,7 +426,7 @@ export function BlurredStorePreview() {
               {storeInitial}
             </div>
           )}
-          <span className="font-semibold text-gray-900 dark:text-white text-lg bg-white/90 dark:bg-zinc-900/90 px-2 py-1 rounded">
+          <span className="font-semibold text-gray-900 dark:text-white text-lg">
             {storeName}
           </span>
         </div>
