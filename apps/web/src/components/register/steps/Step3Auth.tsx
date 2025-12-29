@@ -43,7 +43,11 @@ export function Step3Auth() {
   // Animate unblurring header + hero when entering this step (desktop only)
   // On mobile, keep everything blurred since user already saw the preview
   useEffect(() => {
-    if (!isMobile) {
+    if (isMobile) {
+      // On mobile, blur everything
+      setUnblurredSections([]);
+    } else {
+      // On desktop, unblur header + hero
       const timer = setTimeout(() => {
         setUnblurredSections(['header', 'hero']);
       }, 300);
