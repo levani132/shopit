@@ -165,5 +165,33 @@
     "completeRegistration": "რეგისტრაციის დასრულება",
     "completing": "სრულდება...",
     "securityNote": "თქვენი ინფორმაცია დაშიფრულია და უსაფრთხოდ ინახება"
+  },
+  "dashboard": {
+    "overview": "მიმოხილვა",
+    "storeSettings": "მაღაზიის პარამეტრები",
+    "products": "პროდუქტები",
+    "orders": "შეკვეთები",
+    "analytics": "ანალიტიკა",
+    "profile": "პროფილი",
+    "viewStore": "ჩემი მაღაზიის ნახვა",
+    "welcomeBack": "გამარჯობა!",
+    "overviewDescription": "აი რა ხდება შენს მაღაზიაში დღეს.",
+    "totalProducts": "სულ პროდუქტები",
+    "totalOrders": "სულ შეკვეთები",
+    "totalRevenue": "სულ შემოსავალი",
+    "pendingOrders": "მოლოდინში შეკვეთები",
+    "quickActions": "სწრაფი მოქმედებები",
+    "addProduct": "პროდუქტის დამატება",
+    "viewOrders": "შეკვეთების ნახვა",
+    "editStore": "მაღაზიის რედაქტირება",
+    "viewAnalytics": "ანალიტიკის ნახვა",
+    "gettingStarted": "დაწყება",
+    "gettingStartedDescription": "დაასრულე ეს ნაბიჯები მაღაზიის გასაშვებად.",
+    "step1Title": "დაასრულე პროფილი",
+    "step1Description": "დაამატე პირადი და საბანკო ინფორმაცია",
+    "step2Title": "დაამატე პირველი პროდუქტი",
+    "step2Description": "შექმენი პროდუქტის განცხადება გაყიდვების დასაწყებად",
+    "step3Title": "გააზიარე მაღაზია",
+    "step3Description": "გაუზიარე მაღაზიის ბმული მომხმარებლებს"
   }
 }

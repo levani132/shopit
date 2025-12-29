@@ -165,5 +165,33 @@
     "completeRegistration": "Complete Registration",
     "completing": "Completing...",
     "securityNote": "Your information is encrypted and stored securely"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "storeSettings": "Store Settings",
+    "products": "Products",
+    "orders": "Orders",
+    "analytics": "Analytics",
+    "profile": "Profile",
+    "viewStore": "View My Store",
+    "welcomeBack": "Welcome back!",
+    "overviewDescription": "Here's what's happening with your store today.",
+    "totalProducts": "Total Products",
+    "totalOrders": "Total Orders",
+    "totalRevenue": "Total Revenue",
+    "pendingOrders": "Pending Orders",
+    "quickActions": "Quick Actions",
+    "addProduct": "Add Product",
+    "viewOrders": "View Orders",
+    "editStore": "Edit Store",
+    "viewAnalytics": "View Analytics",
+    "gettingStarted": "Getting Started",
+    "gettingStartedDescription": "Complete these steps to set up your store and start selling.",
+    "step1Title": "Complete your profile",
+    "step1Description": "Add your personal and banking information",
+    "step2Title": "Add your first product",
+    "step2Description": "Create a product listing to start selling",
+    "step3Title": "Share your store",
+    "step3Description": "Share your store link with customers"
   }
 }
