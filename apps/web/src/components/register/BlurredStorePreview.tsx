@@ -408,7 +408,7 @@ export function BlurredStorePreview() {
             '--start-x': 'calc(50vw - 80px)',
             '--start-y': 'calc(50vh - 120px)',
             // End position: on wide screens use (100vw - 80rem)/2 + padding, on narrow screens just use padding
-            '--end-x': 'calc(max(0px, (100vw - 80rem) / 2) + 1rem)',
+            '--end-x': 'calc(max(0px, (100vw - 80rem) / 2) + 1rem + 2px)',
             '--end-y': '53px',
           } as React.CSSProperties}
         >
