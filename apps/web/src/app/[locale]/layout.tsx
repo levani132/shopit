@@ -1,16 +1,11 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import { routing } from '../../i18n/routing';
 import '../global.css';
-import { Header } from '../../components/layout/Header';
-import { Footer } from '../../components/layout/Footer';
+import { ConditionalLayout } from '../../components/layout/ConditionalLayout';
 import { ThemeProvider } from '../../components/theme/ThemeProvider';
 import { AccentColorProvider } from '../../components/theme/AccentColorProvider';
-
-// Routes where Header/Footer should be hidden
-const HIDE_LAYOUT_ROUTES = ['/register'];
 
 type Params = Promise<{ locale: string }>;
 
@@ -57,13 +52,6 @@ export default async function LocaleLayout({
   // Providing all messages to the client
   const messages = await getMessages();
 
-  // Check if we should hide header/footer based on the current path
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || '';
-  const shouldHideLayout = HIDE_LAYOUT_ROUTES.some((route) =>
-    pathname.includes(route),
-  );
-
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
@@ -107,9 +95,7 @@ export default async function LocaleLayout({
         <ThemeProvider>
           <AccentColorProvider>
             <NextIntlClientProvider messages={messages}>
-              {!shouldHideLayout && <Header />}
-              <main className="flex-1">{children}</main>
-              {!shouldHideLayout && <Footer />}
+              <ConditionalLayout>{children}</ConditionalLayout>
             </NextIntlClientProvider>
           </AccentColorProvider>
         </ThemeProvider>

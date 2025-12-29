@@ -1,6 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
 
 export interface RegistrationData {
   // Step 1: Brand
@@ -29,7 +35,12 @@ export interface RegistrationData {
   beneficiaryBankCode: string;
 }
 
-type UnblurredSection = 'header' | 'hero' | 'categories' | 'products' | 'footer';
+type UnblurredSection =
+  | 'header'
+  | 'hero'
+  | 'categories'
+  | 'products'
+  | 'footer';
 
 interface RegistrationContextType {
   step: number;
@@ -64,12 +75,16 @@ const initialData: RegistrationData = {
   beneficiaryBankCode: '',
 };
 
-const RegistrationContext = createContext<RegistrationContextType | undefined>(undefined);
+const RegistrationContext = createContext<RegistrationContextType | undefined>(
+  undefined,
+);
 
 export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<RegistrationData>(initialData);
-  const [unblurredSections, setUnblurredSections] = useState<UnblurredSection[]>([]);
+  const [unblurredSections, setUnblurredSections] = useState<
+    UnblurredSection[]
+  >([]);
   const [isPreviewAnimating, setIsPreviewAnimating] = useState(false);
 
   const updateData = useCallback((updates: Partial<RegistrationData>) => {
@@ -107,8 +122,9 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
 export function useRegistration() {
   const context = useContext(RegistrationContext);
   if (!context) {
-    throw new Error('useRegistration must be used within a RegistrationProvider');
+    throw new Error(
+      'useRegistration must be used within a RegistrationProvider',
+    );
   }
   return context;
 }
-

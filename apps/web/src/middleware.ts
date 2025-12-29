@@ -19,14 +19,7 @@ const MAIN_DOMAINS = [
 ];
 
 // Create middleware with locale detection enabled
-const intlMiddlewareBase = createMiddleware(routing);
-
-// Wrapper to add pathname header to all responses
-function intlMiddleware(request: NextRequest): NextResponse {
-  const response = intlMiddlewareBase(request);
-  response.headers.set('x-pathname', request.nextUrl.pathname);
-  return response;
-}
+const intlMiddleware = createMiddleware(routing);
 
 /**
  * Extract subdomain from hostname
@@ -68,10 +61,6 @@ export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
-  // Add pathname header for layout to use
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('x-pathname', pathname);
-
   // Check for subdomain (seller store)
   const subdomain = getSubdomain(hostname);
 
@@ -100,9 +89,7 @@ export default function middleware(request: NextRequest) {
     }
 
     // Rewrite (not redirect) so the URL stays the same in browser
-    return NextResponse.rewrite(url, {
-      request: { headers: requestHeaders },
-    });
+    return NextResponse.rewrite(url);
   }
 
   // ---- Main site logic (no subdomain) ----
