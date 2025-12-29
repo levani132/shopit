@@ -16,7 +16,7 @@ const BRAND_COLORS: Record<string, string> = {
 
 export function Step2Details() {
   const t = useTranslations('register');
-  const { data, updateData, nextStep, prevStep } = useRegistration();
+  const { data, updateData, nextStep, prevStep, setUnblurredSections } = useRegistration();
   const [errors, setErrors] = useState<{ description?: string; authorName?: string }>({});
   const [animating, setAnimating] = useState(true);
 
@@ -29,6 +29,12 @@ export function Step2Details() {
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleBack = () => {
+    // Re-blur header when going back to step 1
+    setUnblurredSections([]);
+    prevStep();
+  };
 
   const handleSubmit = () => {
     const newErrors: typeof errors = {};
@@ -155,7 +161,7 @@ export function Step2Details() {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={prevStep}
+            onClick={handleBack}
             className="flex-1 py-2.5 px-4 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 font-semibold rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition text-sm"
           >
             {t('back')}
