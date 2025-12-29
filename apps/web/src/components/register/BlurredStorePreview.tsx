@@ -52,11 +52,14 @@ const SAMPLE_PRODUCTS = [
 ];
 
 export function BlurredStorePreview() {
-  const { data, unblurredSections, isPreviewAnimating } = useRegistration();
+  const { data, step, unblurredSections, isPreviewAnimating } = useRegistration();
   const colors = ACCENT_COLORS[data.brandColor] || ACCENT_COLORS.indigo;
 
   const isHeaderUnblurred = unblurredSections.includes('header');
   const isHeroUnblurred = unblurredSections.includes('hero');
+  
+  // Hide header logo on step 1 or while animation is playing
+  const hideHeaderLogo = step === 1 || isPreviewAnimating;
 
   const storeName = data.storeName || 'Your Store';
   const storeInitial = storeName.charAt(0).toUpperCase() || 'S';
@@ -106,10 +109,10 @@ export function BlurredStorePreview() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16">
-            {/* Logo / Store Name - Hidden while animation is playing */}
+            {/* Logo / Store Name - Hidden on step 1 and while animation is playing */}
             <div
               className={`flex items-center gap-3 flex-shrink-0 transition-opacity duration-0 ${
-                isPreviewAnimating ? 'opacity-0' : 'opacity-100'
+                hideHeaderLogo ? 'opacity-0' : 'opacity-100'
               }`}
             >
               {data.logoPreview && !data.useInitialAsLogo ? (

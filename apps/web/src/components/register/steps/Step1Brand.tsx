@@ -46,13 +46,13 @@ export function Step1Brand() {
     setError(null);
     setIsTransitioning(true);
     
-    // Start the preview flying animation
+    // Start the preview flying animation AND unblur header at the same time
     setIsPreviewAnimating(true);
+    setUnblurredSections(['header']);
     
-    // After animation completes (500ms), hide animated preview and show header logo
+    // After animation completes (500ms), hide animated preview (header logo appears)
     setTimeout(() => {
       setIsPreviewAnimating(false);
-      setUnblurredSections(['header']);
     }, 500);
     
     // Then go to next step
