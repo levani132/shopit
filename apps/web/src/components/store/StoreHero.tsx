@@ -1,12 +1,20 @@
 'use client';
 
-import type { StoreData } from '../../data/mock-stores';
-
 interface StoreHeroProps {
-  store: StoreData;
+  store: {
+    name: string;
+    description?: string;
+    logo?: string;
+    authorName?: string;
+    showAuthorName?: boolean;
+    accentColor?: string;
+  };
 }
 
 export function StoreHero({ store }: StoreHeroProps) {
+  const authorName = store.authorName || 'Store Owner';
+  const showAuthor = store.showAuthorName !== false;
+
   return (
     <section className="relative overflow-hidden">
       {/* Background */}
@@ -55,29 +63,25 @@ export function StoreHero({ store }: StoreHeroProps) {
           </h1>
 
           {/* Description */}
-          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8">
-            {store.description}
-          </p>
+          {store.description && (
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8">
+              {store.description}
+            </p>
+          )}
 
           {/* Owner */}
-          <div className="flex items-center justify-center gap-2 text-white/80">
-            <span>by</span>
-            {store.owner.avatar ? (
-              <img
-                src={store.owner.avatar}
-                alt={store.owner.name}
-                className="w-6 h-6 rounded-full"
-              />
-            ) : (
+          {showAuthor && authorName && (
+            <div className="flex items-center justify-center gap-2 text-white/80">
+              <span>by</span>
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium"
                 style={{ backgroundColor: 'var(--store-accent-800)' }}
               >
-                {store.owner.name.charAt(0)}
+                {authorName.charAt(0)}
               </div>
-            )}
-            <span className="font-medium">{store.owner.name}</span>
-          </div>
+              <span className="font-medium">{authorName}</span>
+            </div>
+          )}
 
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">

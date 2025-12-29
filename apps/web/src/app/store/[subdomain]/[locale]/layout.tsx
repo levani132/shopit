@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
-import { getStoreBySubdomain } from '../../../../data/mock-stores';
+import { getStoreBySubdomain as getStoreFromApi } from '../../../../lib/api';
+import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-stores';
 import { StoreHeader } from '../../../../components/store/StoreHeader';
 import { StoreFooter } from '../../../../components/store/StoreFooter';
 import { ThemeProvider } from '../../../../components/theme/ThemeProvider';
@@ -100,11 +101,46 @@ interface StoreLayoutProps {
   params: Promise<{ subdomain: string; locale: string }>;
 }
 
+// Helper to get store data from API or fallback to mock
+async function getStoreData(subdomain: string) {
+  // Try API first
+  const apiStore = await getStoreFromApi(subdomain);
+  if (apiStore) {
+    return {
+      name: apiStore.name,
+      subdomain: apiStore.subdomain,
+      description: apiStore.description,
+      logo: apiStore.logo,
+      brandColor: apiStore.brandColor,
+      accentColor: apiStore.brandColor, // Use brandColor as accentColor key
+      authorName: apiStore.authorName,
+      showAuthorName: apiStore.showAuthorName,
+    };
+  }
+
+  // Fallback to mock
+  const mockStore = getMockStore(subdomain);
+  if (mockStore) {
+    return {
+      name: mockStore.name,
+      subdomain: mockStore.subdomain,
+      description: mockStore.description,
+      logo: mockStore.logo,
+      brandColor: mockStore.accentColor,
+      accentColor: mockStore.accentColor,
+      authorName: mockStore.owner,
+      showAuthorName: true,
+    };
+  }
+
+  return null;
+}
+
 export async function generateMetadata({
   params,
 }: StoreLayoutProps): Promise<Metadata> {
   const { subdomain } = await params;
-  const store = getStoreBySubdomain(subdomain);
+  const store = await getStoreData(subdomain);
 
   return {
     title: store?.name || 'Store',
@@ -124,7 +160,7 @@ export default async function StoreLayout({
   }
 
   // Get store data
-  const store = getStoreBySubdomain(subdomain);
+  const store = await getStoreData(subdomain);
 
   if (!store) {
     notFound();
@@ -132,6 +168,16 @@ export default async function StoreLayout({
 
   // Get accent colors for this store
   const accentColors = ACCENT_COLORS[store.accentColor] || ACCENT_COLORS.indigo;
+
+  // Store data for header/footer
+  const storeForComponents = {
+    name: store.name,
+    subdomain: store.subdomain,
+    description: store.description,
+    logo: store.logo,
+    authorName: store.authorName,
+    showAuthorName: store.showAuthorName,
+  };
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -160,9 +206,9 @@ export default async function StoreLayout({
             className="min-h-screen flex flex-col bg-gray-50 dark:bg-zinc-900"
             style={accentColors as React.CSSProperties}
           >
-            <StoreHeader store={store} />
+            <StoreHeader store={storeForComponents} />
             <main className="flex-1">{children}</main>
-            <StoreFooter store={store} />
+            <StoreFooter store={storeForComponents} />
           </div>
         </ThemeProvider>
       </body>

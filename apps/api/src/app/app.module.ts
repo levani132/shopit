@@ -5,6 +5,7 @@ import { DatabaseModule } from '@sellit/api-database';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from '../auth/auth.module';
+import { StoresModule } from '../stores/stores.module';
 
 @Module({
   imports: [
@@ -23,8 +24,9 @@ import { AuthModule } from '../auth/auth.module';
     }),
     // Database schemas
     DatabaseModule,
-    // Auth module
+    // Feature modules
     AuthModule,
+    StoresModule,
   ],
   controllers: [AppController],
   providers: [AppService],

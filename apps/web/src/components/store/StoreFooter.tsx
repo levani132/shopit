@@ -1,9 +1,14 @@
 'use client';
 
-import type { StoreData } from '../../data/mock-stores';
-
 interface StoreFooterProps {
-  store: StoreData;
+  store: {
+    name: string;
+    subdomain?: string;
+    description?: string;
+    logo?: string;
+    authorName?: string;
+    showAuthorName?: boolean;
+  };
 }
 
 export function StoreFooter({ store }: StoreFooterProps) {

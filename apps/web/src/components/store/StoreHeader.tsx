@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { StoreData } from '../../data/mock-stores';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItLogo } from '../ui/ShopItLogo';
 
 interface StoreHeaderProps {
-  store: StoreData;
+  store: {
+    name: string;
+    subdomain?: string;
+    description?: string;
+    logo?: string;
+    authorName?: string;
+    showAuthorName?: boolean;
+  };
 }
 
 export function StoreHeader({ store }: StoreHeaderProps) {
