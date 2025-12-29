@@ -47,12 +47,14 @@ interface RegistrationContextType {
   data: RegistrationData;
   unblurredSections: UnblurredSection[];
   isPreviewAnimating: boolean;
+  showMobileCta: boolean;
   setStep: (step: number) => void;
   updateData: (updates: Partial<RegistrationData>) => void;
   nextStep: () => void;
   prevStep: () => void;
   setUnblurredSections: (sections: UnblurredSection[]) => void;
   setIsPreviewAnimating: (animating: boolean) => void;
+  setShowMobileCta: (show: boolean) => void;
 }
 
 const initialData: RegistrationData = {
@@ -86,6 +88,7 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
     UnblurredSection[]
   >([]);
   const [isPreviewAnimating, setIsPreviewAnimating] = useState(false);
+  const [showMobileCta, setShowMobileCta] = useState(false);
 
   const updateData = useCallback((updates: Partial<RegistrationData>) => {
     setData((prev) => ({ ...prev, ...updates }));
@@ -106,12 +109,14 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
         data,
         unblurredSections,
         isPreviewAnimating,
+        showMobileCta,
         setStep,
         updateData,
         nextStep,
         prevStep,
         setUnblurredSections,
         setIsPreviewAnimating,
+        setShowMobileCta,
       }}
     >
       {children}

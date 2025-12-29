@@ -4,13 +4,19 @@ import {
   RegistrationProvider,
   useRegistration,
   BlurredStorePreview,
+  MobileCta,
   Step1Brand,
   Step2Details,
   Step3Auth,
 } from '../../../components/register';
 
 function RegistrationSteps() {
-  const { step } = useRegistration();
+  const { step, showMobileCta } = useRegistration();
+
+  // On mobile, when CTA is shown, hide the form steps
+  if (showMobileCta) {
+    return null;
+  }
 
   return (
     <>
@@ -21,6 +27,16 @@ function RegistrationSteps() {
   );
 }
 
+function MobileCtaWrapper() {
+  const { showMobileCta } = useRegistration();
+
+  if (!showMobileCta) {
+    return null;
+  }
+
+  return <MobileCta />;
+}
+
 export default function RegisterPage() {
   return (
     <RegistrationProvider>
@@ -29,6 +45,9 @@ export default function RegisterPage() {
 
       {/* Registration steps overlay */}
       <RegistrationSteps />
+
+      {/* Mobile CTA overlay (shown between step 2 and 3 on mobile) */}
+      <MobileCtaWrapper />
     </RegistrationProvider>
   );
 }

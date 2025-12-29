@@ -16,11 +16,30 @@ const BRAND_COLORS: Record<string, string> = {
 
 export function Step2Details() {
   const t = useTranslations('register');
-  const { data, updateData, nextStep, prevStep, setUnblurredSections } = useRegistration();
-  const [errors, setErrors] = useState<{ description?: string; authorName?: string }>({});
+  const {
+    data,
+    updateData,
+    nextStep,
+    prevStep,
+    setUnblurredSections,
+    setShowMobileCta,
+  } = useRegistration();
+  const [errors, setErrors] = useState<{
+    description?: string;
+    authorName?: string;
+  }>({});
   const [animating, setAnimating] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Entry animation
   useEffect(() => {
@@ -52,7 +71,16 @@ export function Step2Details() {
     }
 
     setErrors({});
-    nextStep();
+
+    if (isMobile) {
+      // On mobile, show the CTA overlay instead of going directly to step 3
+      // Unblur header + hero so user can see their store preview
+      setUnblurredSections(['header', 'hero']);
+      setShowMobileCta(true);
+    } else {
+      // On desktop, go to step 3 directly
+      nextStep();
+    }
   };
 
   return (
