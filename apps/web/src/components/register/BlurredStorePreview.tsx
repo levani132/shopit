@@ -5,43 +5,97 @@ import { useRegistration } from './RegistrationContext';
 // Accent color palettes matching the store layout
 const ACCENT_COLORS: Record<string, Record<string, string>> = {
   indigo: {
-    '50': '#eef2ff', '100': '#e0e7ff', '200': '#c7d2fe', '300': '#a5b4fc',
-    '400': '#818cf8', '500': '#6366f1', '600': '#4f46e5', '700': '#4338ca',
-    '800': '#3730a3', '900': '#312e81',
+    '50': '#eef2ff',
+    '100': '#e0e7ff',
+    '200': '#c7d2fe',
+    '300': '#a5b4fc',
+    '400': '#818cf8',
+    '500': '#6366f1',
+    '600': '#4f46e5',
+    '700': '#4338ca',
+    '800': '#3730a3',
+    '900': '#312e81',
   },
   rose: {
-    '50': '#fff1f2', '100': '#ffe4e6', '200': '#fecdd3', '300': '#fda4af',
-    '400': '#fb7185', '500': '#f43f5e', '600': '#e11d48', '700': '#be123c',
-    '800': '#9f1239', '900': '#881337',
+    '50': '#fff1f2',
+    '100': '#ffe4e6',
+    '200': '#fecdd3',
+    '300': '#fda4af',
+    '400': '#fb7185',
+    '500': '#f43f5e',
+    '600': '#e11d48',
+    '700': '#be123c',
+    '800': '#9f1239',
+    '900': '#881337',
   },
   blue: {
-    '50': '#eff6ff', '100': '#dbeafe', '200': '#bfdbfe', '300': '#93c5fd',
-    '400': '#60a5fa', '500': '#3b82f6', '600': '#2563eb', '700': '#1d4ed8',
-    '800': '#1e40af', '900': '#1e3a8a',
+    '50': '#eff6ff',
+    '100': '#dbeafe',
+    '200': '#bfdbfe',
+    '300': '#93c5fd',
+    '400': '#60a5fa',
+    '500': '#3b82f6',
+    '600': '#2563eb',
+    '700': '#1d4ed8',
+    '800': '#1e40af',
+    '900': '#1e3a8a',
   },
   green: {
-    '50': '#f0fdf4', '100': '#dcfce7', '200': '#bbf7d0', '300': '#86efac',
-    '400': '#4ade80', '500': '#22c55e', '600': '#16a34a', '700': '#15803d',
-    '800': '#166534', '900': '#14532d',
+    '50': '#f0fdf4',
+    '100': '#dcfce7',
+    '200': '#bbf7d0',
+    '300': '#86efac',
+    '400': '#4ade80',
+    '500': '#22c55e',
+    '600': '#16a34a',
+    '700': '#15803d',
+    '800': '#166534',
+    '900': '#14532d',
   },
   purple: {
-    '50': '#faf5ff', '100': '#f3e8ff', '200': '#e9d5ff', '300': '#d8b4fe',
-    '400': '#c084fc', '500': '#a855f7', '600': '#9333ea', '700': '#7e22ce',
-    '800': '#6b21a8', '900': '#581c87',
+    '50': '#faf5ff',
+    '100': '#f3e8ff',
+    '200': '#e9d5ff',
+    '300': '#d8b4fe',
+    '400': '#c084fc',
+    '500': '#a855f7',
+    '600': '#9333ea',
+    '700': '#7e22ce',
+    '800': '#6b21a8',
+    '900': '#581c87',
   },
   orange: {
-    '50': '#fff7ed', '100': '#ffedd5', '200': '#fed7aa', '300': '#fdba74',
-    '400': '#fb923c', '500': '#f97316', '600': '#ea580c', '700': '#c2410c',
-    '800': '#9a3412', '900': '#7c2d12',
+    '50': '#fff7ed',
+    '100': '#ffedd5',
+    '200': '#fed7aa',
+    '300': '#fdba74',
+    '400': '#fb923c',
+    '500': '#f97316',
+    '600': '#ea580c',
+    '700': '#c2410c',
+    '800': '#9a3412',
+    '900': '#7c2d12',
   },
   black: {
-    '50': '#fafafa', '100': '#f4f4f5', '200': '#e4e4e7', '300': '#d4d4d8',
-    '400': '#a1a1aa', '500': '#71717a', '600': '#52525b', '700': '#3f3f46',
-    '800': '#27272a', '900': '#18181b',
+    '50': '#fafafa',
+    '100': '#f4f4f5',
+    '200': '#e4e4e7',
+    '300': '#d4d4d8',
+    '400': '#a1a1aa',
+    '500': '#71717a',
+    '600': '#52525b',
+    '700': '#3f3f46',
+    '800': '#27272a',
+    '900': '#18181b',
   },
 };
 
-const SAMPLE_CATEGORIES = ['Electronics', 'Clothing', 'Home & Garden', 'Sports'];
+const SAMPLE_CATEGORIES = [
+  'Electronics',
+  'Clothing',
+  'Home & Garden',
+  'Sports',
+];
 const SAMPLE_PRODUCTS = [
   { id: '1', name: 'Premium Headphones', category: 'Electronics', price: 199 },
   { id: '2', name: 'Designer T-Shirt', category: 'Clothing', price: 49 },
@@ -52,18 +106,21 @@ const SAMPLE_PRODUCTS = [
 ];
 
 export function BlurredStorePreview() {
-  const { data, step, unblurredSections, isPreviewAnimating } = useRegistration();
+  const { data, step, unblurredSections, isPreviewAnimating } =
+    useRegistration();
   const colors = ACCENT_COLORS[data.brandColor] || ACCENT_COLORS.indigo;
 
   const isHeaderUnblurred = unblurredSections.includes('header');
   const isHeroUnblurred = unblurredSections.includes('hero');
-  
+
   // Hide header logo on step 1 or while animation is playing
   const hideHeaderLogo = step === 1 || isPreviewAnimating;
 
   const storeName = data.storeName || 'Your Store';
   const storeInitial = storeName.charAt(0).toUpperCase() || 'S';
-  const description = data.description || 'Your store description will appear here. Make it compelling!';
+  const description =
+    data.description ||
+    'Your store description will appear here. Make it compelling!';
   const authorName = data.authorName || 'Your Name';
 
   return (
@@ -80,7 +137,9 @@ export function BlurredStorePreview() {
             <div className="flex items-center gap-2">
               <div
                 className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-                style={{ background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)` }}
+                style={{
+                  background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)`,
+                }}
               >
                 S
               </div>
@@ -137,7 +196,9 @@ export function BlurredStorePreview() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-6 ml-10">
               <span className="text-gray-600 dark:text-gray-300">Products</span>
-              <span className="text-gray-600 dark:text-gray-300">Categories</span>
+              <span className="text-gray-600 dark:text-gray-300">
+                Categories
+              </span>
               <span className="text-gray-600 dark:text-gray-300">About</span>
             </nav>
 
@@ -148,14 +209,26 @@ export function BlurredStorePreview() {
             <div className="flex items-center gap-2">
               {/* Theme Toggle */}
               <div className="p-2 text-gray-600 dark:text-gray-300">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
                 </svg>
               </div>
 
               {/* Language Switcher */}
               <div className="flex items-center gap-1 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
-                <span className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-400 text-xs">ქარ</span>
+                <span className="px-2 py-1 rounded-md text-gray-600 dark:text-gray-400 text-xs">
+                  ქარ
+                </span>
                 <span
                   className="px-2 py-1 rounded-md text-white text-xs"
                   style={{ backgroundColor: colors['500'] }}
@@ -166,8 +239,18 @@ export function BlurredStorePreview() {
 
               {/* Cart */}
               <div className="p-2 text-gray-600 dark:text-gray-300">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
                 </svg>
               </div>
             </div>
@@ -261,7 +344,9 @@ export function BlurredStorePreview() {
       {/* ===== Categories Section ===== */}
       <section className="py-12 bg-white dark:bg-zinc-900 blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Categories</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+            Categories
+          </h2>
           <div className="flex flex-wrap gap-3">
             <span
               className="px-5 py-2.5 rounded-full font-medium text-white shadow-lg"
@@ -284,7 +369,9 @@ export function BlurredStorePreview() {
       {/* ===== Products Section ===== */}
       <section className="py-12 bg-gray-50 dark:bg-zinc-800 blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Products</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+            Products
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {SAMPLE_PRODUCTS.map((product) => (
               <div
@@ -360,12 +447,16 @@ export function BlurredStorePreview() {
                   {storeName}
                 </span>
               </div>
-              <p className="text-gray-600 dark:text-gray-400 text-sm">{description}</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                {description}
+              </p>
             </div>
 
             {/* Quick Links */}
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Quick Links</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+                Quick Links
+              </h3>
               <ul className="space-y-2 text-gray-600 dark:text-gray-400 text-sm">
                 <li>Products</li>
                 <li>Categories</li>
@@ -376,7 +467,9 @@ export function BlurredStorePreview() {
 
             {/* Follow Us */}
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Follow Us</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+                Follow Us
+              </h3>
               <div className="flex gap-4 text-gray-400">
                 <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-zinc-700" />
                 <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-zinc-700" />
@@ -392,8 +485,7 @@ export function BlurredStorePreview() {
                 © 2025 {storeName}. All rights reserved.
               </p>
               <p className="text-gray-400 dark:text-gray-500 text-sm">
-                Powered by{' '}
-                <span style={{ color: colors['500'] }}>ShopIt</span>
+                Powered by <span style={{ color: colors['500'] }}>ShopIt</span>
               </p>
             </div>
           </div>
@@ -404,13 +496,15 @@ export function BlurredStorePreview() {
       {isPreviewAnimating && (
         <div
           className="fixed z-50 flex items-center gap-3 animate-fly-to-header"
-          style={{
-            '--start-x': 'calc(50vw - 80px)',
-            '--start-y': 'calc(50vh - 120px)',
-            // End position: on wide screens use (100vw - 80rem)/2 + padding, on narrow screens just use padding
-            '--end-x': 'calc(max(0px, (100vw - 80rem) / 2) + 1rem + 2px)',
-            '--end-y': '53px',
-          } as React.CSSProperties}
+          style={
+            {
+              '--start-x': 'calc(50vw - 80px)',
+              '--start-y': 'calc(50vh - 120px)',
+              // End position: on wide screens use (100vw - 80rem)/2 + padding, on narrow screens just use padding
+              '--end-x': 'calc(max(0px, (100vw - 80rem) / 2) + 1rem + 8px)',
+              '--end-y': '53px',
+            } as React.CSSProperties
+          }
         >
           {data.logoPreview && !data.useInitialAsLogo ? (
             <img
