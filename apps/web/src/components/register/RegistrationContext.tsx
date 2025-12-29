@@ -29,16 +29,18 @@ export interface RegistrationData {
   beneficiaryBankCode: string;
 }
 
+type UnblurredSection = 'header' | 'hero' | 'categories' | 'products' | 'footer';
+
 interface RegistrationContextType {
   step: number;
   data: RegistrationData;
-  unblurredSections: ('header' | 'hero' | 'categories' | 'products' | 'footer')[];
+  unblurredSections: UnblurredSection[];
   isPreviewAnimating: boolean;
   setStep: (step: number) => void;
   updateData: (updates: Partial<RegistrationData>) => void;
   nextStep: () => void;
   prevStep: () => void;
-  setUnblurredSections: (sections: typeof unblurredSections) => void;
+  setUnblurredSections: (sections: UnblurredSection[]) => void;
   setIsPreviewAnimating: (animating: boolean) => void;
 }
 
@@ -67,9 +69,7 @@ const RegistrationContext = createContext<RegistrationContextType | undefined>(u
 export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<RegistrationData>(initialData);
-  const [unblurredSections, setUnblurredSections] = useState<
-    ('header' | 'hero' | 'categories' | 'products' | 'footer')[]
-  >([]);
+  const [unblurredSections, setUnblurredSections] = useState<UnblurredSection[]>([]);
   const [isPreviewAnimating, setIsPreviewAnimating] = useState(false);
 
   const updateData = useCallback((updates: Partial<RegistrationData>) => {
