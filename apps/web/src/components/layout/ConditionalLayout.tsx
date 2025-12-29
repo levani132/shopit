@@ -5,7 +5,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 
 // Routes where Header/Footer should be hidden
-const HIDE_LAYOUT_ROUTES = ['/register'];
+const HIDE_LAYOUT_ROUTES = ['/register', '/dashboard'];
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
