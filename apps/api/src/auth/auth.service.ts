@@ -285,5 +285,83 @@ export class AuthService {
   async getStoreByOwnerId(ownerId: string): Promise<StoreDocument | null> {
     return this.storeModel.findOne({ ownerId });
   }
+
+  /**
+   * Find user by email
+   */
+  async findUserByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email: email.toLowerCase() });
+  }
+
+  /**
+   * Generate token for existing user
+   */
+  async generateTokenForUser(user: UserDocument): Promise<string> {
+    return this.generateToken(user);
+  }
+
+  /**
+   * Register with Google OAuth
+   */
+  async registerWithGoogle(
+    dto: {
+      storeName: string;
+      brandColor: string;
+      description: string;
+      authorName: string;
+      email: string;
+      googleId: string;
+      useInitialAsLogo?: boolean;
+      showAuthorName?: boolean;
+    },
+    logoUrl?: string,
+  ): Promise<{ user: UserDocument; store: StoreDocument; accessToken: string }> {
+    // Check if email already exists
+    const existingUser = await this.userModel.findOne({ email: dto.email });
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    // Generate subdomain
+    const subdomain = await this.findAvailableSubdomain(dto.storeName);
+
+    // Split author name into first/last for initial user
+    const nameParts = dto.authorName.split(' ');
+    const firstName = nameParts[0] || dto.authorName;
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Create user (no password for Google users)
+    const user = new this.userModel({
+      email: dto.email.toLowerCase(),
+      googleId: dto.googleId,
+      firstName,
+      lastName,
+      authProvider: AuthProvider.GOOGLE,
+      isProfileComplete: false,
+    });
+
+    await user.save();
+
+    // Create store
+    const store = new this.storeModel({
+      subdomain,
+      name: dto.storeName,
+      description: dto.description,
+      brandColor: dto.brandColor,
+      accentColor: this.brandColorToHex(dto.brandColor),
+      useInitialAsLogo: dto.useInitialAsLogo ?? false,
+      logo: logoUrl,
+      authorName: dto.authorName,
+      showAuthorName: dto.showAuthorName ?? true,
+      ownerId: user._id,
+    });
+
+    await store.save();
+
+    // Generate JWT
+    const accessToken = this.generateToken(user);
+
+    return { user, store, accessToken };
+  }
 }
 

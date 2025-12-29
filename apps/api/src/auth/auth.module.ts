@@ -6,7 +6,11 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { User, UserSchema, Store, StoreSchema } from '@sellit/api-database';
 
 @Module({
@@ -28,8 +32,16 @@ import { User, UserSchema, Store, StoreSchema } from '@sellit/api-database';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
+    GoogleStrategy,
+    JwtAuthGuard,
+    LocalAuthGuard,
+    GoogleAuthGuard,
+  ],
+  exports: [AuthService, JwtAuthGuard, LocalAuthGuard, GoogleAuthGuard],
 })
 export class AuthModule {}
 

@@ -8,10 +8,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Request,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -27,11 +30,16 @@ import {
   CheckSubdomainDto,
 } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { GoogleProfile } from './strategies/google.strategy';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new seller (Steps 1-3)' })
@@ -171,6 +179,95 @@ export class AuthController {
             description: store.description,
           }
         : null,
+    };
+  }
+
+  // ============ Google OAuth ============
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth flow' })
+  async googleAuth() {
+    // Guard redirects to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleAuthCallback(
+    @Request() req: { user: GoogleProfile },
+    @Res() res: Response,
+  ) {
+    try {
+      const frontendUrl =
+        this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+
+      // Check if user exists, if not this is just auth - they need to complete registration
+      const existingUser = await this.authService.findUserByEmail(
+        req.user.email,
+      );
+
+      if (existingUser) {
+        // User exists - log them in
+        const store = await this.authService.getStoreByOwnerId(
+          existingUser._id.toString(),
+        );
+
+        const accessToken = await this.authService.generateTokenForUser(
+          existingUser,
+        );
+
+        // Redirect to frontend with token
+        res.redirect(
+          `${frontendUrl}/auth/callback?token=${accessToken}&hasStore=${!!store}`,
+        );
+      } else {
+        // New user - redirect to registration with Google data
+        const googleData = Buffer.from(JSON.stringify(req.user)).toString(
+          'base64',
+        );
+        res.redirect(`${frontendUrl}/register?google=${googleData}`);
+      }
+    } catch (error) {
+      console.error('Google auth callback error:', error);
+      const frontendUrl =
+        this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+      res.redirect(`${frontendUrl}/register?error=auth_failed`);
+    }
+  }
+
+  @Post('google/register')
+  @ApiOperation({ summary: 'Complete registration for Google user' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201, description: 'Registration successful' })
+  @UseInterceptors(FileInterceptor('logoFile'))
+  async googleRegister(
+    @Body() dto: InitialRegisterDto & { googleId: string },
+    @UploadedFile() logoFile?: Express.Multer.File,
+  ) {
+    let logoUrl: string | undefined;
+    if (logoFile) {
+      // TODO: Upload logo to cloud storage
+    }
+
+    const result = await this.authService.registerWithGoogle(dto, logoUrl);
+
+    return {
+      message: 'Registration successful',
+      user: {
+        id: result.user._id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        isProfileComplete: result.user.isProfileComplete,
+      },
+      store: {
+        id: result.store._id,
+        subdomain: result.store.subdomain,
+        name: result.store.name,
+        brandColor: result.store.brandColor,
+      },
+      accessToken: result.accessToken,
     };
   }
 }
