@@ -55,13 +55,19 @@ export class InitialRegisterDto {
   @IsOptional()
   logoFile?: unknown; // Handled by FileInterceptor, not validated here
 
-  @ApiProperty({ example: 'A great place to shop for unique items', description: 'Store description' })
+  @ApiProperty({
+    example: 'A great place to shop for unique items',
+    description: 'Store description',
+  })
   @IsNotEmpty({ message: 'Description is required' })
   @IsString()
   @MaxLength(500)
   description!: string;
 
-  @ApiProperty({ example: 'John Doe', description: 'Author/owner display name' })
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Author/owner display name',
+  })
   @IsNotEmpty({ message: 'Author name is required' })
   @IsString()
   @MaxLength(100)
@@ -94,7 +100,10 @@ export class InitialRegisterDto {
   @Transform(({ value }) => value?.toLowerCase().trim())
   email!: string;
 
-  @ApiProperty({ example: 'SecurePassword123', description: 'Password (6-50 characters)' })
+  @ApiProperty({
+    example: 'SecurePassword123',
+    description: 'Password (6-50 characters)',
+  })
   @IsNotEmpty({ message: 'Password is required' })
   @IsString()
   @MinLength(6, { message: 'Password must be at least 6 characters' })
@@ -119,22 +128,35 @@ export class CompleteProfileDto {
   @MaxLength(50)
   lastName!: string;
 
-  @ApiProperty({ example: '+995555123456', description: 'Phone number in Georgian format' })
+  @ApiProperty({
+    example: '+995555123456',
+    description: 'Phone number in Georgian format',
+  })
   @IsNotEmpty({ message: 'Phone number is required' })
   @IsString()
-  @Matches(/^\+995\d{9}$/, { message: 'Phone must be in Georgian format (+995XXXXXXXXX)' })
+  @Matches(/^\+995\d{9}$/, {
+    message: 'Phone must be in Georgian format (+995XXXXXXXXX)',
+  })
   phoneNumber!: string;
 
-  @ApiProperty({ example: '01234567890', description: 'Georgian personal ID (11 digits)' })
+  @ApiProperty({
+    example: '01234567890',
+    description: 'Georgian personal ID (11 digits)',
+  })
   @IsNotEmpty({ message: 'ID number is required' })
   @IsString()
   @Matches(/^\d{11}$/, { message: 'ID number must be 11 digits' })
   identificationNumber!: string;
 
-  @ApiProperty({ example: 'GE29TB7777777777777777', description: 'Georgian IBAN' })
+  @ApiProperty({
+    example: 'GE29TB7777777777777777',
+    description: 'Georgian IBAN',
+  })
   @IsNotEmpty({ message: 'IBAN is required' })
   @IsString()
-  @Matches(/^GE\d{2}[A-Z]{2}\d{16}$/, { message: 'Invalid Georgian IBAN format' })
+  @Matches(/^GE\d{2}[A-Z]{2}\d{16}$/, {
+    message: 'Invalid Georgian IBAN format',
+  })
   @Transform(({ value }) => value?.toUpperCase().replace(/\s/g, ''))
   accountNumber!: string;
 
@@ -171,13 +193,19 @@ export class GoogleRegisterDto {
   @IsBoolean()
   useInitialAsLogo?: boolean;
 
-  @ApiProperty({ example: 'A great place to shop for unique items', description: 'Store description' })
+  @ApiProperty({
+    example: 'A great place to shop for unique items',
+    description: 'Store description',
+  })
   @IsNotEmpty({ message: 'Description is required' })
   @IsString()
   @MaxLength(500)
   description!: string;
 
-  @ApiProperty({ example: 'John Doe', description: 'Author/owner display name' })
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Author/owner display name',
+  })
   @IsNotEmpty({ message: 'Author name is required' })
   @IsString()
   @MaxLength(100)
@@ -220,7 +248,8 @@ export class CheckSubdomainDto {
   @IsNotEmpty()
   @IsString()
   @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
-    message: 'Subdomain can only contain lowercase letters, numbers, and hyphens',
+    message:
+      'Subdomain can only contain lowercase letters, numbers, and hyphens',
   })
   @Transform(({ value }) => value?.toLowerCase().trim())
   subdomain!: string;
