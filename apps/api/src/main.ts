@@ -20,22 +20,33 @@ async function bootstrap() {
     : ['http://localhost:3000'];
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Allow requests with no origin (like mobile apps or Postman)
       if (!origin) {
         return callback(null, true);
       }
 
       // Check if origin is in allowed list
-      if (corsOrigins.some((allowed) => origin === allowed || origin.endsWith(allowed.replace('https://', '.')))) {
+      if (
+        corsOrigins.some(
+          (allowed) =>
+            origin === allowed ||
+            origin.endsWith(allowed.replace('https://', '.')),
+        )
+      ) {
         return callback(null, true);
       }
 
       // For subdomains like *.shopit.ge
-      if (corsOrigins.some((allowed) => {
-        const domain = allowed.replace('https://', '').replace('http://', '');
-        return origin.endsWith(`.${domain}`) || origin.includes(domain);
-      })) {
+      if (
+        corsOrigins.some((allowed) => {
+          const domain = allowed.replace('https://', '').replace('http://', '');
+          return origin.endsWith(`.${domain}`) || origin.includes(domain);
+        })
+      ) {
         return callback(null, true);
       }
 
@@ -44,7 +55,12 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'Accept',
+    ],
   });
 
   // Global validation pipe
@@ -56,7 +72,7 @@ async function bootstrap() {
       transformOptions: {
         enableImplicitConversion: true,
       },
-    })
+    }),
   );
 
   // PORT is set by cloud providers (Render, Railway, etc.) - prioritize it
@@ -64,7 +80,7 @@ async function bootstrap() {
   await app.listen(port);
 
   Logger.log(
-    `🚀 ShopIt API is running on: http://localhost:${port}/${globalPrefix}`
+    `🚀 ShopIt API is running on: http://localhost:${port}/${globalPrefix}`,
   );
 }
 
