@@ -18,6 +18,8 @@ interface StoreForHero {
   name: string;
   description?: string;
   logo?: string;
+  coverImage?: string;
+  useDefaultCover?: boolean;
   authorName?: string;
   showAuthorName?: boolean;
   accentColor: string;
@@ -59,6 +61,7 @@ async function getStoreData(subdomain: string): Promise<{
         name: mockStore.name,
         description: mockStore.description,
         logo: mockStore.logo,
+        coverImage: mockStore.coverImage,
         brandColor: mockStore.accentColor,
         accentColor: mockStore.accentColor,
         useInitialAsLogo: !mockStore.logo,
@@ -98,6 +101,8 @@ export default async function StorePage({ params }: StorePageProps) {
     name: store.name,
     description: store.description,
     logo: store.logo,
+    coverImage: store.coverImage,
+    useDefaultCover: store.useDefaultCover,
     authorName: store.authorName,
     showAuthorName: store.showAuthorName,
     accentColor: store.accentColor,

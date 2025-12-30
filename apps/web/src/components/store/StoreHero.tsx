@@ -5,6 +5,8 @@ interface StoreHeroProps {
     name: string;
     description?: string;
     logo?: string;
+    coverImage?: string;
+    useDefaultCover?: boolean;
     authorName?: string;
     showAuthorName?: boolean;
     accentColor?: string;
@@ -14,28 +16,46 @@ interface StoreHeroProps {
 export function StoreHero({ store }: StoreHeroProps) {
   const authorName = store.authorName || 'Store Owner';
   const showAuthor = store.showAuthorName !== false;
+  const hasCoverImage = store.coverImage && !store.useDefaultCover;
 
   return (
     <section className="relative overflow-hidden">
-      {/* Background */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(135deg, var(--store-accent-500) 0%, var(--store-accent-700) 100%)`,
-        }}
-      />
+      {/* Background - either cover image or gradient */}
+      {hasCoverImage ? (
+        <>
+          <div className="absolute inset-0">
+            <img
+              src={store.coverImage}
+              alt={`${store.name} cover`}
+              className="w-full h-full object-cover"
+            />
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-black/40" />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Default gradient background */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(135deg, var(--store-accent-500) 0%, var(--store-accent-700) 100%)`,
+            }}
+          />
 
-      {/* Decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div
-          className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
-          style={{ backgroundColor: 'var(--store-accent-300)' }}
-        />
-        <div
-          className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full opacity-20"
-          style={{ backgroundColor: 'var(--store-accent-300)' }}
-        />
-      </div>
+          {/* Decorative elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div
+              className="absolute -top-20 -right-20 w-80 h-80 rounded-full opacity-20"
+              style={{ backgroundColor: 'var(--store-accent-300)' }}
+            />
+            <div
+              className="absolute -bottom-20 -left-20 w-60 h-60 rounded-full opacity-20"
+              style={{ backgroundColor: 'var(--store-accent-300)' }}
+            />
+          </div>
+        </>
+      )}
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <div className="text-center">
@@ -58,13 +78,13 @@ export function StoreHero({ store }: StoreHeroProps) {
           </div>
 
           {/* Store Name */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-lg">
             {store.name}
           </h1>
 
           {/* Description */}
           {store.description && (
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8">
+            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8 drop-shadow">
               {store.description}
             </p>
           )}
@@ -103,4 +123,3 @@ export function StoreHero({ store }: StoreHeroProps) {
     </section>
   );
 }
-

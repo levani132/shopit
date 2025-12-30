@@ -68,13 +68,15 @@ async function bootstrap() {
   });
 
   // Global validation pipe
+  // NOTE: enableImplicitConversion is DISABLED because it converts "false" string to true boolean
+  // We use explicit @Transform decorators for type conversions instead
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
-        enableImplicitConversion: true,
+        enableImplicitConversion: false,
       },
     }),
   );

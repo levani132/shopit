@@ -13,7 +13,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Response, Request } from 'express';
+import type { Response, Request } from 'express';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -36,7 +36,7 @@ import { GoogleProfile } from './strategies/google.strategy';
 import { UploadService } from '../upload/upload.service';
 import { cookieConfig } from '../config/cookie.config';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import { UserDocument } from '@sellit/api-database';
+import type { UserDocument } from '@sellit/api-database';
 import * as crypto from 'crypto';
 
 @ApiTags('auth')
@@ -399,9 +399,7 @@ export class AuthController {
       return { user: null, store: null };
     }
 
-    const store = await this.authService.getStoreByOwnerId(
-      user._id.toString(),
-    );
+    const store = await this.authService.getStoreByOwnerId(user._id.toString());
 
     return {
       user: {
@@ -440,10 +438,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Trust current device' })
-  async trustDevice(
-    @CurrentUser() user: UserDocument,
-    @Req() req: Request,
-  ) {
+  async trustDevice(@CurrentUser() user: UserDocument, @Req() req: Request) {
     const deviceFingerprint = this.generateDeviceFingerprint(req);
     await this.authService.trustDevice(user._id.toString(), deviceFingerprint);
     return { success: true, message: 'Device trusted successfully' };

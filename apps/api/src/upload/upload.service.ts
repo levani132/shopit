@@ -34,7 +34,8 @@ export class UploadService {
   private region: string;
 
   constructor(private configService: ConfigService) {
-    this.region = this.configService.get<string>('AWS_REGION') || 'eu-central-1';
+    this.region =
+      this.configService.get<string>('AWS_REGION') || 'eu-central-1';
     this.bucket = this.configService.get<string>('AWS_S3_BUCKET') || '';
 
     this.s3Client = new S3Client({
@@ -76,16 +77,18 @@ export class UploadService {
     // Generate unique filename
     const extension = this.getFileExtension(file.originalname);
     const uniqueFileName = `${uuidv4()}${extension}`;
-    const key = opts.folder ? `${opts.folder}/${uniqueFileName}` : uniqueFileName;
+    const key = opts.folder
+      ? `${opts.folder}/${uniqueFileName}`
+      : uniqueFileName;
 
     // Upload to S3
+    // Note: ACL is removed because newer S3 buckets have ACLs disabled by default
+    // Use bucket policies for public access instead
     const command = new PutObjectCommand({
       Bucket: this.bucket,
       Key: key,
       Body: file.buffer,
       ContentType: file.mimetype,
-      // Make the file publicly readable
-      ACL: 'public-read',
     });
 
     await this.s3Client.send(command);
@@ -172,5 +175,3 @@ export class UploadService {
     }
   }
 }
-
-
