@@ -1,7 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_PREFIX = process.env.NEXT_PUBLIC_API_PREFIX || 'api/v1';
+// Build API base URL - strip any existing prefix to avoid duplication
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
-export const apiUrl = `${API_URL}/${API_PREFIX}`;
+export const apiUrl = `${API_URL}/api/v1`;
 
 export interface ApiError {
   statusCode: number;

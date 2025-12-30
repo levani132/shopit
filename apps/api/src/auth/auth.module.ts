@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Provider } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -12,6 +12,28 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { User, UserSchema, Store, StoreSchema } from '@sellit/api-database';
+
+// Factory to conditionally provide GoogleStrategy
+const googleStrategyProvider: Provider = {
+  provide: GoogleStrategy,
+  useFactory: (configService: ConfigService) => {
+    const clientID = configService.get('GOOGLE_CLIENT_ID');
+    const clientSecret = configService.get('GOOGLE_CLIENT_SECRET');
+    const callbackURL = configService.get('GOOGLE_CALLBACK_URL');
+
+    // Only create GoogleStrategy if all required config is present
+    if (clientID && clientSecret && callbackURL) {
+      return new GoogleStrategy(configService);
+    }
+
+    // Return a placeholder that won't be used
+    console.warn(
+      '⚠️  Google OAuth not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL to enable.',
+    );
+    return null;
+  },
+  inject: [ConfigService],
+};
 
 @Module({
   imports: [
@@ -36,7 +58,7 @@ import { User, UserSchema, Store, StoreSchema } from '@sellit/api-database';
     AuthService,
     JwtStrategy,
     LocalStrategy,
-    GoogleStrategy,
+    googleStrategyProvider,
     JwtAuthGuard,
     LocalAuthGuard,
     GoogleAuthGuard,

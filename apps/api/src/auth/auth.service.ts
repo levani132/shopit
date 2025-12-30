@@ -7,16 +7,19 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User, UserDocument, AuthProvider } from '@sellit/api-database';
+import { User, UserDocument, AuthProvider, Role } from '@sellit/api-database';
 import { Store, StoreDocument } from '@sellit/api-database';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { randomUUID } from 'crypto';
 import {
   InitialRegisterDto,
   CompleteProfileDto,
   LoginDto,
   CheckSubdomainDto,
 } from './dto';
+import { TokensDto, TokenPayload } from './dto/auth-response.dto';
 
 // Reserved subdomains that cannot be used
 const RESERVED_SUBDOMAINS = [
@@ -47,12 +50,19 @@ const RESERVED_SUBDOMAINS = [
   'files',
 ];
 
+interface DeviceInfo {
+  fingerprint?: string;
+  userAgent?: string;
+  trusted?: boolean;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Store.name) private storeModel: Model<StoreDocument>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -97,13 +107,11 @@ export class AuthService {
     while (true) {
       const candidate = suffix === 0 ? subdomain : `${subdomain}-${suffix}`;
 
-      // Check if reserved
       if (RESERVED_SUBDOMAINS.includes(candidate)) {
         suffix++;
         continue;
       }
 
-      // Check if exists in database
       const existing = await this.storeModel.findOne({ subdomain: candidate });
       if (!existing) {
         return candidate;
@@ -121,15 +129,15 @@ export class AuthService {
   /**
    * Check if subdomain is available
    */
-  async checkSubdomain(dto: CheckSubdomainDto): Promise<{ available: boolean; reason?: string }> {
+  async checkSubdomain(
+    dto: CheckSubdomainDto,
+  ): Promise<{ available: boolean; reason?: string }> {
     const { subdomain } = dto;
 
-    // Check if reserved
     if (RESERVED_SUBDOMAINS.includes(subdomain)) {
       return { available: false, reason: 'reserved' };
     }
 
-    // Check if exists
     const existing = await this.storeModel.findOne({ subdomain });
     if (existing) {
       return { available: false, reason: 'taken' };
@@ -139,43 +147,324 @@ export class AuthService {
   }
 
   /**
+   * Generate tokens (access, refresh, session)
+   */
+  private async generateTokens(
+    user: UserDocument,
+    deviceInfo?: DeviceInfo,
+  ): Promise<TokensDto> {
+    const jti = randomUUID();
+    const sessionId = randomUUID();
+
+    const accessSecret = this.configService.get('JWT_ACCESS_SECRET') || this.configService.get('JWT_SECRET') || 'default-access-secret';
+    const refreshSecret = this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET') || 'default-refresh-secret';
+    const sessionSecret = this.configService.get('JWT_SESSION_SECRET') || accessSecret;
+
+    const [accessToken, refreshToken, sessionToken] = await Promise.all([
+      // Access token - 1 hour
+      this.jwtService.signAsync(
+        {
+          sub: user._id.toString(),
+          email: user.email,
+          role: user.role,
+          type: 'access',
+          sessionId,
+        } as TokenPayload,
+        {
+          expiresIn: '1h',
+          secret: accessSecret,
+        },
+      ),
+      // Refresh token - 30 days
+      this.jwtService.signAsync(
+        {
+          sub: user._id.toString(),
+          email: user.email,
+          role: user.role,
+          type: 'refresh',
+          jti,
+          sessionId,
+        } as TokenPayload,
+        {
+          expiresIn: '30d',
+          secret: refreshSecret,
+        },
+      ),
+      // Session token - 7 days
+      this.jwtService.signAsync(
+        {
+          sub: user._id.toString(),
+          email: user.email,
+          role: user.role,
+          type: 'session',
+          sessionId,
+          deviceTrusted: !!deviceInfo?.trusted,
+        } as TokenPayload,
+        {
+          expiresIn: '7d',
+          secret: sessionSecret,
+        },
+      ),
+    ]);
+
+    // Update user with session info
+    const globalUpdateData: Record<string, unknown> = {
+      refreshToken: jti,
+      sessionId,
+      lastActivity: new Date(),
+    };
+
+    // Handle device info
+    if (deviceInfo?.fingerprint) {
+      const existingUser = await this.userModel.findById(user._id);
+      const existingDevice = existingUser?.knownDevices?.find(
+        (device) => device.fingerprint === deviceInfo.fingerprint,
+      );
+
+      if (existingDevice) {
+        await this.userModel.findOneAndUpdate(
+          {
+            _id: user._id,
+            'knownDevices.fingerprint': deviceInfo.fingerprint,
+          },
+          {
+            $set: {
+              ...globalUpdateData,
+              'knownDevices.$.userAgent': deviceInfo.userAgent,
+              'knownDevices.$.lastSeen': new Date(),
+              'knownDevices.$.trusted':
+                deviceInfo.trusted || existingDevice.trusted,
+              'knownDevices.$.sessionId': sessionId,
+              'knownDevices.$.refreshToken': refreshToken,
+              'knownDevices.$.refreshTokenJti': jti,
+              'knownDevices.$.isActive': true,
+            },
+          },
+        );
+      } else {
+        await this.userModel.findByIdAndUpdate(user._id, {
+          ...globalUpdateData,
+          $push: {
+            knownDevices: {
+              fingerprint: deviceInfo.fingerprint,
+              userAgent: deviceInfo.userAgent,
+              lastSeen: new Date(),
+              trusted: deviceInfo.trusted || false,
+              sessionId,
+              refreshToken,
+              refreshTokenJti: jti,
+              isActive: true,
+            },
+          },
+        });
+      }
+    } else {
+      await this.userModel.findByIdAndUpdate(user._id, globalUpdateData);
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+      sessionToken,
+    };
+  }
+
+  /**
+   * Validate user credentials
+   */
+  async validateUser(email: string, password: string): Promise<UserDocument> {
+    const lowercaseEmail = email.toLowerCase();
+    const user = await this.userModel.findOne({ email: lowercaseEmail });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    const isPasswordValid = await this.verifyPassword(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    return user;
+  }
+
+  /**
+   * Login user and generate tokens
+   */
+  async login(
+    user: UserDocument,
+    deviceInfo?: DeviceInfo,
+  ): Promise<{ user: UserDocument; store: StoreDocument | null; tokens: TokensDto }> {
+    const tokens = await this.generateTokens(user, deviceInfo);
+    const store = await this.storeModel.findOne({ ownerId: user._id });
+
+    return { user, store, tokens };
+  }
+
+  /**
+   * Refresh tokens
+   */
+  async refresh(
+    refreshToken: string,
+    deviceInfo?: DeviceInfo,
+  ): Promise<TokensDto> {
+    try {
+      const refreshSecret = this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET') || 'default-refresh-secret';
+      
+      const payload = await this.jwtService.verifyAsync<TokenPayload>(
+        refreshToken,
+        {
+          secret: refreshSecret,
+        },
+      );
+
+      if (payload.type !== 'refresh' || !payload.jti) {
+        throw new UnauthorizedException('Invalid token payload');
+      }
+
+      const user = await this.userModel.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Validate device-specific or global refresh token
+      let validDevice = null;
+      let deviceTrusted = false;
+
+      if (deviceInfo?.fingerprint) {
+        validDevice = user.knownDevices?.find(
+          (device) =>
+            device.fingerprint === deviceInfo.fingerprint &&
+            device.refreshTokenJti === payload.jti &&
+            device.isActive,
+        );
+
+        if (!validDevice) {
+          const deviceByFingerprint = user.knownDevices?.find(
+            (device) =>
+              device.fingerprint === deviceInfo.fingerprint && device.isActive,
+          );
+
+          if (deviceByFingerprint) {
+            validDevice = deviceByFingerprint;
+          }
+        }
+
+        deviceTrusted = validDevice?.trusted || false;
+      }
+
+      // Fallback to global refresh token
+      if (!validDevice && user.refreshToken === payload.jti) {
+        return this.generateTokens(user, {
+          ...deviceInfo,
+          trusted: deviceTrusted,
+        });
+      }
+
+      if (validDevice) {
+        return this.generateTokens(user, {
+          ...deviceInfo,
+          trusted: deviceTrusted,
+        });
+      }
+
+      throw new UnauthorizedException('Invalid refresh token');
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Token refresh failed');
+    }
+  }
+
+  /**
+   * Logout user
+   */
+  async logout(
+    userId: string,
+    deviceInfo?: { fingerprint?: string; sessionId?: string },
+  ): Promise<void> {
+    if (deviceInfo?.fingerprint) {
+      await this.userModel.findOneAndUpdate(
+        {
+          _id: userId,
+          'knownDevices.fingerprint': deviceInfo.fingerprint,
+        },
+        {
+          $set: {
+            'knownDevices.$.isActive': false,
+            'knownDevices.$.refreshToken': null,
+            'knownDevices.$.refreshTokenJti': null,
+          },
+        },
+      );
+    } else if (deviceInfo?.sessionId) {
+      await this.userModel.findOneAndUpdate(
+        {
+          _id: userId,
+          'knownDevices.sessionId': deviceInfo.sessionId,
+        },
+        {
+          $set: {
+            'knownDevices.$.isActive': false,
+            'knownDevices.$.refreshToken': null,
+            'knownDevices.$.refreshTokenJti': null,
+          },
+        },
+      );
+    } else {
+      // Full logout
+      await this.userModel.findByIdAndUpdate(userId, {
+        refreshToken: null,
+        sessionId: null,
+        $set: {
+          'knownDevices.$[].isActive': false,
+          'knownDevices.$[].refreshToken': null,
+          'knownDevices.$[].refreshTokenJti': null,
+        },
+      });
+    }
+  }
+
+  /**
    * Initial registration (Steps 1-3)
    */
   async register(
     dto: InitialRegisterDto,
     logoUrl?: string,
     coverUrl?: string,
-  ): Promise<{ user: UserDocument; store: StoreDocument; accessToken: string }> {
-    // Check if email already exists
-    const existingUser = await this.userModel.findOne({ email: dto.email });
+    deviceInfo?: DeviceInfo,
+  ): Promise<{
+    user: UserDocument;
+    store: StoreDocument;
+    tokens: TokensDto;
+  }> {
+    const existingUser = await this.userModel.findOne({
+      email: dto.email.toLowerCase(),
+    });
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
 
-    // Generate subdomain
     const subdomain = await this.findAvailableSubdomain(dto.storeName);
-
-    // Hash password
     const hashedPassword = await this.hashPassword(dto.password);
 
-    // Split author name into first/last for initial user
     const nameParts = dto.authorName.split(' ');
     const firstName = nameParts[0] || dto.authorName;
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Create user
     const user = new this.userModel({
-      email: dto.email,
+      email: dto.email.toLowerCase(),
       password: hashedPassword,
       firstName,
       lastName,
       authProvider: AuthProvider.EMAIL,
+      role: Role.SELLER,
       isProfileComplete: false,
     });
 
     await user.save();
 
-    // Create store
     const store = new this.storeModel({
       subdomain,
       name: dto.storeName,
@@ -193,10 +482,9 @@ export class AuthService {
 
     await store.save();
 
-    // Generate JWT
-    const accessToken = this.generateToken(user);
+    const tokens = await this.generateTokens(user, deviceInfo);
 
-    return { user, store, accessToken };
+    return { user, store, tokens };
   }
 
   /**
@@ -211,7 +499,6 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    // Update user with profile information
     user.firstName = dto.firstName;
     user.lastName = dto.lastName;
     user.phoneNumber = dto.phoneNumber;
@@ -223,39 +510,6 @@ export class AuthService {
     await user.save();
 
     return user;
-  }
-
-  /**
-   * Login with email and password
-   */
-  async login(dto: LoginDto): Promise<{ user: UserDocument; accessToken: string }> {
-    const user = await this.userModel.findOne({ email: dto.email });
-
-    if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    const isPasswordValid = await this.verifyPassword(dto.password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    const accessToken = this.generateToken(user);
-
-    return { user, accessToken };
-  }
-
-  /**
-   * Generate JWT token
-   */
-  private generateToken(user: UserDocument): string {
-    const payload = {
-      sub: user._id.toString(),
-      email: user.email,
-      role: user.role,
-    };
-
-    return this.jwtService.sign(payload);
   }
 
   /**
@@ -297,13 +551,6 @@ export class AuthService {
   }
 
   /**
-   * Generate token for existing user
-   */
-  async generateTokenForUser(user: UserDocument): Promise<string> {
-    return this.generateToken(user);
-  }
-
-  /**
    * Register with Google OAuth
    */
   async registerWithGoogle(
@@ -320,34 +567,37 @@ export class AuthService {
     },
     logoUrl?: string,
     coverUrl?: string,
-  ): Promise<{ user: UserDocument; store: StoreDocument; accessToken: string }> {
-    // Check if email already exists
-    const existingUser = await this.userModel.findOne({ email: dto.email });
+    deviceInfo?: DeviceInfo,
+  ): Promise<{
+    user: UserDocument;
+    store: StoreDocument;
+    tokens: TokensDto;
+  }> {
+    const existingUser = await this.userModel.findOne({
+      email: dto.email.toLowerCase(),
+    });
     if (existingUser) {
       throw new ConflictException('Email already registered');
     }
 
-    // Generate subdomain
     const subdomain = await this.findAvailableSubdomain(dto.storeName);
 
-    // Split author name into first/last for initial user
     const nameParts = dto.authorName.split(' ');
     const firstName = nameParts[0] || dto.authorName;
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    // Create user (no password for Google users)
     const user = new this.userModel({
       email: dto.email.toLowerCase(),
       googleId: dto.googleId,
       firstName,
       lastName,
       authProvider: AuthProvider.GOOGLE,
+      role: Role.SELLER,
       isProfileComplete: false,
     });
 
     await user.save();
 
-    // Create store
     const store = new this.storeModel({
       subdomain,
       name: dto.storeName,
@@ -365,10 +615,68 @@ export class AuthService {
 
     await store.save();
 
-    // Generate JWT
-    const accessToken = this.generateToken(user);
+    const tokens = await this.generateTokens(user, deviceInfo);
 
-    return { user, store, accessToken };
+    return { user, store, tokens };
+  }
+
+  /**
+   * Sign in with Google (for existing users)
+   */
+  async signInWithGoogle(
+    googleData: { email: string; name: string; id: string },
+    deviceInfo?: DeviceInfo,
+  ): Promise<{ user: UserDocument; store: StoreDocument | null; tokens: TokensDto } | null> {
+    const email = googleData.email.toLowerCase();
+    const existUser = await this.userModel.findOne({ email });
+
+    if (!existUser) {
+      return null; // User needs to register
+    }
+
+    // Update googleId if not set
+    if (!existUser.googleId) {
+      existUser.googleId = googleData.id;
+      await existUser.save();
+    }
+
+    const tokens = await this.generateTokens(existUser, deviceInfo);
+    const store = await this.storeModel.findOne({ ownerId: existUser._id });
+
+    return { user: existUser, store, tokens };
+  }
+
+  /**
+   * Get user's devices
+   */
+  async getUserDevices(userId: string) {
+    const user = await this.userModel.findById(userId).select('knownDevices');
+    return user?.knownDevices || [];
+  }
+
+  /**
+   * Trust a device
+   */
+  async trustDevice(userId: string, deviceFingerprint: string): Promise<void> {
+    await this.userModel.findOneAndUpdate(
+      {
+        _id: userId,
+        'knownDevices.fingerprint': deviceFingerprint,
+      },
+      {
+        $set: { 'knownDevices.$.trusted': true },
+      },
+    );
+  }
+
+  /**
+   * Remove a device
+   */
+  async removeDevice(userId: string, deviceFingerprint: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      $pull: {
+        knownDevices: { fingerprint: deviceFingerprint },
+      },
+    });
   }
 }
-

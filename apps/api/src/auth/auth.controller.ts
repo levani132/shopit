@@ -4,20 +4,17 @@ import {
   Body,
   Get,
   Param,
+  Delete,
   UseGuards,
   UseInterceptors,
-  UploadedFile,
   UploadedFiles,
-  Request,
+  Req,
   Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { Response } from 'express';
-import {
-  FileInterceptor,
-  FileFieldsInterceptor,
-} from '@nestjs/platform-express';
+import { Response, Request } from 'express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
@@ -37,6 +34,10 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { GoogleProfile } from './strategies/google.strategy';
 import { UploadService } from '../upload/upload.service';
+import { cookieConfig } from '../config/cookie.config';
+import { CurrentUser } from '../decorators/current-user.decorator';
+import { UserDocument } from '@sellit/api-database';
+import * as crypto from 'crypto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -46,6 +47,24 @@ export class AuthController {
     private readonly configService: ConfigService,
     private readonly uploadService: UploadService,
   ) {}
+
+  /**
+   * Generate device fingerprint from request headers
+   */
+  private generateDeviceFingerprint(req: Request): string {
+    const components = [
+      req.headers['user-agent'] || '',
+      req.headers['accept-language'] || '',
+      req.ip || '',
+      req.headers['accept-encoding'] || '',
+    ].join('|');
+
+    return crypto
+      .createHash('sha256')
+      .update(components)
+      .digest('hex')
+      .substring(0, 16);
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new seller (Steps 1-3)' })
@@ -60,6 +79,8 @@ export class AuthController {
   )
   async register(
     @Body() dto: InitialRegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
     @UploadedFiles()
     files?: {
       logoFile?: Express.Multer.File[];
@@ -73,7 +94,7 @@ export class AuthController {
       try {
         const uploadResult = await this.uploadService.uploadFile(logoFile, {
           folder: 'logos',
-          maxSizeBytes: 2 * 1024 * 1024, // 2MB
+          maxSizeBytes: 2 * 1024 * 1024,
           allowedMimeTypes: [
             'image/jpeg',
             'image/png',
@@ -84,7 +105,6 @@ export class AuthController {
         logoUrl = uploadResult.url;
       } catch (error) {
         console.error('Failed to upload logo:', error);
-        // Continue without logo if upload fails
       }
     }
 
@@ -95,17 +115,47 @@ export class AuthController {
       try {
         const uploadResult = await this.uploadService.uploadFile(coverFile, {
           folder: 'covers',
-          maxSizeBytes: 10 * 1024 * 1024, // 10MB
+          maxSizeBytes: 10 * 1024 * 1024,
           allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
         });
         coverUrl = uploadResult.url;
       } catch (error) {
         console.error('Failed to upload cover:', error);
-        // Continue without cover if upload fails
       }
     }
 
-    const result = await this.authService.register(dto, logoUrl, coverUrl);
+    // Get device info
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+      trusted: false,
+    };
+
+    const result = await this.authService.register(
+      dto,
+      logoUrl,
+      coverUrl,
+      deviceInfo,
+    );
+
+    // Set HTTP-only cookies
+    res.cookie(
+      cookieConfig.access.name,
+      result.tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      result.tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (result.tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        result.tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
 
     return {
       message: 'Registration successful',
@@ -114,6 +164,7 @@ export class AuthController {
         email: result.user.email,
         firstName: result.user.firstName,
         lastName: result.user.lastName,
+        role: result.user.role,
         isProfileComplete: result.user.isProfileComplete,
       },
       store: {
@@ -123,7 +174,157 @@ export class AuthController {
         brandColor: result.store.brandColor,
         coverImage: result.store.coverImage,
       },
-      accessToken: result.accessToken,
+    };
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Validate credentials first
+    const user = await this.authService.validateUser(dto.email, dto.password);
+
+    // Get device info
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+      trusted: false,
+    };
+
+    // Generate tokens and get store
+    const result = await this.authService.login(user, deviceInfo);
+
+    // Set HTTP-only cookies
+    res.cookie(
+      cookieConfig.access.name,
+      result.tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      result.tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (result.tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        result.tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
+
+    return {
+      message: 'Login successful',
+      user: {
+        id: result.user._id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        role: result.user.role,
+        isProfileComplete: result.user.isProfileComplete,
+      },
+      store: result.store
+        ? {
+            id: result.store._id,
+            subdomain: result.store.subdomain,
+            name: result.store.name,
+            brandColor: result.store.brandColor,
+          }
+        : null,
+    };
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed' })
+  @ApiResponse({ status: 401, description: 'Invalid refresh token' })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Get refresh token from cookie
+    const refreshToken = req.cookies?.[cookieConfig.refresh.name];
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'No refresh token' });
+    }
+
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+    };
+
+    const tokens = await this.authService.refresh(refreshToken, deviceInfo);
+
+    // Set new cookies
+    res.cookie(
+      cookieConfig.access.name,
+      tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
+
+    return { success: true };
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Logout user' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  async logout(
+    @CurrentUser() user: UserDocument,
+    @Body() body: { logoutAllDevices?: boolean },
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const deviceFingerprint = this.generateDeviceFingerprint(req);
+
+    if (body.logoutAllDevices) {
+      await this.authService.logout(user._id.toString());
+    } else {
+      await this.authService.logout(user._id.toString(), {
+        fingerprint: deviceFingerprint,
+      });
+    }
+
+    // Clear cookies
+    res.clearCookie(cookieConfig.access.name, {
+      ...cookieConfig.access.options,
+      maxAge: 0,
+    });
+    res.clearCookie(cookieConfig.refresh.name, {
+      ...cookieConfig.refresh.options,
+      maxAge: 0,
+    });
+    res.clearCookie(cookieConfig.session.name, {
+      ...cookieConfig.session.options,
+      maxAge: 0,
+    });
+
+    return {
+      success: true,
+      message: body.logoutAllDevices
+        ? 'Logged out from all devices'
+        : 'Logged out from current device',
     };
   }
 
@@ -134,54 +335,24 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Profile completed successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async completeProfile(
-    @Request() req: { user: { sub: string } },
+    @CurrentUser() user: UserDocument,
     @Body() dto: CompleteProfileDto,
   ) {
-    const user = await this.authService.completeProfile(req.user.sub, dto);
+    const updatedUser = await this.authService.completeProfile(
+      user._id.toString(),
+      dto,
+    );
 
     return {
       message: 'Profile completed successfully',
       user: {
-        id: user._id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        phoneNumber: user.phoneNumber,
-        isProfileComplete: user.isProfileComplete,
+        id: updatedUser._id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        phoneNumber: updatedUser.phoneNumber,
+        isProfileComplete: updatedUser.isProfileComplete,
       },
-    };
-  }
-
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() dto: LoginDto) {
-    const result = await this.authService.login(dto);
-
-    const store = await this.authService.getStoreByOwnerId(
-      result.user._id.toString(),
-    );
-
-    return {
-      message: 'Login successful',
-      user: {
-        id: result.user._id,
-        email: result.user.email,
-        firstName: result.user.firstName,
-        lastName: result.user.lastName,
-        isProfileComplete: result.user.isProfileComplete,
-      },
-      store: store
-        ? {
-            id: store._id,
-            subdomain: store.subdomain,
-            name: store.name,
-            brandColor: store.brandColor,
-          }
-        : null,
-      accessToken: result.accessToken,
     };
   }
 
@@ -198,9 +369,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'User profile' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@Request() req: { user: { sub: string } }) {
-    const user = await this.authService.getUserById(req.user.sub);
-
+  async getProfile(@CurrentUser() user: UserDocument) {
     if (!user) {
       return { user: null, store: null };
     }
@@ -215,6 +384,7 @@ export class AuthController {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
+        role: user.role,
         phoneNumber: user.phoneNumber,
         isProfileComplete: user.isProfileComplete,
       },
@@ -230,6 +400,42 @@ export class AuthController {
     };
   }
 
+  // ============ Device Management ============
+
+  @Get('devices')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user devices' })
+  async getUserDevices(@CurrentUser() user: UserDocument) {
+    const devices = await this.authService.getUserDevices(user._id.toString());
+    return { devices };
+  }
+
+  @Post('devices/trust')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Trust current device' })
+  async trustDevice(
+    @CurrentUser() user: UserDocument,
+    @Req() req: Request,
+  ) {
+    const deviceFingerprint = this.generateDeviceFingerprint(req);
+    await this.authService.trustDevice(user._id.toString(), deviceFingerprint);
+    return { success: true, message: 'Device trusted successfully' };
+  }
+
+  @Delete('devices/:fingerprint')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a device' })
+  async removeDevice(
+    @CurrentUser() user: UserDocument,
+    @Param('fingerprint') fingerprint: string,
+  ) {
+    await this.authService.removeDevice(user._id.toString(), fingerprint);
+    return { success: true, message: 'Device removed successfully' };
+  }
+
   // ============ Google OAuth ============
 
   @Get('google')
@@ -243,31 +449,51 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleAuthCallback(
-    @Request() req: { user: GoogleProfile },
+    @Req() req: Request & { user: GoogleProfile },
     @Res() res: Response,
   ) {
     try {
       const frontendUrl =
         this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
 
-      // Check if user exists, if not this is just auth - they need to complete registration
-      const existingUser = await this.authService.findUserByEmail(
-        req.user.email,
+      const deviceInfo = {
+        fingerprint: this.generateDeviceFingerprint(req),
+        userAgent: req.headers['user-agent'] || '',
+        trusted: false,
+      };
+
+      // Check if user exists
+      const result = await this.authService.signInWithGoogle(
+        {
+          email: req.user.email,
+          name: req.user.name || 'Google User',
+          id: req.user.id,
+        },
+        deviceInfo,
       );
 
-      if (existingUser) {
-        // User exists - log them in
-        const store = await this.authService.getStoreByOwnerId(
-          existingUser._id.toString(),
+      if (result) {
+        // User exists - set cookies and redirect to dashboard
+        res.cookie(
+          cookieConfig.access.name,
+          result.tokens.accessToken,
+          cookieConfig.access.options,
         );
-
-        const accessToken = await this.authService.generateTokenForUser(
-          existingUser,
+        res.cookie(
+          cookieConfig.refresh.name,
+          result.tokens.refreshToken,
+          cookieConfig.refresh.options,
         );
+        if (result.tokens.sessionToken) {
+          res.cookie(
+            cookieConfig.session.name,
+            result.tokens.sessionToken,
+            cookieConfig.session.options,
+          );
+        }
 
-        // Redirect to frontend with token
         res.redirect(
-          `${frontendUrl}/auth/callback?token=${accessToken}&hasStore=${!!store}`,
+          `${frontendUrl}/auth/callback?success=true&hasStore=${!!result.store}`,
         );
       } else {
         // New user - redirect to registration with Google data
@@ -288,17 +514,88 @@ export class AuthController {
   @ApiOperation({ summary: 'Complete registration for Google user' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Registration successful' })
-  @UseInterceptors(FileInterceptor('logoFile'))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'logoFile', maxCount: 1 },
+      { name: 'coverFile', maxCount: 1 },
+    ]),
+  )
   async googleRegister(
     @Body() dto: InitialRegisterDto & { googleId: string },
-    @UploadedFile() logoFile?: Express.Multer.File,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @UploadedFiles()
+    files?: {
+      logoFile?: Express.Multer.File[];
+      coverFile?: Express.Multer.File[];
+    },
   ) {
     let logoUrl: string | undefined;
+    const logoFile = files?.logoFile?.[0];
     if (logoFile) {
-      // TODO: Upload logo to cloud storage
+      try {
+        const uploadResult = await this.uploadService.uploadFile(logoFile, {
+          folder: 'logos',
+          maxSizeBytes: 2 * 1024 * 1024,
+          allowedMimeTypes: [
+            'image/jpeg',
+            'image/png',
+            'image/svg+xml',
+            'image/webp',
+          ],
+        });
+        logoUrl = uploadResult.url;
+      } catch (error) {
+        console.error('Failed to upload logo:', error);
+      }
     }
 
-    const result = await this.authService.registerWithGoogle(dto, logoUrl);
+    let coverUrl: string | undefined;
+    const coverFile = files?.coverFile?.[0];
+    if (coverFile) {
+      try {
+        const uploadResult = await this.uploadService.uploadFile(coverFile, {
+          folder: 'covers',
+          maxSizeBytes: 10 * 1024 * 1024,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        });
+        coverUrl = uploadResult.url;
+      } catch (error) {
+        console.error('Failed to upload cover:', error);
+      }
+    }
+
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+      trusted: false,
+    };
+
+    const result = await this.authService.registerWithGoogle(
+      dto,
+      logoUrl,
+      coverUrl,
+      deviceInfo,
+    );
+
+    // Set HTTP-only cookies
+    res.cookie(
+      cookieConfig.access.name,
+      result.tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      result.tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (result.tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        result.tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
 
     return {
       message: 'Registration successful',
@@ -307,6 +604,7 @@ export class AuthController {
         email: result.user.email,
         firstName: result.user.firstName,
         lastName: result.user.lastName,
+        role: result.user.role,
         isProfileComplete: result.user.isProfileComplete,
       },
       store: {
@@ -315,8 +613,6 @@ export class AuthController {
         name: result.store.name,
         brandColor: result.store.brandColor,
       },
-      accessToken: result.accessToken,
     };
   }
 }
-

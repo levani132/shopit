@@ -8,6 +8,12 @@ interface StoreFooterProps {
     logo?: string;
     authorName?: string;
     showAuthorName?: boolean;
+    socialLinks?: {
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+      tiktok?: string;
+    };
   };
 }
 

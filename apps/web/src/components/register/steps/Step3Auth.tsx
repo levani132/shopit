@@ -4,6 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../../../contexts/AuthContext';
+
+// Build API base URL - use just the host, we'll add the prefix
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Remove any trailing slash and any existing /api/v1 prefix to avoid duplication
+const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 const BRAND_COLORS: Record<string, string> = {
   indigo: '#6366f1',
@@ -18,12 +24,14 @@ const BRAND_COLORS: Record<string, string> = {
 export function Step3Auth() {
   const t = useTranslations('register');
   const router = useRouter();
+  const { refreshAuth } = useAuth();
   const { data, updateData, prevStep, setUnblurredSections, setShowMobileCta } =
     useRegistration();
   const [errors, setErrors] = useState<{
     email?: string;
     password?: string;
     confirmPassword?: string;
+    general?: string;
   }>({});
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -87,14 +95,57 @@ export function Step3Auth() {
     setIsLoading(true);
 
     try {
-      // TODO: Call registration API
+      // Build FormData for multipart/form-data request (needed for file uploads)
+      const formData = new FormData();
+      formData.append('storeName', data.storeName);
+      formData.append('brandColor', data.brandColor);
+      formData.append('description', data.description || 'Welcome to my store');
+      formData.append('authorName', data.authorName || data.storeName);
+      formData.append('email', data.email);
+      formData.append('password', data.password);
+      formData.append('useInitialAsLogo', String(data.useInitialAsLogo));
+      formData.append('showAuthorName', String(data.showAuthorName));
+      formData.append('useDefaultCover', String(data.useDefaultCover));
+
+      // Add logo file if provided
+      if (data.logoFile) {
+        formData.append('logoFile', data.logoFile);
+      }
+
+      // Add cover file if provided
+      if (data.coverFile) {
+        formData.append('coverFile', data.coverFile);
+      }
+
+      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include', // Include cookies for auth
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 409) {
+          setErrors({ email: t('emailAlreadyExists') });
+        } else {
+          setErrors({ general: errorData.message || t('registrationFailed') });
+        }
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Registration successful:', result);
+
+      // Update auth context
+      await refreshAuth();
+
       updateData({ authMethod: 'email' });
       
       // Navigate to profile completion page
       router.push('/register/complete');
     } catch (error) {
       console.error('Registration failed:', error);
-      setErrors({ email: t('registrationFailed') });
+      setErrors({ general: t('registrationFailed') });
     } finally {
       setIsLoading(false);
     }
@@ -103,12 +154,11 @@ export function Step3Auth() {
   const handleGoogleSignup = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement Google OAuth
-      updateData({ authMethod: 'google' });
-      router.push('/register/complete');
+      // Redirect to Google OAuth endpoint
+      // The backend will handle the OAuth flow and redirect back
+      window.location.href = `${API_URL}/api/v1/auth/google`;
     } catch (error) {
       console.error('Google signup failed:', error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -159,6 +209,12 @@ export function Step3Auth() {
 
       {/* Main Form Card - Full width, horizontal layout */}
       <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-5 w-full max-w-3xl">
+        {/* General error message */}
+        {errors.general && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-600 dark:text-red-400 text-sm">{errors.general}</p>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Side - Form Fields */}
           <div className="space-y-3">

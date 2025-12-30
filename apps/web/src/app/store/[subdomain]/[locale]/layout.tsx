@@ -128,7 +128,7 @@ async function getStoreData(subdomain: string) {
       logo: mockStore.logo,
       brandColor: mockStore.accentColor,
       accentColor: mockStore.accentColor,
-      authorName: mockStore.owner,
+      authorName: mockStore.owner.name,
       showAuthorName: true,
     };
   }

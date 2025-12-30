@@ -3,15 +3,47 @@ import { HydratedDocument } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
-export enum UserRole {
-  PLATFORM_ADMIN = 'PLATFORM_ADMIN',
-  STORE_OWNER = 'STORE_OWNER',
+// User roles
+export enum Role {
+  ADMIN = 'admin',
+  SELLER = 'seller',
+  USER = 'user',
 }
 
 export enum AuthProvider {
   EMAIL = 'EMAIL',
   GOOGLE = 'GOOGLE',
 }
+
+// Device tracking for multi-device support
+@Schema({ _id: false })
+export class KnownDevice {
+  @Prop({ required: true })
+  fingerprint: string;
+
+  @Prop()
+  userAgent?: string;
+
+  @Prop({ default: Date.now })
+  lastSeen: Date;
+
+  @Prop({ default: false })
+  trusted: boolean;
+
+  @Prop()
+  sessionId?: string;
+
+  @Prop()
+  refreshToken?: string;
+
+  @Prop()
+  refreshTokenJti?: string;
+
+  @Prop({ default: true })
+  isActive: boolean;
+}
+
+export const KnownDeviceSchema = SchemaFactory.createForClass(KnownDevice);
 
 @Schema({ timestamps: true, collection: 'users' })
 export class User {
@@ -45,8 +77,8 @@ export class User {
   @Prop({ trim: true })
   beneficiaryBankCode?: string; // SWIFT/BIC code
 
-  @Prop({ type: String, enum: UserRole, default: UserRole.STORE_OWNER })
-  role: UserRole;
+  @Prop({ type: String, enum: Role, default: Role.SELLER })
+  role: Role;
 
   @Prop({ default: false })
   isProfileComplete: boolean;
@@ -62,6 +94,20 @@ export class User {
 
   @Prop()
   passwordResetExpires?: Date;
+
+  // Session management
+  @Prop()
+  refreshToken?: string; // JTI of current refresh token (legacy support)
+
+  @Prop()
+  sessionId?: string; // Current session ID
+
+  @Prop()
+  lastActivity?: Date;
+
+  // Multi-device support
+  @Prop({ type: [KnownDeviceSchema], default: [] })
+  knownDevices: KnownDevice[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

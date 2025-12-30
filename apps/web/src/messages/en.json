@@ -4,7 +4,8 @@
     "learnMore": "Learn More",
     "language": "Language",
     "georgian": "ქართული",
-    "english": "English"
+    "english": "English",
+    "loading": "Loading..."
   },
   "nav": {
     "home": "Home",
@@ -135,6 +136,8 @@
     "createAccount": "Create Account",
     "creating": "Creating...",
     "registrationFailed": "Registration failed. Please try again.",
+    "emailAlreadyExists": "This email is already registered. Please use a different email or login.",
+    "profileCompletionFailed": "Failed to complete profile. Please try again.",
     "almostDone": "Almost Done!",
     "profileCompletionDescription": "We need a few more details to help you get paid and for our team to contact you if needed.",
     "whyWeNeedThis": "Why do we need this information?",
@@ -193,5 +196,19 @@
     "step2Description": "Create a product listing to start selling",
     "step3Title": "Share your store",
     "step3Description": "Share your store link with customers"
+  },
+  "auth": {
+    "login": "Login",
+    "signUp": "Sign Up",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "orContinueWith": "or continue with",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "forgotPassword": "Forgot password?",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "registerFailed": "Registration failed. Please try again."
   }
 }

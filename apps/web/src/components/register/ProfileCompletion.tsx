@@ -5,6 +5,12 @@ import { useRegistration } from './RegistrationContext';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { GEORGIAN_BANKS, detectBankFromIban, isValidGeorgianIban } from '../../utils/georgian-banks';
+import { useAuth } from '../../contexts/AuthContext';
+
+// Build API base URL - use just the host, we'll add the prefix
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Remove any trailing slash and any existing /api/v1 prefix to avoid duplication
+const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 const BRAND_COLORS: Record<string, string> = {
   indigo: '#6366f1',
@@ -23,12 +29,14 @@ interface FormErrors {
   identificationNumber?: string;
   accountNumber?: string;
   beneficiaryBankCode?: string;
+  general?: string;
 }
 
 export function ProfileCompletion() {
   const t = useTranslations('register');
   const router = useRouter();
   const { data, updateData } = useRegistration();
+  const { refreshAuth, isAuthenticated, isLoading: authLoading } = useAuth();
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -89,21 +97,71 @@ export function ProfileCompletion() {
     setIsLoading(true);
 
     try {
-      // TODO: Call API to complete profile
-      // await api.completeProfile(data);
+      const response = await fetch(`${API_URL}/api/v1/auth/complete-profile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Include cookies for auth
+        body: JSON.stringify({
+          firstName: data.ownerFirstName,
+          lastName: data.ownerLastName,
+          phoneNumber: data.phoneNumber,
+          identificationNumber: data.identificationNumber,
+          accountNumber: data.accountNumber,
+          beneficiaryBankCode: data.beneficiaryBankCode,
+        }),
+      });
 
-      // Redirect to dashboard or store
-      router.push(`/dashboard`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 401) {
+          // User not authenticated, redirect to login
+          router.push('/login');
+          return;
+        }
+        setErrors({ general: errorData.message || t('profileCompletionFailed') });
+        return;
+      }
+
+      // Refresh auth context to update user data
+      await refreshAuth();
+
+      // Redirect to dashboard
+      router.push('/dashboard');
     } catch (error) {
       console.error('Profile completion failed:', error);
+      setErrors({ general: t('profileCompletionFailed') });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // If not authenticated after auth loading is done, redirect to register
+  if (!authLoading && !isAuthenticated) {
+    router.push('/register');
+    return null;
+  }
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex items-center justify-center">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 py-12 px-4">
       <div className="max-w-2xl mx-auto">
+        {/* General error message */}
+        {errors.general && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-600 dark:text-red-400">{errors.general}</p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
           <div
@@ -326,4 +384,5 @@ export function ProfileCompletion() {
     </div>
   );
 }
+
 

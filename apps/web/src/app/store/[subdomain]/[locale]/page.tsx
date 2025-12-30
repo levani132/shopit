@@ -62,9 +62,10 @@ async function getStoreData(subdomain: string): Promise<{
         brandColor: mockStore.accentColor,
         accentColor: mockStore.accentColor,
         useInitialAsLogo: !mockStore.logo,
-        authorName: mockStore.owner,
+        useDefaultCover: !mockStore.coverImage,
+        authorName: mockStore.owner.name,
         showAuthorName: true,
-        categories: mockStore.categories.map((c) => c.name),
+        categories: mockStore.categories,
         isVerified: false,
       },
       products: mockStore.products.map((p) => ({
