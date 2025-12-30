@@ -6,10 +6,10 @@ export type PostLikeDocument = HydratedDocument<PostLike>;
 @Schema({ timestamps: true, collection: 'post_likes' })
 export class PostLike {
   @Prop({ required: true })
-  visitorId: string;
+  visitorId!: string;
 
   @Prop({ type: Types.ObjectId, ref: 'Post', required: true })
-  postId: Types.ObjectId;
+  postId!: Types.ObjectId;
 }
 
 export const PostLikeSchema = SchemaFactory.createForClass(PostLike);

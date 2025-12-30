@@ -2,10 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class TokensDto {
   @ApiProperty()
-  accessToken: string;
+  accessToken!: string;
 
   @ApiProperty()
-  refreshToken: string;
+  refreshToken!: string;
 
   @ApiProperty({ required: false })
   sessionToken?: string;
@@ -13,19 +13,19 @@ export class TokensDto {
 
 export class UserResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  email: string;
+  email!: string;
 
   @ApiProperty()
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty()
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty()
-  role: string;
+  role!: string;
 
   @ApiProperty({ required: false })
   isProfileComplete?: boolean;
@@ -33,16 +33,16 @@ export class UserResponseDto {
 
 export class StoreResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty()
-  subdomain: string;
+  subdomain!: string;
 
   @ApiProperty()
-  name: string;
+  name!: string;
 
   @ApiProperty()
-  brandColor: string;
+  brandColor!: string;
 
   @ApiProperty({ required: false })
   description?: string;
@@ -50,7 +50,7 @@ export class StoreResponseDto {
 
 export class AuthResponseDto {
   @ApiProperty()
-  user: UserResponseDto;
+  user!: UserResponseDto;
 
   @ApiProperty({ required: false })
   store?: StoreResponseDto;
@@ -68,5 +68,3 @@ export interface TokenPayload {
   jti?: string;
   deviceTrusted?: boolean;
 }
-
-

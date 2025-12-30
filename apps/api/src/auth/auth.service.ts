@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -16,7 +15,6 @@ import { randomUUID } from 'crypto';
 import {
   InitialRegisterDto,
   CompleteProfileDto,
-  LoginDto,
   CheckSubdomainDto,
 } from './dto';
 import { TokensDto, TokenPayload } from './dto/auth-response.dto';

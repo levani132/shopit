@@ -34,12 +34,12 @@ export class InitialRegisterDto {
   @IsNotEmpty({ message: 'Store name is required' })
   @IsString()
   @MaxLength(100)
-  storeName: string;
+  storeName!: string;
 
   @ApiProperty({ example: 'indigo', description: 'Brand color name' })
   @IsNotEmpty()
   @IsString()
-  brandColor: string;
+  brandColor!: string;
 
   @ApiPropertyOptional({ description: 'Use colored initial as logo' })
   @IsOptional()
@@ -53,19 +53,19 @@ export class InitialRegisterDto {
     description: 'Store logo file',
   })
   @IsOptional()
-  logoFile?: Express.Multer.File;
+  logoFile?: unknown; // Handled by FileInterceptor, not validated here
 
   @ApiProperty({ example: 'A great place to shop for unique items', description: 'Store description' })
   @IsNotEmpty({ message: 'Description is required' })
   @IsString()
   @MaxLength(500)
-  description: string;
+  description!: string;
 
   @ApiProperty({ example: 'John Doe', description: 'Author/owner display name' })
   @IsNotEmpty({ message: 'Author name is required' })
   @IsString()
   @MaxLength(100)
-  authorName: string;
+  authorName!: string;
 
   @ApiPropertyOptional({ description: 'Show author name on homepage' })
   @IsOptional()
@@ -85,21 +85,21 @@ export class InitialRegisterDto {
     description: 'Store cover image file',
   })
   @IsOptional()
-  coverFile?: Express.Multer.File;
+  coverFile?: unknown; // Handled by FileInterceptor, not validated here
 
   // Auth Information
   @ApiProperty({ example: 'user@example.com', description: 'Email address' })
   @IsNotEmpty({ message: 'Email is required' })
   @IsEmail({}, { message: 'Invalid email format' })
   @Transform(({ value }) => value?.toLowerCase().trim())
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'SecurePassword123', description: 'Password (6-50 characters)' })
   @IsNotEmpty({ message: 'Password is required' })
   @IsString()
   @MinLength(6, { message: 'Password must be at least 6 characters' })
   @MaxLength(50, { message: 'Password must be less than 50 characters' })
-  password: string;
+  password!: string;
 }
 
 /**
@@ -111,37 +111,37 @@ export class CompleteProfileDto {
   @IsNotEmpty({ message: 'First name is required' })
   @IsString()
   @MaxLength(50)
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ example: 'Doe', description: 'Last name' })
   @IsNotEmpty({ message: 'Last name is required' })
   @IsString()
   @MaxLength(50)
-  lastName: string;
+  lastName!: string;
 
   @ApiProperty({ example: '+995555123456', description: 'Phone number in Georgian format' })
   @IsNotEmpty({ message: 'Phone number is required' })
   @IsString()
   @Matches(/^\+995\d{9}$/, { message: 'Phone must be in Georgian format (+995XXXXXXXXX)' })
-  phoneNumber: string;
+  phoneNumber!: string;
 
   @ApiProperty({ example: '01234567890', description: 'Georgian personal ID (11 digits)' })
   @IsNotEmpty({ message: 'ID number is required' })
   @IsString()
   @Matches(/^\d{11}$/, { message: 'ID number must be 11 digits' })
-  identificationNumber: string;
+  identificationNumber!: string;
 
   @ApiProperty({ example: 'GE29TB7777777777777777', description: 'Georgian IBAN' })
   @IsNotEmpty({ message: 'IBAN is required' })
   @IsString()
   @Matches(/^GE\d{2}[A-Z]{2}\d{16}$/, { message: 'Invalid Georgian IBAN format' })
   @Transform(({ value }) => value?.toUpperCase().replace(/\s/g, ''))
-  accountNumber: string;
+  accountNumber!: string;
 
   @ApiProperty({ example: 'TBCBGE22', description: 'Bank SWIFT/BIC code' })
   @IsNotEmpty({ message: 'Bank code is required' })
   @IsString()
-  beneficiaryBankCode: string;
+  beneficiaryBankCode!: string;
 }
 
 /**
@@ -151,19 +151,19 @@ export class GoogleRegisterDto {
   @ApiProperty({ description: 'Google OAuth token' })
   @IsNotEmpty()
   @IsString()
-  googleToken: string;
+  googleToken!: string;
 
   // Store Information
   @ApiProperty({ example: 'My Awesome Store', description: 'Store name' })
   @IsNotEmpty({ message: 'Store name is required' })
   @IsString()
   @MaxLength(100)
-  storeName: string;
+  storeName!: string;
 
   @ApiProperty({ example: 'indigo', description: 'Brand color name' })
   @IsNotEmpty()
   @IsString()
-  brandColor: string;
+  brandColor!: string;
 
   @ApiPropertyOptional({ description: 'Use colored initial as logo' })
   @IsOptional()
@@ -175,13 +175,13 @@ export class GoogleRegisterDto {
   @IsNotEmpty({ message: 'Description is required' })
   @IsString()
   @MaxLength(500)
-  description: string;
+  description!: string;
 
   @ApiProperty({ example: 'John Doe', description: 'Author/owner display name' })
   @IsNotEmpty({ message: 'Author name is required' })
   @IsString()
   @MaxLength(100)
-  authorName: string;
+  authorName!: string;
 
   @ApiPropertyOptional({ description: 'Show author name on homepage' })
   @IsOptional()
@@ -204,12 +204,12 @@ export class LoginDto {
   @IsNotEmpty()
   @IsEmail()
   @Transform(({ value }) => value?.toLowerCase().trim())
-  email: string;
+  email!: string;
 
   @ApiProperty({ example: 'password123' })
   @IsNotEmpty()
   @IsString()
-  password: string;
+  password!: string;
 }
 
 /**
@@ -223,6 +223,5 @@ export class CheckSubdomainDto {
     message: 'Subdomain can only contain lowercase letters, numbers, and hyphens',
   })
   @Transform(({ value }) => value?.toLowerCase().trim())
-  subdomain: string;
+  subdomain!: string;
 }
-

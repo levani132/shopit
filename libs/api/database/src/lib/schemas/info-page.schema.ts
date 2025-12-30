@@ -5,10 +5,10 @@ export type InfoPageDocument = HydratedDocument<InfoPage>;
 
 export class FaqItem {
   @Prop({ required: true })
-  question: string;
+  question!: string;
 
   @Prop({ required: true })
-  answer: string;
+  answer!: string;
 }
 
 @Schema({ timestamps: true, collection: 'info_pages' })
@@ -29,10 +29,10 @@ export class InfoPage {
   policies?: string;
 
   @Prop({ type: [{ question: String, answer: String }], default: [] })
-  faq: FaqItem[];
+  faq!: FaqItem[];
 
   @Prop({ type: Types.ObjectId, ref: 'Store', required: true, unique: true })
-  storeId: Types.ObjectId;
+  storeId!: Types.ObjectId;
 }
 
 export const InfoPageSchema = SchemaFactory.createForClass(InfoPage);

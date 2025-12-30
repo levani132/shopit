@@ -19,16 +19,16 @@ export enum AuthProvider {
 @Schema({ _id: false })
 export class KnownDevice {
   @Prop({ required: true })
-  fingerprint: string;
+  fingerprint!: string;
 
   @Prop()
   userAgent?: string;
 
   @Prop({ default: Date.now })
-  lastSeen: Date;
+  lastSeen!: Date;
 
   @Prop({ default: false })
-  trusted: boolean;
+  trusted!: boolean;
 
   @Prop()
   sessionId?: string;
@@ -40,7 +40,7 @@ export class KnownDevice {
   refreshTokenJti?: string;
 
   @Prop({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 }
 
 export const KnownDeviceSchema = SchemaFactory.createForClass(KnownDevice);
@@ -48,22 +48,22 @@ export const KnownDeviceSchema = SchemaFactory.createForClass(KnownDevice);
 @Schema({ timestamps: true, collection: 'users' })
 export class User {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
-  email: string;
+  email!: string;
 
   @Prop({ required: false }) // Optional for OAuth users
   password?: string;
 
   @Prop({ type: String, enum: AuthProvider, default: AuthProvider.EMAIL })
-  authProvider: AuthProvider;
+  authProvider!: AuthProvider;
 
   @Prop() // Google user ID for OAuth
   googleId?: string;
 
   @Prop({ required: true, trim: true })
-  firstName: string;
+  firstName!: string;
 
   @Prop({ required: true, trim: true })
-  lastName: string;
+  lastName!: string;
 
   @Prop({ trim: true })
   phoneNumber?: string;
@@ -78,13 +78,13 @@ export class User {
   beneficiaryBankCode?: string; // SWIFT/BIC code
 
   @Prop({ type: String, enum: Role, default: Role.SELLER })
-  role: Role;
+  role!: Role;
 
   @Prop({ default: false })
-  isProfileComplete: boolean;
+  isProfileComplete!: boolean;
 
   @Prop({ default: false })
-  isVerified: boolean;
+  isVerified!: boolean;
 
   @Prop()
   verificationToken?: string;
@@ -107,7 +107,7 @@ export class User {
 
   // Multi-device support
   @Prop({ type: [KnownDeviceSchema], default: [] })
-  knownDevices: KnownDevice[];
+  knownDevices!: KnownDevice[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

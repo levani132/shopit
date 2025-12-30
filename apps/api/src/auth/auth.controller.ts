@@ -38,6 +38,7 @@ import { cookieConfig } from '../config/cookie.config';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { UserDocument } from '@sellit/api-database';
 import * as crypto from 'crypto';
+import 'multer'; // Import for Express.Multer.File types
 
 @ApiTags('auth')
 @Controller('auth')
@@ -87,27 +88,6 @@ export class AuthController {
       coverFile?: Express.Multer.File[];
     },
   ) {
-    // Debug: Log received DTO and files
-    console.log('📋 Received DTO (after transform):', {
-      useInitialAsLogo: dto.useInitialAsLogo,
-      useInitialAsLogoType: typeof dto.useInitialAsLogo,
-      showAuthorName: dto.showAuthorName,
-      showAuthorNameType: typeof dto.showAuthorName,
-      useDefaultCover: dto.useDefaultCover,
-      useDefaultCoverType: typeof dto.useDefaultCover,
-    });
-    console.log('📁 Received files:', {
-      logoFile: files?.logoFile?.[0]
-        ? { name: files.logoFile[0].originalname, size: files.logoFile[0].size }
-        : 'none',
-      coverFile: files?.coverFile?.[0]
-        ? {
-            name: files.coverFile[0].originalname,
-            size: files.coverFile[0].size,
-          }
-        : 'none',
-    });
-
     // Upload logo to S3 if provided
     let logoUrl: string | undefined;
     const logoFile = files?.logoFile?.[0];

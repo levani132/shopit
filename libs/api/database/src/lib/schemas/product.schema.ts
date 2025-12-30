@@ -6,31 +6,31 @@ export type ProductDocument = HydratedDocument<Product>;
 @Schema({ timestamps: true, collection: 'products' })
 export class Product {
   @Prop({ required: true, trim: true })
-  name: string;
+  name!: string;
 
   @Prop({ trim: true })
   description?: string;
 
   @Prop({ required: true, min: 0 })
-  price: number;
+  price!: number;
 
   @Prop({ min: 0 })
   salePrice?: number;
 
   @Prop({ default: false })
-  isOnSale: boolean;
+  isOnSale!: boolean;
 
   @Prop({ type: [String], default: [] })
-  images: string[];
+  images!: string[];
 
   @Prop({ default: 0, min: 0 })
-  stock: number;
+  stock!: number;
 
   @Prop({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
-  storeId: Types.ObjectId;
+  storeId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Category' })
   categoryId?: Types.ObjectId;

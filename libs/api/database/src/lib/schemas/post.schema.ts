@@ -6,19 +6,19 @@ export type PostDocument = HydratedDocument<Post>;
 @Schema({ timestamps: true, collection: 'posts' })
 export class Post {
   @Prop({ required: true, trim: true })
-  content: string;
+  content!: string;
 
   @Prop({ type: [String], default: [] })
-  images: string[];
+  images!: string[];
 
   @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
-  storeId: Types.ObjectId;
+  storeId!: Types.ObjectId;
 
   @Prop({ default: 0 })
-  likesCount: number;
+  likesCount!: number;
 
   @Prop({ default: 0 })
-  commentsCount: number;
+  commentsCount!: number;
 }
 
 export const PostSchema = SchemaFactory.createForClass(Post);

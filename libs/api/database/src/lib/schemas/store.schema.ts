@@ -6,10 +6,10 @@ export type StoreDocument = HydratedDocument<Store>;
 @Schema({ timestamps: true, collection: 'stores' })
 export class Store {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
-  subdomain: string;
+  subdomain!: string;
 
   @Prop({ required: true, trim: true })
-  name: string;
+  name!: string;
 
   @Prop({ trim: true })
   description?: string;
@@ -21,37 +21,37 @@ export class Store {
   coverImage?: string;
 
   @Prop({ default: 'indigo' }) // Brand color name (e.g., 'indigo', 'rose', 'blue')
-  brandColor: string;
+  brandColor!: string;
 
   @Prop({ default: '#6366f1' }) // Fallback hex color
-  accentColor: string;
+  accentColor!: string;
 
   @Prop({ default: false })
-  useInitialAsLogo: boolean; // Use colored initial instead of logo
+  useInitialAsLogo!: boolean; // Use colored initial instead of logo
 
   @Prop({ default: true })
-  useDefaultCover: boolean; // Use colored gradient as cover instead of image
+  useDefaultCover!: boolean; // Use colored gradient as cover instead of image
 
   @Prop({ trim: true })
   authorName?: string; // Display name for the store owner
 
   @Prop({ default: true })
-  showAuthorName: boolean; // Show author name on store homepage
+  showAuthorName!: boolean; // Show author name on store homepage
 
   @Prop({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @Prop({ default: false })
-  isVerified: boolean; // Store has been verified by admin
+  isVerified!: boolean; // Store has been verified by admin
 
   @Prop({ default: false })
-  isFeatured: boolean; // Featured on homepage
+  isFeatured!: boolean; // Featured on homepage
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
-  ownerId: Types.ObjectId;
+  ownerId!: Types.ObjectId;
 
   @Prop({ type: [String], default: [] })
-  categories: string[]; // Store categories
+  categories!: string[]; // Store categories
 
   @Prop({ type: Object })
   socialLinks?: {
