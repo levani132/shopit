@@ -87,7 +87,15 @@ export class AuthController {
       coverFile?: Express.Multer.File[];
     },
   ) {
-    // Debug: Log received files
+    // Debug: Log received DTO and files
+    console.log('📋 Received DTO (after transform):', {
+      useInitialAsLogo: dto.useInitialAsLogo,
+      useInitialAsLogoType: typeof dto.useInitialAsLogo,
+      showAuthorName: dto.showAuthorName,
+      showAuthorNameType: typeof dto.showAuthorName,
+      useDefaultCover: dto.useDefaultCover,
+      useDefaultCoverType: typeof dto.useDefaultCover,
+    });
     console.log('📁 Received files:', {
       logoFile: files?.logoFile?.[0]
         ? { name: files.logoFile[0].originalname, size: files.logoFile[0].size }

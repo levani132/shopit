@@ -460,6 +460,16 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
+    // Debug: Log received DTO values
+    console.log('📋 Registration DTO received:', {
+      useInitialAsLogo: dto.useInitialAsLogo,
+      useInitialAsLogoType: typeof dto.useInitialAsLogo,
+      showAuthorName: dto.showAuthorName,
+      showAuthorNameType: typeof dto.showAuthorName,
+      useDefaultCover: dto.useDefaultCover,
+      useDefaultCoverType: typeof dto.useDefaultCover,
+    });
+
     const subdomain = await this.findAvailableSubdomain(dto.storeName);
     const hashedPassword = await this.hashPassword(dto.password);
 

@@ -16,10 +16,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  * Contains store setup and basic auth info
  */
 // Helper to transform string "true"/"false" to boolean
-const toBooleanTransform = ({ value }: { value: unknown }) => {
-  if (value === 'true' || value === true) return true;
-  if (value === 'false' || value === false) return false;
-  return value;
+// This needs to handle the string values from FormData
+const toBooleanTransform = ({ value }: { value: unknown }): boolean => {
+  // Already a boolean
+  if (typeof value === 'boolean') return value;
+  // String "true" -> true, everything else (including "false") -> false
+  if (typeof value === 'string') {
+    return value.toLowerCase() === 'true';
+  }
+  // Default to false for undefined/null
+  return false;
 };
 
 export class InitialRegisterDto {
