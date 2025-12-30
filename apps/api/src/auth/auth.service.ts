@@ -101,7 +101,7 @@ export class AuthService {
    * Find available subdomain
    */
   private async findAvailableSubdomain(baseName: string): Promise<string> {
-    let subdomain = this.generateSubdomain(baseName);
+    const subdomain = this.generateSubdomain(baseName);
     let suffix = 0;
 
     while (true) {
@@ -156,9 +156,16 @@ export class AuthService {
     const jti = randomUUID();
     const sessionId = randomUUID();
 
-    const accessSecret = this.configService.get('JWT_ACCESS_SECRET') || this.configService.get('JWT_SECRET') || 'default-access-secret';
-    const refreshSecret = this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET') || 'default-refresh-secret';
-    const sessionSecret = this.configService.get('JWT_SESSION_SECRET') || accessSecret;
+    const accessSecret =
+      this.configService.get('JWT_ACCESS_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-access-secret';
+    const refreshSecret =
+      this.configService.get('JWT_REFRESH_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-refresh-secret';
+    const sessionSecret =
+      this.configService.get('JWT_SESSION_SECRET') || accessSecret;
 
     const [accessToken, refreshToken, sessionToken] = await Promise.all([
       // Access token - 1 hour
@@ -294,7 +301,11 @@ export class AuthService {
   async login(
     user: UserDocument,
     deviceInfo?: DeviceInfo,
-  ): Promise<{ user: UserDocument; store: StoreDocument | null; tokens: TokensDto }> {
+  ): Promise<{
+    user: UserDocument;
+    store: StoreDocument | null;
+    tokens: TokensDto;
+  }> {
     const tokens = await this.generateTokens(user, deviceInfo);
     const store = await this.storeModel.findOne({ ownerId: user._id });
 
@@ -309,8 +320,11 @@ export class AuthService {
     deviceInfo?: DeviceInfo,
   ): Promise<TokensDto> {
     try {
-      const refreshSecret = this.configService.get('JWT_REFRESH_SECRET') || this.configService.get('JWT_SECRET') || 'default-refresh-secret';
-      
+      const refreshSecret =
+        this.configService.get('JWT_REFRESH_SECRET') ||
+        this.configService.get('JWT_SECRET') ||
+        'default-refresh-secret';
+
       const payload = await this.jwtService.verifyAsync<TokenPayload>(
         refreshToken,
         {
@@ -626,7 +640,11 @@ export class AuthService {
   async signInWithGoogle(
     googleData: { email: string; name: string; id: string },
     deviceInfo?: DeviceInfo,
-  ): Promise<{ user: UserDocument; store: StoreDocument | null; tokens: TokensDto } | null> {
+  ): Promise<{
+    user: UserDocument;
+    store: StoreDocument | null;
+    tokens: TokensDto;
+  } | null> {
     const email = googleData.email.toLowerCase();
     const existUser = await this.userModel.findOne({ email });
 

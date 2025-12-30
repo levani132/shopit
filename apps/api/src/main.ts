@@ -14,10 +14,37 @@ async function bootstrap() {
   const globalPrefix = process.env['API_PREFIX'] || 'api/v1';
   app.setGlobalPrefix(globalPrefix);
 
-  // Enable CORS
+  // Enable CORS - support multiple origins
+  const corsOrigins = process.env['CORS_ORIGIN']
+    ? process.env['CORS_ORIGIN'].split(',').map((origin) => origin.trim())
+    : ['http://localhost:3000'];
+
   app.enableCors({
-    origin: process.env['CORS_ORIGIN'] || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or Postman)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Check if origin is in allowed list
+      if (corsOrigins.some((allowed) => origin === allowed || origin.endsWith(allowed.replace('https://', '.')))) {
+        return callback(null, true);
+      }
+
+      // For subdomains like *.shopit.ge
+      if (corsOrigins.some((allowed) => {
+        const domain = allowed.replace('https://', '').replace('http://', '');
+        return origin.endsWith(`.${domain}`) || origin.includes(domain);
+      })) {
+        return callback(null, true);
+      }
+
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   });
 
   // Global validation pipe
