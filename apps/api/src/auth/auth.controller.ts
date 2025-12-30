@@ -87,11 +87,25 @@ export class AuthController {
       coverFile?: Express.Multer.File[];
     },
   ) {
+    // Debug: Log received files
+    console.log('📁 Received files:', {
+      logoFile: files?.logoFile?.[0]
+        ? { name: files.logoFile[0].originalname, size: files.logoFile[0].size }
+        : 'none',
+      coverFile: files?.coverFile?.[0]
+        ? {
+            name: files.coverFile[0].originalname,
+            size: files.coverFile[0].size,
+          }
+        : 'none',
+    });
+
     // Upload logo to S3 if provided
     let logoUrl: string | undefined;
     const logoFile = files?.logoFile?.[0];
     if (logoFile) {
       try {
+        console.log('📤 Uploading logo...', logoFile.originalname);
         const uploadResult = await this.uploadService.uploadFile(logoFile, {
           folder: 'logos',
           maxSizeBytes: 2 * 1024 * 1024,
@@ -103,8 +117,9 @@ export class AuthController {
           ],
         });
         logoUrl = uploadResult.url;
+        console.log('✅ Logo uploaded:', logoUrl);
       } catch (error) {
-        console.error('Failed to upload logo:', error);
+        console.error('❌ Failed to upload logo:', error);
       }
     }
 
@@ -113,14 +128,16 @@ export class AuthController {
     const coverFile = files?.coverFile?.[0];
     if (coverFile) {
       try {
+        console.log('📤 Uploading cover...', coverFile.originalname);
         const uploadResult = await this.uploadService.uploadFile(coverFile, {
           folder: 'covers',
           maxSizeBytes: 10 * 1024 * 1024,
           allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
         });
         coverUrl = uploadResult.url;
+        console.log('✅ Cover uploaded:', coverUrl);
       } catch (error) {
-        console.error('Failed to upload cover:', error);
+        console.error('❌ Failed to upload cover:', error);
       }
     }
 

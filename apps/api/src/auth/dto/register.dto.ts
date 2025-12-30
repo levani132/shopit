@@ -15,6 +15,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
  * Step 1 & 2: Initial registration DTO
  * Contains store setup and basic auth info
  */
+// Helper to transform string "true"/"false" to boolean
+const toBooleanTransform = ({ value }: { value: unknown }) => {
+  if (value === 'true' || value === true) return true;
+  if (value === 'false' || value === false) return false;
+  return value;
+};
+
 export class InitialRegisterDto {
   // Store Information
   @ApiProperty({ example: 'My Awesome Store', description: 'Store name' })
@@ -30,6 +37,7 @@ export class InitialRegisterDto {
 
   @ApiPropertyOptional({ description: 'Use colored initial as logo' })
   @IsOptional()
+  @Transform(toBooleanTransform)
   @IsBoolean()
   useInitialAsLogo?: boolean;
 
@@ -55,11 +63,13 @@ export class InitialRegisterDto {
 
   @ApiPropertyOptional({ description: 'Show author name on homepage' })
   @IsOptional()
+  @Transform(toBooleanTransform)
   @IsBoolean()
   showAuthorName?: boolean;
 
   @ApiPropertyOptional({ description: 'Use default colored cover' })
   @IsOptional()
+  @Transform(toBooleanTransform)
   @IsBoolean()
   useDefaultCover?: boolean;
 
@@ -151,6 +161,7 @@ export class GoogleRegisterDto {
 
   @ApiPropertyOptional({ description: 'Use colored initial as logo' })
   @IsOptional()
+  @Transform(toBooleanTransform)
   @IsBoolean()
   useInitialAsLogo?: boolean;
 
@@ -168,11 +179,13 @@ export class GoogleRegisterDto {
 
   @ApiPropertyOptional({ description: 'Show author name on homepage' })
   @IsOptional()
+  @Transform(toBooleanTransform)
   @IsBoolean()
   showAuthorName?: boolean;
 
   @ApiPropertyOptional({ description: 'Use default colored cover' })
   @IsOptional()
+  @Transform(toBooleanTransform)
   @IsBoolean()
   useDefaultCover?: boolean;
 }
