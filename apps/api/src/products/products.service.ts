@@ -443,8 +443,9 @@ export class ProductsService {
           salePrice: v.salePrice,
           stock: v.stock ?? 0,
           images: variantImages,
-        isActive: v.isActive ?? true,
-      }));
+          isActive: v.isActive ?? true,
+        };
+      });
       // Recompute total stock
       product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
     } else if (dto.hasVariants === false) {
