@@ -147,6 +147,9 @@ export class AttributesService {
       }
     }
 
+    // Get the type to use for validation (new type if provided, otherwise existing)
+    const effectiveType = dto.type ?? attribute.type;
+
     // Don't allow changing type if values exist
     if (dto.type && dto.type !== attribute.type && attribute.values.length > 0) {
       throw new BadRequestException(
@@ -154,7 +157,34 @@ export class AttributesService {
       );
     }
 
-    Object.assign(attribute, dto);
+    // Handle values update if provided
+    if (dto.values !== undefined) {
+      // Process values - generate _id for new values, keep existing _ids
+      const processedValues = dto.values.map((v, index) => {
+        // Validate color hex for color type
+        if (effectiveType === 'color' && !v.colorHex) {
+          throw new BadRequestException(
+            `Color hex is required for color-type attributes. Missing for value: ${v.value}`,
+          );
+        }
+
+        return {
+          _id: v._id ? new Types.ObjectId(v._id) : new Types.ObjectId(),
+          value: v.value,
+          valueLocalized: v.valueLocalized,
+          slug: v.slug || this.generateSlug(v.value),
+          colorHex: effectiveType === 'color' ? v.colorHex : undefined,
+          order: v.order ?? index,
+        };
+      });
+
+      attribute.values = processedValues;
+    }
+
+    // Update other fields (excluding values which we handled above)
+    const { values: _, ...otherFields } = dto;
+    Object.assign(attribute, otherFields);
+
     await attribute.save();
 
     return attribute.toObject();

@@ -120,6 +120,12 @@ export class UpdateAttributeDto {
   isActive?: boolean;
 
   @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AttributeValueDto)
+  values?: AttributeValueDto[];
+
+  @IsOptional()
   @IsNumber()
   @Min(0)
   order?: number;
