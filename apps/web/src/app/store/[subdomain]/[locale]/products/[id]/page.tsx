@@ -113,22 +113,32 @@ export default function ProductDetailPage() {
         );
         if (!productRes.ok) throw new Error('Product not found');
         const productData = await productRes.json();
+        console.log('Product data:', {
+          hasVariants: productData.hasVariants,
+          productAttributes: productData.productAttributes,
+          variants: productData.variants?.length,
+        });
         setProduct(productData);
 
         // If product has variants, fetch attributes
         if (productData.hasVariants && productData.productAttributes?.length > 0) {
           const attrIds = productData.productAttributes.map(
-            (pa: ProductAttribute) => pa.attributeId,
+            (pa: ProductAttribute) => String(pa.attributeId),
           );
+          console.log('Product has variants, fetching attributes. attrIds:', attrIds);
+          
           const attrsRes = await fetch(
             `${API_URL}/api/v1/attributes/store/${store._id}`,
           );
           if (attrsRes.ok) {
             const allAttrs = await attrsRes.json();
-            // Filter to only attributes used by this product
+            console.log('All store attributes:', allAttrs);
+            
+            // Filter to only attributes used by this product (compare as strings)
             const productAttrs = allAttrs.filter((attr: Attribute) =>
-              attrIds.includes(attr._id),
+              attrIds.includes(String(attr._id)),
             );
+            console.log('Filtered product attributes:', productAttrs);
             setAttributes(productAttrs);
 
             // Pre-select first variant's values if available
