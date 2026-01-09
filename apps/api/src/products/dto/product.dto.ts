@@ -11,7 +11,7 @@ import {
   IsArray,
   ValidateNested,
 } from 'class-validator';
-import { Type, Transform } from 'class-transformer';
+import { Type, Transform, plainToInstance } from 'class-transformer';
 
 // Interface for bilingual text (not a DTO class to avoid nested validation issues with FormData)
 interface BilingualText {
@@ -29,6 +29,28 @@ const parseJsonTransform = ({ value }: { value: unknown }) => {
     }
   }
   return value;
+};
+
+// Helper to parse JSON and transform to class instances
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const parseJsonAndTransform = <T>(cls: new () => T) => {
+  return ({ value }: { value: unknown }): T[] | undefined => {
+    if (value === undefined || value === null) return undefined;
+
+    let parsed = value;
+    if (typeof value === 'string') {
+      try {
+        parsed = JSON.parse(value);
+      } catch {
+        return undefined;
+      }
+    }
+
+    if (!Array.isArray(parsed)) return undefined;
+
+    // Transform plain objects to class instances
+    return plainToInstance(cls, parsed);
+  };
 };
 
 export enum SortBy {
@@ -281,14 +303,14 @@ export class CreateProductDto {
   hasVariants?: boolean;
 
   @IsOptional()
-  @Transform(parseJsonTransform)
+  @Transform(parseJsonAndTransform(ProductAttributeDto))
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductAttributeDto)
   productAttributes?: ProductAttributeDto[];
 
   @IsOptional()
-  @Transform(parseJsonTransform)
+  @Transform(parseJsonAndTransform(ProductVariantDto))
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
@@ -363,14 +385,14 @@ export class UpdateProductDto {
   hasVariants?: boolean;
 
   @IsOptional()
-  @Transform(parseJsonTransform)
+  @Transform(parseJsonAndTransform(ProductAttributeDto))
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductAttributeDto)
   productAttributes?: ProductAttributeDto[];
 
   @IsOptional()
-  @Transform(parseJsonTransform)
+  @Transform(parseJsonAndTransform(ProductVariantDto))
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
