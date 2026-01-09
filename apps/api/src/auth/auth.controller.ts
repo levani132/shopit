@@ -12,6 +12,7 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -401,7 +402,7 @@ export class AuthController {
     // Get refresh token from cookie
     const refreshToken = req.cookies?.[cookieConfig.refresh.name];
     if (!refreshToken) {
-      return res.status(401).json({ message: 'No refresh token' });
+      throw new UnauthorizedException('No refresh token');
     }
 
     const deviceInfo = {
