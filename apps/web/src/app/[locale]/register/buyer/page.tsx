@@ -2,49 +2,26 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useTranslations, useLocale } from 'next-intl';
 import { ShopItLogo } from '../../../../components/ui/ShopItLogo';
 import { getStoreBySubdomain } from '../../../../lib/api';
 import Link from 'next/link';
 
-// Accent color CSS variables mapping
-const ACCENT_COLORS: Record<string, Record<string, string>> = {
-  rose: {
-    '--store-accent-500': '#f43f5e',
-    '--store-accent-600': '#e11d48',
-    '--store-accent-700': '#be123c',
-  },
-  blue: {
-    '--store-accent-500': '#3b82f6',
-    '--store-accent-600': '#2563eb',
-    '--store-accent-700': '#1d4ed8',
-  },
-  green: {
-    '--store-accent-500': '#22c55e',
-    '--store-accent-600': '#16a34a',
-    '--store-accent-700': '#15803d',
-  },
-  purple: {
-    '--store-accent-500': '#a855f7',
-    '--store-accent-600': '#9333ea',
-    '--store-accent-700': '#7e22ce',
-  },
-  orange: {
-    '--store-accent-500': '#f97316',
-    '--store-accent-600': '#ea580c',
-    '--store-accent-700': '#c2410c',
-  },
-  indigo: {
-    '--store-accent-500': '#6366f1',
-    '--store-accent-600': '#4f46e5',
-    '--store-accent-700': '#4338ca',
-  },
-  black: {
-    '--store-accent-500': '#71717a',
-    '--store-accent-600': '#52525b',
-    '--store-accent-700': '#3f3f46',
-  },
+// Accent color hex values mapping
+const ACCENT_COLORS: Record<
+  string,
+  { 500: string; 600: string; 700: string }
+> = {
+  rose: { 500: '#f43f5e', 600: '#e11d48', 700: '#be123c' },
+  blue: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+  green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
+  purple: { 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce' },
+  orange: { 500: '#f97316', 600: '#ea580c', 700: '#c2410c' },
+  indigo: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+  black: { 500: '#71717a', 600: '#52525b', 700: '#3f3f46' },
 };
+
+// Default accent colors
+const DEFAULT_ACCENT = { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' };
 
 interface StoreInfo {
   name: string;
@@ -69,8 +46,6 @@ function getSubdomainFromHostname(): string | null {
 }
 
 export default function BuyerRegisterPage() {
-  const t = useTranslations();
-  const locale = useLocale();
   const router = useRouter();
 
   const [firstName, setFirstName] = useState('');
@@ -102,10 +77,10 @@ export default function BuyerRegisterPage() {
     }
   }, []);
 
-  // Get accent colors for store or default
-  const accentColors = storeInfo
-    ? ACCENT_COLORS[storeInfo.brandColor] || ACCENT_COLORS.indigo
-    : null;
+  // Get accent colors
+  const colors = storeInfo
+    ? ACCENT_COLORS[storeInfo.brandColor] || DEFAULT_ACCENT
+    : DEFAULT_ACCENT;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,7 +100,8 @@ export default function BuyerRegisterPage() {
     setIsSubmitting(true);
 
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const apiUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
       const response = await fetch(`${apiUrl}/api/v1/auth/register/buyer`, {
@@ -162,12 +138,14 @@ export default function BuyerRegisterPage() {
     window.location.href = `${apiUrl}/api/v1/auth/google?role=user`;
   };
 
-  // CSS variable style for store colors
-  const storeColorStyle = accentColors
-    ? (accentColors as React.CSSProperties)
+  // CSS variables for store colors
+  const storeColorStyle = storeInfo
+    ? ({
+        '--store-accent-500': colors[500],
+        '--store-accent-600': colors[600],
+        '--store-accent-700': colors[700],
+      } as React.CSSProperties)
     : undefined;
-
-  const accentVar = isOnStore ? '--store-accent' : '--accent';
 
   return (
     <div
@@ -218,7 +196,10 @@ export default function BuyerRegisterPage() {
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(${accentVar}-500)] focus:border-transparent`}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
+                  style={
+                    { '--tw-ring-color': colors[500] } as React.CSSProperties
+                  }
                   placeholder="John"
                   required
                 />
@@ -235,7 +216,10 @@ export default function BuyerRegisterPage() {
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className={`w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(${accentVar}-500)] focus:border-transparent`}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
+                  style={
+                    { '--tw-ring-color': colors[500] } as React.CSSProperties
+                  }
                   placeholder="Doe"
                   required
                 />
@@ -254,7 +238,10 @@ export default function BuyerRegisterPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(${accentVar}-500)] focus:border-transparent`}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
+                style={
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
+                }
                 placeholder="you@example.com"
                 required
               />
@@ -272,7 +259,10 @@ export default function BuyerRegisterPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(${accentVar}-500)] focus:border-transparent`}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
+                style={
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
+                }
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -291,7 +281,10 @@ export default function BuyerRegisterPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(${accentVar}-500)] focus:border-transparent`}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
+                style={
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
+                }
                 placeholder="••••••••"
                 required
               />
@@ -300,7 +293,14 @@ export default function BuyerRegisterPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-3 px-4 bg-[var(${accentVar}-600)] hover:bg-[var(${accentVar}-700)] text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              className="w-full py-3 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: colors[600] }}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = colors[700])
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = colors[600])
+              }
             >
               {isSubmitting ? 'Creating account...' : 'Create Account'}
             </button>
@@ -351,7 +351,8 @@ export default function BuyerRegisterPage() {
             Already have an account?{' '}
             <Link
               href="/login"
-              className={`text-[var(${accentVar}-600)] hover:text-[var(${accentVar}-700)] font-medium`}
+              className="font-medium hover:underline"
+              style={{ color: colors[600] }}
             >
               Sign in
             </Link>
@@ -370,4 +371,3 @@ export default function BuyerRegisterPage() {
     </div>
   );
 }
-
