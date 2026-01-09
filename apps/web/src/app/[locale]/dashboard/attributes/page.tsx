@@ -359,10 +359,18 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
         },
         type: formData.type,
         requiresImage: formData.requiresImage,
-        values: values.map((v, idx) => ({
-          ...v,
-          order: idx,
-        })),
+        values: values.map((v, idx) => {
+          // Don't send _id for new values (those with temp- prefix)
+          const isNewValue = v._id.startsWith('temp-');
+          return {
+            ...(isNewValue ? {} : { _id: v._id }),
+            value: v.value,
+            valueLocalized: v.valueLocalized,
+            slug: v.slug,
+            colorHex: v.colorHex,
+            order: idx,
+          };
+        }),
       };
 
       const url = attribute
