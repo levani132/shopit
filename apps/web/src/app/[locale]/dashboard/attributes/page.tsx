@@ -34,16 +34,21 @@ export default function AttributesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(null);
+  const [editingAttribute, setEditingAttribute] = useState<Attribute | null>(
+    null,
+  );
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Fetch attributes
   const fetchAttributes = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_URL}/api/v1/attributes/my-store?includeInactive=true`, {
-        credentials: 'include',
-      });
+      const res = await fetch(
+        `${API_URL}/api/v1/attributes/my-store?includeInactive=true`,
+        {
+          credentials: 'include',
+        },
+      );
 
       if (!res.ok) {
         throw new Error('Failed to fetch attributes');
@@ -53,7 +58,9 @@ export default function AttributesPage() {
       setAttributes(data);
     } catch (err) {
       console.error('Error fetching attributes:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load attributes');
+      setError(
+        err instanceof Error ? err.message : 'Failed to load attributes',
+      );
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +86,9 @@ export default function AttributesPage() {
       setDeleteConfirm(null);
     } catch (err) {
       console.error('Error deleting attribute:', err);
-      setError(err instanceof Error ? err.message : 'Failed to delete attribute');
+      setError(
+        err instanceof Error ? err.message : 'Failed to delete attribute',
+      );
     }
   };
 
@@ -104,7 +113,10 @@ export default function AttributesPage() {
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 shadow-sm">
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-gray-200 dark:bg-zinc-800 rounded" />
+                <div
+                  key={i}
+                  className="h-16 bg-gray-200 dark:bg-zinc-800 rounded"
+                />
               ))}
             </div>
           </div>
@@ -139,8 +151,18 @@ export default function AttributesPage() {
           onClick={handleCreate}
           className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center gap-2"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
           {t('addAttribute')}
         </button>
@@ -175,8 +197,18 @@ export default function AttributesPage() {
               onClick={handleCreate}
               className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               {t('addFirstAttribute')}
             </button>
@@ -203,12 +235,24 @@ export default function AttributesPage() {
                           : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
                       }`}
                     >
-                      {attribute.type === 'color' ? t('colorType') : t('textType')}
+                      {attribute.type === 'color'
+                        ? t('colorType')
+                        : t('textType')}
                     </span>
                     {attribute.requiresImage && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
                         </svg>
                         {t('requiresImage')}
                       </span>
@@ -257,16 +301,36 @@ export default function AttributesPage() {
                     onClick={() => handleEdit(attribute)}
                     className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                   </button>
                   <button
                     onClick={() => setDeleteConfirm(attribute._id)}
                     className="p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -335,15 +399,21 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
     name: attribute?.name || '',
     nameKa: attribute?.nameLocalized?.ka || '',
     nameEn: attribute?.nameLocalized?.en || attribute?.name || '',
-    type: attribute?.type || 'text' as 'text' | 'color',
+    type: attribute?.type || ('text' as 'text' | 'color'),
     requiresImage: attribute?.requiresImage || false,
   });
-  const [values, setValues] = useState<AttributeValue[]>(attribute?.values || []);
+  const [values, setValues] = useState<AttributeValue[]>(
+    attribute?.values || [],
+  );
   const [newValue, setNewValue] = useState({ value: '', colorHex: '#000000' });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL_MODAL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+  const API_URL_MODAL = (
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  )
+    .replace(/\/api\/v1\/?$/, '')
+    .replace(/\/$/, '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -448,7 +518,9 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
               <input
                 type="text"
                 value={formData.nameKa}
-                onChange={(e) => setFormData({ ...formData, nameKa: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nameKa: e.target.value })
+                }
                 placeholder="მაგ: ზომა, ფერი"
                 className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
               />
@@ -460,7 +532,9 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
               <input
                 type="text"
                 value={formData.nameEn}
-                onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nameEn: e.target.value })
+                }
                 placeholder="e.g., Size, Color"
                 required
                 className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
@@ -484,7 +558,9 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                   className="w-4 h-4"
                   style={{ accentColor: 'var(--accent-500)' }}
                 />
-                <span className="text-gray-700 dark:text-gray-300">{t('textType')}</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  {t('textType')}
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -496,7 +572,9 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                   className="w-4 h-4"
                   style={{ accentColor: 'var(--accent-500)' }}
                 />
-                <span className="text-gray-700 dark:text-gray-300">{t('colorType')}</span>
+                <span className="text-gray-700 dark:text-gray-300">
+                  {t('colorType')}
+                </span>
               </label>
             </div>
           </div>
@@ -507,7 +585,9 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
               <input
                 type="checkbox"
                 checked={formData.requiresImage}
-                onChange={(e) => setFormData({ ...formData, requiresImage: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, requiresImage: e.target.checked })
+                }
                 className="w-5 h-5 mt-0.5 rounded border-gray-300 dark:border-zinc-600"
                 style={{ accentColor: 'var(--accent-500)' }}
               />
@@ -549,8 +629,18 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                     onClick={() => removeValue(value._id)}
                     className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -563,14 +653,18 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                 <input
                   type="color"
                   value={newValue.colorHex}
-                  onChange={(e) => setNewValue({ ...newValue, colorHex: e.target.value })}
+                  onChange={(e) =>
+                    setNewValue({ ...newValue, colorHex: e.target.value })
+                  }
                   className="w-12 h-10 p-1 rounded border border-gray-300 dark:border-zinc-600 cursor-pointer"
                 />
               )}
               <input
                 type="text"
                 value={newValue.value}
-                onChange={(e) => setNewValue({ ...newValue, value: e.target.value })}
+                onChange={(e) =>
+                  setNewValue({ ...newValue, value: e.target.value })
+                }
                 placeholder={t('valueName')}
                 className="flex-1 px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                 onKeyDown={(e) => {
@@ -606,9 +700,24 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
             >
               {isSaving ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                    />
                   </svg>
                   {t('saving')}
                 </>
@@ -622,4 +731,3 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
     </div>
   );
 }
-
