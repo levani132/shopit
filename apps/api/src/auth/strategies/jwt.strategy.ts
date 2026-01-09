@@ -3,8 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { User, UserDocument } from '@sellit/api-database';
+import { Model, Types } from 'mongoose';
+import { User, UserDocument, Store, StoreDocument } from '@sellit/api-database';
 import { Request } from 'express';
 
 export interface JwtPayload {
@@ -31,6 +31,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     configService: ConfigService,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Store.name) private storeModel: Model<StoreDocument>,
   ) {
     super({
       // Try cookie first, then fall back to bearer token
@@ -46,7 +47,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<UserDocument> {
+  async validate(payload: JwtPayload): Promise<UserDocument & { storeId?: string }> {
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token');
     }
@@ -57,6 +58,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    // If user is a seller, also find their store
+    let storeId: string | undefined;
+    if (user.role === 'seller' || user.role === 'admin') {
+      const store = await this.storeModel.findOne({
+        ownerId: new Types.ObjectId(payload.sub),
+      });
+      if (store) {
+        storeId = store._id.toString();
+      }
+    }
+
+    // Extend the user object with storeId
+    const userWithStore = user.toObject() as UserDocument & { storeId?: string };
+    userWithStore.storeId = storeId;
+
+    return userWithStore;
   }
 }

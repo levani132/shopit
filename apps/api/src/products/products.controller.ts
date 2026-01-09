@@ -1,0 +1,164 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  Request,
+} from '@nestjs/common';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { ProductsService } from './products.service';
+import {
+  ListProductsDto,
+  CreateProductDto,
+  UpdateProductDto,
+} from './dto/product.dto';
+import { UploadService } from '../upload/upload.service';
+import 'multer';
+
+@Controller('products')
+export class ProductsController {
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly uploadService: UploadService,
+  ) {}
+
+  /**
+   * List products for a store (public) with filtering and sorting
+   */
+  @Get('store/:storeId')
+  async listByStore(
+    @Param('storeId') storeId: string,
+    @Query() query: ListProductsDto,
+  ) {
+    return this.productsService.listProducts(storeId, query);
+  }
+
+  /**
+   * Get homepage products for a store (public)
+   * Returns up to 6 products based on store's configured order
+   */
+  @Get('store/:storeId/homepage')
+  async getHomepageProducts(
+    @Param('storeId') storeId: string,
+    @Query('order') order?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.productsService.getHomepageProducts(
+      storeId,
+      order || 'popular',
+      limit ? parseInt(limit, 10) : 6,
+    );
+  }
+
+  /**
+   * Get all products for current user's store (dashboard)
+   */
+  @Get('my-store')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async getMyProducts(@Request() req: { user: { storeId: string } }) {
+    return this.productsService.findByStore(req.user.storeId);
+  }
+
+  /**
+   * Get a single product (public)
+   */
+  @Get(':id')
+  async getOne(@Param('id') id: string) {
+    return this.productsService.findById(id);
+  }
+
+  /**
+   * Increment view count for a product (public)
+   */
+  @Post(':id/view')
+  async incrementView(@Param('id') id: string) {
+    return this.productsService.incrementViewCount(id);
+  }
+
+  /**
+   * Create a new product
+   */
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'images', maxCount: 10 }]),
+  )
+  async create(
+    @Body() dto: CreateProductDto,
+    @UploadedFiles() files: { images?: Express.Multer.File[] },
+    @Request() req: { user: { storeId: string } },
+  ) {
+    let imageUrls: string[] = [];
+
+    if (files?.images && files.images.length > 0) {
+      const uploadPromises = files.images.map((file) =>
+        this.uploadService.uploadFile(file, {
+          folder: 'products',
+          maxSizeBytes: 5 * 1024 * 1024,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        }),
+      );
+      const results = await Promise.all(uploadPromises);
+      imageUrls = results.map((r) => r.url);
+    }
+
+    return this.productsService.create(req.user.storeId, dto, imageUrls);
+  }
+
+  /**
+   * Update a product
+   */
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'images', maxCount: 10 }]),
+  )
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductDto,
+    @UploadedFiles() files: { images?: Express.Multer.File[] },
+    @Request() req: { user: { storeId: string } },
+  ) {
+    let imageUrls: string[] | undefined;
+
+    if (files?.images && files.images.length > 0) {
+      const uploadPromises = files.images.map((file) =>
+        this.uploadService.uploadFile(file, {
+          folder: 'products',
+          maxSizeBytes: 5 * 1024 * 1024,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        }),
+      );
+      const results = await Promise.all(uploadPromises);
+      imageUrls = results.map((r) => r.url);
+    }
+
+    return this.productsService.update(id, req.user.storeId, dto, imageUrls);
+  }
+
+  /**
+   * Delete a product
+   */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async delete(
+    @Param('id') id: string,
+    @Request() req: { user: { storeId: string } },
+  ) {
+    return this.productsService.delete(id, req.user.storeId);
+  }
+}

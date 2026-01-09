@@ -10,11 +10,18 @@ export interface ApiError {
   error?: string;
 }
 
+export interface LocalizedText {
+  ka?: string;
+  en?: string;
+}
+
 export interface StoreData {
   id: string;
   subdomain: string;
   name: string;
+  nameLocalized?: LocalizedText;
   description?: string;
+  descriptionLocalized?: LocalizedText;
   logo?: string;
   coverImage?: string;
   useDefaultCover: boolean;
@@ -22,6 +29,7 @@ export interface StoreData {
   accentColor: string;
   useInitialAsLogo: boolean;
   authorName?: string;
+  authorNameLocalized?: LocalizedText;
   showAuthorName: boolean;
   categories: string[];
   socialLinks?: {
@@ -33,6 +41,7 @@ export interface StoreData {
   phone?: string;
   address?: string;
   isVerified: boolean;
+  homepageProductOrder?: string;
 }
 
 export interface ProductData {
@@ -44,6 +53,24 @@ export interface ProductData {
   images: string[];
   category?: string;
   inStock: boolean;
+}
+
+export interface SubcategoryData {
+  _id: string;
+  name: string;
+  nameLocalized?: LocalizedText;
+  slug: string;
+  order: number;
+}
+
+export interface CategoryData {
+  _id: string;
+  name: string;
+  nameLocalized?: LocalizedText;
+  slug: string;
+  order: number;
+  storeId: string;
+  subcategories: SubcategoryData[];
 }
 
 export interface StoreWithProducts {
@@ -123,6 +150,78 @@ export async function checkSubdomainAvailability(
   } catch (error) {
     console.error('Error checking subdomain:', error);
     return { available: false, reason: 'error' };
+  }
+}
+
+/**
+ * Fetch categories for a store by storeId
+ */
+export async function getCategoriesByStoreId(
+  storeId: string,
+): Promise<CategoryData[]> {
+  try {
+    const response = await fetch(`${apiUrl}/categories/store/${storeId}`, {
+      next: { revalidate: 60 }, // Cache for 60 seconds
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return [];
+      }
+      throw new Error(`Failed to fetch categories: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+}
+
+export interface HomepageProduct {
+  _id: string;
+  name: string;
+  nameLocalized?: LocalizedText;
+  description?: string;
+  descriptionLocalized?: LocalizedText;
+  price: number;
+  salePrice?: number;
+  isOnSale: boolean;
+  images: string[];
+  stock: number;
+  categoryId?: { name: string; nameLocalized?: LocalizedText };
+}
+
+export interface HomepageProductsResponse {
+  products: HomepageProduct[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
+/**
+ * Fetch homepage products for a store
+ */
+export async function getHomepageProducts(
+  storeId: string,
+  order: string = 'popular',
+  limit: number = 6,
+): Promise<HomepageProductsResponse> {
+  try {
+    const response = await fetch(
+      `${apiUrl}/products/store/${storeId}/homepage?order=${order}&limit=${limit}`,
+      {
+        next: { revalidate: 30 }, // Cache for 30 seconds for slight dynamism
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch homepage products: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching homepage products:', error);
+    return { products: [], totalCount: 0, hasMore: false };
   }
 }
 

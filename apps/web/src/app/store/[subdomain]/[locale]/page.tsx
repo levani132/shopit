@@ -1,16 +1,28 @@
 import { notFound } from 'next/navigation';
 import {
-  getStoreWithProducts,
+  getStoreBySubdomain,
+  getHomepageProducts,
   StoreData,
-  ProductData,
+  HomepageProduct,
 } from '../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-stores';
 import { StoreHero } from '../../../../components/store/StoreHero';
-import { StoreCategories } from '../../../../components/store/StoreCategories';
-import { StoreProducts } from '../../../../components/store/StoreProducts';
+import { HomepageProducts } from '../../../../components/store/HomepageProducts';
 
 interface StorePageProps {
   params: Promise<{ subdomain: string; locale: string }>;
+}
+
+// Helper to get localized content
+function getLocalizedText(
+  localized: { ka?: string; en?: string } | undefined,
+  fallback: string | undefined,
+  locale: string
+): string {
+  if (localized) {
+    return (locale === 'ka' ? localized.ka : localized.en) || fallback || '';
+  }
+  return fallback || '';
 }
 
 // Type for the store hero component
@@ -25,27 +37,16 @@ interface StoreForHero {
   accentColor: string;
 }
 
-// Type for products component
-interface ProductForDisplay {
-  id: string;
-  name: string;
-  category?: string;
-  price: number;
-  images?: string[];
-}
-
 async function getStoreData(subdomain: string): Promise<{
   store: StoreData | null;
-  products: ProductData[];
   isMock: boolean;
 }> {
   // Try to fetch from API first
-  const apiData = await getStoreWithProducts(subdomain);
+  const apiStore = await getStoreBySubdomain(subdomain);
 
-  if (apiData) {
+  if (apiStore) {
     return {
-      store: apiData.store,
-      products: apiData.products,
+      store: apiStore,
       isMock: false,
     };
   }
@@ -70,63 +71,67 @@ async function getStoreData(subdomain: string): Promise<{
         showAuthorName: true,
         categories: mockStore.categories,
         isVerified: false,
+        homepageProductOrder: 'popular',
       },
-      products: mockStore.products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: '',
-        price: p.price,
-        images: p.image ? [p.image] : [],
-        category: p.category,
-        inStock: true,
-      })),
       isMock: true,
     };
   }
 
-  return { store: null, products: [], isMock: false };
+  return { store: null, isMock: false };
 }
 
 export default async function StorePage({ params }: StorePageProps) {
-  const { subdomain } = await params;
+  const { subdomain, locale } = await params;
 
-  const { store, products } = await getStoreData(subdomain);
+  const { store, isMock } = await getStoreData(subdomain);
 
   if (!store) {
     notFound();
   }
 
+  // Fetch homepage products
+  let homepageProducts: HomepageProduct[] = [];
+  let hasMoreProducts = false;
+
+  if (!isMock && store.id) {
+    const productOrder = store.homepageProductOrder || 'popular';
+    const result = await getHomepageProducts(store.id, productOrder, 6);
+    homepageProducts = result.products;
+    hasMoreProducts = result.hasMore;
+  }
+
+  // Get localized content based on locale
+  const localizedName = getLocalizedText(store.nameLocalized, store.name, locale);
+  const localizedDescription = getLocalizedText(store.descriptionLocalized, store.description, locale);
+  const localizedAuthorName = getLocalizedText(store.authorNameLocalized, store.authorName, locale);
+
   // Transform store data for components
   const storeForHero: StoreForHero = {
-    name: store.name,
-    description: store.description,
+    name: localizedName,
+    description: localizedDescription,
     logo: store.logo,
     coverImage: store.coverImage,
     useDefaultCover: store.useDefaultCover,
-    authorName: store.authorName,
+    authorName: localizedAuthorName,
     showAuthorName: store.showAuthorName,
     accentColor: store.accentColor,
   };
 
-  const productsForDisplay: ProductForDisplay[] = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    category: p.category,
-    price: p.price,
-    images: p.images,
-  }));
-
   return (
     <>
       <StoreHero store={storeForHero} />
-      <StoreCategories categories={store.categories} />
-      <StoreProducts products={productsForDisplay} />
+      <HomepageProducts 
+        products={homepageProducts} 
+        hasMore={hasMoreProducts}
+        locale={locale}
+        subdomain={subdomain}
+      />
     </>
   );
 }
 
 export async function generateMetadata({ params }: StorePageProps) {
-  const { subdomain } = await params;
+  const { subdomain, locale } = await params;
   const { store } = await getStoreData(subdomain);
 
   if (!store) {
@@ -135,9 +140,12 @@ export async function generateMetadata({ params }: StorePageProps) {
     };
   }
 
+  const name = getLocalizedText(store.nameLocalized, store.name, locale);
+  const description = getLocalizedText(store.descriptionLocalized, store.description, locale);
+
   return {
-    title: store.name,
-    description: store.description,
+    title: name,
+    description: description,
   };
 }
 

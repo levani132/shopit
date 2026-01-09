@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument, AuthProvider, Role } from '@sellit/api-database';
 import { Store, StoreDocument } from '@sellit/api-database';
 import * as bcrypt from 'bcrypt';
@@ -511,6 +511,67 @@ export class AuthService {
   }
 
   /**
+   * Create a store for an existing authenticated user
+   * This upgrades a buyer (USER role) to a seller (SELLER role)
+   */
+  async createStoreForUser(
+    userId: string,
+    dto: {
+      storeName: string;
+      brandColor: string;
+      description: string;
+      authorName: string;
+      useInitialAsLogo?: boolean;
+      showAuthorName?: boolean;
+      useDefaultCover?: boolean;
+    },
+    logoUrl?: string,
+    coverUrl?: string,
+  ): Promise<{
+    user: UserDocument;
+    store: StoreDocument;
+  }> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if user already has a store
+    const existingStore = await this.storeModel.findOne({ ownerId: userId });
+    if (existingStore) {
+      throw new ConflictException('User already has a store');
+    }
+
+    const subdomain = await this.findAvailableSubdomain(dto.storeName);
+
+    const store = new this.storeModel({
+      subdomain,
+      name: dto.storeName,
+      description: dto.description,
+      brandColor: dto.brandColor,
+      accentColor: this.brandColorToHex(dto.brandColor),
+      useInitialAsLogo: dto.useInitialAsLogo ?? false,
+      logo: logoUrl,
+      coverImage: coverUrl,
+      useDefaultCover: dto.useDefaultCover ?? true,
+      authorName: dto.authorName,
+      showAuthorName: dto.showAuthorName ?? true,
+      ownerId: user._id,
+    });
+
+    await store.save();
+
+    // Upgrade user role to SELLER if they were a regular USER
+    if (user.role === Role.USER) {
+      user.role = Role.SELLER;
+      user.isProfileComplete = false; // They need to complete seller profile
+      await user.save();
+    }
+
+    return { user, store };
+  }
+
+  /**
    * Register a buyer (simple user registration)
    */
   async registerBuyer(
@@ -599,7 +660,7 @@ export class AuthService {
    * Get store by owner ID
    */
   async getStoreByOwnerId(ownerId: string): Promise<StoreDocument | null> {
-    return this.storeModel.findOne({ ownerId });
+    return this.storeModel.findOne({ ownerId: new Types.ObjectId(ownerId) });
   }
 
   /**

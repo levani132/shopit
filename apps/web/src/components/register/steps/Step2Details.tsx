@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const BRAND_COLORS: Record<string, string> = {
   indigo: '#6366f1',
@@ -16,6 +17,7 @@ const BRAND_COLORS: Record<string, string> = {
 
 export function Step2Details() {
   const t = useTranslations('register');
+  const { user, isAuthenticated } = useAuth();
   const {
     data,
     updateData,
@@ -31,8 +33,20 @@ export function Step2Details() {
   const [animating, setAnimating] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const hasAutoFilledAuthor = useRef(false);
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
+
+  // Auto-populate author name from logged-in user
+  useEffect(() => {
+    if (isAuthenticated && user && !hasAutoFilledAuthor.current && !data.authorName) {
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      if (fullName) {
+        updateData({ authorName: fullName });
+        hasAutoFilledAuthor.current = true;
+      }
+    }
+  }, [isAuthenticated, user, data.authorName, updateData]);
 
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

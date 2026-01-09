@@ -1,5 +1,8 @@
+'use client';
+
 import { useTranslations } from 'next-intl';
-import { Link } from '../../i18n/routing';
+import { CtaButton } from '../ui/CtaButton';
+import { getLatinInitial } from '../../lib/utils';
 
 // Placeholder stores - will be empty/mocked for now
 const placeholderStores = [
@@ -31,7 +34,6 @@ const placeholderStores = [
 
 export function FeaturedStores() {
   const t = useTranslations('featuredStores');
-  const tCommon = useTranslations('common');
 
   // For now, we'll show placeholder stores
   // In production, this will fetch from API
@@ -80,25 +82,7 @@ export function FeaturedStores() {
 
         {/* CTA */}
         <div className="text-center mt-12">
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-          >
-            {tCommon('startForFree')}
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </Link>
+          <CtaButton />
         </div>
       </div>
     </section>
@@ -129,7 +113,7 @@ function StoreCard({ store }: { store: Store }) {
           className="absolute -bottom-6 left-6 w-16 h-16 rounded-xl bg-white dark:bg-zinc-800 shadow-lg flex items-center justify-center text-2xl font-bold"
           style={{ color: store.accentColor }}
         >
-          {store.name.charAt(0)}
+          {getLatinInitial(store.name)}
         </div>
       </div>
 

@@ -1,5 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+import { getLatinInitial } from '../../lib/utils';
+
 interface StoreHeroProps {
   store: {
     name: string;
@@ -14,7 +17,8 @@ interface StoreHeroProps {
 }
 
 export function StoreHero({ store }: StoreHeroProps) {
-  const authorName = store.authorName || 'Store Owner';
+  const t = useTranslations('store');
+  const authorName = store.authorName || t('storeOwner');
   const showAuthor = store.showAuthorName !== false;
   const hasCoverImage = store.coverImage && !store.useDefaultCover;
 
@@ -72,7 +76,7 @@ export function StoreHero({ store }: StoreHeroProps) {
                 className="w-24 h-24 mx-auto rounded-full flex items-center justify-center text-white font-bold text-4xl border-4 border-white/30 shadow-xl"
                 style={{ backgroundColor: 'var(--store-accent-700)' }}
               >
-                {store.name.charAt(0)}
+                {getLatinInitial(store.name)}
               </div>
             )}
           </div>
@@ -92,12 +96,12 @@ export function StoreHero({ store }: StoreHeroProps) {
           {/* Owner */}
           {showAuthor && authorName && (
             <div className="flex items-center justify-center gap-2 text-white/80">
-              <span>by</span>
+              <span>{t('by')}</span>
               <div
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium"
                 style={{ backgroundColor: 'var(--store-accent-800)' }}
               >
-                {authorName.charAt(0)}
+                {getLatinInitial(authorName)}
               </div>
               <span className="font-medium">{authorName}</span>
             </div>
@@ -109,13 +113,13 @@ export function StoreHero({ store }: StoreHeroProps) {
               href="#products"
               className="px-8 py-4 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
-              Browse Products
+              {t('browseProducts')}
             </a>
             <a
               href="#about"
               className="px-8 py-4 bg-white/10 text-white border border-white/30 rounded-xl hover:bg-white/20 transition-all font-semibold text-lg backdrop-blur-sm"
             >
-              Learn More
+              {t('learnMore')}
             </a>
           </div>
         </div>

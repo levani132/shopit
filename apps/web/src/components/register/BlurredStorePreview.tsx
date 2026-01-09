@@ -3,6 +3,7 @@
 import { useRegistration } from './RegistrationContext';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { STORE_BRAND_COLORS } from '@sellit/constants';
+import { getLatinInitial } from '../../lib/utils';
 
 const SAMPLE_CATEGORIES = [
   'Electronics',
@@ -33,7 +34,7 @@ export function BlurredStorePreview() {
   const hideHeaderLogo = step === 1 || isPreviewAnimating;
 
   const storeName = data.storeName || 'Your Store';
-  const storeInitial = storeName.charAt(0).toUpperCase() || 'S';
+  const storeInitial = getLatinInitial(storeName);
   const description =
     data.description ||
     'Your store description will appear here. Make it compelling!';
@@ -249,7 +250,7 @@ export function BlurredStorePreview() {
                   className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium"
                   style={{ backgroundColor: colors['800'] }}
                 >
-                  {authorName.charAt(0).toUpperCase()}
+                  {getLatinInitial(authorName)}
                 </div>
                 <span className="font-medium">{authorName}</span>
               </div>

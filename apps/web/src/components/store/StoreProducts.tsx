@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 interface Product {
   id: string;
   name: string;
@@ -15,12 +17,14 @@ interface StoreProductsProps {
 }
 
 export function StoreProducts({ products }: StoreProductsProps) {
+  const t = useTranslations('store');
+
   if (products.length === 0) {
     return (
       <section id="products" className="py-12 bg-gray-50 dark:bg-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-            Products
+            {t('products')}
           </h2>
           <div className="text-center py-16">
             <div
@@ -45,10 +49,10 @@ export function StoreProducts({ products }: StoreProductsProps) {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No products yet
+              {t('noProducts')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Check back soon for new arrivals!
+              {t('noProductsDescription')}
             </p>
           </div>
         </div>
@@ -60,7 +64,7 @@ export function StoreProducts({ products }: StoreProductsProps) {
     <section id="products" className="py-12 bg-gray-50 dark:bg-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-          Products
+          {t('products')}
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -74,6 +78,7 @@ export function StoreProducts({ products }: StoreProductsProps) {
 }
 
 function ProductCard({ product }: { product: Product }) {
+  const t = useTranslations('store');
   const inStock = product.inStock !== false;
   const hasImage = product.images && product.images.length > 0;
 
@@ -114,7 +119,7 @@ function ProductCard({ product }: { product: Product }) {
         {/* Out of Stock Badge */}
         {!inStock && (
           <div className="absolute top-3 left-3 bg-gray-900/80 text-white text-xs font-medium px-3 py-1 rounded-full">
-            Out of Stock
+            {t('outOfStock')}
           </div>
         )}
 
@@ -179,11 +184,10 @@ function ProductCard({ product }: { product: Product }) {
             }
             disabled={!inStock}
           >
-            {inStock ? 'Add to Cart' : 'Sold Out'}
+            {inStock ? t('addToCart') : t('soldOut')}
           </button>
         </div>
       </div>
     </div>
   );
 }
-

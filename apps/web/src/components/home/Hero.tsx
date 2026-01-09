@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from '../../i18n/routing';
+import { useAuth } from '../../contexts/AuthContext';
 
 const slides = [
   {
@@ -24,7 +25,12 @@ const slides = [
 
 export function Hero() {
   const t = useTranslations('hero');
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { user, isAuthenticated } = useAuth();
+  
+  const isSeller = user?.role === 'seller' || user?.role === 'admin';
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -54,21 +60,39 @@ export function Hero() {
               {t('subtitle')}
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Link
-                href="/register"
-                className="px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-                style={{
-                  boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 20px 25px -5px color-mix(in srgb, var(--accent-300) 40%, transparent), 0 8px 10px -6px color-mix(in srgb, var(--accent-300) 40%, transparent)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)';
-                }}
-              >
-                {t('cta')}
-              </Link>
+              {isAuthenticated && isSeller ? (
+                <Link
+                  href="/dashboard"
+                  className="px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  style={{
+                    boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 20px 25px -5px color-mix(in srgb, var(--accent-300) 40%, transparent), 0 8px 10px -6px color-mix(in srgb, var(--accent-300) 40%, transparent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)';
+                  }}
+                >
+                  {tNav('goToDashboard')}
+                </Link>
+              ) : (
+                <Link
+                  href="/register"
+                  className="px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  style={{
+                    boxShadow: '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 20px 25px -5px color-mix(in srgb, var(--accent-300) 40%, transparent), 0 8px 10px -6px color-mix(in srgb, var(--accent-300) 40%, transparent)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent), 0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent)';
+                  }}
+                >
+                  {t('cta')}
+                </Link>
+              )}
               <a
                 href="#how-it-works"
                 className="px-8 py-4 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all font-semibold text-lg border border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600"

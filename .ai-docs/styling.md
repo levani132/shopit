@@ -129,3 +129,37 @@ html, body {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 ```
 
+## Avatar Initials
+
+Avatars with initials should always display **Latin characters** (A-Z), even when the store/user name is in Georgian.
+
+### Utility Functions
+
+Location: `apps/web/src/lib/utils.ts`
+
+```typescript
+import { getLatinInitial, getUserInitials } from '@/lib/utils';
+
+// For store names
+<div>{getLatinInitial(store.name)}</div>  // "მაღაზია" → "S" (fallback)
+<div>{getLatinInitial("My Store")}</div>  // "My Store" → "M"
+
+// For user initials  
+<div>{getUserInitials(user.firstName, user.lastName, user.email)}</div>
+```
+
+### How It Works
+
+1. Searches for the first Latin character (A-Z, a-z) in the string
+2. If found, returns it uppercased
+3. If not found, falls back to the first character (any script)
+4. If empty, returns a default fallback ('S' for stores, 'U' for users)
+
+### Files Using This Pattern
+
+All avatar initials use these utilities:
+- `StoreFooter.tsx`, `StoreHeader.tsx`, `StoreHero.tsx`
+- `FeaturedStores.tsx`, `BlurredStorePreview.tsx`
+- `ProfileCompletion.tsx`, `Step1Brand.tsx`
+- `dashboard/store/page.tsx`
+

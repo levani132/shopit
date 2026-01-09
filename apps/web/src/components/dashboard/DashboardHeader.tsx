@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Link } from '../../i18n/routing';
 import { useTranslations } from 'next-intl';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { useTheme } from '../theme/ThemeProvider';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface NavItem {
   href: string;
@@ -72,9 +73,24 @@ const NAV_ITEMS: NavItem[] = [
 
 export function DashboardHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const t = useTranslations('dashboard');
+  const tNav = useTranslations('nav');
   const { theme, toggleTheme } = useTheme();
+  const { user, store, logout } = useAuth();
+
+  // Close user menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const isActive = (href: string) => {
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '');
@@ -82,6 +98,24 @@ export function DashboardHeader() {
       return pathWithoutLocale === '/dashboard';
     }
     return pathWithoutLocale.startsWith(href);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setIsUserMenuOpen(false);
+  };
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (!user) return 'U';
+    const first = user.firstName?.charAt(0) || '';
+    const last = user.lastName?.charAt(0) || '';
+    return (first + last).toUpperCase() || 'U';
+  };
+
+  const getDisplayName = () => {
+    if (!user) return 'User';
+    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
   };
 
   return (
@@ -126,9 +160,93 @@ export function DashboardHeader() {
               )}
             </button>
 
-            {/* User avatar/menu placeholder */}
-            <div className="w-8 h-8 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-medium text-sm">
-              U
+            {/* User menu */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-medium text-sm">
+                  {getUserInitials()}
+                </div>
+                <svg
+                  className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* Dropdown */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 py-2 z-50">
+                  {/* User Info */}
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-semibold">
+                        {getUserInitials()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {getDisplayName()}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user?.email}
+                        </p>
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
+                          {tNav('seller')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-1">
+                    {/* View My Store */}
+                    {store && (
+                      <a
+                        href={`https://${store.subdomain}.shopit.ge`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        {t('viewStore')}
+                      </a>
+                    )}
+
+                    {/* Profile */}
+                    <Link
+                      href="/dashboard/profile"
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {t('profile')}
+                    </Link>
+                  </div>
+
+                  {/* Logout */}
+                  <div className="border-t border-gray-100 dark:border-zinc-700 pt-1">
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      {tNav('logout')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -178,15 +296,52 @@ export function DashboardHeader() {
 
             {/* View Store Link */}
             <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
-              <a
-                href="#"
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              {store && (
+                <a
+                  href={`https://${store.subdomain}.shopit.ge`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span className="font-medium">{t('viewStore')}</span>
+                </a>
+              )}
+            </div>
+
+            {/* User info and logout */}
+            <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
+              {/* User Info */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-semibold">
+                  {getUserInitials()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {getDisplayName()}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* Logout button */}
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  handleLogout();
+                }}
+                className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                <span className="font-medium">{t('viewStore')}</span>
-              </a>
+                <span className="font-medium">{tNav('logout')}</span>
+              </button>
             </div>
           </div>
         </div>

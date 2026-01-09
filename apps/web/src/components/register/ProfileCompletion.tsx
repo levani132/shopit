@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { GEORGIAN_BANKS, detectBankFromIban, isValidGeorgianIban } from '../../utils/georgian-banks';
 import { useAuth } from '../../contexts/AuthContext';
+import { getLatinInitial } from '../../lib/utils';
 
 // Build API base URL - use just the host, we'll add the prefix
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -168,7 +169,7 @@ export function ProfileCompletion() {
             className="w-16 h-16 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-4"
             style={{ backgroundColor: accentColor }}
           >
-            {data.storeName.charAt(0).toUpperCase() || 'S'}
+            {getLatinInitial(data.storeName)}
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             {t('almostDone')}

@@ -30,6 +30,7 @@ import {
   LoginDto,
   CheckSubdomainDto,
   BuyerRegisterDto,
+  CreateStoreDto,
 } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -228,6 +229,99 @@ export class AuthController {
         lastName: result.user.lastName,
         role: result.user.role,
         isProfileComplete: result.user.isProfileComplete,
+      },
+    };
+  }
+
+  @Post('create-store')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a store for an authenticated user' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201, description: 'Store created successfully' })
+  @ApiResponse({ status: 409, description: 'User already has a store' })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'logoFile', maxCount: 1 },
+      { name: 'coverFile', maxCount: 1 },
+    ]),
+  )
+  async createStore(
+    @CurrentUser() currentUser: UserDocument,
+    @Body() dto: CreateStoreDto,
+    @UploadedFiles()
+    files: {
+      logoFile?: Express.Multer.File[];
+      coverFile?: Express.Multer.File[];
+    },
+  ) {
+    let logoUrl: string | undefined;
+    let coverUrl: string | undefined;
+
+    // Upload logo if provided
+    if (files?.logoFile?.[0]) {
+      const uploadResult = await this.uploadService.uploadFile(
+        files.logoFile[0],
+        {
+          folder: 'logos',
+          maxSizeBytes: 2 * 1024 * 1024,
+          allowedMimeTypes: [
+            'image/jpeg',
+            'image/png',
+            'image/svg+xml',
+            'image/webp',
+          ],
+        },
+      );
+      logoUrl = uploadResult.url;
+    }
+
+    // Upload cover if provided
+    if (files?.coverFile?.[0]) {
+      const uploadResult = await this.uploadService.uploadFile(
+        files.coverFile[0],
+        {
+          folder: 'covers',
+          maxSizeBytes: 10 * 1024 * 1024,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        },
+      );
+      coverUrl = uploadResult.url;
+    }
+
+    const result = await this.authService.createStoreForUser(
+      currentUser._id.toString(),
+      {
+        storeName: dto.storeName,
+        brandColor: dto.brandColor,
+        description: dto.description,
+        authorName: dto.authorName,
+        useInitialAsLogo: dto.useInitialAsLogo,
+        showAuthorName: dto.showAuthorName,
+        useDefaultCover: dto.useDefaultCover,
+      },
+      logoUrl,
+      coverUrl,
+    );
+
+    return {
+      message: 'Store created successfully',
+      user: {
+        id: result.user._id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        role: result.user.role,
+        isProfileComplete: result.user.isProfileComplete,
+      },
+      store: {
+        id: result.store._id,
+        name: result.store.name,
+        subdomain: result.store.subdomain,
+        description: result.store.description,
+        brandColor: result.store.brandColor,
+        logo: result.store.logo,
+        coverImage: result.store.coverImage,
       },
     };
   }

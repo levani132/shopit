@@ -3,10 +3,24 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type CategoryDocument = HydratedDocument<Category>;
 
+/**
+ * Bilingual text field - supports Georgian (ka) and English (en)
+ */
+export class BilingualText {
+  @Prop({ trim: true })
+  ka?: string; // Georgian
+
+  @Prop({ trim: true })
+  en?: string; // English
+}
+
 @Schema({ timestamps: true, collection: 'categories' })
 export class Category {
   @Prop({ required: true, trim: true })
-  name!: string;
+  name!: string; // Default/fallback name (usually English)
+
+  @Prop({ type: Object })
+  nameLocalized?: BilingualText; // Localized names
 
   @Prop({ required: true, lowercase: true, trim: true })
   slug!: string;

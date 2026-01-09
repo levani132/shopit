@@ -112,6 +112,76 @@ export class InitialRegisterDto {
 }
 
 /**
+ * DTO for creating a store for an already authenticated user
+ * Does not require email/password since user is already logged in
+ */
+export class CreateStoreDto {
+  // Store Information
+  @ApiProperty({ example: 'My Awesome Store', description: 'Store name' })
+  @IsNotEmpty({ message: 'Store name is required' })
+  @IsString()
+  @MaxLength(100)
+  storeName!: string;
+
+  @ApiProperty({ example: 'indigo', description: 'Brand color name' })
+  @IsNotEmpty()
+  @IsString()
+  brandColor!: string;
+
+  @ApiPropertyOptional({ description: 'Use colored initial as logo' })
+  @IsOptional()
+  @Transform(toBooleanTransform)
+  @IsBoolean()
+  useInitialAsLogo?: boolean;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Store logo file',
+  })
+  @IsOptional()
+  logoFile?: unknown;
+
+  @ApiProperty({
+    example: 'A great place to shop for unique items',
+    description: 'Store description',
+  })
+  @IsNotEmpty({ message: 'Description is required' })
+  @IsString()
+  @MaxLength(500)
+  description!: string;
+
+  @ApiProperty({
+    example: 'John Doe',
+    description: 'Author/owner display name',
+  })
+  @IsNotEmpty({ message: 'Author name is required' })
+  @IsString()
+  @MaxLength(100)
+  authorName!: string;
+
+  @ApiPropertyOptional({ description: 'Show author name on homepage' })
+  @IsOptional()
+  @Transform(toBooleanTransform)
+  @IsBoolean()
+  showAuthorName?: boolean;
+
+  @ApiPropertyOptional({ description: 'Use default colored cover' })
+  @IsOptional()
+  @Transform(toBooleanTransform)
+  @IsBoolean()
+  useDefaultCover?: boolean;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    format: 'binary',
+    description: 'Store cover image file',
+  })
+  @IsOptional()
+  coverFile?: unknown;
+}
+
+/**
  * Step 4: Profile completion DTO
  * Contains personal and banking information
  */

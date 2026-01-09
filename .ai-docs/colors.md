@@ -95,7 +95,29 @@ style={{ backgroundColor: colors[600] }}
 
 - `apps/web/src/components/theme/AccentColorProvider.tsx` - Sets main site `--accent-*` variables
 - `apps/web/src/app/store/[subdomain]/[locale]/layout.tsx` - Sets store `--store-accent-*` variables
+- `apps/web/src/app/[locale]/dashboard/layout.tsx` - Sets dashboard `--accent-*` variables based on store's brand color
 - `apps/web/src/components/register/BlurredStorePreview.tsx` - Uses `STORE_BRAND_COLORS` directly
 - `apps/web/src/app/[locale]/login/page.tsx` - Uses both (main site vars + store colors if on subdomain)
 - `apps/web/src/app/[locale]/register/buyer/page.tsx` - Same as login
+
+## Dashboard Theming
+
+The seller dashboard uses the seller's store brand color as its accent color:
+
+```typescript
+// In dashboard layout (apps/web/src/app/[locale]/dashboard/layout.tsx)
+const { store } = useAuth();
+const brandColor = (store?.brandColor || 'indigo') as AccentColorName;
+
+useEffect(() => {
+  const accentColors = getAccentColorCssVars(brandColor, '--accent');
+  Object.entries(accentColors).forEach(([varName, value]) => {
+    document.documentElement.style.setProperty(varName, value);
+  });
+}, [brandColor]);
+```
+
+**Important:** The `AccentColorProvider` component checks for `/dashboard` in the pathname and **skips** setting its own colors on dashboard pages. This prevents the main site's accent colors from overriding the dashboard's store-specific colors.
+
+This makes the dashboard feel personalized to each seller's brand.
 

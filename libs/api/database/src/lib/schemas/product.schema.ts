@@ -3,13 +3,30 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type ProductDocument = HydratedDocument<Product>;
 
+/**
+ * Bilingual text field - supports Georgian (ka) and English (en)
+ */
+export class BilingualText {
+  @Prop({ trim: true })
+  ka?: string; // Georgian
+
+  @Prop({ trim: true })
+  en?: string; // English
+}
+
 @Schema({ timestamps: true, collection: 'products' })
 export class Product {
   @Prop({ required: true, trim: true })
   name!: string;
 
+  @Prop({ type: Object })
+  nameLocalized?: BilingualText;
+
   @Prop({ trim: true })
   description?: string;
+
+  @Prop({ type: Object })
+  descriptionLocalized?: BilingualText;
 
   @Prop({ required: true, min: 0 })
   price!: number;
@@ -37,13 +54,22 @@ export class Product {
 
   @Prop({ type: Types.ObjectId, ref: 'Subcategory' })
   subcategoryId?: Types.ObjectId;
+
+  // Popularity tracking
+  @Prop({ default: 0, min: 0 })
+  viewCount!: number;
+
+  @Prop({ default: 0, min: 0 })
+  orderCount!: number; // For future use - track how many times product was ordered
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
 
-// Indexes (compound indexes cover storeId queries via prefix)
+// Indexes
 ProductSchema.index({ storeId: 1, isActive: 1 });
 ProductSchema.index({ storeId: 1, categoryId: 1 });
 ProductSchema.index({ storeId: 1, subcategoryId: 1 });
 ProductSchema.index({ storeId: 1, isOnSale: 1 });
+ProductSchema.index({ storeId: 1, price: 1 }); // For price sorting/filtering
+ProductSchema.index({ storeId: 1, viewCount: -1 }); // For popularity sorting
 ProductSchema.index({ name: 'text', description: 'text' }); // Full-text search

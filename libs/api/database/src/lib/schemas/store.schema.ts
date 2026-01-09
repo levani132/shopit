@@ -3,16 +3,37 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type StoreDocument = HydratedDocument<Store>;
 
+/**
+ * Bilingual text field - supports Georgian (ka) and English (en)
+ */
+export class BilingualText {
+  @Prop({ trim: true })
+  ka?: string; // Georgian
+
+  @Prop({ trim: true })
+  en?: string; // English
+}
+
 @Schema({ timestamps: true, collection: 'stores' })
 export class Store {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   subdomain!: string;
 
+  // Legacy field for backward compatibility - will be populated from nameLocalized.en or nameLocalized.ka
   @Prop({ required: true, trim: true })
   name!: string;
 
+  // Localized store name
+  @Prop({ type: Object })
+  nameLocalized?: BilingualText;
+
+  // Legacy field for backward compatibility
   @Prop({ trim: true })
   description?: string;
+
+  // Localized description
+  @Prop({ type: Object })
+  descriptionLocalized?: BilingualText;
 
   @Prop()
   logo?: string; // Store logo URL
@@ -32,8 +53,13 @@ export class Store {
   @Prop({ default: true })
   useDefaultCover!: boolean; // Use colored gradient as cover instead of image
 
+  // Legacy field for backward compatibility
   @Prop({ trim: true })
   authorName?: string; // Display name for the store owner
+
+  // Localized author name
+  @Prop({ type: Object })
+  authorNameLocalized?: BilingualText;
 
   @Prop({ default: true })
   showAuthorName!: boolean; // Show author name on store homepage
@@ -77,6 +103,10 @@ export class Store {
 
   @Prop()
   address?: string;
+
+  // Homepage product display order: 'popular', 'newest', 'price_asc', 'price_desc', 'random'
+  @Prop({ default: 'popular' })
+  homepageProductOrder!: string;
 }
 
 export const StoreSchema = SchemaFactory.createForClass(Store);

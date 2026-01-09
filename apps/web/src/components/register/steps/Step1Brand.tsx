@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
+import { getLatinInitial } from '../../../lib/utils';
 
 const BRAND_COLORS = [
   { name: 'indigo', label: 'Indigo', color: '#6366f1' },
@@ -101,7 +102,7 @@ export function Step1Brand() {
             className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg transition-colors"
             style={{ backgroundColor: accentColor }}
           >
-            {data.storeName.charAt(0).toUpperCase() || 'S'}
+            {getLatinInitial(data.storeName)}
           </div>
         )}
         <span className="font-semibold text-white text-lg truncate">

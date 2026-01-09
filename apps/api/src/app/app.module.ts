@@ -6,6 +6,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from '../auth/auth.module';
 import { StoresModule } from '../stores/stores.module';
+import { CategoriesModule } from '../categories/categories.module';
+import { ProductsModule } from '../products/products.module';
 import { UploadModule } from '../upload/upload.module';
 
 @Module({
@@ -28,6 +30,8 @@ import { UploadModule } from '../upload/upload.module';
     // Feature modules
     AuthModule,
     StoresModule,
+    CategoriesModule,
+    ProductsModule,
     UploadModule,
   ],
   controllers: [AppController],

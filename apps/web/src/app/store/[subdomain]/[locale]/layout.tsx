@@ -1,37 +1,67 @@
 import { notFound } from 'next/navigation';
-import { headers } from 'next/headers';
 import { Metadata } from 'next';
-import { getStoreBySubdomain as getStoreFromApi } from '../../../../lib/api';
+import { NextIntlClientProvider } from 'next-intl';
+import {
+  getStoreBySubdomain as getStoreFromApi,
+  getCategoriesByStoreId,
+  LocalizedText,
+  CategoryData,
+} from '../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-stores';
-import { StoreHeader } from '../../../../components/store/StoreHeader';
-import { StoreFooter } from '../../../../components/store/StoreFooter';
+import { StoreLayoutContent } from '../../../../components/store/StoreLayoutContent';
 import { ThemeProvider } from '../../../../components/theme/ThemeProvider';
+import { AuthProvider } from '../../../../contexts/AuthContext';
 import { routing } from '../../../../i18n/routing';
 import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
 import '../../../global.css';
-
-// Routes that should NOT show header/footer (auth pages)
-const AUTH_ROUTES = ['/login', '/register'];
 
 interface StoreLayoutProps {
   children: React.ReactNode;
   params: Promise<{ subdomain: string; locale: string }>;
 }
 
+// Helper to get localized text
+function getLocalizedText(
+  localized: LocalizedText | undefined,
+  fallback: string | undefined,
+  locale: string,
+): string {
+  if (localized) {
+    return (locale === 'ka' ? localized.ka : localized.en) || fallback || '';
+  }
+  return fallback || '';
+}
+
 // Helper to get store data from API or fallback to mock
-async function getStoreData(subdomain: string) {
+async function getStoreData(subdomain: string, locale: string) {
   // Try API first
   const apiStore = await getStoreFromApi(subdomain);
   if (apiStore) {
+    // Fetch categories for this store
+    const categories = await getCategoriesByStoreId(apiStore.id);
+
     return {
-      name: apiStore.name,
+      id: apiStore.id,
+      name: getLocalizedText(apiStore.nameLocalized, apiStore.name, locale),
       subdomain: apiStore.subdomain,
-      description: apiStore.description,
+      description: getLocalizedText(
+        apiStore.descriptionLocalized,
+        apiStore.description,
+        locale,
+      ),
       logo: apiStore.logo,
       brandColor: apiStore.brandColor,
       accentColor: apiStore.brandColor, // Use brandColor as accentColor key
-      authorName: apiStore.authorName,
+      authorName: getLocalizedText(
+        apiStore.authorNameLocalized,
+        apiStore.authorName,
+        locale,
+      ),
       showAuthorName: apiStore.showAuthorName,
+      phone: apiStore.phone,
+      address: apiStore.address,
+      socialLinks: apiStore.socialLinks,
+      categories,
     };
   }
 
@@ -39,6 +69,7 @@ async function getStoreData(subdomain: string) {
   const mockStore = getMockStore(subdomain);
   if (mockStore) {
     return {
+      id: mockStore.subdomain, // Use subdomain as ID for mock stores
       name: mockStore.name,
       subdomain: mockStore.subdomain,
       description: mockStore.description,
@@ -47,6 +78,10 @@ async function getStoreData(subdomain: string) {
       accentColor: mockStore.accentColor,
       authorName: mockStore.owner.name,
       showAuthorName: true,
+      phone: undefined,
+      address: undefined,
+      socialLinks: undefined,
+      categories: [] as CategoryData[],
     };
   }
 
@@ -56,8 +91,8 @@ async function getStoreData(subdomain: string) {
 export async function generateMetadata({
   params,
 }: StoreLayoutProps): Promise<Metadata> {
-  const { subdomain } = await params;
-  const store = await getStoreData(subdomain);
+  const { subdomain, locale } = await params;
+  const store = await getStoreData(subdomain, locale);
 
   return {
     title: store?.name || 'Store',
@@ -76,24 +111,21 @@ export default async function StoreLayout({
     notFound();
   }
 
-  // Get store data
-  const store = await getStoreData(subdomain);
+  // Get store data with localized content
+  const store = await getStoreData(subdomain, locale);
 
   if (!store) {
     notFound();
   }
 
-  // Check if this is an auth route (login/register) - these don't show header/footer
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || '';
-  // Also check referer as fallback
-  const referer = headersList.get('referer') || '';
-  const isAuthRoute = AUTH_ROUTES.some(
-    (route) => pathname.endsWith(route) || referer.includes(route)
+  // Get accent colors for this store
+  const accentColors = getAccentColorCssVars(
+    store.accentColor as AccentColorName,
   );
 
-  // Get accent colors for this store
-  const accentColors = getAccentColorCssVars(store.accentColor as AccentColorName);
+  // Load messages for translations
+  const messages = (await import(`../../../../messages/${locale}.json`))
+    .default;
 
   // Store data for header/footer
   const storeForComponents = {
@@ -103,6 +135,10 @@ export default async function StoreLayout({
     logo: store.logo,
     authorName: store.authorName,
     showAuthorName: store.showAuthorName,
+    phone: store.phone,
+    address: store.address,
+    socialLinks: store.socialLinks,
+    categories: store.categories,
   };
 
   return (
@@ -127,16 +163,18 @@ export default async function StoreLayout({
         />
       </head>
       <body>
-        <ThemeProvider>
-          <div
-            className="min-h-screen flex flex-col bg-gray-50 dark:bg-zinc-900"
-            style={accentColors as React.CSSProperties}
-          >
-            {!isAuthRoute && <StoreHeader store={storeForComponents} />}
-            <main className="flex-1">{children}</main>
-            {!isAuthRoute && <StoreFooter store={storeForComponents} />}
-          </div>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <ThemeProvider>
+            <AuthProvider>
+              <StoreLayoutContent
+                store={storeForComponents}
+                accentColors={accentColors as React.CSSProperties}
+              >
+                {children}
+              </StoreLayoutContent>
+            </AuthProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

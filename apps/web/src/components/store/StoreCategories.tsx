@@ -1,18 +1,22 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface StoreCategoriesProps {
   categories: string[];
 }
 
 export function StoreCategories({ categories }: StoreCategoriesProps) {
+  const t = useTranslations('store');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   return (
     <section id="categories" className="py-12 bg-white dark:bg-zinc-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Categories</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          {t('categories')}
+        </h2>
 
         <div className="flex flex-wrap gap-3">
           <button
@@ -28,7 +32,7 @@ export function StoreCategories({ categories }: StoreCategoriesProps) {
                 : undefined
             }
           >
-            All
+            {t('all')}
           </button>
           {categories.map((category) => (
             <button
@@ -53,4 +57,3 @@ export function StoreCategories({ categories }: StoreCategoriesProps) {
     </section>
   );
 }
-

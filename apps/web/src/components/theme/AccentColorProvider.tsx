@@ -1,6 +1,13 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
+import { usePathname } from 'next/navigation';
 import {
   MAIN_SITE_ACCENT_COLORS,
   MainSiteAccentColorName,
@@ -59,14 +66,21 @@ const AccentColorContext = createContext<AccentColorContextType | undefined>(
 );
 
 export function AccentColorProvider({ children }: { children: ReactNode }) {
-  const [accentColorName, setAccentColorName] = useState<AccentColorName>('indigo');
+  const [accentColorName, setAccentColorName] =
+    useState<AccentColorName>('indigo');
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+
+  // Check if we're on dashboard pages (which manage their own accent colors)
+  const isDashboard = pathname?.includes('/dashboard');
 
   useEffect(() => {
     setMounted(true);
-    
+
     // Load saved accent color from localStorage
-    const savedColor = localStorage.getItem('accentColor') as AccentColorName | null;
+    const savedColor = localStorage.getItem(
+      'accentColor',
+    ) as AccentColorName | null;
     if (savedColor && ACCENT_COLORS[savedColor]) {
       setAccentColorName(savedColor);
     }
@@ -74,20 +88,20 @@ export function AccentColorProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!mounted) return;
-    
+
+    // Skip setting colors on dashboard pages - dashboard manages its own colors
+    if (isDashboard) return;
+
     const color = ACCENT_COLORS[accentColorName];
-    
+
     // Set CSS variables on document root
     Object.entries(color.shades).forEach(([shade, value]) => {
-      document.documentElement.style.setProperty(
-        `--accent-${shade}`,
-        value
-      );
+      document.documentElement.style.setProperty(`--accent-${shade}`, value);
     });
-    
+
     // Save to localStorage
     localStorage.setItem('accentColor', accentColorName);
-  }, [accentColorName, mounted]);
+  }, [accentColorName, mounted, isDashboard]);
 
   const setAccentColor = (color: AccentColorName) => {
     setAccentColorName(color);
@@ -109,8 +123,9 @@ export function AccentColorProvider({ children }: { children: ReactNode }) {
 export function useAccentColor() {
   const context = useContext(AccentColorContext);
   if (context === undefined) {
-    throw new Error('useAccentColor must be used within an AccentColorProvider');
+    throw new Error(
+      'useAccentColor must be used within an AccentColorProvider',
+    );
   }
   return context;
 }
-

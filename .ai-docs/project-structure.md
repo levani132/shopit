@@ -91,6 +91,25 @@ Mongoose schemas:
 - `product.schema.ts`
 - etc.
 
+## Layout Structure
+
+**IMPORTANT**: The root layout (`apps/web/src/app/layout.tsx`) is a pass-through that does NOT include `<html>` or `<body>` tags.
+
+Each route group provides its own full HTML structure:
+
+- **Main site** (`apps/web/src/app/[locale]/layout.tsx`):
+  - Provides `<html lang={locale}>` and `<body>`
+  - Includes theme + accent color detection scripts
+  - Imports global.css
+
+- **Store subdomains** (`apps/web/src/app/store/[subdomain]/[locale]/layout.tsx`):
+  - Provides its own `<html lang={locale}>` and `<body>`
+  - Includes theme detection script
+  - Sets store accent color CSS variables
+  - Imports global.css
+
+This prevents hydration mismatches from having duplicate HTML structures.
+
 ## Nx Commands
 
 ```bash

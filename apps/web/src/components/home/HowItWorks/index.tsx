@@ -1,9 +1,9 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Link } from '../../../i18n/routing';
 import { StepCard } from './StepCard';
 import { BrandIcon, CategoryIcon, ProductIcon } from './StepIcons';
+import { CtaButton } from '../../ui/CtaButton';
 
 const STEPS = [
   {
@@ -31,7 +31,6 @@ const STEPS = [
 
 export function HowItWorks() {
   const t = useTranslations('howItWorks');
-  const tCommon = useTranslations('common');
 
   return (
     <section id="how-it-works" className="py-20 bg-gray-50 dark:bg-zinc-800">
@@ -65,25 +64,7 @@ export function HowItWorks() {
 
         {/* CTA */}
         <div className="text-center mt-16">
-          <Link
-            href="/register"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white rounded-xl hover:bg-[var(--accent-700)] dark:hover:bg-[var(--accent-600)] transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
-          >
-            {tCommon('startForFree')}
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </Link>
+          <CtaButton />
         </div>
       </div>
     </section>
