@@ -162,7 +162,7 @@ export function BlurredStorePreview() {
 
       {/* ===== Main Store Header ===== */}
       <header
-        className={`bg-white dark:bg-zinc-900 shadow-sm transition-all duration-700 ${
+        className={`bg-white dark:bg-zinc-900 shadow-sm transition-all duration-700 relative z-10 ${
           isHeaderUnblurred ? 'blur-0' : 'blur-md'
         }`}
       >
