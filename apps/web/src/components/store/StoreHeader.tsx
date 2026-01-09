@@ -4,9 +4,6 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItLogo } from '../ui/ShopItLogo';
 
-// Main site URL for links back to ShopIt
-const MAIN_SITE_URL = process.env.NEXT_PUBLIC_MAIN_SITE_URL || 'https://shopit.ge';
-
 interface StoreHeaderProps {
   store: {
     name: string;
@@ -52,26 +49,26 @@ export function StoreHeader({ store }: StoreHeaderProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
             {/* ShopIt Logo */}
-            <a href={MAIN_SITE_URL} className="flex items-center">
+            <a href="/" className="flex items-center">
               <ShopItLogo size="sm" variant="light" useStoreAccent />
             </a>
 
             {/* Right side buttons */}
             <div className="flex items-center gap-3">
               <a
-                href={`${MAIN_SITE_URL}/login`}
+                href="/login"
                 className="text-xs text-gray-300 hover:text-white transition-colors"
               >
                 Login
               </a>
               <a
-                href={`${MAIN_SITE_URL}/register`}
+                href="/register"
                 className="text-xs text-gray-300 hover:text-white transition-colors"
               >
                 Register
               </a>
               <a
-                href={`${MAIN_SITE_URL}/register`}
+                href="/register"
                 className="text-xs px-3 py-1 rounded-full text-white transition-colors"
                 style={{ backgroundColor: 'var(--store-accent-500)' }}
               >
