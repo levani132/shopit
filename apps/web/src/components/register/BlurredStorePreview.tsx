@@ -1,6 +1,7 @@
 'use client';
 
 import { useRegistration } from './RegistrationContext';
+import { ShopItLogo } from '../ui/ShopItLogo';
 
 // Accent color palettes matching the store layout
 const ACCENT_COLORS: Record<string, Record<string, string>> = {
@@ -130,21 +131,17 @@ export function BlurredStorePreview() {
         className={`bg-gray-900 dark:bg-zinc-950 transition-all duration-700 ${
           isHeaderUnblurred ? 'blur-0' : 'blur-md'
         }`}
+        style={
+          {
+            '--store-accent-500': colors['500'],
+            '--store-accent-700': colors['700'],
+          } as React.CSSProperties
+        }
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10">
           <div className="flex items-center justify-between h-full">
-            {/* ShopIt Logo placeholder */}
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
-                style={{
-                  background: `linear-gradient(135deg, ${colors['500']} 0%, ${colors['700']} 100%)`,
-                }}
-              >
-                S
-              </div>
-              <span className="text-white text-sm font-medium">ShopIt</span>
-            </div>
+            {/* ShopIt Logo - using actual component */}
+            <ShopItLogo size="sm" variant="light" useStoreAccent />
             {/* Right side buttons */}
             <div className="flex items-center gap-3">
               <span className="text-xs text-gray-300">Login</span>
