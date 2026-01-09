@@ -10,6 +10,7 @@ import {
 } from '@sellit/api-database';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
+import { CategoryStatsModule } from '../category-stats/category-stats.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { CategoriesService } from './categories.service';
       { name: Subcategory.name, schema: SubcategorySchema },
       { name: Store.name, schema: StoreSchema },
     ]),
+    CategoryStatsModule,
   ],
   controllers: [CategoriesController],
   providers: [CategoriesService],

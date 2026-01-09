@@ -14,6 +14,7 @@ export * from './product.schema';
 
 // Attributes
 export * from './attribute.schema';
+export * from './category-attribute-stats.schema';
 
 // Posts (Social feed)
 export * from './post.schema';

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
 import { Product, ProductDocument, Attribute, AttributeDocument } from '@sellit/api-database';
@@ -7,17 +7,44 @@ import {
   CreateProductDto,
   UpdateProductDto,
   SortBy,
-  ProductVariantDto,
   UpdateVariantDto,
   BulkVariantsDto,
 } from './dto/product.dto';
+import { CategoryStatsService } from '../category-stats/category-stats.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Attribute.name) private attributeModel: Model<AttributeDocument>,
+    @Inject(forwardRef(() => CategoryStatsService))
+    private categoryStatsService: CategoryStatsService,
   ) {}
+
+  /**
+   * Parse attribute filter string into structured format
+   * Format: attributeSlug:valueSlug,valueSlug|attributeSlug:valueSlug
+   */
+  private parseAttributeFilters(
+    attributes: string,
+  ): Map<string, string[]> {
+    const result = new Map<string, string[]>();
+
+    if (!attributes) return result;
+
+    const attrParts = attributes.split('|');
+    for (const part of attrParts) {
+      const [attrSlug, valuesStr] = part.split(':');
+      if (attrSlug && valuesStr) {
+        const values = valuesStr.split(',').filter((v) => v.trim());
+        if (values.length > 0) {
+          result.set(attrSlug, values);
+        }
+      }
+    }
+
+    return result;
+  }
 
   /**
    * List products with filtering, sorting, and pagination
@@ -32,6 +59,7 @@ export class ProductsService {
       search,
       onSale,
       inStock,
+      attributes,
       page = 1,
       limit = 20,
     } = dto;
@@ -68,9 +96,44 @@ export class ProductsService {
       filter.isOnSale = true;
     }
 
-    // In stock filter
+    // In stock filter - check both stock and totalStock (for variant products)
     if (inStock === true) {
-      filter.stock = { $gt: 0 };
+      filter.$or = [
+        { hasVariants: false, stock: { $gt: 0 } },
+        { hasVariants: true, totalStock: { $gt: 0 } },
+        { hasVariants: { $exists: false }, stock: { $gt: 0 } },
+      ];
+    }
+
+    // Attribute filter (faceted search)
+    if (attributes) {
+      const attrFilters = this.parseAttributeFilters(attributes);
+
+      if (attrFilters.size > 0) {
+        // We need to find products that have variants matching the selected attribute values
+        // Using $elemMatch on variants.attributes for each attribute filter
+        const attrConditions: FilterQuery<ProductDocument>[] = [];
+
+        for (const [_attrSlug, valueIds] of attrFilters) {
+          // Match products where at least one variant has any of the selected values
+          // Note: We're matching by valueId or value slug depending on what frontend sends
+          attrConditions.push({
+            'variants.attributes': {
+              $elemMatch: {
+                $or: [
+                  { valueId: { $in: valueIds.map((v) => new Types.ObjectId(v)) } },
+                  // Also try matching by value string for flexibility
+                ],
+              },
+            },
+          });
+        }
+
+        if (attrConditions.length > 0) {
+          filter.$and = filter.$and || [];
+          filter.$and.push(...attrConditions);
+        }
+      }
     }
 
     // Text search
@@ -238,6 +301,11 @@ export class ProductsService {
       totalStock,
     });
 
+    // Update category stats if product has variants
+    if (product.hasVariants && product.variants?.length > 0) {
+      await this.categoryStatsService.updateStatsForProduct(product, 'increment');
+    }
+
     return product.toObject();
   }
 
@@ -326,14 +394,21 @@ export class ProductsService {
    * Delete a product
    */
   async delete(productId: string, storeId: string) {
-    const result = await this.productModel.findOneAndDelete({
+    const product = await this.productModel.findOne({
       _id: new Types.ObjectId(productId),
       storeId: new Types.ObjectId(storeId),
     });
 
-    if (!result) {
+    if (!product) {
       throw new NotFoundException('Product not found');
     }
+
+    // Decrement category stats before deletion
+    if (product.hasVariants && product.variants?.length > 0) {
+      await this.categoryStatsService.updateStatsForProduct(product, 'decrement');
+    }
+
+    await this.productModel.deleteOne({ _id: product._id });
 
     return { deleted: true };
   }

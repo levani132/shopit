@@ -20,10 +20,14 @@ import {
   UpdateSubcategoryDto,
   ReorderCategoriesDto,
 } from './dto/category.dto';
+import { CategoryStatsService } from '../category-stats/category-stats.service';
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(
+    private readonly categoriesService: CategoriesService,
+    private readonly categoryStatsService: CategoryStatsService,
+  ) {}
 
   /**
    * Get all categories for a store (public)
@@ -49,6 +53,18 @@ export class CategoriesController {
   @Get(':id')
   async getOne(@Param('id') id: string) {
     return this.categoriesService.findById(id);
+  }
+
+  /**
+   * Get available filters for a category (public)
+   * Returns attribute filters with product counts
+   */
+  @Get(':id/filters/:storeId')
+  async getFilters(
+    @Param('id') categoryId: string,
+    @Param('storeId') storeId: string,
+  ) {
+    return this.categoryStatsService.getFiltersForCategory(categoryId, storeId);
   }
 
   /**

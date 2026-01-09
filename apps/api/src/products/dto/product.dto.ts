@@ -245,6 +245,15 @@ export class ListProductsDto {
   @Min(1)
   @Max(100)
   limit?: number = 20;
+
+  /**
+   * Filter by attribute values (faceted search)
+   * Format: attributeSlug:valueSlug,valueSlug|attributeSlug:valueSlug
+   * Example: color:red,blue|size:xl
+   */
+  @IsOptional()
+  @IsString()
+  attributes?: string;
 }
 
 export class CreateProductDto {

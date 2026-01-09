@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   Product,
@@ -9,6 +9,7 @@ import {
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { UploadModule } from '../upload/upload.module';
+import { CategoryStatsModule } from '../category-stats/category-stats.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UploadModule } from '../upload/upload.module';
       { name: Attribute.name, schema: AttributeSchema },
     ]),
     UploadModule,
+    forwardRef(() => CategoryStatsModule),
   ],
   controllers: [ProductsController],
   providers: [ProductsService],
