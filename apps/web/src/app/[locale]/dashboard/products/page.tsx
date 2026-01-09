@@ -17,6 +17,10 @@ interface ProductData {
   images: string[];
   categoryId?: { name: string; nameLocalized?: { ka?: string; en?: string } };
   createdAt: string;
+  // Variant support
+  hasVariants?: boolean;
+  totalStock?: number;
+  variants?: { stock: number }[];
 }
 
 type SortField = 'name' | 'price' | 'stock' | 'status';
@@ -83,7 +87,10 @@ export default function ProductsPage() {
           comparison = priceA - priceB;
           break;
         case 'stock':
-          comparison = a.stock - b.stock;
+          // Use totalStock for variant products, stock for simple products
+          const stockA = a.hasVariants ? (a.totalStock ?? 0) : a.stock;
+          const stockB = b.hasVariants ? (b.totalStock ?? 0) : b.stock;
+          comparison = stockA - stockB;
           break;
         case 'status':
           // Active (true) comes before Draft (false) in ascending order
@@ -293,9 +300,23 @@ export default function ProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm ${product.stock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {product.stock > 0 ? `${product.stock} ${t('inStock')}` : t('outOfStock')}
-                      </span>
+                      {(() => {
+                        const effectiveStock = product.hasVariants 
+                          ? (product.totalStock ?? 0) 
+                          : product.stock;
+                        return (
+                          <div className="flex flex-col">
+                            <span className={`text-sm ${effectiveStock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {effectiveStock > 0 ? `${effectiveStock} ${t('inStock')}` : t('outOfStock')}
+                            </span>
+                            {product.hasVariants && product.variants && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {product.variants.length} {t('variants').toLowerCase()}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
