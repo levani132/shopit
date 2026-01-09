@@ -289,6 +289,10 @@
     "variantPrice": "Price Override",
     "variantSku": "SKU",
     "variantImages": "Variant Images",
+    "variantImagesDescription": "Upload images for each variant group. Images are required for attributes marked as 'requires image'.",
+    "variantImageRequired": "This variant group requires at least one image",
+    "image": "image",
+    "images": "images",
     "noVariantsGenerated": "No Variants Generated",
     "noVariantsDescription": "Select attributes and values above, then click Generate Variants to create all combinations.",
     "totalVariants": "Total Variants",
@@ -347,6 +351,20 @@
     "seller": "Seller",
     "sellerDashboard": "Seller Dashboard",
     "seeAll": "See All",
-    "sale": "Sale"
+    "sale": "Sale",
+    "home": "Home",
+    "inStock": "In Stock",
+    "description": "Description",
+    "selectVariant": "Select Options",
+    "filters": "Filters",
+    "sortBy": "Sort by",
+    "priceRange": "Price Range",
+    "clearAll": "Clear All",
+    "applyFilters": "Apply Filters",
+    "relevance": "Relevance",
+    "priceLowToHigh": "Price: Low to High",
+    "priceHighToLow": "Price: High to Low",
+    "popularity": "Popularity",
+    "newest": "Newest"
   }
 }

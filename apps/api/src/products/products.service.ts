@@ -251,32 +251,74 @@ export class ProductsService {
   }
 
   /**
+   * Helper to get variant image group key
+   */
+  private getVariantImageGroupKey(
+    variantAttributes: { attributeId: Types.ObjectId | string; valueId: Types.ObjectId | string }[],
+    imageRequiringAttrIds: Set<string>,
+  ): string {
+    const imageAttrs = variantAttributes
+      .filter((va) => imageRequiringAttrIds.has(va.attributeId.toString()))
+      .sort((a, b) => a.attributeId.toString().localeCompare(b.attributeId.toString()));
+    return imageAttrs.map((a) => `${a.attributeId}-${a.valueId}`).join('|');
+  }
+
+  /**
    * Create a new product
    */
-  async create(storeId: string, dto: CreateProductDto, images?: string[]) {
+  async create(
+    storeId: string,
+    dto: CreateProductDto,
+    images?: string[],
+    variantImagesByGroup?: Record<string, string[]>,
+  ) {
     // Process variants if provided
     let variants = [];
     let totalStock = dto.stock ?? 0;
     let hasVariants = dto.hasVariants ?? false;
 
+    // Get image-requiring attribute IDs
+    const imageRequiringAttrIds = new Set<string>();
+    if (dto.productAttributes && variantImagesByGroup) {
+      const attrIds = dto.productAttributes.map((pa) => pa.attributeId);
+      const attrs = await this.attributeModel.find({
+        _id: { $in: attrIds.map((id) => new Types.ObjectId(id)) },
+        requiresImage: true,
+      });
+      attrs.forEach((a) => imageRequiringAttrIds.add(a._id.toString()));
+    }
+
     if (dto.variants && dto.variants.length > 0) {
       hasVariants = true;
-      variants = dto.variants.map((v) => ({
-        _id: new Types.ObjectId(),
-        sku: v.sku,
-        attributes: v.attributes.map((attr) => ({
+      variants = dto.variants.map((v) => {
+        const variantAttrs = v.attributes.map((attr) => ({
           attributeId: new Types.ObjectId(attr.attributeId),
           attributeName: attr.attributeName,
           valueId: new Types.ObjectId(attr.valueId),
           value: attr.value,
           colorHex: attr.colorHex,
-        })),
-        price: v.price,
-        salePrice: v.salePrice,
-        stock: v.stock ?? 0,
-        images: v.images || [],
-        isActive: v.isActive ?? true,
-      }));
+        }));
+
+        // Determine images for this variant based on its group
+        let variantImages = v.images || [];
+        if (variantImagesByGroup && imageRequiringAttrIds.size > 0) {
+          const groupKey = this.getVariantImageGroupKey(variantAttrs, imageRequiringAttrIds);
+          if (variantImagesByGroup[groupKey]) {
+            variantImages = [...variantImages, ...variantImagesByGroup[groupKey]];
+          }
+        }
+
+        return {
+          _id: new Types.ObjectId(),
+          sku: v.sku,
+          attributes: variantAttrs,
+          price: v.price,
+          salePrice: v.salePrice,
+          stock: v.stock ?? 0,
+          images: variantImages,
+          isActive: v.isActive ?? true,
+        };
+      });
       // Compute total stock from variants
       totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
     }
@@ -317,6 +359,7 @@ export class ProductsService {
     storeId: string,
     dto: UpdateProductDto,
     newImageUrls?: string[],
+    variantImagesByGroup?: Record<string, string[]>,
   ) {
     const product = await this.productModel.findOne({
       _id: new Types.ObjectId(productId),
@@ -333,7 +376,7 @@ export class ProductsService {
     const combinedImages = [...existingImages, ...newImages];
 
     // Remove fields that need special handling
-    const { existingImages: _, productAttributes, variants, ...updateData } = dto;
+    const { existingImages: _, productAttributes, variants, variantImageMapping: __, ...updateData } = dto;
 
     // Update basic fields
     Object.assign(product, updateData);
@@ -350,6 +393,19 @@ export class ProductsService {
       product.subcategoryId = new Types.ObjectId(dto.subcategoryId);
     }
 
+    // Get image-requiring attribute IDs
+    const imageRequiringAttrIds = new Set<string>();
+    const attrIds = (productAttributes || product.productAttributes || []).map((pa) => 
+      typeof pa.attributeId === 'string' ? pa.attributeId : pa.attributeId.toString()
+    );
+    if (attrIds.length > 0 && variantImagesByGroup) {
+      const attrs = await this.attributeModel.find({
+        _id: { $in: attrIds.map((id) => new Types.ObjectId(id)) },
+        requiresImage: true,
+      });
+      attrs.forEach((a) => imageRequiringAttrIds.add(a._id.toString()));
+    }
+
     // Handle product attributes update
     if (productAttributes !== undefined) {
       product.productAttributes = productAttributes.map((pa) => ({
@@ -361,20 +417,32 @@ export class ProductsService {
     // Handle variants update
     if (variants !== undefined) {
       product.hasVariants = variants.length > 0;
-      product.variants = variants.map((v) => ({
-        _id: v._id ? new Types.ObjectId(v._id) : new Types.ObjectId(),
-        sku: v.sku,
-        attributes: v.attributes.map((attr) => ({
+      product.variants = variants.map((v) => {
+        const variantAttrs = v.attributes.map((attr) => ({
           attributeId: new Types.ObjectId(attr.attributeId),
           attributeName: attr.attributeName,
           valueId: new Types.ObjectId(attr.valueId),
           value: attr.value,
           colorHex: attr.colorHex,
-        })),
-        price: v.price,
-        salePrice: v.salePrice,
-        stock: v.stock ?? 0,
-        images: v.images || [],
+        }));
+
+        // Determine images for this variant based on its group
+        let variantImages = v.images || [];
+        if (variantImagesByGroup && imageRequiringAttrIds.size > 0) {
+          const groupKey = this.getVariantImageGroupKey(variantAttrs, imageRequiringAttrIds);
+          if (variantImagesByGroup[groupKey]) {
+            variantImages = [...variantImages, ...variantImagesByGroup[groupKey]];
+          }
+        }
+
+        return {
+          _id: v._id ? new Types.ObjectId(v._id) : new Types.ObjectId(),
+          sku: v.sku,
+          attributes: variantAttrs,
+          price: v.price,
+          salePrice: v.salePrice,
+          stock: v.stock ?? 0,
+          images: variantImages,
         isActive: v.isActive ?? true,
       }));
       // Recompute total stock

@@ -324,6 +324,14 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
   variants?: ProductVariantDto[];
+
+  /**
+   * Mapping of image group key to number of images
+   * Used to distribute uploaded variant images to correct groups
+   */
+  @IsOptional()
+  @IsString()
+  variantImageMapping?: string;
 }
 
 export class UpdateProductDto {
@@ -406,4 +414,11 @@ export class UpdateProductDto {
   @ValidateNested({ each: true })
   @Type(() => ProductVariantDto)
   variants?: ProductVariantDto[];
+
+  /**
+   * Mapping of image group key to number of images
+   */
+  @IsOptional()
+  @IsString()
+  variantImageMapping?: string;
 }

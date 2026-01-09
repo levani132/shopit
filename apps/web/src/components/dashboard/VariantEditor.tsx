@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '../../i18n/routing';
+import Image from 'next/image';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -50,6 +51,14 @@ interface ProductVariant {
   isActive: boolean;
 }
 
+interface ImageGroup {
+  key: string; // Unique key for the group (e.g., "color-red")
+  label: string; // Display label (e.g., "Red")
+  attributes: { attributeId: string; valueId: string; value: string; colorHex?: string }[];
+  images: string[];
+  previewImages: { file: File; preview: string }[];
+}
+
 interface VariantEditorProps {
   hasVariants: boolean;
   productAttributes: ProductAttribute[];
@@ -57,6 +66,8 @@ interface VariantEditorProps {
   onHasVariantsChange: (hasVariants: boolean) => void;
   onProductAttributesChange: (attributes: ProductAttribute[]) => void;
   onVariantsChange: (variants: ProductVariant[]) => void;
+  variantImageFiles: Map<string, File[]>; // Map of imageGroupKey -> File[]
+  onVariantImageFilesChange: (files: Map<string, File[]>) => void;
 }
 
 function getLocalizedText(
@@ -75,6 +86,8 @@ export default function VariantEditor({
   onHasVariantsChange,
   onProductAttributesChange,
   onVariantsChange,
+  variantImageFiles,
+  onVariantImageFilesChange,
 }: VariantEditorProps) {
   const t = useTranslations('dashboard');
   const locale = useLocale();
@@ -82,6 +95,139 @@ export default function VariantEditor({
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<Map<string, { file: File; preview: string }[]>>(new Map());
+  const fileInputRefs = useRef<Map<string, HTMLInputElement | null>>(new Map());
+
+  // Compute image groups based on requiresImage attributes
+  const imageGroups = useMemo<ImageGroup[]>(() => {
+    if (!hasVariants || variants.length === 0) return [];
+
+    // Find attributes that require images
+    const imageRequiringAttrs = attributes.filter((attr) => 
+      attr.requiresImage && productAttributes.some((pa) => pa.attributeId === attr._id)
+    );
+
+    if (imageRequiringAttrs.length === 0) return [];
+
+    // Group variants by their image-requiring attribute values
+    const groupMap = new Map<string, ImageGroup>();
+
+    for (const variant of variants) {
+      // Get the image-requiring attributes for this variant
+      const imageAttrs = variant.attributes.filter((va) =>
+        imageRequiringAttrs.some((attr) => attr._id === va.attributeId)
+      );
+
+      if (imageAttrs.length === 0) continue;
+
+      // Create a unique key based on the image-requiring attribute values
+      const key = imageAttrs
+        .sort((a, b) => a.attributeId.localeCompare(b.attributeId))
+        .map((a) => `${a.attributeId}-${a.valueId}`)
+        .join('|');
+
+      if (!groupMap.has(key)) {
+        // Build a label for this group
+        const labelParts = imageAttrs.map((a) => a.value);
+        groupMap.set(key, {
+          key,
+          label: labelParts.join(' / '),
+          attributes: imageAttrs.map((a) => ({
+            attributeId: a.attributeId,
+            valueId: a.valueId,
+            value: a.value,
+            colorHex: a.colorHex,
+          })),
+          images: variant.images || [],
+          previewImages: [],
+        });
+      }
+    }
+
+    return Array.from(groupMap.values());
+  }, [hasVariants, variants, attributes, productAttributes]);
+
+  // Handle image upload for a group
+  const handleImageUpload = (groupKey: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+
+    const newFiles = Array.from(files);
+    const newPreviews = newFiles.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    // Update preview images
+    setPreviewImages((prev) => {
+      const updated = new Map(prev);
+      const existing = updated.get(groupKey) || [];
+      updated.set(groupKey, [...existing, ...newPreviews]);
+      return updated;
+    });
+
+    // Update variant image files
+    const updatedFiles = new Map(variantImageFiles);
+    const existingFiles = updatedFiles.get(groupKey) || [];
+    updatedFiles.set(groupKey, [...existingFiles, ...newFiles]);
+    onVariantImageFilesChange(updatedFiles);
+  };
+
+  // Remove an image from a group
+  const removeImage = (groupKey: string, index: number, isPreview: boolean) => {
+    if (isPreview) {
+      // Remove from preview images
+      setPreviewImages((prev) => {
+        const updated = new Map(prev);
+        const existing = updated.get(groupKey) || [];
+        // Revoke the URL to prevent memory leaks
+        URL.revokeObjectURL(existing[index].preview);
+        updated.set(groupKey, existing.filter((_, i) => i !== index));
+        return updated;
+      });
+
+      // Remove from variant image files
+      const updatedFiles = new Map(variantImageFiles);
+      const existingFiles = updatedFiles.get(groupKey) || [];
+      updatedFiles.set(groupKey, existingFiles.filter((_, i) => i !== index));
+      onVariantImageFilesChange(updatedFiles);
+    } else {
+      // Remove existing image URL from variants
+      const updatedVariants = variants.map((variant) => {
+        // Check if this variant belongs to this group
+        const variantKey = variant.attributes
+          .filter((va) => imageGroups.some((g) => g.key === groupKey && 
+            g.attributes.some((a) => a.attributeId === va.attributeId && a.valueId === va.valueId)))
+          .sort((a, b) => a.attributeId.localeCompare(b.attributeId))
+          .map((a) => `${a.attributeId}-${a.valueId}`)
+          .join('|');
+
+        if (variantKey === groupKey && variant.images) {
+          return {
+            ...variant,
+            images: variant.images.filter((_, i) => i !== index),
+          };
+        }
+        return variant;
+      });
+      onVariantsChange(updatedVariants);
+    }
+  };
+
+  // Get all images for a group (existing + preview)
+  const getGroupImages = (groupKey: string): { url: string; isPreview: boolean; index: number }[] => {
+    const group = imageGroups.find((g) => g.key === groupKey);
+    const existingImages = (group?.images || []).map((url, index) => ({
+      url,
+      isPreview: false,
+      index,
+    }));
+    const previews = (previewImages.get(groupKey) || []).map((p, index) => ({
+      url: p.preview,
+      isPreview: true,
+      index,
+    }));
+    return [...existingImages, ...previews];
+  };
 
   // Fetch available attributes
   useEffect(() => {
@@ -484,6 +630,113 @@ export default function VariantEditor({
                     </p>
                   </div>
                 )
+              )}
+
+              {/* Variant Images Section */}
+              {variants.length > 0 && imageGroups.length > 0 && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                    {t('variantImages')}
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                    {t('variantImagesDescription')}
+                  </p>
+
+                  <div className="space-y-6">
+                    {imageGroups.map((group) => {
+                      const groupImages = getGroupImages(group.key);
+                      
+                      return (
+                        <div
+                          key={group.key}
+                          className="border border-gray-200 dark:border-zinc-700 rounded-lg p-4"
+                        >
+                          {/* Group Header */}
+                          <div className="flex items-center gap-3 mb-4">
+                            {group.attributes.map((attr, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-700 rounded-lg"
+                              >
+                                {attr.colorHex && (
+                                  <span
+                                    className="w-4 h-4 rounded-full border border-gray-300 dark:border-zinc-600"
+                                    style={{ backgroundColor: attr.colorHex }}
+                                  />
+                                )}
+                                <span className="font-medium text-gray-900 dark:text-white">
+                                  {attr.value}
+                                </span>
+                              </span>
+                            ))}
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
+                              ({groupImages.length} {groupImages.length === 1 ? t('image') : t('images')})
+                            </span>
+                          </div>
+
+                          {/* Images Grid */}
+                          <div className="flex flex-wrap gap-3 mb-4">
+                            {groupImages.map((img, idx) => (
+                              <div
+                                key={idx}
+                                className="relative group w-24 h-24 rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700"
+                              >
+                                <Image
+                                  src={img.url}
+                                  alt={`${group.label} ${idx + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized={img.isPreview}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(group.key, img.index, img.isPreview)}
+                                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                                {img.isPreview && (
+                                  <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-yellow-500 text-white text-xs rounded">
+                                    {t('new')}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+
+                            {/* Add Image Button */}
+                            <button
+                              type="button"
+                              onClick={() => fileInputRefs.current.get(group.key)?.click()}
+                              className="w-24 h-24 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg hover:border-[var(--accent-500)] transition-colors flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 hover:text-[var(--accent-600)]"
+                            >
+                              <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              <span className="text-xs">{t('addImage')}</span>
+                            </button>
+                            <input
+                              type="file"
+                              ref={(el) => { fileInputRefs.current.set(group.key, el); }}
+                              accept="image/*"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => handleImageUpload(group.key, e.target.files)}
+                            />
+                          </div>
+
+                          {/* No images hint */}
+                          {groupImages.length === 0 && (
+                            <p className="text-sm text-yellow-600 dark:text-yellow-500">
+                              ⚠️ {t('variantImageRequired')}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </>
           )}

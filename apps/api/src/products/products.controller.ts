@@ -95,15 +95,20 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
   @UseInterceptors(
-    FileFieldsInterceptor([{ name: 'images', maxCount: 10 }]),
+    FileFieldsInterceptor([
+      { name: 'images', maxCount: 10 },
+      { name: 'variantImages', maxCount: 50 },
+    ]),
   )
   async create(
     @Body() dto: CreateProductDto,
-    @UploadedFiles() files: { images?: Express.Multer.File[] },
+    @UploadedFiles()
+    files: { images?: Express.Multer.File[]; variantImages?: Express.Multer.File[] },
     @Request() req: { user: { storeId: string } },
   ) {
     let imageUrls: string[] = [];
 
+    // Upload main product images
     if (files?.images && files.images.length > 0) {
       const uploadPromises = files.images.map((file) =>
         this.uploadService.uploadFile(file, {
@@ -116,7 +121,43 @@ export class ProductsController {
       imageUrls = results.map((r) => r.url);
     }
 
-    return this.productsService.create(req.user.storeId, dto, imageUrls);
+    // Upload variant images and organize by group key
+    let variantImagesByGroup: Record<string, string[]> | undefined;
+    if (files?.variantImages && files.variantImages.length > 0 && dto.variantImageMapping) {
+      const mapping: Record<string, number> =
+        typeof dto.variantImageMapping === 'string'
+          ? JSON.parse(dto.variantImageMapping)
+          : dto.variantImageMapping;
+
+      // Upload all variant images
+      const uploadPromises = files.variantImages.map((file) =>
+        this.uploadService.uploadFile(file, {
+          folder: 'products/variants',
+          maxSizeBytes: 5 * 1024 * 1024,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        }),
+      );
+      const results = await Promise.all(uploadPromises);
+      const variantImageUrls = results.map((r) => r.url);
+
+      // Distribute URLs according to mapping
+      variantImagesByGroup = {};
+      let currentIndex = 0;
+      for (const [groupKey, count] of Object.entries(mapping)) {
+        variantImagesByGroup[groupKey] = variantImageUrls.slice(
+          currentIndex,
+          currentIndex + count,
+        );
+        currentIndex += count;
+      }
+    }
+
+    return this.productsService.create(
+      req.user.storeId,
+      dto,
+      imageUrls,
+      variantImagesByGroup,
+    );
   }
 
   /**
@@ -126,16 +167,21 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
   @UseInterceptors(
-    FileFieldsInterceptor([{ name: 'images', maxCount: 10 }]),
+    FileFieldsInterceptor([
+      { name: 'images', maxCount: 10 },
+      { name: 'variantImages', maxCount: 50 },
+    ]),
   )
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateProductDto,
-    @UploadedFiles() files: { images?: Express.Multer.File[] },
+    @UploadedFiles()
+    files: { images?: Express.Multer.File[]; variantImages?: Express.Multer.File[] },
     @Request() req: { user: { storeId: string } },
   ) {
     let imageUrls: string[] | undefined;
 
+    // Upload main product images
     if (files?.images && files.images.length > 0) {
       const uploadPromises = files.images.map((file) =>
         this.uploadService.uploadFile(file, {
@@ -148,7 +194,42 @@ export class ProductsController {
       imageUrls = results.map((r) => r.url);
     }
 
-    return this.productsService.update(id, req.user.storeId, dto, imageUrls);
+    // Upload variant images and organize by group key
+    let variantImagesByGroup: Record<string, string[]> | undefined;
+    if (files?.variantImages && files.variantImages.length > 0 && dto.variantImageMapping) {
+      const mapping: Record<string, number> =
+        typeof dto.variantImageMapping === 'string'
+          ? JSON.parse(dto.variantImageMapping)
+          : dto.variantImageMapping;
+
+      const uploadPromises = files.variantImages.map((file) =>
+        this.uploadService.uploadFile(file, {
+          folder: 'products/variants',
+          maxSizeBytes: 5 * 1024 * 1024,
+          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        }),
+      );
+      const results = await Promise.all(uploadPromises);
+      const variantImageUrls = results.map((r) => r.url);
+
+      variantImagesByGroup = {};
+      let currentIndex = 0;
+      for (const [groupKey, count] of Object.entries(mapping)) {
+        variantImagesByGroup[groupKey] = variantImageUrls.slice(
+          currentIndex,
+          currentIndex + count,
+        );
+        currentIndex += count;
+      }
+    }
+
+    return this.productsService.update(
+      id,
+      req.user.storeId,
+      dto,
+      imageUrls,
+      variantImagesByGroup,
+    );
   }
 
   /**

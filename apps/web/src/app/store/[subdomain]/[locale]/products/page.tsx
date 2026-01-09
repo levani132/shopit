@@ -473,7 +473,7 @@ export default function StoreProductsPage() {
                   {products.map((product) => (
                     <a
                       key={product._id}
-                      href={`/product/${product._id}`}
+                      href={`/store/${subdomain}/${locale}/products/${product._id}`}
                       onClick={() => trackView(product._id)}
                       className="group bg-white dark:bg-zinc-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow"
                     >

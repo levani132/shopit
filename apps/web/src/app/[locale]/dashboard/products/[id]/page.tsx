@@ -94,6 +94,7 @@ export default function EditProductPage() {
       isActive: boolean;
     }[]
   >([]);
+  const [variantImageFiles, setVariantImageFiles] = useState<Map<string, File[]>>(new Map());
 
   // Fetch product and categories
   useEffect(() => {
@@ -307,6 +308,18 @@ export default function EditProductPage() {
       newImages.forEach((image) => {
         formDataToSend.append('images', image);
       });
+
+      // Add variant images (grouped by key)
+      if (hasVariants && variantImageFiles.size > 0) {
+        const variantImageMapping: Record<string, number> = {};
+        variantImageFiles.forEach((files, key) => {
+          variantImageMapping[key] = files.length;
+          files.forEach((file) => {
+            formDataToSend.append('variantImages', file);
+          });
+        });
+        formDataToSend.append('variantImageMapping', JSON.stringify(variantImageMapping));
+      }
 
       const res = await fetch(`${API_URL}/api/v1/products/${productId}`, {
         method: 'PATCH',
@@ -768,6 +781,8 @@ export default function EditProductPage() {
           onHasVariantsChange={setHasVariants}
           onProductAttributesChange={setProductAttributes}
           onVariantsChange={setVariants}
+          variantImageFiles={variantImageFiles}
+          onVariantImageFilesChange={setVariantImageFiles}
         />
 
         {/* Submit Button */}
