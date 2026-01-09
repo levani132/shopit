@@ -76,8 +76,8 @@ export class ProductsController {
    * Get a single product (public)
    */
   @Get(':id')
-  async getOne(@Param('id') id: string) {
-    return this.productsService.findById(id);
+  async getOne(@Param('id') id: string, @Query('storeId') storeId?: string) {
+    return this.productsService.findById(id, storeId);
   }
 
   /**

@@ -106,10 +106,12 @@ export default function ProductDetailPage() {
         const storeRes = await fetch(`${API_URL}/api/v1/stores/subdomain/${subdomain}`);
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
+        const storeId = store._id || store.id;
+        console.log('Store:', { storeId, store });
 
         // Fetch product
         const productRes = await fetch(
-          `${API_URL}/api/v1/products/${productId}?storeId=${store._id}`,
+          `${API_URL}/api/v1/products/${productId}?storeId=${storeId}`,
         );
         if (!productRes.ok) throw new Error('Product not found');
         const productData = await productRes.json();
@@ -128,7 +130,7 @@ export default function ProductDetailPage() {
           console.log('Product has variants, fetching attributes. attrIds:', attrIds);
           
           const attrsRes = await fetch(
-            `${API_URL}/api/v1/attributes/store/${store._id}`,
+            `${API_URL}/api/v1/attributes/store/${storeId}`,
           );
           if (attrsRes.ok) {
             const allAttrs = await attrsRes.json();
