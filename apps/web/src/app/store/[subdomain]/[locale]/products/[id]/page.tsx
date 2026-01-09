@@ -107,7 +107,6 @@ export default function ProductDetailPage() {
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         const storeId = store._id || store.id;
-        console.log('Store:', { storeId, store });
 
         // Fetch product
         const productRes = await fetch(
@@ -115,11 +114,6 @@ export default function ProductDetailPage() {
         );
         if (!productRes.ok) throw new Error('Product not found');
         const productData = await productRes.json();
-        console.log('Product data:', {
-          hasVariants: productData.hasVariants,
-          productAttributes: productData.productAttributes,
-          variants: productData.variants?.length,
-        });
         setProduct(productData);
 
         // If product has variants, fetch attributes
@@ -127,20 +121,17 @@ export default function ProductDetailPage() {
           const attrIds = productData.productAttributes.map(
             (pa: ProductAttribute) => String(pa.attributeId),
           );
-          console.log('Product has variants, fetching attributes. attrIds:', attrIds);
           
           const attrsRes = await fetch(
             `${API_URL}/api/v1/attributes/store/${storeId}`,
           );
           if (attrsRes.ok) {
             const allAttrs = await attrsRes.json();
-            console.log('All store attributes:', allAttrs);
             
             // Filter to only attributes used by this product (compare as strings)
             const productAttrs = allAttrs.filter((attr: Attribute) =>
               attrIds.includes(String(attr._id)),
             );
-            console.log('Filtered product attributes:', productAttrs);
             setAttributes(productAttrs);
 
             // Pre-select first variant's values if available
@@ -232,10 +223,20 @@ export default function ProductDetailPage() {
     return product?.stock || 0;
   }, [product, selectedVariant]);
 
-  // Get images to display (variant images if available, else product images)
+  // Get images to display (variant images first, then general product images)
   const displayImages = useMemo(() => {
-    if (selectedVariant?.images?.length) return selectedVariant.images;
-    return product?.images || [];
+    const variantImages = selectedVariant?.images || [];
+    const productImages = product?.images || [];
+    
+    // Combine variant images with product images, avoiding duplicates
+    const allImages = [...variantImages];
+    productImages.forEach((img) => {
+      if (!allImages.includes(img)) {
+        allImages.push(img);
+      }
+    });
+    
+    return allImages;
   }, [product, selectedVariant]);
 
   // Handle attribute value selection
