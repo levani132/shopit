@@ -446,7 +446,7 @@ export default function StoreProductsPage() {
                   <input
                     type="number"
                     placeholder={`${priceRange.min}`}
-                    value={minPrice}
+                    value={minPrice ?? ''}
                     onChange={(e) => updateFilters({ minPrice: e.target.value || null })}
                     className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                   />
@@ -454,7 +454,7 @@ export default function StoreProductsPage() {
                   <input
                     type="number"
                     placeholder={`${priceRange.max}`}
-                    value={maxPrice}
+                    value={maxPrice ?? ''}
                     onChange={(e) => updateFilters({ maxPrice: e.target.value || null })}
                     className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                   />

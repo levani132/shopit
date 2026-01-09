@@ -606,7 +606,7 @@ export default function VariantEditor({
                               <input
                                 type="number"
                                 min="0"
-                                value={variant.stock}
+                                value={variant.stock ?? 0}
                                 onChange={(e) =>
                                   updateVariantStock(
                                     index,
