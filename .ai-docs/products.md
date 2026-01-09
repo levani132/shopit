@@ -2,6 +2,9 @@
 
 This document describes how products work in the application, including filtering, sorting, and view tracking.
 
+> **⚠️ IMPORTANT:** For products with attributes/variants (size, color, etc.), see `attributes-and-variants.md`.
+> That document describes variant stock tracking, category attribute stats, and order processing.
+
 ## Overview
 
 Products are the main items for sale in a store. They support:
@@ -11,6 +14,7 @@ Products are the main items for sale in a store. They support:
 - Image galleries
 - Stock management
 - View count tracking for popularity sorting
+- **Attributes and Variants** (see `attributes-and-variants.md`)
 
 ## Database Schema
 

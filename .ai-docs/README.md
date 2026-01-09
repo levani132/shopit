@@ -13,6 +13,7 @@ This folder contains documentation about patterns, decisions, and conventions us
 - `dashboard.md` - Seller dashboard layout, theming, and components
 - `categories.md` - Categories system, API, dashboard management, and header display
 - `products.md` - Products system, filtering, sorting, and view tracking
+- `attributes-and-variants.md` - **IMPORTANT** Product attributes, variants, stock per variant, category filters
 
 ## Key Reusable Components
 
