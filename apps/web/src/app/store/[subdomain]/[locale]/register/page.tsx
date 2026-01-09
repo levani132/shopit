@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { ShopItLogo } from '../../../../components/ui/ShopItLogo';
-import { getStoreBySubdomain } from '../../../../lib/api';
+import { useRouter, useParams } from 'next/navigation';
+import { ShopItLogo } from '../../../../../components/ui/ShopItLogo';
+import { getStoreBySubdomain } from '../../../../../lib/api';
 import Link from 'next/link';
 
 import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
@@ -14,24 +14,10 @@ interface StoreInfo {
   brandColor: string;
 }
 
-/**
- * Extract subdomain from hostname
- */
-function getSubdomainFromHostname(): string | null {
-  if (typeof window === 'undefined') return null;
-
-  const hostname = window.location.hostname;
-  const parts = hostname.split('.');
-
-  if (parts.length > 2 && parts[0] !== 'www') {
-    return parts[0];
-  }
-
-  return null;
-}
-
-export default function BuyerRegisterPage() {
+export default function StoreRegisterPage() {
   const router = useRouter();
+  const params = useParams();
+  const subdomain = params.subdomain as string;
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -41,15 +27,12 @@ export default function BuyerRegisterPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Store subdomain detection
+  // Store info
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
-  const [isOnStore, setIsOnStore] = useState(false);
 
-  // Detect if on store subdomain and fetch store info
+  // Fetch store info
   useEffect(() => {
-    const subdomain = getSubdomainFromHostname();
     if (subdomain) {
-      setIsOnStore(true);
       getStoreBySubdomain(subdomain).then((store) => {
         if (store) {
           setStoreInfo({
@@ -60,14 +43,13 @@ export default function BuyerRegisterPage() {
         }
       });
     }
-  }, []);
+  }, [subdomain]);
 
-  // Get accent colors - only needed for store subdomains
-  // On main site, we use CSS variables (--accent-*) set by AccentColorProvider
-  const storeColors = storeInfo
+  // Get accent colors
+  const colors = storeInfo
     ? ACCENT_COLORS[storeInfo.brandColor as AccentColorName] ||
       ACCENT_COLORS.indigo
-    : null;
+    : ACCENT_COLORS.indigo;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +92,7 @@ export default function BuyerRegisterPage() {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Redirect back to store or home
+      // Redirect back to store
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -125,14 +107,12 @@ export default function BuyerRegisterPage() {
     window.location.href = `${apiUrl}/api/v1/auth/google?role=user`;
   };
 
-  // CSS variables for store colors (only on store subdomains)
-  const storeColorStyle = storeColors
-    ? ({
-        '--store-accent-500': storeColors[500],
-        '--store-accent-600': storeColors[600],
-        '--store-accent-700': storeColors[700],
-      } as React.CSSProperties)
-    : undefined;
+  // CSS variables for store colors
+  const storeColorStyle = {
+    '--store-accent-500': colors[500],
+    '--store-accent-600': colors[600],
+    '--store-accent-700': colors[700],
+  } as React.CSSProperties;
 
   return (
     <div
@@ -143,7 +123,7 @@ export default function BuyerRegisterPage() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2">
-            <ShopItLogo size="xl" useStoreAccent={isOnStore} />
+            <ShopItLogo size="xl" useStoreAccent />
           </Link>
         </div>
 
@@ -185,11 +165,7 @@ export default function BuyerRegisterPage() {
                   onChange={(e) => setFirstName(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                   style={
-                    {
-                      '--tw-ring-color': storeColors
-                        ? storeColors[500]
-                        : 'var(--accent-500)',
-                    } as React.CSSProperties
+                    { '--tw-ring-color': colors[500] } as React.CSSProperties
                   }
                   placeholder="John"
                   required
@@ -209,11 +185,7 @@ export default function BuyerRegisterPage() {
                   onChange={(e) => setLastName(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                   style={
-                    {
-                      '--tw-ring-color': storeColors
-                        ? storeColors[500]
-                        : 'var(--accent-500)',
-                    } as React.CSSProperties
+                    { '--tw-ring-color': colors[500] } as React.CSSProperties
                   }
                   placeholder="Doe"
                   required
@@ -235,11 +207,7 @@ export default function BuyerRegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                 style={
-                  {
-                    '--tw-ring-color': storeColors
-                      ? storeColors[500]
-                      : 'var(--accent-500)',
-                  } as React.CSSProperties
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
                 }
                 placeholder="you@example.com"
                 required
@@ -260,11 +228,7 @@ export default function BuyerRegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                 style={
-                  {
-                    '--tw-ring-color': storeColors
-                      ? storeColors[500]
-                      : 'var(--accent-500)',
-                  } as React.CSSProperties
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
                 }
                 placeholder="••••••••"
                 required
@@ -286,11 +250,7 @@ export default function BuyerRegisterPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                 style={
-                  {
-                    '--tw-ring-color': storeColors
-                      ? storeColors[500]
-                      : 'var(--accent-500)',
-                  } as React.CSSProperties
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
                 }
                 placeholder="••••••••"
                 required
@@ -301,21 +261,13 @@ export default function BuyerRegisterPage() {
               type="submit"
               disabled={isSubmitting}
               className="w-full py-3 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: storeColors
-                  ? storeColors[600]
-                  : 'var(--accent-600)',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = storeColors
-                  ? storeColors[700]
-                  : 'var(--accent-700)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = storeColors
-                  ? storeColors[600]
-                  : 'var(--accent-600)';
-              }}
+              style={{ backgroundColor: colors[600] }}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = colors[700])
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = colors[600])
+              }
             >
               {isSubmitting ? 'Creating account...' : 'Create Account'}
             </button>
@@ -367,22 +319,18 @@ export default function BuyerRegisterPage() {
             <Link
               href="/login"
               className="font-medium hover:underline"
-              style={{
-                color: storeColors ? storeColors[600] : 'var(--accent-600)',
-              }}
+              style={{ color: colors[600] }}
             >
               Sign in
             </Link>
           </p>
 
           {/* Back to store link */}
-          {isOnStore && (
-            <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-500">
-              <Link href="/" className="hover:underline">
-                ← Back to store
-              </Link>
-            </p>
-          )}
+          <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-500">
+            <Link href="/" className="hover:underline">
+              ← Back to store
+            </Link>
+          </p>
         </div>
       </div>
     </div>

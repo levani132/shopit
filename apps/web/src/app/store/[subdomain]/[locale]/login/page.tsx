@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTranslations, useLocale } from 'next-intl';
-import { useAuth } from '../../../contexts/AuthContext';
-import { ShopItLogo } from '../../../components/ui/ShopItLogo';
-import { getStoreBySubdomain } from '../../../lib/api';
+import { useRouter, useParams } from 'next/navigation';
+import { useAuth } from '../../../../../contexts/AuthContext';
+import { ShopItLogo } from '../../../../../components/ui/ShopItLogo';
+import { getStoreBySubdomain } from '../../../../../lib/api';
 import Link from 'next/link';
 
 import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
@@ -16,26 +15,10 @@ interface StoreInfo {
   brandColor: string;
 }
 
-/**
- * Extract subdomain from hostname
- */
-function getSubdomainFromHostname(): string | null {
-  if (typeof window === 'undefined') return null;
-
-  const hostname = window.location.hostname;
-  const parts = hostname.split('.');
-
-  if (parts.length > 2 && parts[0] !== 'www') {
-    return parts[0];
-  }
-
-  return null;
-}
-
-export default function LoginPage() {
-  const t = useTranslations();
-  const locale = useLocale();
+export default function StoreLoginPage() {
   const router = useRouter();
+  const params = useParams();
+  const subdomain = params.subdomain as string;
   const { login, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -43,15 +26,12 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Store subdomain detection
+  // Store info
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
-  const [isOnStore, setIsOnStore] = useState(false);
 
-  // Detect if on store subdomain and fetch store info
+  // Fetch store info
   useEffect(() => {
-    const subdomain = getSubdomainFromHostname();
     if (subdomain) {
-      setIsOnStore(true);
       getStoreBySubdomain(subdomain).then((store) => {
         if (store) {
           setStoreInfo({
@@ -62,14 +42,13 @@ export default function LoginPage() {
         }
       });
     }
-  }, []);
+  }, [subdomain]);
 
-  // Get accent colors - only needed for store subdomains
-  // On main site, we use CSS variables (--accent-*) set by AccentColorProvider
-  const storeColors = storeInfo
+  // Get accent colors
+  const colors = storeInfo
     ? ACCENT_COLORS[storeInfo.brandColor as AccentColorName] ||
       ACCENT_COLORS.indigo
-    : null;
+    : ACCENT_COLORS.indigo;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,11 +57,8 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      if (isOnStore) {
-        router.push('/');
-      } else {
-        router.push(`/${locale}/dashboard`);
-      }
+      // Redirect back to store root
+      router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -96,14 +72,12 @@ export default function LoginPage() {
     window.location.href = `${apiUrl}/api/v1/auth/google`;
   };
 
-  // CSS variables for store colors (only on store subdomains)
-  const storeColorStyle = storeColors
-    ? ({
-        '--store-accent-500': storeColors[500],
-        '--store-accent-600': storeColors[600],
-        '--store-accent-700': storeColors[700],
-      } as React.CSSProperties)
-    : undefined;
+  // CSS variables for store colors
+  const storeColorStyle = {
+    '--store-accent-500': colors[500],
+    '--store-accent-600': colors[600],
+    '--store-accent-700': colors[700],
+  } as React.CSSProperties;
 
   return (
     <div
@@ -113,25 +87,22 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Link
-            href={isOnStore ? '/' : `/${locale}`}
-            className="flex items-center gap-2"
-          >
-            <ShopItLogo size="xl" useStoreAccent={isOnStore} />
+          <Link href="/" className="flex items-center gap-2">
+            <ShopItLogo size="xl" useStoreAccent />
           </Link>
         </div>
 
         {/* Login Card */}
         <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-8">
           <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
-            {isOnStore ? 'Welcome Back' : t('auth.login')}
+            Welcome Back
           </h1>
-          {isOnStore && storeInfo && (
+          {storeInfo && (
             <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
               Sign in to continue shopping at {storeInfo.name}
             </p>
           )}
-          {!isOnStore && <div className="mb-6" />}
+          {!storeInfo && <div className="mb-6" />}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
@@ -145,7 +116,7 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                {t('auth.email')}
+                Email
               </label>
               <input
                 id="email"
@@ -154,11 +125,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                 style={
-                  {
-                    '--tw-ring-color': storeColors
-                      ? storeColors[500]
-                      : 'var(--accent-500)',
-                  } as React.CSSProperties
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
                 }
                 placeholder="you@example.com"
                 required
@@ -170,7 +137,7 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                {t('auth.password')}
+                Password
               </label>
               <input
                 id="password"
@@ -179,11 +146,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
                 style={
-                  {
-                    '--tw-ring-color': storeColors
-                      ? storeColors[500]
-                      : 'var(--accent-500)',
-                  } as React.CSSProperties
+                  { '--tw-ring-color': colors[500] } as React.CSSProperties
                 }
                 placeholder="••••••••"
                 required
@@ -194,23 +157,15 @@ export default function LoginPage() {
               type="submit"
               disabled={isSubmitting || isLoading}
               className="w-full py-3 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                backgroundColor: storeColors
-                  ? storeColors[600]
-                  : 'var(--accent-600)',
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = storeColors
-                  ? storeColors[700]
-                  : 'var(--accent-700)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = storeColors
-                  ? storeColors[600]
-                  : 'var(--accent-600)';
-              }}
+              style={{ backgroundColor: colors[600] }}
+              onMouseOver={(e) =>
+                (e.currentTarget.style.backgroundColor = colors[700])
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.backgroundColor = colors[600])
+              }
             >
-              {isSubmitting ? t('common.loading') : t('auth.login')}
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
@@ -221,7 +176,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white dark:bg-zinc-800 text-gray-500 dark:text-gray-400">
-                {t('auth.orContinueWith')}
+                or continue with
               </span>
             </div>
           </div>
@@ -256,26 +211,22 @@ export default function LoginPage() {
 
           {/* Register Link */}
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            {t('auth.noAccount')}{' '}
+            Don&apos;t have an account?{' '}
             <Link
-              href={isOnStore ? '/register' : `/${locale}/register`}
+              href="/register"
               className="font-medium hover:underline"
-              style={{
-                color: storeColors ? storeColors[600] : 'var(--accent-600)',
-              }}
+              style={{ color: colors[600] }}
             >
-              {t('auth.signUp')}
+              Sign up
             </Link>
           </p>
 
           {/* Back to store link */}
-          {isOnStore && (
-            <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-500">
-              <Link href="/" className="hover:underline">
-                ← Back to store
-              </Link>
-            </p>
-          )}
+          <p className="mt-4 text-center text-sm text-gray-500 dark:text-gray-500">
+            <Link href="/" className="hover:underline">
+              ← Back to store
+            </Link>
+          </p>
         </div>
       </div>
     </div>
