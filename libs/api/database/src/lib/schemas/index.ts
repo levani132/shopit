@@ -12,6 +12,9 @@ export * from './subcategory.schema';
 // Products
 export * from './product.schema';
 
+// Attributes
+export * from './attribute.schema';
+
 // Posts (Social feed)
 export * from './post.schema';
 export * from './post-like.schema';

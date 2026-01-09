@@ -8,6 +8,7 @@ import { AuthModule } from '../auth/auth.module';
 import { StoresModule } from '../stores/stores.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { ProductsModule } from '../products/products.module';
+import { AttributesModule } from '../attributes/attributes.module';
 import { UploadModule } from '../upload/upload.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { UploadModule } from '../upload/upload.module';
     StoresModule,
     CategoriesModule,
     ProductsModule,
+    AttributesModule,
     UploadModule,
   ],
   controllers: [AppController],
