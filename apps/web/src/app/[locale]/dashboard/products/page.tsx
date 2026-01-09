@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/routing';
+import { apiUrl } from '../../../../lib/api';
 
 interface ProductData {
   _id: string;
@@ -32,7 +33,6 @@ export default function ProductsPage() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
         const response = await fetch(`${apiUrl}/products/my-store`, {
           credentials: 'include',
         });
