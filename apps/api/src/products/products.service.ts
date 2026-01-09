@@ -1,7 +1,18 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
-import { Product, ProductDocument, Attribute, AttributeDocument } from '@sellit/api-database';
+import {
+  Product,
+  ProductDocument,
+  Attribute,
+  AttributeDocument,
+} from '@sellit/api-database';
 import {
   ListProductsDto,
   CreateProductDto,
@@ -16,7 +27,8 @@ import { CategoryStatsService } from '../category-stats/category-stats.service';
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-    @InjectModel(Attribute.name) private attributeModel: Model<AttributeDocument>,
+    @InjectModel(Attribute.name)
+    private attributeModel: Model<AttributeDocument>,
     @Inject(forwardRef(() => CategoryStatsService))
     private categoryStatsService: CategoryStatsService,
   ) {}
@@ -25,9 +37,7 @@ export class ProductsService {
    * Parse attribute filter string into structured format
    * Format: attributeSlug:valueSlug,valueSlug|attributeSlug:valueSlug
    */
-  private parseAttributeFilters(
-    attributes: string,
-  ): Map<string, string[]> {
+  private parseAttributeFilters(attributes: string): Map<string, string[]> {
     const result = new Map<string, string[]>();
 
     if (!attributes) return result;
@@ -121,7 +131,11 @@ export class ProductsService {
             'variants.attributes': {
               $elemMatch: {
                 $or: [
-                  { valueId: { $in: valueIds.map((v) => new Types.ObjectId(v)) } },
+                  {
+                    valueId: {
+                      $in: valueIds.map((v) => new Types.ObjectId(v)),
+                    },
+                  },
                   // Also try matching by value string for flexibility
                 ],
               },
@@ -254,12 +268,17 @@ export class ProductsService {
    * Helper to get variant image group key
    */
   private getVariantImageGroupKey(
-    variantAttributes: { attributeId: Types.ObjectId | string; valueId: Types.ObjectId | string }[],
+    variantAttributes: {
+      attributeId: Types.ObjectId | string;
+      valueId: Types.ObjectId | string;
+    }[],
     imageRequiringAttrIds: Set<string>,
   ): string {
     const imageAttrs = variantAttributes
       .filter((va) => imageRequiringAttrIds.has(va.attributeId.toString()))
-      .sort((a, b) => a.attributeId.toString().localeCompare(b.attributeId.toString()));
+      .sort((a, b) =>
+        a.attributeId.toString().localeCompare(b.attributeId.toString()),
+      );
     return imageAttrs.map((a) => `${a.attributeId}-${a.valueId}`).join('|');
   }
 
@@ -302,9 +321,15 @@ export class ProductsService {
         // Determine images for this variant based on its group
         let variantImages = v.images || [];
         if (variantImagesByGroup && imageRequiringAttrIds.size > 0) {
-          const groupKey = this.getVariantImageGroupKey(variantAttrs, imageRequiringAttrIds);
+          const groupKey = this.getVariantImageGroupKey(
+            variantAttrs,
+            imageRequiringAttrIds,
+          );
           if (variantImagesByGroup[groupKey]) {
-            variantImages = [...variantImages, ...variantImagesByGroup[groupKey]];
+            variantImages = [
+              ...variantImages,
+              ...variantImagesByGroup[groupKey],
+            ];
           }
         }
 
@@ -332,7 +357,9 @@ export class ProductsService {
     const product = await this.productModel.create({
       ...dto,
       storeId: new Types.ObjectId(storeId),
-      categoryId: dto.categoryId ? new Types.ObjectId(dto.categoryId) : undefined,
+      categoryId: dto.categoryId
+        ? new Types.ObjectId(dto.categoryId)
+        : undefined,
       subcategoryId: dto.subcategoryId
         ? new Types.ObjectId(dto.subcategoryId)
         : undefined,
@@ -345,7 +372,10 @@ export class ProductsService {
 
     // Update category stats if product has variants
     if (product.hasVariants && product.variants?.length > 0) {
-      await this.categoryStatsService.updateStatsForProduct(product, 'increment');
+      await this.categoryStatsService.updateStatsForProduct(
+        product,
+        'increment',
+      );
     }
 
     return product.toObject();
@@ -376,7 +406,13 @@ export class ProductsService {
     const combinedImages = [...existingImages, ...newImages];
 
     // Remove fields that need special handling
-    const { existingImages: _, productAttributes, variants, variantImageMapping: __, ...updateData } = dto;
+    const {
+      existingImages: _,
+      productAttributes,
+      variants,
+      variantImageMapping: __,
+      ...updateData
+    } = dto;
 
     // Update basic fields
     Object.assign(product, updateData);
@@ -395,8 +431,11 @@ export class ProductsService {
 
     // Get image-requiring attribute IDs
     const imageRequiringAttrIds = new Set<string>();
-    const attrIds = (productAttributes || product.productAttributes || []).map((pa) => 
-      typeof pa.attributeId === 'string' ? pa.attributeId : pa.attributeId.toString()
+    const attrIds = (productAttributes || product.productAttributes || []).map(
+      (pa) =>
+        typeof pa.attributeId === 'string'
+          ? pa.attributeId
+          : pa.attributeId.toString(),
     );
     if (attrIds.length > 0 && variantImagesByGroup) {
       const attrs = await this.attributeModel.find({
@@ -429,9 +468,15 @@ export class ProductsService {
         // Determine images for this variant based on its group
         let variantImages = v.images || [];
         if (variantImagesByGroup && imageRequiringAttrIds.size > 0) {
-          const groupKey = this.getVariantImageGroupKey(variantAttrs, imageRequiringAttrIds);
+          const groupKey = this.getVariantImageGroupKey(
+            variantAttrs,
+            imageRequiringAttrIds,
+          );
           if (variantImagesByGroup[groupKey]) {
-            variantImages = [...variantImages, ...variantImagesByGroup[groupKey]];
+            variantImages = [
+              ...variantImages,
+              ...variantImagesByGroup[groupKey],
+            ];
           }
         }
 
@@ -447,7 +492,10 @@ export class ProductsService {
         };
       });
       // Recompute total stock
-      product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+      product.totalStock = product.variants.reduce(
+        (sum, v) => sum + (v.stock || 0),
+        0,
+      );
     } else if (dto.hasVariants === false) {
       // Switching from variants to no variants
       product.hasVariants = false;
@@ -474,7 +522,10 @@ export class ProductsService {
 
     // Decrement category stats before deletion
     if (product.hasVariants && product.variants?.length > 0) {
-      await this.categoryStatsService.updateStatsForProduct(product, 'decrement');
+      await this.categoryStatsService.updateStatsForProduct(
+        product,
+        'decrement',
+      );
     }
 
     await this.productModel.deleteOne({ _id: product._id });
@@ -555,7 +606,11 @@ export class ProductsService {
         // Shuffle the top products slightly for variety
         if (topProducts.length > limit) {
           // Fisher-Yates partial shuffle - only shuffle top portion
-          for (let i = Math.min(topProducts.length - 1, limit + 2); i > 0; i--) {
+          for (
+            let i = Math.min(topProducts.length - 1, limit + 2);
+            i > 0;
+            i--
+          ) {
             const j = Math.floor(Math.random() * (i + 1));
             [topProducts[i], topProducts[j]] = [topProducts[j], topProducts[i]];
           }
@@ -620,7 +675,10 @@ export class ProductsService {
     if (dto.isActive !== undefined) variant.isActive = dto.isActive;
 
     // Recompute total stock
-    product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    product.totalStock = product.variants.reduce(
+      (sum, v) => sum + (v.stock || 0),
+      0,
+    );
 
     await product.save();
     return product.toObject();
@@ -655,7 +713,10 @@ export class ProductsService {
     }
 
     // Recompute total stock
-    product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    product.totalStock = product.variants.reduce(
+      (sum, v) => sum + (v.stock || 0),
+      0,
+    );
 
     await product.save();
     return { deleted: true };
@@ -739,8 +800,10 @@ export class ProductsService {
 
       // Check if this variant already exists (same attribute values)
       const existingVariant = product.variants.find((v) =>
-        v.attributes.every((attr, i) =>
-          attr.valueId.toString() === variantAttributes[i]?.valueId.toString(),
+        v.attributes.every(
+          (attr, i) =>
+            attr.valueId.toString() ===
+            variantAttributes[i]?.valueId.toString(),
         ),
       );
 
@@ -762,7 +825,10 @@ export class ProductsService {
 
     product.variants = newVariants;
     product.hasVariants = true;
-    product.totalStock = newVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    product.totalStock = newVariants.reduce(
+      (sum, v) => sum + (v.stock || 0),
+      0,
+    );
 
     await product.save();
     return product.toObject();
@@ -776,8 +842,7 @@ export class ProductsService {
     if (arrays.length === 1) return arrays[0].map((item) => [item]);
 
     return arrays.reduce<T[][]>(
-      (acc, curr) =>
-        acc.flatMap((a) => curr.map((c) => [...a, c])),
+      (acc, curr) => acc.flatMap((a) => curr.map((c) => [...a, c])),
       [[]],
     );
   }
@@ -822,13 +887,17 @@ export class ProductsService {
       }));
 
       product.hasVariants = product.variants.length > 0;
-      product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+      product.totalStock = product.variants.reduce(
+        (sum, v) => sum + (v.stock || 0),
+        0,
+      );
 
       await product.save();
       return product.toObject();
     }
 
-    throw new BadRequestException('Either regenerate or variants must be provided');
+    throw new BadRequestException(
+      'Either regenerate or variants must be provided',
+    );
   }
 }
-

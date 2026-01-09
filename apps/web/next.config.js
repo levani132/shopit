@@ -14,6 +14,22 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  
+  // Configure remote image domains for next/image
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'shopit-s3.s3.eu-north-1.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.amazonaws.com',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 const plugins = [
