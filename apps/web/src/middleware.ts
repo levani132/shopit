@@ -143,9 +143,14 @@ export default function middleware(request: NextRequest) {
   // If user has a saved preference, use it
   if (
     savedLocaleCookie &&
-    routing.locales.includes(savedLocaleCookie as (typeof routing.locales)[number])
+    routing.locales.includes(
+      savedLocaleCookie as (typeof routing.locales)[number],
+    )
   ) {
-    console.log('[Middleware] Using saved locale preference:', savedLocaleCookie);
+    console.log(
+      '[Middleware] Using saved locale preference:',
+      savedLocaleCookie,
+    );
     return intlMiddleware(request);
   }
 
@@ -159,26 +164,28 @@ export default function middleware(request: NextRequest) {
 
   // STRATEGY: Default to Georgian (ka) unless we KNOW the user is outside Georgia
   // This is because the target audience is Georgian, and geo-detection is unreliable
-  
+
   // Countries that should default to English (major English-speaking countries)
   const ENGLISH_COUNTRIES = ['US', 'GB', 'CA', 'AU', 'NZ', 'IE', 'ZA'];
-  
+
   // If we can detect the country and it's a known English-speaking country, use English
   if (countryCode && ENGLISH_COUNTRIES.includes(countryCode)) {
-    console.log('[Middleware] Detected English-speaking country, using browser preference');
+    console.log(
+      '[Middleware] Detected English-speaking country, using browser preference',
+    );
     return intlMiddleware(request);
   }
 
   // For Georgia OR unknown country (including when geo-detection fails),
   // default to Georgian
   console.log('[Middleware] Defaulting to Georgian (GE or unknown country)');
-  
+
   // Create a redirect to Georgian locale
   const url = request.nextUrl.clone();
   url.pathname = `/ka${pathname === '/' ? '' : pathname}`;
-  
+
   const response = NextResponse.redirect(url);
-  
+
   // Set cookie so future visits remember Georgian
   response.cookies.set(LOCALE_COOKIE, 'ka', {
     path: '/',
