@@ -29,6 +29,7 @@ import {
   CompleteProfileDto,
   LoginDto,
   CheckSubdomainDto,
+  BuyerRegisterDto,
 } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -178,6 +179,55 @@ export class AuthController {
         name: result.store.name,
         brandColor: result.store.brandColor,
         coverImage: result.store.coverImage,
+      },
+    };
+  }
+
+  @Post('register/buyer')
+  @ApiOperation({ summary: 'Register a buyer (simple user registration)' })
+  @ApiResponse({ status: 201, description: 'Registration successful' })
+  @ApiResponse({ status: 409, description: 'Email already registered' })
+  async registerBuyer(
+    @Body() dto: BuyerRegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+      trusted: false,
+    };
+
+    const result = await this.authService.registerBuyer(dto, deviceInfo);
+
+    // Set HTTP-only cookies
+    res.cookie(
+      cookieConfig.access.name,
+      result.tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      result.tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (result.tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        result.tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
+
+    return {
+      message: 'Registration successful',
+      user: {
+        id: result.user._id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        role: result.user.role,
+        isProfileComplete: result.user.isProfileComplete,
       },
     };
   }

@@ -15,17 +15,52 @@ interface StoreHeaderProps {
   };
 }
 
+/**
+ * Get the main site URL from a subdomain
+ * e.g., storename.shopit.ge → https://shopit.ge
+ */
+function getMainSiteUrl(): string {
+  if (typeof window === 'undefined') return '/';
+  
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // Split hostname into parts
+  const parts = hostname.split('.');
+  
+  // If we have a subdomain (e.g., storename.shopit.ge has 3 parts)
+  // Remove the first part to get the main domain
+  if (parts.length > 2) {
+    const mainDomain = parts.slice(1).join('.');
+    return `${protocol}//${mainDomain}`;
+  }
+  
+  // If on localhost with port, just return root
+  if (hostname === 'localhost' || hostname.startsWith('localhost:')) {
+    return '/';
+  }
+  
+  // Already on main domain
+  return '/';
+}
+
 export function StoreHeader({ store }: StoreHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [cartCount] = useState(0);
   const [topBarVisible, setTopBarVisible] = useState(true);
+  const [mainSiteUrl, setMainSiteUrl] = useState('/');
   const { theme, toggleTheme } = useTheme();
+
+  // Get main site URL on client side
+  useEffect(() => {
+    setMainSiteUrl(getMainSiteUrl());
+  }, []);
 
   // Handle scroll to hide/show top bar
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       // Hide top bar after scrolling down 50px
       if (currentScrollY > 50) {
         setTopBarVisible(false);
@@ -48,13 +83,14 @@ export function StoreHeader({ store }: StoreHeaderProps) {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="flex items-center justify-between h-full">
-            {/* ShopIt Logo */}
-            <a href="/" className="flex items-center">
+            {/* ShopIt Logo - links to main site */}
+            <a href={mainSiteUrl} className="flex items-center">
               <ShopItLogo size="sm" variant="light" useStoreAccent />
             </a>
 
             {/* Right side buttons */}
             <div className="flex items-center gap-3">
+              {/* Login/Register - stay on current subdomain (relative URLs) */}
               <a
                 href="/login"
                 className="text-xs text-gray-300 hover:text-white transition-colors"
@@ -67,8 +103,9 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               >
                 Register
               </a>
+              {/* Create Your Shop - links to main site registration */}
               <a
-                href="/register"
+                href={`${mainSiteUrl}/register`}
                 className="text-xs px-3 py-1 rounded-full text-white transition-colors"
                 style={{ backgroundColor: 'var(--store-accent-500)' }}
               >
@@ -139,15 +176,39 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               <button
                 onClick={toggleTheme}
                 className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
-                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={
+                  theme === 'dark'
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode'
+                }
               >
                 {theme === 'dark' ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                    />
                   </svg>
                 )}
               </button>
@@ -256,7 +317,9 @@ function LanguageSwitcher() {
   useEffect(() => {
     // Read locale from cookie
     const cookies = document.cookie.split(';');
-    const localeCookie = cookies.find(c => c.trim().startsWith('NEXT_LOCALE='));
+    const localeCookie = cookies.find((c) =>
+      c.trim().startsWith('NEXT_LOCALE='),
+    );
     if (localeCookie) {
       const value = localeCookie.split('=')[1] as 'en' | 'ka';
       if (value === 'en' || value === 'ka') {
@@ -282,7 +345,11 @@ function LanguageSwitcher() {
             ? 'text-white shadow-sm'
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
-        style={locale === 'ka' ? { backgroundColor: 'var(--store-accent-500)' } : undefined}
+        style={
+          locale === 'ka'
+            ? { backgroundColor: 'var(--store-accent-500)' }
+            : undefined
+        }
       >
         ქარ
       </button>
@@ -293,7 +360,11 @@ function LanguageSwitcher() {
             ? 'text-white shadow-sm'
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
-        style={locale === 'en' ? { backgroundColor: 'var(--store-accent-500)' } : undefined}
+        style={
+          locale === 'en'
+            ? { backgroundColor: 'var(--store-accent-500)' }
+            : undefined
+        }
       >
         ENG
       </button>

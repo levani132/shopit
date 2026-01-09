@@ -16,6 +16,7 @@ import {
   InitialRegisterDto,
   CompleteProfileDto,
   CheckSubdomainDto,
+  BuyerRegisterDto,
 } from './dto';
 import { TokensDto, TokenPayload } from './dto/auth-response.dto';
 
@@ -507,6 +508,42 @@ export class AuthService {
     const tokens = await this.generateTokens(user, deviceInfo);
 
     return { user, store, tokens };
+  }
+
+  /**
+   * Register a buyer (simple user registration)
+   */
+  async registerBuyer(
+    dto: BuyerRegisterDto,
+    deviceInfo?: DeviceInfo,
+  ): Promise<{
+    user: UserDocument;
+    tokens: TokensDto;
+  }> {
+    const existingUser = await this.userModel.findOne({
+      email: dto.email.toLowerCase(),
+    });
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    const hashedPassword = await this.hashPassword(dto.password);
+
+    const user = new this.userModel({
+      email: dto.email.toLowerCase(),
+      password: hashedPassword,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      authProvider: AuthProvider.EMAIL,
+      role: Role.USER,
+      isProfileComplete: true, // Buyers don't need profile completion
+    });
+
+    await user.save();
+
+    const tokens = await this.generateTokens(user, deviceInfo);
+
+    return { user, tokens };
   }
 
   /**

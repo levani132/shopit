@@ -254,3 +254,36 @@ export class CheckSubdomainDto {
   @Transform(({ value }) => value?.toLowerCase().trim())
   subdomain!: string;
 }
+
+/**
+ * Buyer registration DTO (simple user registration)
+ */
+export class BuyerRegisterDto {
+  @ApiProperty({ example: 'John', description: 'First name' })
+  @IsNotEmpty({ message: 'First name is required' })
+  @IsString()
+  @MaxLength(50)
+  firstName!: string;
+
+  @ApiProperty({ example: 'Doe', description: 'Last name' })
+  @IsNotEmpty({ message: 'Last name is required' })
+  @IsString()
+  @MaxLength(50)
+  lastName!: string;
+
+  @ApiProperty({ example: 'user@example.com', description: 'Email address' })
+  @IsNotEmpty({ message: 'Email is required' })
+  @IsEmail({}, { message: 'Invalid email format' })
+  @Transform(({ value }) => value?.toLowerCase().trim())
+  email!: string;
+
+  @ApiProperty({
+    example: 'SecurePassword123',
+    description: 'Password (6-50 characters)',
+  })
+  @IsNotEmpty({ message: 'Password is required' })
+  @IsString()
+  @MinLength(6, { message: 'Password must be at least 6 characters' })
+  @MaxLength(50, { message: 'Password must be less than 50 characters' })
+  password!: string;
+}
