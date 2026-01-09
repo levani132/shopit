@@ -77,6 +77,18 @@ export class CategoriesController {
   }
 
   /**
+   * Rebuild attribute stats for a store
+   * Useful after importing products or fixing data issues
+   */
+  @Post('rebuild-stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async rebuildStats(@Request() req: { user: { storeId: string } }) {
+    await this.categoryStatsService.rebuildStatsForStore(req.user.storeId);
+    return { success: true, message: 'Stats rebuilt successfully' };
+  }
+
+  /**
    * Create a new category
    */
   @Post()
