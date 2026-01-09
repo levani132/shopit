@@ -44,6 +44,24 @@ interface Product {
   };
 }
 
+interface AttributeFilterValue {
+  valueId: string;
+  value: string;
+  valueSlug: string;
+  colorHex?: string;
+  count: number;
+}
+
+interface AttributeFilter {
+  _id: string;
+  attributeId: string;
+  attributeName: string;
+  attributeSlug: string;
+  attributeType: 'text' | 'color';
+  values: AttributeFilterValue[];
+  totalProducts: number;
+}
+
 interface ProductsResponse {
   products: Product[];
   pagination: {
@@ -73,6 +91,7 @@ export default function StoreProductsPage() {
   // State
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [attributeFilters, setAttributeFilters] = useState<AttributeFilter[]>([]);
   const [storeId, setStoreId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -94,6 +113,18 @@ export default function StoreProductsPage() {
   const onSale = searchParams.get('onSale') === 'true';
   const inStock = searchParams.get('inStock') === 'true';
   const page = parseInt(searchParams.get('page') || '1', 10);
+  const attributes = searchParams.get('attributes') || ''; // Format: attrSlug:valueSlug,valueSlug|attrSlug:valueSlug
+
+  // Parse selected attributes for easy access
+  const selectedAttributes: Record<string, string[]> = {};
+  if (attributes) {
+    attributes.split('|').forEach((attrGroup) => {
+      const [attrSlug, values] = attrGroup.split(':');
+      if (attrSlug && values) {
+        selectedAttributes[attrSlug] = values.split(',');
+      }
+    });
+  }
 
   // Get localized text
   const getLocalizedText = (
@@ -131,6 +162,33 @@ export default function StoreProductsPage() {
     fetchStoreData();
   }, [subdomain]);
 
+  // Fetch attribute filters based on current category or store-level
+  useEffect(() => {
+    if (!storeId) return;
+
+    const fetchAttributeFilters = async () => {
+      try {
+        // Use category-specific filters if a category is selected, otherwise store-level
+        const filterUrl = categoryId
+          ? `${API_URL}/api/v1/categories/${subcategoryId || categoryId}/filters/${storeId}`
+          : `${API_URL}/api/v1/categories/filters/store/${storeId}`;
+
+        const res = await fetch(filterUrl);
+        if (res.ok) {
+          const data = await res.json();
+          setAttributeFilters(data);
+        } else {
+          setAttributeFilters([]);
+        }
+      } catch (err) {
+        console.error('Error fetching attribute filters:', err);
+        setAttributeFilters([]);
+      }
+    };
+
+    fetchAttributeFilters();
+  }, [storeId, categoryId, subcategoryId]);
+
   // Fetch products
   useEffect(() => {
     if (!storeId) return;
@@ -147,6 +205,7 @@ export default function StoreProductsPage() {
         if (search) queryParams.set('search', search);
         if (onSale) queryParams.set('onSale', 'true');
         if (inStock) queryParams.set('inStock', 'true');
+        if (attributes) queryParams.set('attributes', attributes);
         queryParams.set('page', page.toString());
 
         const res = await fetch(
@@ -169,7 +228,7 @@ export default function StoreProductsPage() {
     };
 
     fetchProducts();
-  }, [storeId, categoryId, subcategoryId, minPrice, maxPrice, sortBy, search, onSale, inStock, page]);
+  }, [storeId, categoryId, subcategoryId, minPrice, maxPrice, sortBy, search, onSale, inStock, attributes, page]);
 
   // Update URL params
   const updateFilters = useCallback(
@@ -192,6 +251,35 @@ export default function StoreProductsPage() {
       router.push(`?${newParams.toString()}`);
     },
     [searchParams, router]
+  );
+
+  // Toggle attribute value selection
+  const toggleAttributeValue = useCallback(
+    (attrSlug: string, valueSlug: string) => {
+      const newSelectedAttributes = { ...selectedAttributes };
+
+      if (!newSelectedAttributes[attrSlug]) {
+        newSelectedAttributes[attrSlug] = [valueSlug];
+      } else if (newSelectedAttributes[attrSlug].includes(valueSlug)) {
+        newSelectedAttributes[attrSlug] = newSelectedAttributes[attrSlug].filter(
+          (v) => v !== valueSlug
+        );
+        if (newSelectedAttributes[attrSlug].length === 0) {
+          delete newSelectedAttributes[attrSlug];
+        }
+      } else {
+        newSelectedAttributes[attrSlug].push(valueSlug);
+      }
+
+      // Build new attributes string
+      const attrParts = Object.entries(newSelectedAttributes).map(
+        ([slug, values]) => `${slug}:${values.join(',')}`
+      );
+      const newAttributesString = attrParts.length > 0 ? attrParts.join('|') : null;
+
+      updateFilters({ attributes: newAttributesString });
+    },
+    [selectedAttributes, updateFilters]
   );
 
   // Track product view
@@ -374,7 +462,7 @@ export default function StoreProductsPage() {
               </div>
 
               {/* Quick Filters */}
-              <div className="space-y-3">
+              <div className="space-y-3 mb-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -397,8 +485,75 @@ export default function StoreProductsPage() {
                 </label>
               </div>
 
+              {/* Attribute Filters */}
+              {attributeFilters.length > 0 && (
+                <div className="space-y-6">
+                  {attributeFilters.map((attr) => (
+                    <div key={attr._id} className="mb-6">
+                      <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                        {attr.attributeName}
+                      </h4>
+                      {attr.attributeType === 'color' ? (
+                        // Color swatches
+                        <div className="flex flex-wrap gap-2">
+                          {attr.values.map((value) => {
+                            const isSelected = selectedAttributes[attr.attributeSlug]?.includes(value.valueSlug);
+                            return (
+                              <button
+                                key={value.valueId}
+                                onClick={() => toggleAttributeValue(attr.attributeSlug, value.valueSlug)}
+                                className={`relative w-8 h-8 rounded-full border-2 transition-all ${
+                                  isSelected
+                                    ? 'border-[var(--store-accent-500)] ring-2 ring-[var(--store-accent-300)]'
+                                    : 'border-gray-300 dark:border-zinc-600 hover:border-gray-400'
+                                }`}
+                                style={{ backgroundColor: value.colorHex || '#ccc' }}
+                                title={`${value.value} (${value.count})`}
+                              >
+                                {isSelected && (
+                                  <svg
+                                    className="absolute inset-0 m-auto w-4 h-4"
+                                    fill="none"
+                                    stroke={value.colorHex && parseInt(value.colorHex.slice(1), 16) < 0x808080 ? 'white' : 'black'}
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        // Text/checkbox filters
+                        <div className="space-y-2">
+                          {attr.values.map((value) => {
+                            const isSelected = selectedAttributes[attr.attributeSlug]?.includes(value.valueSlug);
+                            return (
+                              <label key={value.valueId} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleAttributeValue(attr.attributeSlug, value.valueSlug)}
+                                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600"
+                                  style={{ accentColor: 'var(--store-accent-500)' }}
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                  {value.value}
+                                </span>
+                                <span className="text-xs text-gray-400">({value.count})</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
               {/* Clear Filters */}
-              {(categoryId || subcategoryId || minPrice || maxPrice || onSale || inStock || search) && (
+              {(categoryId || subcategoryId || minPrice || maxPrice || onSale || inStock || search || attributes) && (
                 <button
                   onClick={() =>
                     updateFilters({
@@ -409,6 +564,7 @@ export default function StoreProductsPage() {
                       onSale: null,
                       inStock: null,
                       search: null,
+                      attributes: null,
                     })
                   }
                   className="mt-6 w-full py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-zinc-700 rounded-lg"

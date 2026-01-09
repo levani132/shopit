@@ -131,6 +131,7 @@ To enable efficient filtering on category pages without querying all products:
    - Used when browsing a specific category page
 
 This ensures:
+
 - Shops without categories can still filter by attributes
 - Uncategorized products' attributes are still filterable
 - Category-specific filtering remains efficient
