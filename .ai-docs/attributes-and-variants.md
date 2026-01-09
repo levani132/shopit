@@ -359,10 +359,14 @@ When adding this feature to existing products:
 - Added `/api/v1/categories/:id/filters/:storeId` endpoint
 - Added attribute filtering to product list (`?attributes=color:red|size:xl`)
 
-### Phase 4: Store Frontend Variant Selection ⏳ PENDING
+### Phase 4: Store Frontend Variant Selection ✅ COMPLETED
 
-- Product page variant selector
-- Price and stock updates on selection
+- Created product detail page with variant selector
+- Price and stock updates dynamically on selection
+- Variant-specific images display when variant selected
+- Color swatches for color-type attributes, buttons for text
+- Dynamic availability based on other selections
+- Dashboard variant image upload grouped by requiresImage attributes
 - Variant-specific images
 - Add to cart with variant ID
 
