@@ -256,30 +256,41 @@ export default function StoreProductsPage() {
   // Toggle attribute value selection
   const toggleAttributeValue = useCallback(
     (attrSlug: string, valueSlug: string) => {
-      const newSelectedAttributes = { ...selectedAttributes };
+      // Parse current attributes from URL to avoid stale closure
+      const currentAttributes = searchParams.get('attributes') || '';
+      const currentSelected: Record<string, string[]> = {};
+      if (currentAttributes) {
+        currentAttributes.split('|').forEach((attrGroup) => {
+          const [slug, values] = attrGroup.split(':');
+          if (slug && values) {
+            currentSelected[slug] = values.split(',');
+          }
+        });
+      }
 
-      if (!newSelectedAttributes[attrSlug]) {
-        newSelectedAttributes[attrSlug] = [valueSlug];
-      } else if (newSelectedAttributes[attrSlug].includes(valueSlug)) {
-        newSelectedAttributes[attrSlug] = newSelectedAttributes[attrSlug].filter(
+      // Toggle the value
+      if (!currentSelected[attrSlug]) {
+        currentSelected[attrSlug] = [valueSlug];
+      } else if (currentSelected[attrSlug].includes(valueSlug)) {
+        currentSelected[attrSlug] = currentSelected[attrSlug].filter(
           (v) => v !== valueSlug
         );
-        if (newSelectedAttributes[attrSlug].length === 0) {
-          delete newSelectedAttributes[attrSlug];
+        if (currentSelected[attrSlug].length === 0) {
+          delete currentSelected[attrSlug];
         }
       } else {
-        newSelectedAttributes[attrSlug].push(valueSlug);
+        currentSelected[attrSlug].push(valueSlug);
       }
 
       // Build new attributes string
-      const attrParts = Object.entries(newSelectedAttributes).map(
+      const attrParts = Object.entries(currentSelected).map(
         ([slug, values]) => `${slug}:${values.join(',')}`
       );
       const newAttributesString = attrParts.length > 0 ? attrParts.join('|') : null;
 
       updateFilters({ attributes: newAttributesString });
     },
-    [selectedAttributes, updateFilters]
+    [searchParams, updateFilters]
   );
 
   // Track product view

@@ -54,7 +54,12 @@ interface ProductVariant {
 interface ImageGroup {
   key: string; // Unique key for the group (e.g., "color-red")
   label: string; // Display label (e.g., "Red")
-  attributes: { attributeId: string; valueId: string; value: string; colorHex?: string }[];
+  attributes: {
+    attributeId: string;
+    valueId: string;
+    value: string;
+    colorHex?: string;
+  }[];
   images: string[];
   previewImages: { file: File; preview: string }[];
 }
@@ -95,7 +100,9 @@ export default function VariantEditor({
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [previewImages, setPreviewImages] = useState<Map<string, { file: File; preview: string }[]>>(new Map());
+  const [previewImages, setPreviewImages] = useState<
+    Map<string, { file: File; preview: string }[]>
+  >(new Map());
   const fileInputRefs = useRef<Map<string, HTMLInputElement | null>>(new Map());
 
   // Compute image groups based on requiresImage attributes
@@ -103,8 +110,10 @@ export default function VariantEditor({
     if (!hasVariants || variants.length === 0) return [];
 
     // Find attributes that require images
-    const imageRequiringAttrs = attributes.filter((attr) => 
-      attr.requiresImage && productAttributes.some((pa) => pa.attributeId === attr._id)
+    const imageRequiringAttrs = attributes.filter(
+      (attr) =>
+        attr.requiresImage &&
+        productAttributes.some((pa) => pa.attributeId === attr._id),
     );
 
     if (imageRequiringAttrs.length === 0) return [];
@@ -115,7 +124,7 @@ export default function VariantEditor({
     for (const variant of variants) {
       // Get the image-requiring attributes for this variant
       const imageAttrs = variant.attributes.filter((va) =>
-        imageRequiringAttrs.some((attr) => attr._id === va.attributeId)
+        imageRequiringAttrs.some((attr) => attr._id === va.attributeId),
       );
 
       if (imageAttrs.length === 0) continue;
@@ -181,22 +190,37 @@ export default function VariantEditor({
         const existing = updated.get(groupKey) || [];
         // Revoke the URL to prevent memory leaks
         URL.revokeObjectURL(existing[index].preview);
-        updated.set(groupKey, existing.filter((_, i) => i !== index));
+        updated.set(
+          groupKey,
+          existing.filter((_, i) => i !== index),
+        );
         return updated;
       });
 
       // Remove from variant image files
       const updatedFiles = new Map(variantImageFiles);
       const existingFiles = updatedFiles.get(groupKey) || [];
-      updatedFiles.set(groupKey, existingFiles.filter((_, i) => i !== index));
+      updatedFiles.set(
+        groupKey,
+        existingFiles.filter((_, i) => i !== index),
+      );
       onVariantImageFilesChange(updatedFiles);
     } else {
       // Remove existing image URL from variants
       const updatedVariants = variants.map((variant) => {
         // Check if this variant belongs to this group
         const variantKey = variant.attributes
-          .filter((va) => imageGroups.some((g) => g.key === groupKey && 
-            g.attributes.some((a) => a.attributeId === va.attributeId && a.valueId === va.valueId)))
+          .filter((va) =>
+            imageGroups.some(
+              (g) =>
+                g.key === groupKey &&
+                g.attributes.some(
+                  (a) =>
+                    a.attributeId === va.attributeId &&
+                    a.valueId === va.valueId,
+                ),
+            ),
+          )
           .sort((a, b) => a.attributeId.localeCompare(b.attributeId))
           .map((a) => `${a.attributeId}-${a.valueId}`)
           .join('|');
@@ -214,7 +238,9 @@ export default function VariantEditor({
   };
 
   // Get all images for a group (existing + preview)
-  const getGroupImages = (groupKey: string): { url: string; isPreview: boolean; index: number }[] => {
+  const getGroupImages = (
+    groupKey: string,
+  ): { url: string; isPreview: boolean; index: number }[] => {
     const group = imageGroups.find((g) => g.key === groupKey);
     const existingImages = (group?.images || []).map((url, index) => ({
       url,
@@ -254,7 +280,9 @@ export default function VariantEditor({
 
   // Toggle attribute selection
   const toggleAttribute = (attributeId: string) => {
-    const existing = productAttributes.find((pa) => pa.attributeId === attributeId);
+    const existing = productAttributes.find(
+      (pa) => pa.attributeId === attributeId,
+    );
     if (existing) {
       // Remove attribute
       onProductAttributesChange(
@@ -332,14 +360,16 @@ export default function VariantEditor({
     // Create variants, preserving existing data where possible
     const newVariants: ProductVariant[] = combinations.map((combo) => {
       // Check if this exact combination already exists
-      const existingVariant = variants.find((v) =>
-        v.attributes.length === combo.length &&
-        v.attributes.every((attr) =>
-          combo.some(
-            (c) =>
-              c.attributeId === attr.attributeId && c.valueId === attr.valueId,
+      const existingVariant = variants.find(
+        (v) =>
+          v.attributes.length === combo.length &&
+          v.attributes.every((attr) =>
+            combo.some(
+              (c) =>
+                c.attributeId === attr.attributeId &&
+                c.valueId === attr.valueId,
+            ),
           ),
-        ),
       );
 
       if (existingVariant) {
@@ -475,7 +505,9 @@ export default function VariantEditor({
               {productAttributes.length > 0 && (
                 <div className="mb-6 space-y-4">
                   {productAttributes.map((pa) => {
-                    const attr = attributes.find((a) => a._id === pa.attributeId);
+                    const attr = attributes.find(
+                      (a) => a._id === pa.attributeId,
+                    );
                     if (!attr) return null;
 
                     return (
@@ -484,7 +516,11 @@ export default function VariantEditor({
                         className="p-4 border border-gray-200 dark:border-zinc-700 rounded-lg"
                       >
                         <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                          {getLocalizedText(attr.nameLocalized, attr.name, locale)}{' '}
+                          {getLocalizedText(
+                            attr.nameLocalized,
+                            attr.name,
+                            locale,
+                          )}{' '}
                           - {t('selectValues')}
                         </h4>
                         <div className="flex flex-wrap gap-2">
@@ -589,7 +625,9 @@ export default function VariantEditor({
                                     {attr.colorHex && (
                                       <span
                                         className="w-3 h-3 rounded-full border border-gray-300 dark:border-zinc-600"
-                                        style={{ backgroundColor: attr.colorHex }}
+                                        style={{
+                                          backgroundColor: attr.colorHex,
+                                        }}
                                       />
                                     )}
                                     <span className="text-gray-600 dark:text-gray-400">
@@ -623,7 +661,9 @@ export default function VariantEditor({
                   </div>
                 </div>
               ) : (
-                productAttributes.some((pa) => pa.selectedValues.length > 0) && (
+                productAttributes.some(
+                  (pa) => pa.selectedValues.length > 0,
+                ) && (
                   <div className="text-center py-6 border border-dashed border-gray-300 dark:border-zinc-600 rounded-lg">
                     <p className="text-gray-500 dark:text-gray-400">
                       {t('noVariantsDescription')}
@@ -645,7 +685,7 @@ export default function VariantEditor({
                   <div className="space-y-6">
                     {imageGroups.map((group) => {
                       const groupImages = getGroupImages(group.key);
-                      
+
                       return (
                         <div
                           key={group.key}
@@ -670,7 +710,11 @@ export default function VariantEditor({
                               </span>
                             ))}
                             <span className="text-sm text-gray-500 dark:text-gray-400">
-                              ({groupImages.length} {groupImages.length === 1 ? t('image') : t('images')})
+                              ({groupImages.length}{' '}
+                              {groupImages.length === 1
+                                ? t('image')
+                                : t('images')}
+                              )
                             </span>
                           </div>
 
@@ -690,11 +734,27 @@ export default function VariantEditor({
                                 />
                                 <button
                                   type="button"
-                                  onClick={() => removeImage(group.key, img.index, img.isPreview)}
+                                  onClick={() =>
+                                    removeImage(
+                                      group.key,
+                                      img.index,
+                                      img.isPreview,
+                                    )
+                                  }
                                   className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                                 >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M6 18L18 6M6 6l12 12"
+                                    />
                                   </svg>
                                 </button>
                                 {img.isPreview && (
@@ -708,21 +768,37 @@ export default function VariantEditor({
                             {/* Add Image Button */}
                             <button
                               type="button"
-                              onClick={() => fileInputRefs.current.get(group.key)?.click()}
+                              onClick={() =>
+                                fileInputRefs.current.get(group.key)?.click()
+                              }
                               className="w-24 h-24 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg hover:border-[var(--accent-500)] transition-colors flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 hover:text-[var(--accent-600)]"
                             >
-                              <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              <svg
+                                className="w-8 h-8 mb-1"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M12 4v16m8-8H4"
+                                />
                               </svg>
                               <span className="text-xs">{t('addImage')}</span>
                             </button>
                             <input
                               type="file"
-                              ref={(el) => { fileInputRefs.current.set(group.key, el); }}
+                              ref={(el) => {
+                                fileInputRefs.current.set(group.key, el);
+                              }}
                               accept="image/*"
                               multiple
                               className="hidden"
-                              onChange={(e) => handleImageUpload(group.key, e.target.files)}
+                              onChange={(e) =>
+                                handleImageUpload(group.key, e.target.files)
+                              }
                             />
                           </div>
 
@@ -745,4 +821,3 @@ export default function VariantEditor({
     </div>
   );
 }
-
