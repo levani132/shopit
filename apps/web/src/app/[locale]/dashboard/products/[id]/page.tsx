@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -36,7 +35,6 @@ interface ProductFormData {
 }
 
 export default function EditProductPage() {
-  const t = useTranslations('dashboard');
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
