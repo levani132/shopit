@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import { Link } from '../../i18n/routing';
-import { useTranslations } from 'next-intl';
+import { usePathname as useNextPathname } from 'next/navigation';
+import { Link, usePathname } from '../../i18n/routing';
+import { useTranslations, useLocale } from 'next-intl';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
@@ -75,7 +75,7 @@ export function DashboardHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
+  const pathname = useNextPathname();
   const t = useTranslations('dashboard');
   const tNav = useTranslations('nav');
   const { theme, toggleTheme } = useTheme();
@@ -141,8 +141,11 @@ export function DashboardHeader() {
             </Link>
           </div>
 
-          {/* Right: Theme toggle + User menu */}
+          {/* Right: Language switcher + Theme toggle + User menu */}
           <div className="flex items-center gap-2">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
@@ -350,4 +353,35 @@ export function DashboardHeader() {
   );
 }
 
+function LanguageSwitcher() {
+  const t = useTranslations('common');
+  const pathname = usePathname();
+  const locale = useLocale();
 
+  return (
+    <div className="flex items-center gap-1 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
+      <Link
+        href={pathname}
+        locale="ka"
+        className={`px-2.5 py-1.5 rounded-md transition-all font-medium text-xs ${
+          locale === 'ka'
+            ? 'bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+        }`}
+      >
+        {t('georgian')}
+      </Link>
+      <Link
+        href={pathname}
+        locale="en"
+        className={`px-2.5 py-1.5 rounded-md transition-all font-medium text-xs ${
+          locale === 'en'
+            ? 'bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+        }`}
+      >
+        {t('english')}
+      </Link>
+    </div>
+  );
+}
