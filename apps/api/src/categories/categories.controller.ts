@@ -29,6 +29,8 @@ export class CategoriesController {
     private readonly categoryStatsService: CategoryStatsService,
   ) {}
 
+  // ========== Static routes first (before :id parameterized routes) ==========
+
   /**
    * Get all categories for a store (public)
    */
@@ -48,32 +50,12 @@ export class CategoriesController {
   }
 
   /**
-   * Get a single category
-   */
-  @Get(':id')
-  async getOne(@Param('id') id: string) {
-    return this.categoriesService.findById(id);
-  }
-
-  /**
    * Get store-level filters (all products, regardless of category)
    * Used for "All Products" page or stores without categories
    */
   @Get('filters/store/:storeId')
   async getStoreFilters(@Param('storeId') storeId: string) {
     return this.categoryStatsService.getFiltersForStore(storeId);
-  }
-
-  /**
-   * Get available filters for a category (public)
-   * Returns attribute filters with product counts
-   */
-  @Get(':id/filters/:storeId')
-  async getFilters(
-    @Param('id') categoryId: string,
-    @Param('storeId') storeId: string,
-  ) {
-    return this.categoryStatsService.getFiltersForCategory(categoryId, storeId);
   }
 
   /**
@@ -86,6 +68,28 @@ export class CategoriesController {
   async rebuildStats(@Request() req: { user: { storeId: string } }) {
     await this.categoryStatsService.rebuildStatsForStore(req.user.storeId);
     return { success: true, message: 'Stats rebuilt successfully' };
+  }
+
+  // ========== Parameterized :id routes (must come after static routes) ==========
+
+  /**
+   * Get a single category
+   */
+  @Get(':id')
+  async getOne(@Param('id') id: string) {
+    return this.categoriesService.findById(id);
+  }
+
+  /**
+   * Get available filters for a category (public)
+   * Returns attribute filters with product counts
+   */
+  @Get(':id/filters/:storeId')
+  async getFilters(
+    @Param('id') categoryId: string,
+    @Param('storeId') storeId: string,
+  ) {
+    return this.categoryStatsService.getFiltersForCategory(categoryId, storeId);
   }
 
   /**
