@@ -77,8 +77,9 @@ export class CategoryStatsService {
       attributes.map((a) => [a._id.toString(), a]),
     );
 
-    // Update stats for categoryId (if exists)
-    const categoryIds: Types.ObjectId[] = [];
+    // Update stats for categories (if exists) AND store-level (null categoryId)
+    // Store-level stats (categoryId: null) always updated for all products
+    const categoryIds: (Types.ObjectId | null)[] = [null]; // null = store-level
     if (product.categoryId) {
       categoryIds.push(product.categoryId);
     }
@@ -115,7 +116,7 @@ export class CategoryStatsService {
    * Core update method for a single stat entry
    */
   private async updateStat(
-    categoryId: Types.ObjectId,
+    categoryId: Types.ObjectId | null,
     storeId: Types.ObjectId,
     attribute: AttributeDocument | Attribute,
     valueInfo: {
@@ -209,6 +210,23 @@ export class CategoryStatsService {
     return this.statsModel
       .find({
         categoryId: new Types.ObjectId(categoryId),
+        storeId: new Types.ObjectId(storeId),
+        totalProducts: { $gt: 0 },
+      })
+      .sort({ attributeName: 1 })
+      .lean();
+  }
+
+  /**
+   * Get store-level filter stats (all products, regardless of category)
+   * Used when browsing "All Products" or when store has no categories
+   */
+  async getFiltersForStore(
+    storeId: string,
+  ): Promise<CategoryAttributeStatsDocument[]> {
+    return this.statsModel
+      .find({
+        categoryId: null, // null = store-level stats
         storeId: new Types.ObjectId(storeId),
         totalProducts: { $gt: 0 },
       })

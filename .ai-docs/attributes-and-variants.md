@@ -117,12 +117,30 @@ To enable efficient filtering on category pages without querying all products:
 2. Show count of products per filter value
 3. Enable faceted search
 
+### Store-Level vs Category-Level Stats
+
+**IMPORTANT: We track attributes at TWO levels:**
+
+1. **Store-level stats** (`categoryId: null`)
+   - Aggregates ALL products in the store regardless of category
+   - Used when browsing "All Products" page or when store has no categories
+   - Products without categories ONLY contribute to store-level stats
+
+2. **Category-level stats** (`categoryId: <ObjectId>`)
+   - Aggregates products within a specific category/subcategory
+   - Used when browsing a specific category page
+
+This ensures:
+- Shops without categories can still filter by attributes
+- Uncategorized products' attributes are still filterable
+- Category-specific filtering remains efficient
+
 ### Category Attribute Stats Schema
 
 ```typescript
 interface CategoryAttributeStats {
   _id: ObjectId;
-  categoryId: ObjectId; // Category or subcategory
+  categoryId: ObjectId | null; // null = store-level (all products)
   storeId: ObjectId;
   attributeId: ObjectId;
   attributeName: string; // Denormalized

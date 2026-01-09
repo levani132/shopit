@@ -56,6 +56,15 @@ export class CategoriesController {
   }
 
   /**
+   * Get store-level filters (all products, regardless of category)
+   * Used for "All Products" page or stores without categories
+   */
+  @Get('filters/store/:storeId')
+  async getStoreFilters(@Param('storeId') storeId: string) {
+    return this.categoryStatsService.getFiltersForStore(storeId);
+  }
+
+  /**
    * Get available filters for a category (public)
    * Returns attribute filters with product counts
    */
