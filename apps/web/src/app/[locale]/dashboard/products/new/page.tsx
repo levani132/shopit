@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
+import VariantEditor from '../../../../../components/dashboard/VariantEditor';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -60,6 +61,30 @@ export default function NewProductPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Variant state
+  const [hasVariants, setHasVariants] = useState(false);
+  const [productAttributes, setProductAttributes] = useState<
+    { attributeId: string; selectedValues: string[] }[]
+  >([]);
+  const [variants, setVariants] = useState<
+    {
+      _id?: string;
+      sku?: string;
+      attributes: {
+        attributeId: string;
+        attributeName: string;
+        valueId: string;
+        value: string;
+        colorHex?: string;
+      }[];
+      price?: number;
+      salePrice?: number;
+      stock: number;
+      images: string[];
+      isActive: boolean;
+    }[]
+  >([]);
 
   // Fetch categories
   useEffect(() => {
@@ -154,6 +179,20 @@ export default function NewProductPage() {
 
       if (formData.subcategoryId) {
         formDataToSend.append('subcategoryId', formData.subcategoryId);
+      }
+
+      // Add variant data
+      formDataToSend.append('hasVariants', String(hasVariants));
+
+      if (hasVariants && productAttributes.length > 0) {
+        formDataToSend.append(
+          'productAttributes',
+          JSON.stringify(productAttributes),
+        );
+      }
+
+      if (hasVariants && variants.length > 0) {
+        formDataToSend.append('variants', JSON.stringify(variants));
       }
 
       // Add images
@@ -474,6 +513,16 @@ export default function NewProductPage() {
             </p>
           )}
         </div>
+
+        {/* Variants Section */}
+        <VariantEditor
+          hasVariants={hasVariants}
+          productAttributes={productAttributes}
+          variants={variants}
+          onHasVariantsChange={setHasVariants}
+          onProductAttributesChange={setProductAttributes}
+          onVariantsChange={setVariants}
+        />
 
         {/* Submit Button */}
         <div className="flex items-center justify-end gap-4">

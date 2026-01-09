@@ -21,6 +21,8 @@ import {
   ListProductsDto,
   CreateProductDto,
   UpdateProductDto,
+  UpdateVariantDto,
+  BulkVariantsDto,
 } from './dto/product.dto';
 import { UploadService } from '../upload/upload.service';
 import 'multer';
@@ -160,5 +162,71 @@ export class ProductsController {
     @Request() req: { user: { storeId: string } },
   ) {
     return this.productsService.delete(id, req.user.storeId);
+  }
+
+  // --- Variant Endpoints ---
+
+  /**
+   * Get variants for a product (public)
+   */
+  @Get(':id/variants')
+  async getVariants(@Param('id') id: string) {
+    return this.productsService.getVariants(id);
+  }
+
+  /**
+   * Generate variants from product attributes
+   */
+  @Post(':id/variants/generate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async generateVariants(
+    @Param('id') id: string,
+    @Request() req: { user: { storeId: string } },
+  ) {
+    return this.productsService.generateVariants(id, req.user.storeId);
+  }
+
+  /**
+   * Bulk update variants (or regenerate)
+   */
+  @Post(':id/variants')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async bulkUpdateVariants(
+    @Param('id') id: string,
+    @Body() dto: BulkVariantsDto,
+    @Request() req: { user: { storeId: string } },
+  ) {
+    return this.productsService.bulkUpdateVariants(id, req.user.storeId, dto);
+  }
+
+  /**
+   * Update a single variant
+   */
+  @Patch(':id/variants/:variantId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async updateVariant(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+    @Body() dto: UpdateVariantDto,
+    @Request() req: { user: { storeId: string } },
+  ) {
+    return this.productsService.updateVariant(id, variantId, req.user.storeId, dto);
+  }
+
+  /**
+   * Delete a variant
+   */
+  @Delete(':id/variants/:variantId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async deleteVariant(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+    @Request() req: { user: { storeId: string } },
+  ) {
+    return this.productsService.deleteVariant(id, variantId, req.user.storeId);
   }
 }

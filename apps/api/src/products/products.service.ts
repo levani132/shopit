@@ -1,18 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, FilterQuery } from 'mongoose';
-import { Product, ProductDocument } from '@sellit/api-database';
+import { Product, ProductDocument, Attribute, AttributeDocument } from '@sellit/api-database';
 import {
   ListProductsDto,
   CreateProductDto,
   UpdateProductDto,
   SortBy,
+  ProductVariantDto,
+  UpdateVariantDto,
+  BulkVariantsDto,
 } from './dto/product.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Attribute.name) private attributeModel: Model<AttributeDocument>,
   ) {}
 
   /**
@@ -187,6 +191,39 @@ export class ProductsService {
    * Create a new product
    */
   async create(storeId: string, dto: CreateProductDto, images?: string[]) {
+    // Process variants if provided
+    let variants = [];
+    let totalStock = dto.stock ?? 0;
+    let hasVariants = dto.hasVariants ?? false;
+
+    if (dto.variants && dto.variants.length > 0) {
+      hasVariants = true;
+      variants = dto.variants.map((v) => ({
+        _id: new Types.ObjectId(),
+        sku: v.sku,
+        attributes: v.attributes.map((attr) => ({
+          attributeId: new Types.ObjectId(attr.attributeId),
+          attributeName: attr.attributeName,
+          valueId: new Types.ObjectId(attr.valueId),
+          value: attr.value,
+          colorHex: attr.colorHex,
+        })),
+        price: v.price,
+        salePrice: v.salePrice,
+        stock: v.stock ?? 0,
+        images: v.images || [],
+        isActive: v.isActive ?? true,
+      }));
+      // Compute total stock from variants
+      totalStock = variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    }
+
+    // Process product attributes
+    const productAttributes = (dto.productAttributes || []).map((pa) => ({
+      attributeId: new Types.ObjectId(pa.attributeId),
+      selectedValues: pa.selectedValues.map((v) => new Types.ObjectId(v)),
+    }));
+
     const product = await this.productModel.create({
       ...dto,
       storeId: new Types.ObjectId(storeId),
@@ -195,6 +232,10 @@ export class ProductsService {
         ? new Types.ObjectId(dto.subcategoryId)
         : undefined,
       images: images || [],
+      hasVariants,
+      productAttributes,
+      variants,
+      totalStock,
     });
 
     return product.toObject();
@@ -223,10 +264,10 @@ export class ProductsService {
     const newImages = newImageUrls || [];
     const combinedImages = [...existingImages, ...newImages];
 
-    // Remove existingImages from dto before assigning (it's not a schema field)
-    const { existingImages: _, ...updateData } = dto;
+    // Remove fields that need special handling
+    const { existingImages: _, productAttributes, variants, ...updateData } = dto;
 
-    // Update fields
+    // Update basic fields
     Object.assign(product, updateData);
 
     // Update images if any changes
@@ -239,6 +280,42 @@ export class ProductsService {
     }
     if (dto.subcategoryId) {
       product.subcategoryId = new Types.ObjectId(dto.subcategoryId);
+    }
+
+    // Handle product attributes update
+    if (productAttributes !== undefined) {
+      product.productAttributes = productAttributes.map((pa) => ({
+        attributeId: new Types.ObjectId(pa.attributeId),
+        selectedValues: pa.selectedValues.map((v) => new Types.ObjectId(v)),
+      }));
+    }
+
+    // Handle variants update
+    if (variants !== undefined) {
+      product.hasVariants = variants.length > 0;
+      product.variants = variants.map((v) => ({
+        _id: v._id ? new Types.ObjectId(v._id) : new Types.ObjectId(),
+        sku: v.sku,
+        attributes: v.attributes.map((attr) => ({
+          attributeId: new Types.ObjectId(attr.attributeId),
+          attributeName: attr.attributeName,
+          valueId: new Types.ObjectId(attr.valueId),
+          value: attr.value,
+          colorHex: attr.colorHex,
+        })),
+        price: v.price,
+        salePrice: v.salePrice,
+        stock: v.stock ?? 0,
+        images: v.images || [],
+        isActive: v.isActive ?? true,
+      }));
+      // Recompute total stock
+      product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+    } else if (dto.hasVariants === false) {
+      // Switching from variants to no variants
+      product.hasVariants = false;
+      product.variants = [];
+      product.totalStock = product.stock;
     }
 
     await product.save();
@@ -351,6 +428,263 @@ export class ProductsService {
       totalCount,
       hasMore: totalCount > limit,
     };
+  }
+
+  // --- Variant Methods ---
+
+  /**
+   * Get variants for a product
+   */
+  async getVariants(productId: string, storeId?: string) {
+    const product = await this.findById(productId, storeId);
+    return product.variants || [];
+  }
+
+  /**
+   * Update a single variant
+   */
+  async updateVariant(
+    productId: string,
+    variantId: string,
+    storeId: string,
+    dto: UpdateVariantDto,
+  ) {
+    const product = await this.productModel.findOne({
+      _id: new Types.ObjectId(productId),
+      storeId: new Types.ObjectId(storeId),
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const variantIndex = product.variants.findIndex(
+      (v) => v._id.toString() === variantId,
+    );
+
+    if (variantIndex === -1) {
+      throw new NotFoundException('Variant not found');
+    }
+
+    // Update variant fields
+    const variant = product.variants[variantIndex];
+    if (dto.sku !== undefined) variant.sku = dto.sku;
+    if (dto.price !== undefined) variant.price = dto.price;
+    if (dto.salePrice !== undefined) variant.salePrice = dto.salePrice;
+    if (dto.stock !== undefined) variant.stock = dto.stock;
+    if (dto.images !== undefined) variant.images = dto.images;
+    if (dto.isActive !== undefined) variant.isActive = dto.isActive;
+
+    // Recompute total stock
+    product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+
+    await product.save();
+    return product.toObject();
+  }
+
+  /**
+   * Delete a variant
+   */
+  async deleteVariant(productId: string, variantId: string, storeId: string) {
+    const product = await this.productModel.findOne({
+      _id: new Types.ObjectId(productId),
+      storeId: new Types.ObjectId(storeId),
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const variantIndex = product.variants.findIndex(
+      (v) => v._id.toString() === variantId,
+    );
+
+    if (variantIndex === -1) {
+      throw new NotFoundException('Variant not found');
+    }
+
+    product.variants.splice(variantIndex, 1);
+
+    // If no more variants, update hasVariants flag
+    if (product.variants.length === 0) {
+      product.hasVariants = false;
+    }
+
+    // Recompute total stock
+    product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+
+    await product.save();
+    return { deleted: true };
+  }
+
+  /**
+   * Generate variants from product attributes
+   * Creates all possible combinations of selected attribute values
+   */
+  async generateVariants(productId: string, storeId: string) {
+    const product = await this.productModel.findOne({
+      _id: new Types.ObjectId(productId),
+      storeId: new Types.ObjectId(storeId),
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (!product.productAttributes || product.productAttributes.length === 0) {
+      throw new BadRequestException('Product has no attributes configured');
+    }
+
+    // Fetch attribute details
+    const attributeIds = product.productAttributes.map((pa) => pa.attributeId);
+    const attributes = await this.attributeModel
+      .find({ _id: { $in: attributeIds } })
+      .lean();
+
+    // Create a map for quick lookup
+    const attributeMap = new Map(attributes.map((a) => [a._id.toString(), a]));
+
+    // Build value arrays for each attribute
+    const valueArrays: {
+      attributeId: Types.ObjectId;
+      attributeName: string;
+      values: { valueId: Types.ObjectId; value: string; colorHex?: string }[];
+    }[] = [];
+
+    for (const pa of product.productAttributes) {
+      const attr = attributeMap.get(pa.attributeId.toString());
+      if (!attr) continue;
+
+      const values = attr.values
+        .filter((v) =>
+          pa.selectedValues.some((sv) => sv.toString() === v._id.toString()),
+        )
+        .map((v) => ({
+          valueId: v._id,
+          value: v.value,
+          colorHex: v.colorHex,
+        }));
+
+      if (values.length > 0) {
+        valueArrays.push({
+          attributeId: pa.attributeId,
+          attributeName: attr.name,
+          values,
+        });
+      }
+    }
+
+    if (valueArrays.length === 0) {
+      throw new BadRequestException('No valid attribute values selected');
+    }
+
+    // Generate all combinations (Cartesian product)
+    const combinations = this.cartesianProduct(
+      valueArrays.map((va) => va.values),
+    );
+
+    // Create variants from combinations
+    const newVariants = combinations.map((combo) => {
+      const variantAttributes = combo.map((value, index) => ({
+        attributeId: valueArrays[index].attributeId,
+        attributeName: valueArrays[index].attributeName,
+        valueId: value.valueId,
+        value: value.value,
+        colorHex: value.colorHex,
+      }));
+
+      // Check if this variant already exists (same attribute values)
+      const existingVariant = product.variants.find((v) =>
+        v.attributes.every((attr, i) =>
+          attr.valueId.toString() === variantAttributes[i]?.valueId.toString(),
+        ),
+      );
+
+      if (existingVariant) {
+        // Keep existing variant data
+        return existingVariant;
+      }
+
+      // Create new variant
+      return {
+        _id: new Types.ObjectId(),
+        sku: undefined,
+        attributes: variantAttributes,
+        stock: 0,
+        images: [],
+        isActive: true,
+      };
+    });
+
+    product.variants = newVariants;
+    product.hasVariants = true;
+    product.totalStock = newVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
+
+    await product.save();
+    return product.toObject();
+  }
+
+  /**
+   * Helper: Cartesian product of arrays
+   */
+  private cartesianProduct<T>(arrays: T[][]): T[][] {
+    if (arrays.length === 0) return [[]];
+    if (arrays.length === 1) return arrays[0].map((item) => [item]);
+
+    return arrays.reduce<T[][]>(
+      (acc, curr) =>
+        acc.flatMap((a) => curr.map((c) => [...a, c])),
+      [[]],
+    );
+  }
+
+  /**
+   * Bulk update variants for a product
+   */
+  async bulkUpdateVariants(
+    productId: string,
+    storeId: string,
+    dto: BulkVariantsDto,
+  ) {
+    if (dto.regenerate) {
+      return this.generateVariants(productId, storeId);
+    }
+
+    if (dto.variants) {
+      const product = await this.productModel.findOne({
+        _id: new Types.ObjectId(productId),
+        storeId: new Types.ObjectId(storeId),
+      });
+
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
+      product.variants = dto.variants.map((v) => ({
+        _id: v._id ? new Types.ObjectId(v._id) : new Types.ObjectId(),
+        sku: v.sku,
+        attributes: v.attributes.map((attr) => ({
+          attributeId: new Types.ObjectId(attr.attributeId),
+          attributeName: attr.attributeName,
+          valueId: new Types.ObjectId(attr.valueId),
+          value: attr.value,
+          colorHex: attr.colorHex,
+        })),
+        price: v.price,
+        salePrice: v.salePrice,
+        stock: v.stock ?? 0,
+        images: v.images || [],
+        isActive: v.isActive ?? true,
+      }));
+
+      product.hasVariants = product.variants.length > 0;
+      product.totalStock = product.variants.reduce((sum, v) => sum + (v.stock || 0), 0);
+
+      await product.save();
+      return product.toObject();
+    }
+
+    throw new BadRequestException('Either regenerate or variants must be provided');
   }
 }
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
+import VariantEditor from '../../../../../components/dashboard/VariantEditor';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -70,6 +71,30 @@ export default function EditProductPage() {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Variant state
+  const [hasVariants, setHasVariants] = useState(false);
+  const [productAttributes, setProductAttributes] = useState<
+    { attributeId: string; selectedValues: string[] }[]
+  >([]);
+  const [variants, setVariants] = useState<
+    {
+      _id?: string;
+      sku?: string;
+      attributes: {
+        attributeId: string;
+        attributeName: string;
+        valueId: string;
+        value: string;
+        colorHex?: string;
+      }[];
+      price?: number;
+      salePrice?: number;
+      stock: number;
+      images: string[];
+      isActive: boolean;
+    }[]
+  >([]);
+
   // Fetch product and categories
   useEffect(() => {
     const fetchData = async () => {
@@ -111,6 +136,56 @@ export default function EditProductPage() {
 
         // Set existing images
         setExistingImages(product.images || []);
+
+        // Set variant data
+        setHasVariants(product.hasVariants || false);
+        setProductAttributes(
+          (product.productAttributes || []).map((pa: { attributeId: string | { _id: string }; selectedValues: (string | { _id: string })[] }) => ({
+            attributeId: typeof pa.attributeId === 'string' ? pa.attributeId : pa.attributeId?._id,
+            selectedValues: (pa.selectedValues || []).map((v: string | { _id: string }) =>
+              typeof v === 'string' ? v : v?._id,
+            ),
+          })),
+        );
+        setVariants(
+          (product.variants || []).map((v: {
+            _id?: string | { toString: () => string };
+            sku?: string;
+            attributes?: {
+              attributeId: string | { _id: string; toString: () => string };
+              attributeName: string;
+              valueId: string | { _id: string; toString: () => string };
+              value: string;
+              colorHex?: string;
+            }[];
+            price?: number;
+            salePrice?: number;
+            stock?: number;
+            images?: string[];
+            isActive?: boolean;
+          }) => ({
+            _id: typeof v._id === 'string' ? v._id : v._id?.toString(),
+            sku: v.sku,
+            attributes: (v.attributes || []).map((attr) => ({
+              attributeId:
+                typeof attr.attributeId === 'string'
+                  ? attr.attributeId
+                  : attr.attributeId?.toString(),
+              attributeName: attr.attributeName,
+              valueId:
+                typeof attr.valueId === 'string'
+                  ? attr.valueId
+                  : attr.valueId?.toString(),
+              value: attr.value,
+              colorHex: attr.colorHex,
+            })),
+            price: v.price,
+            salePrice: v.salePrice,
+            stock: v.stock ?? 0,
+            images: v.images || [],
+            isActive: v.isActive !== false,
+          })),
+        );
 
         // Set categories
         if (categoriesRes.ok) {
@@ -209,6 +284,20 @@ export default function EditProductPage() {
 
       if (formData.subcategoryId) {
         formDataToSend.append('subcategoryId', formData.subcategoryId);
+      }
+
+      // Add variant data
+      formDataToSend.append('hasVariants', String(hasVariants));
+
+      if (hasVariants && productAttributes.length > 0) {
+        formDataToSend.append(
+          'productAttributes',
+          JSON.stringify(productAttributes),
+        );
+      }
+
+      if (hasVariants && variants.length > 0) {
+        formDataToSend.append('variants', JSON.stringify(variants));
       }
 
       // Add existing images as JSON (for backend to keep track)
@@ -670,6 +759,16 @@ export default function EditProductPage() {
             </p>
           )}
         </div>
+
+        {/* Variants Section */}
+        <VariantEditor
+          hasVariants={hasVariants}
+          productAttributes={productAttributes}
+          variants={variants}
+          onHasVariantsChange={setHasVariants}
+          onProductAttributesChange={setProductAttributes}
+          onVariantsChange={setVariants}
+        />
 
         {/* Submit Button */}
         <div className="flex items-center justify-end gap-4">

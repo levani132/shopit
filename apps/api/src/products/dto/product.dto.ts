@@ -8,6 +8,8 @@ import {
   Max,
   IsEnum,
   IsObject,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
@@ -137,6 +139,27 @@ export class CreateProductDto {
   @IsOptional()
   @IsMongoId()
   subcategoryId?: string;
+
+  // --- Variant Support ---
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  hasVariants?: boolean;
+
+  @IsOptional()
+  @Transform(parseJsonTransform)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductAttributeDto)
+  productAttributes?: ProductAttributeDto[];
+
+  @IsOptional()
+  @Transform(parseJsonTransform)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductVariantDto)
+  variants?: ProductVariantDto[];
 }
 
 export class UpdateProductDto {
@@ -198,5 +221,157 @@ export class UpdateProductDto {
   @IsOptional()
   @Transform(parseJsonTransform)
   existingImages?: string[];
+
+  // --- Variant Support ---
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  hasVariants?: boolean;
+
+  @IsOptional()
+  @Transform(parseJsonTransform)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductAttributeDto)
+  productAttributes?: ProductAttributeDto[];
+
+  @IsOptional()
+  @Transform(parseJsonTransform)
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductVariantDto)
+  variants?: ProductVariantDto[];
+}
+
+// --- Variant DTOs ---
+
+/**
+ * DTO for specifying which attribute values a product uses
+ */
+export class ProductAttributeDto {
+  @IsMongoId()
+  attributeId!: string;
+
+  @IsArray()
+  @IsMongoId({ each: true })
+  selectedValues!: string[];
+}
+
+/**
+ * DTO for variant attribute value (denormalized)
+ */
+export class VariantAttributeValueDto {
+  @IsMongoId()
+  attributeId!: string;
+
+  @IsString()
+  attributeName!: string;
+
+  @IsMongoId()
+  valueId!: string;
+
+  @IsString()
+  value!: string;
+
+  @IsOptional()
+  @IsString()
+  colorHex?: string;
+}
+
+/**
+ * DTO for creating/updating a product variant
+ */
+export class ProductVariantDto {
+  @IsOptional()
+  @IsMongoId()
+  _id?: string; // For updating existing variant
+
+  @IsOptional()
+  @IsString()
+  sku?: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => VariantAttributeValueDto)
+  attributes!: VariantAttributeValueDto[];
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  salePrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  stock?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+/**
+ * DTO for updating a single variant
+ */
+export class UpdateVariantDto {
+  @IsOptional()
+  @IsString()
+  sku?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  salePrice?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  stock?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+/**
+ * DTO for bulk updating variants (with optional generation)
+ */
+export class BulkVariantsDto {
+  @IsOptional()
+  @IsBoolean()
+  regenerate?: boolean; // If true, regenerate all variants from productAttributes
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductVariantDto)
+  variants?: ProductVariantDto[];
 }
 
