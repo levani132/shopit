@@ -21,25 +21,25 @@ interface StoreHeaderProps {
  */
 function getMainSiteUrl(): string {
   if (typeof window === 'undefined') return '/';
-  
+
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
-  
+
   // Split hostname into parts
   const parts = hostname.split('.');
-  
+
   // If we have a subdomain (e.g., storename.shopit.ge has 3 parts)
   // Remove the first part to get the main domain
   if (parts.length > 2) {
     const mainDomain = parts.slice(1).join('.');
     return `${protocol}//${mainDomain}`;
   }
-  
+
   // If on localhost with port, just return root
   if (hostname === 'localhost' || hostname.startsWith('localhost:')) {
     return '/';
   }
-  
+
   // Already on main domain
   return '/';
 }
