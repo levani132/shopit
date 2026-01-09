@@ -283,11 +283,11 @@ export default function ProductDetailPage() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-        <button onClick={() => router.push(`/store/${subdomain}/${locale}`)} className="hover:text-[var(--accent-600)]">
+        <button onClick={() => router.push(`/${locale}`)} className="hover:text-[var(--accent-600)]">
           {t('home')}
         </button>
         <span className="mx-2">/</span>
-        <button onClick={() => router.push(`/store/${subdomain}/${locale}/products`)} className="hover:text-[var(--accent-600)]">
+        <button onClick={() => router.push(`/${locale}/products`)} className="hover:text-[var(--accent-600)]">
           {t('products')}
         </button>
         {product.categoryId && (

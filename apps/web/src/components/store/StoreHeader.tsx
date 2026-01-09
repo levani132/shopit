@@ -271,7 +271,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                         {categories.map((category) => (
                           <div key={category._id}>
                             <a
-                              href={`/products?category=${category._id}`}
+                              href={`/${locale}/products?category=${category._id}`}
                               className="block px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 font-medium"
                             >
                               {getCategoryName(category)}
@@ -282,7 +282,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                                 {category.subcategories.map((sub) => (
                                   <a
                                     key={sub._id}
-                                    href={`/products?category=${category._id}&subcategory=${sub._id}`}
+                                    href={`/${locale}/products?category=${category._id}&subcategory=${sub._id}`}
                                     className="block px-4 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
                                   >
                                     {getSubcategoryName(sub)}
@@ -298,7 +298,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                 </div>
               )}
               <a
-                href="/products"
+                href={`/${locale}/products`}
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 {t('products')}
@@ -509,7 +509,7 @@ function MobileNav({
       <div className="flex flex-col gap-4">
         {/* Navigation Links */}
         <a
-          href="/products"
+          href={`/${locale}/products`}
           className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           onClick={onClose}
         >
@@ -550,7 +550,7 @@ function MobileNav({
                 {categories.map((category) => (
                   <div key={category._id}>
                     <a
-                      href={`/products?category=${category._id}`}
+                      href={`/${locale}/products?category=${category._id}`}
                       className="block text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white font-medium"
                       onClick={onClose}
                     >
@@ -562,7 +562,7 @@ function MobileNav({
                         {category.subcategories.map((sub) => (
                           <a
                             key={sub._id}
-                            href={`/products?category=${category._id}&subcategory=${sub._id}`}
+                            href={`/${locale}/products?category=${category._id}&subcategory=${sub._id}`}
                             className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
                             onClick={onClose}
                           >

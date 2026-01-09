@@ -367,6 +367,15 @@ When adding this feature to existing products:
 - Color swatches for color-type attributes, buttons for text
 - Dynamic availability based on other selections
 - Dashboard variant image upload grouped by requiresImage attributes
+
+### Phase 5: Shopping Cart with Variants ⏳ PENDING
+
+- Cart state management (context/localStorage)
+- Add to cart with product ID + variant ID
+- Cart item display with variant attributes
+- Quantity management per variant
+- Cart persistence across sessions
+- Checkout flow integration
 - Variant-specific images
 - Add to cart with variant ID
 

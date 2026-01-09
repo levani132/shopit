@@ -41,7 +41,7 @@ export function HomepageProducts({ products, hasMore, locale, subdomain }: Homep
           </h2>
           {hasMore && (
             <Link
-              href={`/store/${subdomain}/${locale}/products`}
+              href={`/${locale}/products`}
               className="text-sm font-medium transition-colors hover:opacity-80"
               style={{ color: 'var(--store-accent-600)' }}
             >
@@ -61,7 +61,7 @@ export function HomepageProducts({ products, hasMore, locale, subdomain }: Homep
             return (
               <Link
                 key={product._id}
-                href={`/store/${subdomain}/${locale}/products/${product._id}`}
+                href={`/${locale}/products/${product._id}`}
                 className="group"
               >
                 <div className="bg-gray-50 dark:bg-zinc-800 rounded-xl overflow-hidden transition-transform group-hover:scale-[1.02]">
