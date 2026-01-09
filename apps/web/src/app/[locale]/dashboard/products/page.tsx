@@ -151,7 +151,7 @@ export default function ProductsPage() {
             {t('products')}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Manage your products and inventory.
+            {t('manageProducts')}
           </p>
         </div>
         <Link
@@ -184,11 +184,10 @@ export default function ProductsPage() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No Products Yet
+              {t('noProductsYet')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
-              Start by adding your first product to your store. You can add images, 
-              set prices, and manage inventory.
+              {t('noProductsDescription')}
             </p>
             <Link
               href="/dashboard/products/new"
@@ -197,7 +196,7 @@ export default function ProductsPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Add Your First Product
+              {t('addFirstProduct')}
             </Link>
           </div>
         </div>
@@ -213,7 +212,7 @@ export default function ProductsPage() {
                     onClick={() => handleSort('name')}
                   >
                     <div className="flex items-center">
-                      Product
+                      {t('product')}
                       <SortIndicator field="name" />
                     </div>
                   </th>
@@ -222,7 +221,7 @@ export default function ProductsPage() {
                     onClick={() => handleSort('price')}
                   >
                     <div className="flex items-center">
-                      Price
+                      {t('price')}
                       <SortIndicator field="price" />
                     </div>
                   </th>
@@ -231,7 +230,7 @@ export default function ProductsPage() {
                     onClick={() => handleSort('stock')}
                   >
                     <div className="flex items-center">
-                      Stock
+                      {t('stock')}
                       <SortIndicator field="stock" />
                     </div>
                   </th>
@@ -240,12 +239,12 @@ export default function ProductsPage() {
                     onClick={() => handleSort('status')}
                   >
                     <div className="flex items-center">
-                      Status
+                      {t('status')}
                       <SortIndicator field="status" />
                     </div>
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Actions
+                    {t('actions')}
                   </th>
                 </tr>
               </thead>
@@ -295,7 +294,7 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`text-sm ${product.stock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                        {product.stock > 0 ? `${product.stock} ${t('inStock')}` : t('outOfStock')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -304,7 +303,7 @@ export default function ProductsPage() {
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
                           : 'bg-gray-100 text-gray-800 dark:bg-zinc-800 dark:text-gray-400'
                       }`}>
-                        {product.isActive ? 'Active' : 'Draft'}
+                        {product.isActive ? t('active') : t('draft')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -312,7 +311,7 @@ export default function ProductsPage() {
                         href={`/dashboard/products/${product._id}`}
                         className="text-[var(--accent-600)] hover:text-[var(--accent-700)] mr-4"
                       >
-                        Edit
+                        {t('edit')}
                       </Link>
                       <button
                         className="text-red-600 hover:text-red-700"
@@ -320,7 +319,7 @@ export default function ProductsPage() {
                           // TODO: Delete confirmation
                         }}
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </td>
                   </tr>

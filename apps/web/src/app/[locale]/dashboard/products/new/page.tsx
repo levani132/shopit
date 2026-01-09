@@ -210,10 +210,10 @@ export default function NewProductPage() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Add New Product
+            {t('addNewProduct')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Create a new product for your store
+            {t('createNewProduct')}
           </p>
         </div>
       </div>
@@ -229,10 +229,10 @@ export default function NewProductPage() {
         {/* Images Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Product Images
+            {t('productImages')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Add up to 10 images. The first image will be the main product image.
+            {t('productImagesDescription')}
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -255,7 +255,7 @@ export default function NewProductPage() {
                 </button>
                 {index === 0 && (
                   <span className="absolute bottom-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded">
-                    Main
+                    {t('main')}
                   </span>
                 )}
               </div>
@@ -271,7 +271,7 @@ export default function NewProductPage() {
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="text-sm text-gray-500 mt-2">Add Image</span>
+                <span className="text-sm text-gray-500 mt-2">{t('addImage')}</span>
               </button>
             )}
           </div>
@@ -289,14 +289,14 @@ export default function NewProductPage() {
         {/* Basic Info Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Basic Information
+            {t('basicInformation')}
           </h2>
 
           {/* Product Name */}
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Product Name (Georgian)
+                {t('productNameGeorgian')}
               </label>
               <input
                 type="text"
@@ -308,7 +308,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Product Name (English) *
+                {t('productNameEnglish')} *
               </label>
               <input
                 type="text"
@@ -325,7 +325,7 @@ export default function NewProductPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description (Georgian)
+                {t('descriptionGeorgian')}
               </label>
               <textarea
                 value={formData.descriptionKa}
@@ -337,7 +337,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description (English)
+                {t('descriptionEnglish')}
               </label>
               <textarea
                 value={formData.descriptionEn}
@@ -353,13 +353,13 @@ export default function NewProductPage() {
         {/* Pricing Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Pricing & Inventory
+            {t('pricingInventory')}
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Price (₾) *
+                {t('price')} *
               </label>
               <input
                 type="number"
@@ -374,7 +374,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Sale Price (₾)
+                {t('salePrice')}
               </label>
               <input
                 type="number"
@@ -389,7 +389,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Stock Quantity
+                {t('stockQuantity')}
               </label>
               <input
                 type="number"
@@ -412,7 +412,7 @@ export default function NewProductPage() {
                 style={{ accentColor: 'var(--accent-500)' }}
               />
               <span className="text-gray-700 dark:text-gray-300">
-                This product is on sale
+                {t('productOnSale')}
               </span>
             </label>
           </div>
@@ -421,13 +421,13 @@ export default function NewProductPage() {
         {/* Category Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Category
+            {t('category')}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category
+                {t('category')}
               </label>
               <select
                 value={formData.categoryId}
@@ -436,7 +436,7 @@ export default function NewProductPage() {
                 }
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
               >
-                <option value="">Select a category</option>
+                <option value="">{t('selectCategory')}</option>
                 {categories.map((cat) => (
                   <option key={cat._id} value={cat._id}>
                     {cat.nameLocalized?.en || cat.name}
@@ -446,7 +446,7 @@ export default function NewProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Subcategory
+                {t('subcategory')}
               </label>
               <select
                 value={formData.subcategoryId}
@@ -454,7 +454,7 @@ export default function NewProductPage() {
                 disabled={!formData.categoryId || subcategories.length === 0}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white disabled:opacity-50"
               >
-                <option value="">Select a subcategory</option>
+                <option value="">{t('selectSubcategory')}</option>
                 {subcategories.map((sub) => (
                   <option key={sub._id} value={sub._id}>
                     {sub.nameLocalized?.en || sub.name}
@@ -466,11 +466,11 @@ export default function NewProductPage() {
 
           {categories.length === 0 && (
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-              No categories yet.{' '}
+              {t('noCategoriesYet')}{' '}
               <Link href="/dashboard/categories" className="text-[var(--accent-600)] hover:underline">
-                Create categories
+                {t('createCategories')}
               </Link>{' '}
-              to organize your products.
+              {t('toOrganizeProducts')}
             </p>
           )}
         </div>
@@ -481,7 +481,7 @@ export default function NewProductPage() {
             href="/dashboard/products"
             className="px-6 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            Cancel
+            {t('cancel')}
           </Link>
           <button
             type="submit"
@@ -495,14 +495,14 @@ export default function NewProductPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Saving...
+                {t('saving')}
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Create Product
+                {t('createProduct')}
               </>
             )}
           </button>

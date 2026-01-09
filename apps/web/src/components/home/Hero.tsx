@@ -26,7 +26,6 @@ const slides = [
 export function Hero() {
   const t = useTranslations('hero');
   const tNav = useTranslations('nav');
-  const tCommon = useTranslations('common');
   const [currentSlide, setCurrentSlide] = useState(0);
   const { user, isAuthenticated } = useAuth();
   

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -35,6 +36,7 @@ interface ProductFormData {
 }
 
 export default function EditProductPage() {
+  const t = useTranslations('dashboard');
   const router = useRouter();
   const params = useParams();
   const productId = params.id as string;
@@ -295,10 +297,10 @@ export default function EditProductPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Edit Product
+              {t('editProduct')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Update your product details
+              {t('updateProduct')}
             </p>
           </div>
         </div>
@@ -312,7 +314,7 @@ export default function EditProductPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
-          Delete
+          {t('delete')}
         </button>
       </div>
 
@@ -321,17 +323,17 @@ export default function EditProductPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Delete Product
+              {t('deleteProduct')}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete this product? This action cannot be undone.
+              {t('deleteProductConfirm')}
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDelete}
@@ -344,10 +346,10 @@ export default function EditProductPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Deleting...
+                    {t('deleting')}
                   </>
                 ) : (
-                  'Delete Product'
+                  t('deleteProduct')
                 )}
               </button>
             </div>
@@ -368,10 +370,10 @@ export default function EditProductPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Product Status
+                {t('productStatus')}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {formData.isActive ? 'This product is visible to customers' : 'This product is hidden from your store'}
+                {formData.isActive ? t('productVisible') : t('productHidden')}
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -394,10 +396,10 @@ export default function EditProductPage() {
         {/* Images Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Product Images
+            {t('productImages')}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Add up to 10 images. The first image will be the main product image.
+            {t('productImagesDescription')}
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
@@ -420,7 +422,7 @@ export default function EditProductPage() {
                 </button>
                 {index === 0 && newImages.length === 0 && (
                   <span className="absolute bottom-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded">
-                    Main
+                    {t('main')}
                   </span>
                 )}
               </div>
@@ -446,11 +448,11 @@ export default function EditProductPage() {
                 </button>
                 {index === 0 && existingImages.length === 0 && (
                   <span className="absolute bottom-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded">
-                    Main
+                    {t('main')}
                   </span>
                 )}
                 <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white" style={{ backgroundColor: 'var(--accent-500)' }}>
-                  New
+                  {t('new')}
                 </span>
               </div>
             ))}
@@ -465,7 +467,7 @@ export default function EditProductPage() {
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="text-sm text-gray-500 mt-2">Add Image</span>
+                <span className="text-sm text-gray-500 mt-2">{t('addImage')}</span>
               </button>
             )}
           </div>
@@ -483,14 +485,14 @@ export default function EditProductPage() {
         {/* Basic Info Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Basic Information
+            {t('basicInformation')}
           </h2>
 
           {/* Product Name */}
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Product Name (Georgian)
+                {t('productNameGeorgian')}
               </label>
               <input
                 type="text"
@@ -502,7 +504,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Product Name (English) *
+                {t('productNameEnglish')} *
               </label>
               <input
                 type="text"
@@ -519,7 +521,7 @@ export default function EditProductPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description (Georgian)
+                {t('descriptionGeorgian')}
               </label>
               <textarea
                 value={formData.descriptionKa}
@@ -531,7 +533,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description (English)
+                {t('descriptionEnglish')}
               </label>
               <textarea
                 value={formData.descriptionEn}
@@ -547,13 +549,13 @@ export default function EditProductPage() {
         {/* Pricing Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Pricing & Inventory
+            {t('pricingInventory')}
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Price (₾) *
+                {t('price')} *
               </label>
               <input
                 type="number"
@@ -568,7 +570,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Sale Price (₾)
+                {t('salePrice')}
               </label>
               <input
                 type="number"
@@ -583,7 +585,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Stock Quantity
+                {t('stockQuantity')}
               </label>
               <input
                 type="number"
@@ -606,7 +608,7 @@ export default function EditProductPage() {
                 style={{ accentColor: 'var(--accent-500)' }}
               />
               <span className="text-gray-700 dark:text-gray-300">
-                This product is on sale
+                {t('productOnSale')}
               </span>
             </label>
           </div>
@@ -615,13 +617,13 @@ export default function EditProductPage() {
         {/* Category Section */}
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Category
+            {t('category')}
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category
+                {t('category')}
               </label>
               <select
                 value={formData.categoryId}
@@ -630,7 +632,7 @@ export default function EditProductPage() {
                 }
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
               >
-                <option value="">Select a category</option>
+                <option value="">{t('selectCategory')}</option>
                 {categories.map((cat) => (
                   <option key={cat._id} value={cat._id}>
                     {cat.nameLocalized?.en || cat.name}
@@ -640,7 +642,7 @@ export default function EditProductPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Subcategory
+                {t('subcategory')}
               </label>
               <select
                 value={formData.subcategoryId}
@@ -648,7 +650,7 @@ export default function EditProductPage() {
                 disabled={!formData.categoryId || subcategories.length === 0}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white disabled:opacity-50"
               >
-                <option value="">Select a subcategory</option>
+                <option value="">{t('selectSubcategory')}</option>
                 {subcategories.map((sub) => (
                   <option key={sub._id} value={sub._id}>
                     {sub.nameLocalized?.en || sub.name}
@@ -660,11 +662,11 @@ export default function EditProductPage() {
 
           {categories.length === 0 && (
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-              No categories yet.{' '}
+              {t('noCategoriesYet')}{' '}
               <Link href="/dashboard/categories" className="text-[var(--accent-600)] hover:underline">
-                Create categories
+                {t('createCategories')}
               </Link>{' '}
-              to organize your products.
+              {t('toOrganizeProducts')}
             </p>
           )}
         </div>
@@ -675,7 +677,7 @@ export default function EditProductPage() {
             href="/dashboard/products"
             className="px-6 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            Cancel
+            {t('cancel')}
           </Link>
           <button
             type="submit"
@@ -689,14 +691,14 @@ export default function EditProductPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                 </svg>
-                Saving...
+                {t('saving')}
               </>
             ) : (
               <>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Save Changes
+                {t('saveChanges')}
               </>
             )}
           </button>

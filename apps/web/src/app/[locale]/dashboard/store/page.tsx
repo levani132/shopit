@@ -76,7 +76,7 @@ const PRODUCT_ORDER_OPTIONS = [
 
 export default function StoreSettingsPage() {
   const t = useTranslations('dashboard');
-  const { store, refreshAuth } = useAuth();
+  const { refreshAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
