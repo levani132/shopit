@@ -32,8 +32,29 @@ Located in: `apps/web/src/app/store/[subdomain]/[locale]/`
 /posts               - Blog/social posts
 /posts/[id]          - Post detail
 /info                - Store info pages
-/login               - Store-branded login
-/register            - Store-branded buyer registration
+/login               - Store-branded login (no header/footer)
+/register            - Store-branded buyer registration (no header/footer)
+```
+
+### Auth Pages (No Header/Footer)
+
+Auth pages (`/login`, `/register`) don't show header/footer.
+
+Located in: `apps/web/src/app/store/[subdomain]/[locale]/(auth)/`
+
+The `(auth)` route group uses the parent layout, but the parent layout
+conditionally hides header/footer for auth routes using:
+
+1. Middleware sets `x-pathname` header with the original path
+2. Store layout reads this header and checks against `AUTH_ROUTES`
+3. If on auth route, `StoreHeader` and `StoreFooter` are not rendered
+
+```typescript
+// In store layout
+const AUTH_ROUTES = ['/login', '/register'];
+const pathname = headersList.get('x-pathname') || '';
+const isAuthRoute = AUTH_ROUTES.some((route) => pathname.endsWith(route));
+// Then conditionally render: {!isAuthRoute && <StoreHeader />}
 ```
 
 ## How Subdomains Work
@@ -80,14 +101,16 @@ const store = getStoreBySubdomain('mystore');
 ## Login/Register on Store Subdomain
 
 When a user logs in or registers from a store subdomain:
-1. The page detects it's on a subdomain
-2. Fetches store info to get brand colors
-3. Applies store accent colors to the form
-4. After success, redirects back to the store (not main site)
+1. Middleware sets `x-pathname` header for route detection
+2. Store layout detects auth route and hides header/footer
+3. The page fetches store info to get brand colors
+4. Applies store accent colors to the form
+5. After success, redirects back to the store (not main site)
 
 Files:
-- `apps/web/src/app/store/[subdomain]/[locale]/login/page.tsx`
-- `apps/web/src/app/store/[subdomain]/[locale]/register/page.tsx`
+- `apps/web/src/app/store/[subdomain]/[locale]/layout.tsx` - Conditionally hides header/footer
+- `apps/web/src/app/store/[subdomain]/[locale]/(auth)/login/page.tsx`
+- `apps/web/src/app/store/[subdomain]/[locale]/(auth)/register/page.tsx`
 
 ## i18n (Internationalization)
 

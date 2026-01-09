@@ -74,10 +74,12 @@ export default function middleware(request: NextRequest) {
         pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
     );
 
+    let originalPath = pathname;
     if (pathnameHasLocale) {
       // e.g., /en/products -> /store/sample/en/products
       const locale = pathname.split('/')[1];
       const restPath = pathname.replace(`/${locale}`, '') || '/';
+      originalPath = restPath;
       url.pathname = `/store/${subdomain}/${locale}${restPath}`;
     } else {
       // No locale in path - add default locale
@@ -85,11 +87,15 @@ export default function middleware(request: NextRequest) {
       // e.g., /products -> /store/sample/en/products
       const defaultLocale = routing.defaultLocale;
       const normalizedPath = pathname === '/' ? '' : pathname;
+      originalPath = normalizedPath || '/';
       url.pathname = `/store/${subdomain}/${defaultLocale}${normalizedPath}`;
     }
 
     // Rewrite (not redirect) so the URL stays the same in browser
-    return NextResponse.rewrite(url);
+    // Pass the original pathname as a header for layout detection
+    const response = NextResponse.rewrite(url);
+    response.headers.set('x-pathname', originalPath);
+    return response;
   }
 
   // ---- Main site logic (no subdomain) ----

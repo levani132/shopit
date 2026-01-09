@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { Metadata } from 'next';
 import { getStoreBySubdomain as getStoreFromApi } from '../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-stores';
@@ -8,6 +9,9 @@ import { ThemeProvider } from '../../../../components/theme/ThemeProvider';
 import { routing } from '../../../../i18n/routing';
 import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
 import '../../../global.css';
+
+// Routes that should NOT show header/footer (auth pages)
+const AUTH_ROUTES = ['/login', '/register'];
 
 interface StoreLayoutProps {
   children: React.ReactNode;
@@ -79,6 +83,15 @@ export default async function StoreLayout({
     notFound();
   }
 
+  // Check if this is an auth route (login/register) - these don't show header/footer
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || headersList.get('x-invoke-path') || '';
+  // Also check referer as fallback
+  const referer = headersList.get('referer') || '';
+  const isAuthRoute = AUTH_ROUTES.some(
+    (route) => pathname.endsWith(route) || referer.includes(route)
+  );
+
   // Get accent colors for this store
   const accentColors = getAccentColorCssVars(store.accentColor as AccentColorName);
 
@@ -119,9 +132,9 @@ export default async function StoreLayout({
             className="min-h-screen flex flex-col bg-gray-50 dark:bg-zinc-900"
             style={accentColors as React.CSSProperties}
           >
-            <StoreHeader store={storeForComponents} />
+            {!isAuthRoute && <StoreHeader store={storeForComponents} />}
             <main className="flex-1">{children}</main>
-            <StoreFooter store={storeForComponents} />
+            {!isAuthRoute && <StoreFooter store={storeForComponents} />}
           </div>
         </ThemeProvider>
       </body>

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ShopItLogo } from '../../../../../components/ui/ShopItLogo';
-import { getStoreBySubdomain } from '../../../../../lib/api';
+import { useAuth } from '../../../../../../contexts/AuthContext';
+import { ShopItLogo } from '../../../../../../components/ui/ShopItLogo';
+import { getStoreBySubdomain } from '../../../../../../lib/api';
 import Link from 'next/link';
 
 import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
@@ -14,16 +15,14 @@ interface StoreInfo {
   brandColor: string;
 }
 
-export default function StoreRegisterPage() {
+export default function StoreLoginPage() {
   const router = useRouter();
   const params = useParams();
   const subdomain = params.subdomain as string;
+  const { login, isLoading } = useAuth();
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,57 +53,23 @@ export default function StoreRegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // Validation
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      const apiBase =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const apiUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-
-      const response = await fetch(`${apiUrl}/api/v1/auth/register/buyer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password,
-        }),
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      // Redirect back to store
+      await login(email, password);
+      // Redirect back to store root
       router.push('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleGoogleSignup = () => {
+  const handleGoogleLogin = () => {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     const apiUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-    window.location.href = `${apiUrl}/api/v1/auth/google?role=user`;
+    window.location.href = `${apiUrl}/api/v1/auth/google`;
   };
 
   // CSS variables for store colors
@@ -116,7 +81,7 @@ export default function StoreRegisterPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900 px-4 py-12"
+      className="min-h-screen flex items-center justify-center px-4"
       style={storeColorStyle}
     >
       <div className="w-full max-w-md">
@@ -127,21 +92,17 @@ export default function StoreRegisterPage() {
           </Link>
         </div>
 
-        {/* Register Card */}
+        {/* Login Card */}
         <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-xl p-8">
           <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-2">
-            Create Account
+            Welcome Back
           </h1>
           {storeInfo && (
             <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
-              Join {storeInfo.name} to start shopping
+              Sign in to continue shopping at {storeInfo.name}
             </p>
           )}
-          {!storeInfo && (
-            <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
-              Sign up to start shopping
-            </p>
-          )}
+          {!storeInfo && <div className="mb-6" />}
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm">
@@ -150,49 +111,6 @@ export default function StoreRegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
-                  style={
-                    { '--tw-ring-color': colors[500] } as React.CSSProperties
-                  }
-                  placeholder="John"
-                  required
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                >
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
-                  style={
-                    { '--tw-ring-color': colors[500] } as React.CSSProperties
-                  }
-                  placeholder="Doe"
-                  required
-                />
-              </div>
-            </div>
-
             <div>
               <label
                 htmlFor="email"
@@ -232,34 +150,12 @@ export default function StoreRegisterPage() {
                 }
                 placeholder="••••••••"
                 required
-                minLength={6}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >
-                Confirm Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
-                style={
-                  { '--tw-ring-color': colors[500] } as React.CSSProperties
-                }
-                placeholder="••••••••"
-                required
               />
             </div>
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLoading}
               className="w-full py-3 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: colors[600] }}
               onMouseOver={(e) =>
@@ -269,7 +165,7 @@ export default function StoreRegisterPage() {
                 (e.currentTarget.style.backgroundColor = colors[600])
               }
             >
-              {isSubmitting ? 'Creating account...' : 'Create Account'}
+              {isSubmitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
@@ -285,9 +181,9 @@ export default function StoreRegisterPage() {
             </div>
           </div>
 
-          {/* Google Signup */}
+          {/* Google Login */}
           <button
-            onClick={handleGoogleSignup}
+            onClick={handleGoogleLogin}
             className="w-full py-3 px-4 border border-gray-300 dark:border-zinc-600 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -313,15 +209,15 @@ export default function StoreRegisterPage() {
             </span>
           </button>
 
-          {/* Login Link */}
+          {/* Register Link */}
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
-            Already have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
-              href="/login"
+              href="/register"
               className="font-medium hover:underline"
               style={{ color: colors[600] }}
             >
-              Sign in
+              Sign up
             </Link>
           </p>
 
@@ -336,3 +232,4 @@ export default function StoreRegisterPage() {
     </div>
   );
 }
+
