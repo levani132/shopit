@@ -71,8 +71,8 @@ export function ShopItLogo({
     <div className={`flex items-center ${gap} ${className}`}>
       {/* Shopping Bag Icon - S in gradient rectangle with handle */}
       <div
-        className={`relative flex-shrink-0 top-[-${topOffset}px]`}
-        style={{ width: iconSize, height: totalHeight }}
+        className="relative flex-shrink-0"
+        style={{ width: iconSize, height: totalHeight, top: -topOffset }}
       >
         {/* Handle - semi-circle on top */}
         <svg

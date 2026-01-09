@@ -8,22 +8,17 @@ import { ShopItLogo } from '../../../components/ui/ShopItLogo';
 import { getStoreBySubdomain } from '../../../lib/api';
 import Link from 'next/link';
 
-// Accent color hex values mapping
-const ACCENT_COLORS: Record<
-  string,
-  { 500: string; 600: string; 700: string }
-> = {
-  rose: { 500: '#f43f5e', 600: '#e11d48', 700: '#be123c' },
-  blue: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
-  green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
-  purple: { 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce' },
-  orange: { 500: '#f97316', 600: '#ea580c', 700: '#c2410c' },
-  indigo: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
-  black: { 500: '#71717a', 600: '#52525b', 700: '#3f3f46' },
-};
-
-// Default accent colors (from CSS variables)
-const DEFAULT_ACCENT = { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' };
+// Accent color hex values mapping (for store subdomains)
+const ACCENT_COLORS: Record<string, { 500: string; 600: string; 700: string }> =
+  {
+    rose: { 500: '#f43f5e', 600: '#e11d48', 700: '#be123c' },
+    blue: { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
+    green: { 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
+    purple: { 500: '#a855f7', 600: '#9333ea', 700: '#7e22ce' },
+    orange: { 500: '#f97316', 600: '#ea580c', 700: '#c2410c' },
+    indigo: { 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
+    black: { 500: '#71717a', 600: '#52525b', 700: '#3f3f46' },
+  };
 
 interface StoreInfo {
   name: string;
@@ -79,10 +74,11 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Get accent colors
-  const colors = storeInfo
-    ? ACCENT_COLORS[storeInfo.brandColor] || DEFAULT_ACCENT
-    : DEFAULT_ACCENT;
+  // Get accent colors - only needed for store subdomains
+  // On main site, we use CSS variables (--accent-*) set by AccentColorProvider
+  const storeColors = storeInfo
+    ? ACCENT_COLORS[storeInfo.brandColor] || ACCENT_COLORS.indigo
+    : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,12 +105,12 @@ export default function LoginPage() {
     window.location.href = `${apiUrl}/api/v1/auth/google`;
   };
 
-  // CSS variables for store colors
-  const storeColorStyle = storeInfo
+  // CSS variables for store colors (only on store subdomains)
+  const storeColorStyle = storeColors
     ? ({
-        '--store-accent-500': colors[500],
-        '--store-accent-600': colors[600],
-        '--store-accent-700': colors[700],
+        '--store-accent-500': storeColors[500],
+        '--store-accent-600': storeColors[600],
+        '--store-accent-700': storeColors[700],
       } as React.CSSProperties)
     : undefined;
 
@@ -166,7 +162,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
-                style={{ '--tw-ring-color': colors[500] } as React.CSSProperties}
+                style={
+                  {
+                    '--tw-ring-color': storeColors
+                      ? storeColors[500]
+                      : 'var(--accent-500)',
+                  } as React.CSSProperties
+                }
                 placeholder="you@example.com"
                 required
               />
@@ -185,7 +187,13 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:border-transparent"
-                style={{ '--tw-ring-color': colors[500] } as React.CSSProperties}
+                style={
+                  {
+                    '--tw-ring-color': storeColors
+                      ? storeColors[500]
+                      : 'var(--accent-500)',
+                  } as React.CSSProperties
+                }
                 placeholder="••••••••"
                 required
               />
@@ -195,13 +203,21 @@ export default function LoginPage() {
               type="submit"
               disabled={isSubmitting || isLoading}
               className="w-full py-3 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ backgroundColor: colors[600] }}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.backgroundColor = colors[700])
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.backgroundColor = colors[600])
-              }
+              style={{
+                backgroundColor: storeColors
+                  ? storeColors[600]
+                  : 'var(--accent-600)',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = storeColors
+                  ? storeColors[700]
+                  : 'var(--accent-700)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = storeColors
+                  ? storeColors[600]
+                  : 'var(--accent-600)';
+              }}
             >
               {isSubmitting ? t('common.loading') : t('auth.login')}
             </button>
@@ -253,7 +269,9 @@ export default function LoginPage() {
             <Link
               href={isOnStore ? '/register' : `/${locale}/register`}
               className="font-medium hover:underline"
-              style={{ color: colors[600] }}
+              style={{
+                color: storeColors ? storeColors[600] : 'var(--accent-600)',
+              }}
             >
               {t('auth.signUp')}
             </Link>
