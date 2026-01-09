@@ -10,6 +10,10 @@ export const routing = defineRouting({
 
   // Don't show default locale in URL
   localePrefix: 'as-needed',
+
+  // Disable automatic locale detection based on Accept-Language header
+  // We handle this manually in middleware to default to Georgian
+  localeDetection: false,
 });
 
 // Lightweight wrappers around Next.js navigation APIs

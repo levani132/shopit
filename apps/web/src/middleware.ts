@@ -5,9 +5,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // Cookie name for storing user's locale preference (next-intl uses this)
 const LOCALE_COOKIE = 'NEXT_LOCALE';
 
-// Georgia country code
-const GEORGIA_COUNTRY_CODE = 'GE';
-
 // Main domains that should NOT be treated as store subdomains
 const MAIN_DOMAINS = [
   'localhost',
@@ -60,6 +57,26 @@ function getSubdomain(hostname: string): string | null {
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
+
+  // === DEBUG: Log locale detection info ===
+  const acceptLanguage = request.headers.get('accept-language');
+  const countryCodeVercel = request.headers.get('x-vercel-ip-country');
+  const countryCodeCF = request.headers.get('cf-ipcountry');
+  const savedLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+
+  console.log('[Middleware] Locale detection:', {
+    pathname,
+    hostname,
+    savedLocale,
+    countryCodeVercel,
+    countryCodeCF,
+    acceptLanguage: acceptLanguage?.substring(0, 100), // Truncate for readability
+    hasLocaleInPath: routing.locales.some(
+      (locale) =>
+        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+    ),
+  });
+  // === END DEBUG ===
 
   // Check for subdomain (seller store)
   const subdomain = getSubdomain(hostname);
@@ -121,42 +138,55 @@ export default function middleware(request: NextRequest) {
   }
 
   // Check if user has a saved locale preference
-  const savedLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  const savedLocaleCookie = request.cookies.get(LOCALE_COOKIE)?.value;
 
   // If user has a saved preference, use it
   if (
-    savedLocale &&
-    routing.locales.includes(savedLocale as (typeof routing.locales)[number])
+    savedLocaleCookie &&
+    routing.locales.includes(savedLocaleCookie as (typeof routing.locales)[number])
   ) {
+    console.log('[Middleware] Using saved locale preference:', savedLocaleCookie);
     return intlMiddleware(request);
   }
 
-  // Check if user is in Georgia
-  // Vercel provides country code in header, or we can use Cloudflare headers
+  // Check country from various headers
+  // Vercel provides x-vercel-ip-country, Cloudflare provides cf-ipcountry
   const countryCode =
     request.headers.get('x-vercel-ip-country') ||
     request.headers.get('cf-ipcountry');
 
-  // If user is in Georgia, default to Georgian (ka)
-  if (countryCode === GEORGIA_COUNTRY_CODE) {
-    // Redirect to Georgian locale or set cookie
-    const response = intlMiddleware(request);
+  console.log('[Middleware] Country detection:', { countryCode });
 
-    // Ensure Georgian locale is set in cookie for future visits
-    if (!savedLocale || savedLocale !== 'ka') {
-      response.cookies.set(LOCALE_COOKIE, 'ka', {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 365, // 1 year
-        sameSite: 'lax',
-      });
-    }
-
-    return response;
+  // STRATEGY: Default to Georgian (ka) unless we KNOW the user is outside Georgia
+  // This is because the target audience is Georgian, and geo-detection is unreliable
+  
+  // Countries that should default to English (major English-speaking countries)
+  const ENGLISH_COUNTRIES = ['US', 'GB', 'CA', 'AU', 'NZ', 'IE', 'ZA'];
+  
+  // If we can detect the country and it's a known English-speaking country, use English
+  if (countryCode && ENGLISH_COUNTRIES.includes(countryCode)) {
+    console.log('[Middleware] Detected English-speaking country, using browser preference');
+    return intlMiddleware(request);
   }
 
-  // For users outside Georgia, use browser language detection
-  // next-intl will automatically detect and redirect based on Accept-Language header
-  return intlMiddleware(request);
+  // For Georgia OR unknown country (including when geo-detection fails),
+  // default to Georgian
+  console.log('[Middleware] Defaulting to Georgian (GE or unknown country)');
+  
+  // Create a redirect to Georgian locale
+  const url = request.nextUrl.clone();
+  url.pathname = `/ka${pathname === '/' ? '' : pathname}`;
+  
+  const response = NextResponse.redirect(url);
+  
+  // Set cookie so future visits remember Georgian
+  response.cookies.set(LOCALE_COOKIE, 'ka', {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365, // 1 year
+    sameSite: 'lax',
+  });
+
+  return response;
 }
 
 export const config = {
