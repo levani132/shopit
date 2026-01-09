@@ -339,10 +339,12 @@ When adding this feature to existing products:
 - Created VariantEditor component for dashboard
 - Integrated into new and edit product pages
 
-### Phase 3: Category Filter Stats ⏳ PENDING
-- Create CategoryAttributeStats schema
-- Implement automatic stat updates on product changes
-- Add `/api/v1/categories/:id/filters` endpoint
+### Phase 3: Category Filter Stats ✅ COMPLETED
+- Created CategoryAttributeStats schema with value counts
+- Created CategoryStatsService with update/rebuild methods
+- Integrated stats updates into product create/delete
+- Added `/api/v1/categories/:id/filters/:storeId` endpoint
+- Added attribute filtering to product list (`?attributes=color:red|size:xl`)
 
 ### Phase 4: Store Frontend Variant Selection ⏳ PENDING
 - Product page variant selector
