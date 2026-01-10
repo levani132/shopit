@@ -58,7 +58,7 @@ export function ProductCard({
 
   // Use totalStock for products with variants, otherwise use stock
   const effectiveStock = product.hasVariants
-    ? product.totalStock ?? 0
+    ? (product.totalStock ?? 0)
     : product.stock;
   const isOutOfStock = effectiveStock <= 0;
 
@@ -231,4 +231,3 @@ export function ProductCard({
     </div>
   );
 }
-
