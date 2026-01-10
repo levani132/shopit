@@ -12,6 +12,7 @@ import {
   ProductDocument,
   Attribute,
   AttributeDocument,
+  ProductVariant,
 } from '@sellit/api-database';
 import {
   ListProductsDto,
@@ -300,7 +301,7 @@ export class ProductsService {
     variantImagesByGroup?: Record<string, string[]>,
   ) {
     // Process variants if provided
-    let variants = [];
+    let variants: ProductVariant[] = [];
     let totalStock = dto.stock ?? 0;
     let hasVariants = dto.hasVariants ?? false;
 

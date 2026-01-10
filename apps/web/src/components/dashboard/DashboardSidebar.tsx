@@ -230,11 +230,11 @@ export function DashboardSidebar() {
   const isActive = (href: string) => {
     // Remove locale prefix for comparison (handles /ka, /en, etc.)
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '');
-    
+
     // Normalize paths (remove trailing slashes)
     const normalizedPath = pathWithoutLocale.replace(/\/$/, '') || '/dashboard';
     const normalizedHref = href.replace(/\/$/, '');
-    
+
     if (normalizedHref === '/dashboard') {
       return normalizedPath === '/dashboard';
     }
@@ -261,7 +261,7 @@ export function DashboardSidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
                     isActive(item.href)
-                      ? 'bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]'
+                      ? 'bg-[var(--accent-100)] dark:bg-[var(--accent-800)]/50 text-[var(--accent-700)] dark:text-[var(--accent-200)] font-semibold'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
                   }`}
                 >
