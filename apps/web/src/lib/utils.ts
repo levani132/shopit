@@ -1,4 +1,24 @@
 /**
+ * Gets localized text from a bilingual object based on locale.
+ *
+ * @param localized - Object with ka/en properties
+ * @param fallback - Fallback text if localized version not available
+ * @param locale - Current locale ('ka' or 'en')
+ * @returns The localized text or fallback
+ */
+export function getLocalizedText(
+  localized: { ka?: string; en?: string } | undefined | null,
+  fallback: string | undefined,
+  locale: string
+): string {
+  if (localized) {
+    const text = locale === 'ka' ? localized.ka : localized.en;
+    if (text) return text;
+  }
+  return fallback || '';
+}
+
+/**
  * Extracts the first Latin (A-Z, a-z) character from a string.
  * Used for avatar initials to ensure they display correctly
  * regardless of whether the text is in Georgian or English.
