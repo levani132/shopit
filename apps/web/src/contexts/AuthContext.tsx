@@ -229,9 +229,15 @@ const defaultAuthContext: AuthContextType = {
   store: null,
   isLoading: true,
   isAuthenticated: false,
-  login: async () => {},
-  logout: async () => {},
-  refreshAuth: async () => {},
+  login: async () => {
+    /* empty */
+  },
+  logout: async () => {
+    /* empty */
+  },
+  refreshAuth: async () => {
+    /* empty */
+  },
   checkAuth: async () => false,
 };
 
@@ -272,4 +278,3 @@ export function useRequireRole(allowedRoles: ('admin' | 'seller' | 'user')[]) {
 export function useRequireSeller() {
   return useRequireRole(['admin', 'seller']);
 }
-

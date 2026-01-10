@@ -42,16 +42,16 @@ const transactionTypeColors: Record<string, string> = {
     'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   commission_deduction:
     'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-  refund: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  refund:
+    'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
 };
 
 export default function BalancePage() {
-  const t = useTranslations('dashboard');
   const tBalance = useTranslations('balance');
   const params = useParams();
   const locale = (params?.locale as string) || 'ka';
 
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [balance, setBalance] = useState<SellerBalance | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,7 +83,9 @@ export default function BalancePage() {
         if (transactionsRes.ok) {
           const txData = await transactionsRes.json();
           // Handle both array response and object with transactions property
-          setTransactions(Array.isArray(txData) ? txData : txData.transactions || []);
+          setTransactions(
+            Array.isArray(txData) ? txData : txData.transactions || [],
+          );
         }
       } catch (err) {
         console.error('Error fetching balance data:', err);
@@ -122,7 +124,7 @@ export default function BalancePage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json(); // Consume response
         setBalance({
           ...balance,
           availableBalance: balance.availableBalance - amount,
@@ -158,7 +160,10 @@ export default function BalancePage() {
           <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-48 mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl" />
+              <div
+                key={i}
+                className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl"
+              />
             ))}
           </div>
         </div>
@@ -293,7 +298,10 @@ export default function BalancePage() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-zinc-700">
                 {transactions.map((tx) => (
-                  <div key={tx._id} className="p-4 flex items-center justify-between">
+                  <div
+                    key={tx._id}
+                    className="p-4 flex items-center justify-between"
+                  >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
                         <span
@@ -332,7 +340,8 @@ export default function BalancePage() {
                       </p>
                       {tx.commissionAmount && tx.commissionAmount > 0 && (
                         <p className="text-xs text-gray-400">
-                          -{tx.commissionPercentage}% fee: ₾{tx.commissionAmount.toFixed(2)}
+                          -{tx.commissionPercentage}% fee: ₾
+                          {tx.commissionAmount.toFixed(2)}
                         </p>
                       )}
                     </div>
@@ -346,4 +355,3 @@ export default function BalancePage() {
     </div>
   );
 }
-

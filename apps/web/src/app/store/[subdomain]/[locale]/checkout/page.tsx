@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -23,18 +23,16 @@ export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
   const params = useParams();
-  const router = useRouter();
   const locale = (params?.locale as string) || 'ka';
   const subdomain = params?.subdomain as string;
 
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { items: cart, clearCart } = useCart();
   const {
     shippingAddress,
     setShippingAddress,
     guestInfo,
     setGuestInfo,
-    paymentMethod,
     clearCheckout,
   } = useCheckout();
 
@@ -245,7 +243,7 @@ export default function CheckoutPage() {
         totalPrice: order.totalPrice,
         items: storeItems.map((item) => ({
           productId: item.productId,
-          name: item.productName,
+          name: item.name,
           quantity: item.quantity,
           price: item.salePrice || item.price,
         })),

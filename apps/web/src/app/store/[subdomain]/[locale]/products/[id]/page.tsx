@@ -78,7 +78,7 @@ export default function ProductDetailPage() {
   const subdomain = params?.subdomain as string;
   const productId = params?.id as string;
 
-  const { addItem, isInCart } = useCart();
+  const { addItem } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [attributes, setAttributes] = useState<Attribute[]>([]);

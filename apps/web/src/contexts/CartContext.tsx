@@ -88,11 +88,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isInitialized]);
 
-  // Generate unique key for cart item (product + variant)
-  const getItemKey = useCallback((productId: string, variantId?: string) => {
-    return variantId ? `${productId}:${variantId}` : productId;
-  }, []);
-
   // Add item to cart
   const addItem = useCallback(
     (newItem: Omit<CartItem, 'quantity'>, quantity = 1) => {

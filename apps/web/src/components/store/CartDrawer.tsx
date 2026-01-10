@@ -24,8 +24,6 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     subtotal,
     removeItem,
     updateQuantity,
-    clearCart,
-    getStoreItems,
   } = useCart();
 
   // Get items for the current store
@@ -195,7 +193,6 @@ function CartItemCard({
   getLocalizedName,
 }: CartItemCardProps) {
   const effectivePrice = item.isOnSale && item.salePrice ? item.salePrice : item.price;
-  const lineTotal = effectivePrice * item.quantity;
 
   return (
     <div className="flex gap-4 p-3 bg-gray-50 dark:bg-zinc-800 rounded-lg">

@@ -56,11 +56,10 @@ const statusColors: Record<string, string> = {
 
 export default function OrdersPage() {
   const t = useTranslations('orders');
-  const tCommon = useTranslations('common');
   const params = useParams();
   const locale = (params?.locale as string) || 'ka';
 
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
