@@ -387,16 +387,33 @@ When adding this feature to existing products:
 - Dynamic availability based on other selections
 - Dashboard variant image upload grouped by requiresImage attributes
 
-### Phase 5: Shopping Cart with Variants ⏳ PENDING
+### Phase 5: Shopping Cart with Variants ✅ COMPLETED
 
-- Cart state management (context/localStorage)
-- Add to cart with product ID + variant ID
-- Cart item display with variant attributes
-- Quantity management per variant
-- Cart persistence across sessions
-- Checkout flow integration
-- Variant-specific images
-- Add to cart with variant ID
+- CartContext with localStorage persistence
+- Cart supports products with or without variants
+- CartItem stores: productId, variantId, name, price, stock, variantAttributes, storeInfo
+- CartButton with item count badge in header
+- CartDrawer slide-out panel:
+  - Item list with variant attributes (color swatches, text values)
+  - Quantity controls per item (respects stock limits)
+  - Price display with sale price support
+  - Subtotal calculation
+  - Remove item functionality
+- Add to Cart on product page:
+  - Works for both simple products and variant products
+  - Shows "Added to cart" confirmation feedback
+  - Respects stock limits
+- Bilingual support (English/Georgian)
+
+### Phase 6: Checkout Flow ⏳ PENDING
+
+- Checkout page with order summary
+- Customer information form
+- Shipping address
+- Payment method selection
+- Order placement API
+- Order confirmation page
+- Stock reduction on order
 
 ## Testing Checklist
 
