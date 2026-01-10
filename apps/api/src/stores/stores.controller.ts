@@ -55,6 +55,8 @@ export class StoresController {
       nameLocalized: store.nameLocalized || { ka: '', en: store.name },
       description: store.description,
       descriptionLocalized: store.descriptionLocalized || { ka: '', en: store.description || '' },
+      aboutUs: store.aboutUs,
+      aboutUsLocalized: store.aboutUsLocalized || { ka: '', en: store.aboutUs || '' },
       logo: store.logo,
       coverImage: store.coverImage,
       useDefaultCover: store.useDefaultCover ?? true,

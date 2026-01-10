@@ -15,6 +15,9 @@ export interface UpdateStoreDto {
   description?: string;
   descriptionKa?: string;
   descriptionEn?: string;
+  aboutUs?: string;
+  aboutUsKa?: string;
+  aboutUsEn?: string;
   authorName?: string;
   authorNameKa?: string;
   authorNameEn?: string;
@@ -135,6 +138,15 @@ export class StoresService {
       };
       // Also update legacy authorName field
       store.authorName = dto.authorNameEn || dto.authorNameKa || store.authorName;
+    }
+
+    if (dto.aboutUsKa !== undefined || dto.aboutUsEn !== undefined) {
+      store.aboutUsLocalized = {
+        ka: dto.aboutUsKa ?? store.aboutUsLocalized?.ka,
+        en: dto.aboutUsEn ?? store.aboutUsLocalized?.en,
+      };
+      // Also update legacy aboutUs field
+      store.aboutUs = dto.aboutUsEn || dto.aboutUsKa || store.aboutUs;
     }
 
     // Update boolean fields

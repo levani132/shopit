@@ -15,6 +15,8 @@ interface StoreData {
   nameLocalized?: { ka?: string; en?: string };
   description?: string;
   descriptionLocalized?: { ka?: string; en?: string };
+  aboutUs?: string;
+  aboutUsLocalized?: { ka?: string; en?: string };
   authorName?: string;
   authorNameLocalized?: { ka?: string; en?: string };
   logo?: string;
@@ -101,9 +103,12 @@ export default function AboutPage() {
 
   const name = getLocalizedText(store.nameLocalized, store.name, locale);
   const description = getLocalizedText(store.descriptionLocalized, store.description, locale);
+  const aboutUs = getLocalizedText(store.aboutUsLocalized, store.aboutUs, locale);
   const authorName = getLocalizedText(store.authorNameLocalized, store.authorName, locale);
   const hasSocialLinks = store.socialLinks && Object.values(store.socialLinks).some(v => v);
   const hasContactInfo = store.phone || store.address;
+  // Use aboutUs if available, fall back to description for backward compatibility
+  const aboutContent = aboutUs || description;
 
   return (
     <div className="bg-white dark:bg-zinc-900 min-h-[60vh]">
@@ -127,14 +132,14 @@ export default function AboutPage() {
           )}
         </div>
 
-        {/* Description */}
-        {description && (
+        {/* About Us Content */}
+        {aboutContent && (
           <div className="mb-12">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
               {t('ourStory')}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 leading-relaxed whitespace-pre-line">
-              {description}
+              {aboutContent}
             </p>
           </div>
         )}

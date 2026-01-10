@@ -28,6 +28,8 @@ interface StoreData {
   nameLocalized?: { ka?: string; en?: string };
   description?: string;
   descriptionLocalized?: { ka?: string; en?: string };
+  aboutUs?: string;
+  aboutUsLocalized?: { ka?: string; en?: string };
   authorName?: string;
   authorNameLocalized?: { ka?: string; en?: string };
   brandColor: string;
@@ -385,6 +387,15 @@ export default function StoreSettingsPage() {
       submitData.append(
         'descriptionEn',
         formData.descriptionLocalized?.en || formData.description || '',
+      );
+      submitData.append(
+        'aboutUs',
+        formData.aboutUsLocalized?.en || formData.aboutUs || '',
+      );
+      submitData.append('aboutUsKa', formData.aboutUsLocalized?.ka || '');
+      submitData.append(
+        'aboutUsEn',
+        formData.aboutUsLocalized?.en || formData.aboutUs || '',
       );
       submitData.append(
         'authorName',
@@ -807,6 +818,63 @@ export default function StoreSettingsPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* About Us */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              About Us
+              <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 font-normal">
+                (Shown on your About page)
+              </span>
+            </label>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    🇬🇪 Georgian
+                  </span>
+                </div>
+                <textarea
+                  value={formData.aboutUsLocalized?.ka || ''}
+                  onChange={(e) =>
+                    updateField('aboutUsLocalized', {
+                      ...formData.aboutUsLocalized,
+                      ka: e.target.value,
+                    })
+                  }
+                  placeholder="თქვენს შესახებ დეტალური ინფორმაცია..."
+                  rows={6}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    🇬🇧 English
+                  </span>
+                </div>
+                <textarea
+                  value={
+                    formData.aboutUsLocalized?.en ||
+                    formData.aboutUs ||
+                    ''
+                  }
+                  onChange={(e) =>
+                    updateField('aboutUsLocalized', {
+                      ...formData.aboutUsLocalized,
+                      en: e.target.value,
+                    })
+                  }
+                  placeholder="Detailed information about your store..."
+                  rows={6}
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Tell your customers more about your brand, story, mission, and what makes you unique.
+            </p>
           </div>
 
           {/* Author Name */}

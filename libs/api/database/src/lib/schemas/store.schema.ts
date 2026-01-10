@@ -42,6 +42,14 @@ export class Store {
   @Prop({ type: Object })
   descriptionLocalized?: BilingualText;
 
+  // About Us - longer description for the about page
+  @Prop({ trim: true })
+  aboutUs?: string;
+
+  // Localized About Us
+  @Prop({ type: Object })
+  aboutUsLocalized?: BilingualText;
+
   @Prop()
   logo?: string; // Store logo URL
 
