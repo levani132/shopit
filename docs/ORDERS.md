@@ -22,18 +22,20 @@ Each order item is clickable and navigates to the product page, allowing users t
 </Link>
 ```
 
-### 3. Status Timeline
+### 3. Compact Status Timeline
 
-A horizontal timeline visualizes the order's progression through different statuses:
+A compact inline timeline in the order header visualizes the order's progression through different statuses using small dots:
 
 - **Pending** → **Paid** → **Processing** → **Shipped** → **Delivered**
 
-For cancelled or refunded orders, a simple badge is shown instead of the timeline.
+The current status is shown with the store's accent color and a ring indicator. Completed steps show green dots.
 
-**Component**: `StatusTimeline`
+For cancelled or refunded orders, a simple badge with an icon is shown instead.
+
+**Component**: `CompactTimeline`
 
 ```tsx
-<StatusTimeline currentStatus={order.status} t={t} />
+<CompactTimeline currentStatus={order.status} />
 ```
 
 ### 4. Localized Date Formatting
@@ -56,14 +58,14 @@ const georgianMonths = [
 
 ### 5. Expandable Order Footer
 
-The order footer includes an expandable section that shows:
+The order footer includes an expandable section that shows shipping details and price breakdown **side by side** on desktop (stacked on mobile):
 
-- **Shipping Details**: Full address, city, postal code, country, phone number
-- **Price Breakdown**: Subtotal, shipping cost, total
+- **Shipping Details** (left): Full address, city, postal code, country, phone number
+- **Price Breakdown** (right): Subtotal, shipping cost, total
 
 **Component**: `OrderFooter`
 
-The footer is collapsed by default to keep the UI clean, with a click-to-expand interaction.
+The footer is collapsed by default to keep the UI clean. Uses a responsive 2-column grid layout (`grid-cols-1 md:grid-cols-2`).
 
 ## Order Interface
 

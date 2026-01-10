@@ -94,94 +94,56 @@ function formatDateLocalized(dateString: string, locale: string): string {
   });
 }
 
-// Status Timeline Component
-function StatusTimeline({
-  currentStatus,
-  t,
-}: {
-  currentStatus: string;
-  t: (key: string) => string;
-}) {
+// Compact Inline Status Timeline Component
+function CompactTimeline({ currentStatus }: { currentStatus: string }) {
   const isCancelled =
     currentStatus === 'cancelled' || currentStatus === 'refunded';
   const currentIndex = statusOrder.indexOf(currentStatus);
 
   if (isCancelled) {
     return (
-      <div className="flex items-center justify-center py-3">
-        <span
-          className={`px-4 py-2 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}
-        >
-          {t(`status.${currentStatus}`)}
-        </span>
-      </div>
+      <span
+        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}
+      >
+        {currentStatus === 'cancelled' ? '✕' : '↩'} {currentStatus}
+      </span>
     );
   }
 
   return (
-    <div className="py-4 px-2 overflow-x-auto">
-      <div className="flex items-center justify-between min-w-[400px]">
-        {statusOrder.map((status, index) => {
-          const isCompleted = index <= currentIndex;
-          const isCurrent = index === currentIndex;
-          const isLast = index === statusOrder.length - 1;
+    <div className="flex items-center gap-1">
+      {statusOrder.map((status, index) => {
+        const isCompleted = index <= currentIndex;
+        const isCurrent = index === currentIndex;
+        const isLast = index === statusOrder.length - 1;
 
-          return (
-            <div key={status} className="flex items-center flex-1">
-              {/* Status dot and label */}
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                    isCompleted
-                      ? isCurrent
-                        ? 'bg-[var(--store-accent-500)] text-white ring-4 ring-[var(--store-accent-100)] dark:ring-[var(--store-accent-900)]'
-                        : 'bg-green-500 text-white'
-                      : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500'
-                  }`}
-                >
-                  {isCompleted && !isCurrent ? (
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                <span
-                  className={`mt-2 text-xs whitespace-nowrap ${
-                    isCompleted
-                      ? 'text-gray-900 dark:text-white font-medium'
-                      : 'text-gray-400 dark:text-gray-500'
-                  }`}
-                >
-                  {t(`status.${status}`)}
-                </span>
-              </div>
+        return (
+          <div key={status} className="flex items-center">
+            {/* Status dot */}
+            <div
+              className={`w-2.5 h-2.5 rounded-full transition-all ${
+                isCompleted
+                  ? isCurrent
+                    ? 'bg-[var(--store-accent-500)] ring-2 ring-[var(--store-accent-200)] dark:ring-[var(--store-accent-800)]'
+                    : 'bg-green-500'
+                  : 'bg-gray-300 dark:bg-zinc-600'
+              }`}
+              title={status}
+            />
 
-              {/* Connector line */}
-              {!isLast && (
-                <div
-                  className={`flex-1 h-0.5 mx-2 ${
-                    index < currentIndex
-                      ? 'bg-green-500'
-                      : 'bg-gray-200 dark:bg-zinc-700'
-                  }`}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
+            {/* Connector line */}
+            {!isLast && (
+              <div
+                className={`w-3 h-0.5 ${
+                  index < currentIndex
+                    ? 'bg-green-500'
+                    : 'bg-gray-300 dark:bg-zinc-600'
+                }`}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -190,7 +152,6 @@ function StatusTimeline({
 function OrderFooter({
   order,
   t,
-  locale,
 }: {
   order: Order;
   t: (key: string) => string;
@@ -230,70 +191,72 @@ function OrderFooter({
         </div>
       </button>
 
-      {/* Expanded content */}
+      {/* Expanded content - side by side */}
       {isExpanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-gray-200 dark:border-zinc-700">
-          {/* Shipping Details */}
-          <div className="pt-4">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              {t('shippingDetails')}
-            </h4>
-            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-              <p>{order.shippingDetails.address}</p>
-              <p>
-                {order.shippingDetails.city}
-                {order.shippingDetails.postalCode &&
-                  `, ${order.shippingDetails.postalCode}`}
-              </p>
-              <p>{order.shippingDetails.country}</p>
-              {order.shippingDetails.phoneNumber && (
-                <p className="flex items-center gap-1">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  {order.shippingDetails.phoneNumber}
+        <div className="px-4 pb-4 border-t border-gray-200 dark:border-zinc-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+            {/* Shipping Details */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                {t('shippingDetails')}
+              </h4>
+              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                <p>{order.shippingDetails.address}</p>
+                <p>
+                  {order.shippingDetails.city}
+                  {order.shippingDetails.postalCode &&
+                    `, ${order.shippingDetails.postalCode}`}
                 </p>
-              )}
+                <p>{order.shippingDetails.country}</p>
+                {order.shippingDetails.phoneNumber && (
+                  <p className="flex items-center gap-1">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
+                    </svg>
+                    {order.shippingDetails.phoneNumber}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Price Breakdown */}
-          <div className="pt-4 border-t border-gray-200 dark:border-zinc-700">
-            <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
-              {t('priceBreakdown')}
-            </h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>{t('subtotal')}</span>
-                <span>
-                  ₾
-                  {(
-                    order.itemsPrice ||
-                    order.totalPrice - (order.shippingPrice || 0)
-                  ).toFixed(2)}
-                </span>
-              </div>
-              <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                <span>{t('shipping')}</span>
-                <span>
-                  {order.shippingPrice > 0
-                    ? `₾${order.shippingPrice.toFixed(2)}`
-                    : t('free')}
-                </span>
-              </div>
-              <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
-                <span>{t('total')}</span>
-                <span>₾{order.totalPrice.toFixed(2)}</span>
+            {/* Price Breakdown */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                {t('priceBreakdown')}
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>{t('subtotal')}</span>
+                  <span>
+                    ₾
+                    {(
+                      order.itemsPrice ||
+                      order.totalPrice - (order.shippingPrice || 0)
+                    ).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>{t('shipping')}</span>
+                  <span>
+                    {order.shippingPrice > 0
+                      ? `₾${order.shippingPrice.toFixed(2)}`
+                      : t('free')}
+                  </span>
+                </div>
+                <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
+                  <span>{t('total')}</span>
+                  <span>₾{order.totalPrice.toFixed(2)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -439,7 +402,7 @@ export default function OrdersPage() {
             key={order._id}
             className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700 overflow-hidden"
           >
-            {/* Order Header */}
+            {/* Order Header with Compact Timeline */}
             <div className="p-4 border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -458,19 +421,14 @@ export default function OrdersPage() {
                     {formatDateLocalized(order.createdAt, locale)}
                   </p>
                 </div>
-                <div>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[order.status] || statusColors.pending}`}
-                  >
+                {/* Compact Timeline instead of status badge */}
+                <div className="flex flex-col items-end gap-1">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {t(`status.${order.status}`)}
-                  </span>
+                  </p>
+                  <CompactTimeline currentStatus={order.status} />
                 </div>
               </div>
-            </div>
-
-            {/* Status Timeline */}
-            <div className="border-b border-gray-200 dark:border-zinc-700">
-              <StatusTimeline currentStatus={order.status} t={t} />
             </div>
 
             {/* Order Items */}
