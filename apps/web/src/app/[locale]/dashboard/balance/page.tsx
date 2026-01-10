@@ -181,7 +181,7 @@ export default function BalancePage() {
             {tBalance('availableBalance')}
           </p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-            ₾{balance?.availableBalance.toFixed(2) || '0.00'}
+            ₾{(balance?.availableBalance ?? 0).toFixed(2)}
           </p>
         </div>
 
@@ -190,7 +190,7 @@ export default function BalancePage() {
             {tBalance('pendingBalance')}
           </p>
           <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-            ₾{balance?.pendingBalance.toFixed(2) || '0.00'}
+            ₾{(balance?.pendingBalance ?? 0).toFixed(2)}
           </p>
         </div>
 
@@ -199,7 +199,7 @@ export default function BalancePage() {
             {tBalance('totalEarnings')}
           </p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ₾{balance?.totalEarnings.toFixed(2) || '0.00'}
+            ₾{(balance?.totalEarnings ?? 0).toFixed(2)}
           </p>
         </div>
 
@@ -208,7 +208,7 @@ export default function BalancePage() {
             {tBalance('totalWithdrawn')}
           </p>
           <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            ₾{balance?.totalWithdrawn.toFixed(2) || '0.00'}
+            ₾{(balance?.totalWithdrawn ?? 0).toFixed(2)}
           </p>
         </div>
       </div>
