@@ -39,6 +39,7 @@ export interface StoreData {
     tiktok?: string;
   };
   phone?: string;
+  email?: string;
   address?: string;
   isVerified: boolean;
   homepageProductOrder?: string;
@@ -138,9 +139,7 @@ export async function checkSubdomainAvailability(
   subdomain: string,
 ): Promise<{ available: boolean; reason?: string }> {
   try {
-    const response = await fetch(
-      `${apiUrl}/auth/check-subdomain/${subdomain}`,
-    );
+    const response = await fetch(`${apiUrl}/auth/check-subdomain/${subdomain}`);
 
     if (!response.ok) {
       throw new Error(`Failed to check subdomain: ${response.statusText}`);
@@ -206,8 +205,8 @@ export interface HomepageProductsResponse {
  */
 export async function getHomepageProducts(
   storeId: string,
-  order: string = 'popular',
-  limit: number = 8,
+  order = 'popular',
+  limit = 8,
 ): Promise<HomepageProductsResponse> {
   try {
     const response = await fetch(
@@ -218,7 +217,9 @@ export async function getHomepageProducts(
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch homepage products: ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch homepage products: ${response.statusText}`,
+      );
     }
 
     return response.json();
@@ -227,4 +228,3 @@ export async function getHomepageProducts(
     return { products: [], totalCount: 0, hasMore: false };
   }
 }
-

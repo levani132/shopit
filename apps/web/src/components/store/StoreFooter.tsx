@@ -12,6 +12,7 @@ interface StoreFooterProps {
     authorName?: string;
     showAuthorName?: boolean;
     phone?: string;
+    email?: string;
     address?: string;
     socialLinks?: {
       facebook?: string;
@@ -21,13 +22,14 @@ interface StoreFooterProps {
     };
     initial?: string; // Pre-computed English initial for avatar display
   };
+  locale: string;
 }
 
-export function StoreFooter({ store }: StoreFooterProps) {
+export function StoreFooter({ store, locale }: StoreFooterProps) {
   const t = useTranslations('store');
   const currentYear = new Date().getFullYear();
   const hasSocialLinks = store.socialLinks && Object.values(store.socialLinks).some(v => v);
-  const hasContactInfo = store.phone || store.address;
+  const hasContactInfo = store.phone || store.email || store.address;
 
   return (
     <footer className="bg-white dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-800">
@@ -63,7 +65,15 @@ export function StoreFooter({ store }: StoreFooterProps) {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="#products"
+                  href={`/${locale}`}
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
+                >
+                  {t('home')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`/${locale}/products`}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                 >
                   {t('products')}
@@ -71,15 +81,7 @@ export function StoreFooter({ store }: StoreFooterProps) {
               </li>
               <li>
                 <a
-                  href="#categories"
-                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
-                >
-                  {t('categories')}
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#about"
+                  href={`/${locale}/about`}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
                 >
                   {t('aboutUs')}
@@ -103,6 +105,19 @@ export function StoreFooter({ store }: StoreFooterProps) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                       <span>{store.phone}</span>
+                    </a>
+                  </li>
+                )}
+                {store.email && (
+                  <li>
+                    <a
+                      href={`mailto:${store.email}`}
+                      className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm transition-colors"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      <span>{store.email}</span>
                     </a>
                   </li>
                 )}

@@ -75,6 +75,7 @@ async function getStoreData(subdomain: string, locale: string) {
       ),
       showAuthorName: apiStore.showAuthorName,
       phone: apiStore.phone,
+      email: apiStore.email,
       address: apiStore.address,
       socialLinks: apiStore.socialLinks,
       categories,
@@ -103,6 +104,7 @@ async function getStoreData(subdomain: string, locale: string) {
       authorName: mockStore.owner.name,
       showAuthorName: true,
       phone: undefined,
+      email: undefined,
       address: undefined,
       socialLinks: undefined,
       categories: [] as CategoryData[],
@@ -162,6 +164,7 @@ export default async function StoreLayout({
     authorName: store.authorName,
     showAuthorName: store.showAuthorName,
     phone: store.phone,
+    email: store.email,
     address: store.address,
     socialLinks: store.socialLinks,
     categories: store.categories,
@@ -199,6 +202,7 @@ export default async function StoreLayout({
                   <StoreLayoutContent
                     store={storeForComponents}
                     accentColors={accentColors as React.CSSProperties}
+                    locale={locale}
                   >
                     {children}
                   </StoreLayoutContent>

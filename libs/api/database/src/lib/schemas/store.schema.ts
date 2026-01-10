@@ -117,6 +117,9 @@ export class Store {
   phone?: string;
 
   @Prop()
+  email?: string;
+
+  @Prop()
   address?: string;
 
   // Homepage product display order: 'popular', 'newest', 'price_asc', 'price_desc', 'random'

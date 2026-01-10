@@ -39,6 +39,7 @@ interface StoreData {
   useDefaultCover: boolean;
   showAuthorName: boolean;
   phone?: string;
+  email?: string;
   address?: string;
   socialLinks?: {
     facebook?: string;
@@ -411,6 +412,7 @@ export default function StoreSettingsPage() {
       submitData.append('useDefaultCover', String(formData.useDefaultCover));
       submitData.append('showAuthorName', String(formData.showAuthorName));
       submitData.append('phone', formData.phone || '');
+      submitData.append('email', formData.email || '');
       submitData.append('address', formData.address || '');
 
       // Social links
@@ -963,6 +965,18 @@ export default function StoreSettingsPage() {
               />
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={formData.email || ''}
+                onChange={(e) => updateField('email', e.target.value)}
+                placeholder="contact@yourstore.com"
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Address
               </label>

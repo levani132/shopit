@@ -119,7 +119,8 @@ export default function ProductsPage() {
           comparison = priceA - priceB;
           break;
         }
-        case 'stock': { // Use totalStock for variant products, stock for simple products
+        case 'stock': {
+          // Use totalStock for variant products, stock for simple products
           const stockA = a.hasVariants ? (a.totalStock ?? 0) : a.stock;
           const stockB = b.hasVariants ? (b.totalStock ?? 0) : b.stock;
           comparison = stockA - stockB;

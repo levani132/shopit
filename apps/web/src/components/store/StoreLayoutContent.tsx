@@ -32,6 +32,7 @@ interface StoreLayoutContentProps {
     authorName?: string;
     showAuthorName?: boolean;
     phone?: string;
+    email?: string;
     address?: string;
     socialLinks?: {
       facebook?: string;
@@ -44,12 +45,14 @@ interface StoreLayoutContentProps {
     authorInitial?: string; // Pre-computed English initial for author avatar
   };
   accentColors: React.CSSProperties;
+  locale: string;
 }
 
 export function StoreLayoutContent({
   children,
   store,
   accentColors,
+  locale,
 }: StoreLayoutContentProps) {
   const pathname = usePathname();
 
@@ -63,7 +66,7 @@ export function StoreLayoutContent({
     >
       {!isAuthRoute && <StoreHeader store={store} />}
       <main className="flex-1">{children}</main>
-      {!isAuthRoute && <StoreFooter store={store} />}
+      {!isAuthRoute && <StoreFooter store={store} locale={locale} />}
     </div>
   );
 }

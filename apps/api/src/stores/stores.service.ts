@@ -26,6 +26,7 @@ export interface UpdateStoreDto {
   useDefaultCover?: boolean;
   showAuthorName?: boolean;
   phone?: string;
+  email?: string;
   address?: string;
   socialLinks?: string; // JSON string
   homepageProductOrder?: string; // 'popular', 'newest', 'price_asc', 'price_desc', 'random'
@@ -110,6 +111,7 @@ export class StoresService {
     if (dto.name) store.name = dto.name;
     if (dto.brandColor) store.brandColor = dto.brandColor;
     if (dto.phone !== undefined) store.phone = dto.phone;
+    if (dto.email !== undefined) store.email = dto.email;
     if (dto.address !== undefined) store.address = dto.address;
 
     // Update localized fields

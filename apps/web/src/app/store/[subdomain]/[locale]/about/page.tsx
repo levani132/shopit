@@ -21,6 +21,7 @@ interface StoreData {
   authorNameLocalized?: { ka?: string; en?: string };
   logo?: string;
   phone?: string;
+  email?: string;
   address?: string;
   socialLinks?: {
     facebook?: string;
@@ -121,7 +122,7 @@ export default function AboutPage() {
   );
   const hasSocialLinks =
     store.socialLinks && Object.values(store.socialLinks).some((v) => v);
-  const hasContactInfo = store.phone || store.address;
+  const hasContactInfo = store.phone || store.email || store.address;
   // Use aboutUs if available, fall back to description for backward compatibility
   const aboutContent = aboutUs || description;
 
@@ -186,6 +187,29 @@ export default function AboutPage() {
                     className="text-gray-700 dark:text-gray-300 hover:text-[var(--store-accent-600)]"
                   >
                     {store.phone}
+                  </a>
+                </div>
+              )}
+              {store.email && (
+                <div className="flex items-center gap-3">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <a
+                    href={`mailto:${store.email}`}
+                    className="text-gray-700 dark:text-gray-300 hover:text-[var(--store-accent-600)]"
+                  >
+                    {store.email}
                   </a>
                 </div>
               )}
