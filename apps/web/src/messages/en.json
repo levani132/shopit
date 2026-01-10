@@ -372,7 +372,12 @@
     "priceLowToHigh": "Price: Low to High",
     "priceHighToLow": "Price: High to Low",
     "popularity": "Popularity",
-    "newest": "Newest"
+    "newest": "Newest",
+    "about": "About",
+    "ourStory": "Our Story",
+    "contactInfo": "Contact Information",
+    "storeNotFound": "Store Not Found",
+    "backToHome": "Back to Home"
   },
   "cart": {
     "title": "Shopping Cart",

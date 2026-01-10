@@ -132,7 +132,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   return (
     <>
-      <StoreHero store={storeForHero} />
+      <StoreHero store={storeForHero} locale={locale} />
       <HomepageProducts 
         products={homepageProducts} 
         hasMore={hasMoreProducts}

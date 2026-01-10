@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getLatinInitial } from '../../lib/utils';
 
@@ -16,9 +17,10 @@ interface StoreHeroProps {
     initial?: string; // Pre-computed English initial for avatar display
     authorInitial?: string; // Pre-computed English initial for author avatar
   };
+  locale: string;
 }
 
-export function StoreHero({ store }: StoreHeroProps) {
+export function StoreHero({ store, locale }: StoreHeroProps) {
   const t = useTranslations('store');
   const authorName = store.authorName || t('storeOwner');
   const showAuthor = store.showAuthorName !== false;
@@ -111,18 +113,18 @@ export function StoreHero({ store }: StoreHeroProps) {
 
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#products"
+            <Link
+              href={`/${locale}/products`}
               className="px-8 py-4 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
             >
               {t('browseProducts')}
-            </a>
-            <a
-              href="#about"
+            </Link>
+            <Link
+              href={`/${locale}/about`}
               className="px-8 py-4 bg-white/10 text-white border border-white/30 rounded-xl hover:bg-white/20 transition-all font-semibold text-lg backdrop-blur-sm"
             >
               {t('learnMore')}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
