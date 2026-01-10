@@ -439,6 +439,7 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
   const [newValue, setNewValue] = useState({ value: '', colorHex: '#000000' });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPalette, setShowPalette] = useState(false);
   const [showCustomColor, setShowCustomColor] = useState(false);
 
   const API_URL_MODAL = (
@@ -500,12 +501,12 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
   };
 
   // Select a predefined color and auto-fill the name
-  const selectPredefinedColor = (color: typeof PREDEFINED_COLORS[0]) => {
+  const selectPredefinedColor = (color: (typeof PREDEFINED_COLORS)[0]) => {
     // Check if this color is already added
     const alreadyExists = values.some(
-      (v) => v.colorHex?.toLowerCase() === color.hex.toLowerCase()
+      (v) => v.colorHex?.toLowerCase() === color.hex.toLowerCase(),
     );
-    
+
     if (alreadyExists) {
       // Just select the color in the input without adding
       setNewValue({ value: color.en, colorHex: color.hex });
@@ -542,7 +543,7 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
     // Check if this color already exists
     if (formData.type === 'color') {
       const alreadyExists = values.some(
-        (v) => v.colorHex?.toLowerCase() === newValue.colorHex.toLowerCase()
+        (v) => v.colorHex?.toLowerCase() === newValue.colorHex.toLowerCase(),
       );
       if (alreadyExists) {
         setError(t('colorAlreadyExists'));
@@ -725,76 +726,95 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
 
             {/* Add new value */}
             {formData.type === 'color' ? (
-              <div className="space-y-4">
-                {/* Predefined Color Palette */}
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {t('selectFromPalette')}
-                  </p>
-                  <div className="grid grid-cols-6 gap-2">
-                    {PREDEFINED_COLORS.map((color) => {
-                      const isAdded = values.some(
-                        (v) => v.colorHex?.toLowerCase() === color.hex.toLowerCase()
-                      );
-                      return (
-                        <button
-                          key={color.hex}
-                          type="button"
-                          onClick={() => selectPredefinedColor(color)}
-                          disabled={isAdded}
-                          className={`group relative w-full aspect-square rounded-lg border-2 transition-all ${
-                            isAdded
-                              ? 'border-green-500 cursor-default'
-                              : 'border-gray-200 dark:border-zinc-600 hover:border-[var(--accent-500)] hover:scale-105'
-                          }`}
-                          style={{ backgroundColor: color.hex }}
-                          title={`${color.en} / ${color.ka}`}
-                        >
-                          {isAdded && (
-                            <span className="absolute inset-0 flex items-center justify-center">
-                              <svg
-                                className="w-5 h-5 text-white drop-shadow-md"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path
-                                  fillRule="evenodd"
-                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
-                            </span>
-                          )}
-                          {/* Tooltip */}
-                          <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            {color.en}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Custom Color Toggle */}
-                <div className="border-t border-gray-200 dark:border-zinc-700 pt-4">
+              <div className="space-y-3">
+                {/* Two buttons: Predefined Palette and Custom Color */}
+                <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowCustomColor(!showCustomColor)}
-                    className="text-sm text-[var(--accent-600)] hover:text-[var(--accent-700)] flex items-center gap-2"
+                    onClick={() => {
+                      setShowPalette(!showPalette);
+                      setShowCustomColor(false);
+                    }}
+                    className={`flex-1 px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-center gap-2 ${
+                      showPalette
+                        ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20 text-[var(--accent-700)] dark:text-[var(--accent-400)]'
+                        : 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-zinc-500'
+                    }`}
                   >
-                    <svg
-                      className={`w-4 h-4 transition-transform ${showCustomColor ? 'rotate-90' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <span className="w-4 h-4 rounded-full bg-gradient-to-br from-red-500 via-green-500 to-blue-500" />
+                    {t('selectFromPalette')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustomColor(!showCustomColor);
+                      setShowPalette(false);
+                    }}
+                    className={`flex-1 px-4 py-2.5 rounded-lg border transition-colors flex items-center justify-center gap-2 ${
+                      showCustomColor
+                        ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20 text-[var(--accent-700)] dark:text-[var(--accent-400)]'
+                        : 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-zinc-500'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     {t('addCustomColor')}
                   </button>
+                </div>
 
-                  {showCustomColor && (
-                    <div className="flex gap-2 mt-3">
+                {/* Predefined Color Palette - Compact circles */}
+                {showPalette && (
+                  <div className="p-3 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800/50">
+                    <div className="flex flex-wrap gap-1.5 justify-center">
+                      {PREDEFINED_COLORS.map((color) => {
+                        const isAdded = values.some(
+                          (v) =>
+                            v.colorHex?.toLowerCase() === color.hex.toLowerCase(),
+                        );
+                        return (
+                          <button
+                            key={color.hex}
+                            type="button"
+                            onClick={() => selectPredefinedColor(color)}
+                            disabled={isAdded}
+                            className={`group relative w-7 h-7 rounded-full border-2 transition-all ${
+                              isAdded
+                                ? 'border-green-500 cursor-default opacity-60'
+                                : 'border-transparent hover:border-[var(--accent-500)] hover:scale-110'
+                            } ${color.hex === '#FFFFFF' ? 'border-gray-300 dark:border-zinc-500' : ''}`}
+                            style={{ backgroundColor: color.hex }}
+                            title={`${color.en} / ${color.ka}`}
+                          >
+                            {isAdded && (
+                              <span className="absolute inset-0 flex items-center justify-center">
+                                <svg
+                                  className="w-3.5 h-3.5 text-white drop-shadow-md"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+                      {t('clickToAdd')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Custom Color Input */}
+                {showCustomColor && (
+                  <div className="p-3 border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800/50">
+                    <div className="flex gap-2">
                       <input
                         type="color"
                         value={newValue.colorHex}
@@ -821,13 +841,13 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                       <button
                         type="button"
                         onClick={addValue}
-                        className="px-4 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
+                        className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors"
                       >
                         {t('add')}
                       </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex gap-2">
