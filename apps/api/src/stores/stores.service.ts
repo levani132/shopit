@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Store, StoreDocument } from '@sellit/api-database';
@@ -172,6 +177,157 @@ export class StoresService {
 
     await store.save();
     return store;
+  }
+
+  /**
+   * Check if a subdomain is available
+   */
+  async isSubdomainAvailable(subdomain: string): Promise<boolean> {
+    const normalizedSubdomain = subdomain.toLowerCase().trim();
+    const existingStore = await this.storeModel.findOne({
+      subdomain: normalizedSubdomain,
+    });
+    return !existingStore;
+  }
+
+  /**
+   * Validate subdomain format
+   */
+  validateSubdomain(subdomain: string): { valid: boolean; error?: string } {
+    const normalized = subdomain.toLowerCase().trim();
+
+    // Must be at least 3 characters
+    if (normalized.length < 3) {
+      return { valid: false, error: 'Subdomain must be at least 3 characters' };
+    }
+
+    // Must be at most 30 characters
+    if (normalized.length > 30) {
+      return { valid: false, error: 'Subdomain must be at most 30 characters' };
+    }
+
+    // Must start with a letter
+    if (!/^[a-z]/.test(normalized)) {
+      return { valid: false, error: 'Subdomain must start with a letter' };
+    }
+
+    // Must only contain letters, numbers, and hyphens
+    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(normalized) && normalized.length > 1) {
+      return {
+        valid: false,
+        error: 'Subdomain can only contain letters, numbers, and hyphens',
+      };
+    }
+
+    // Reserved subdomains
+    const reserved = [
+      'www',
+      'api',
+      'admin',
+      'app',
+      'dashboard',
+      'store',
+      'shop',
+      'mail',
+      'email',
+      'support',
+      'help',
+      'blog',
+      'cdn',
+      'assets',
+      'static',
+      'test',
+      'dev',
+      'staging',
+      'prod',
+      'production',
+    ];
+    if (reserved.includes(normalized)) {
+      return { valid: false, error: 'This subdomain is reserved' };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Change store subdomain
+   * First change is free, subsequent changes cost 10 GEL
+   */
+  async changeSubdomain(
+    ownerId: string,
+    newSubdomain: string,
+  ): Promise<{
+    store: StoreDocument;
+    requiresPayment: boolean;
+    cost: number;
+  }> {
+    const store = await this.findByOwnerId(ownerId);
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    const normalizedSubdomain = newSubdomain.toLowerCase().trim();
+
+    // Check if it's the same subdomain
+    if (store.subdomain === normalizedSubdomain) {
+      throw new BadRequestException('New subdomain is the same as current');
+    }
+
+    // Validate subdomain format
+    const validation = this.validateSubdomain(normalizedSubdomain);
+    if (!validation.valid) {
+      throw new BadRequestException(validation.error);
+    }
+
+    // Check availability
+    const isAvailable = await this.isSubdomainAvailable(normalizedSubdomain);
+    if (!isAvailable) {
+      throw new ConflictException('This subdomain is already taken');
+    }
+
+    // Check if this is a paid change (not the first one)
+    const changeCount = store.subdomainChangeCount || 0;
+    const requiresPayment = changeCount >= 1;
+    const cost = requiresPayment ? 10 : 0;
+
+    // Update subdomain
+    store.subdomain = normalizedSubdomain;
+    store.subdomainChangeCount = changeCount + 1;
+    await store.save();
+
+    return {
+      store,
+      requiresPayment,
+      cost,
+    };
+  }
+
+  /**
+   * Get subdomain change info for a store
+   */
+  async getSubdomainChangeInfo(ownerId: string): Promise<{
+    currentSubdomain: string;
+    changeCount: number;
+    nextChangeCost: number;
+    isFreeChangeAvailable: boolean;
+  }> {
+    const store = await this.findByOwnerId(ownerId);
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    const changeCount = store.subdomainChangeCount || 0;
+    const isFreeChangeAvailable = changeCount === 0;
+    const nextChangeCost = isFreeChangeAvailable ? 0 : 10;
+
+    return {
+      currentSubdomain: store.subdomain,
+      changeCount,
+      nextChangeCost,
+      isFreeChangeAvailable,
+    };
   }
 }
 

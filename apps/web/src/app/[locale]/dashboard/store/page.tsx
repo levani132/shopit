@@ -22,6 +22,7 @@ const BRAND_COLORS = [
 interface StoreData {
   _id: string;
   subdomain: string;
+  subdomainChangeCount?: number;
   name: string;
   nameLocalized?: { ka?: string; en?: string };
   description?: string;
@@ -93,6 +94,104 @@ export default function StoreSettingsPage() {
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  // Subdomain change state
+  const [newSubdomain, setNewSubdomain] = useState('');
+  const [subdomainError, setSubdomainError] = useState<string | null>(null);
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
+  const [isChangingSubdomain, setIsChangingSubdomain] = useState(false);
+  const [showSubdomainConfirm, setShowSubdomainConfirm] = useState(false);
+  const subdomainCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Calculate subdomain change cost
+  const isFreeSubdomainChange = (formData?.subdomainChangeCount || 0) === 0;
+  const subdomainChangeCost = isFreeSubdomainChange ? 0 : 10;
+
+  // Check subdomain availability with debounce
+  const checkSubdomainAvailability = async (subdomain: string) => {
+    if (!subdomain || subdomain.length < 3) {
+      setSubdomainAvailable(null);
+      setSubdomainError(subdomain.length > 0 ? 'Subdomain must be at least 3 characters' : null);
+      return;
+    }
+
+    if (subdomain === formData?.subdomain) {
+      setSubdomainAvailable(null);
+      setSubdomainError('This is your current subdomain');
+      return;
+    }
+
+    setIsCheckingSubdomain(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/stores/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`,
+        { credentials: 'include' }
+      );
+      const data = await response.json();
+      setSubdomainAvailable(data.available);
+      setSubdomainError(data.available ? null : data.error);
+    } catch (err) {
+      setSubdomainError('Failed to check availability');
+      setSubdomainAvailable(null);
+    } finally {
+      setIsCheckingSubdomain(false);
+    }
+  };
+
+  const handleSubdomainInputChange = (value: string) => {
+    const normalized = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setNewSubdomain(normalized);
+    setSubdomainAvailable(null);
+    setSubdomainError(null);
+
+    // Debounce the availability check
+    if (subdomainCheckTimeout.current) {
+      clearTimeout(subdomainCheckTimeout.current);
+    }
+    subdomainCheckTimeout.current = setTimeout(() => {
+      checkSubdomainAvailability(normalized);
+    }, 500);
+  };
+
+  const handleSubdomainChange = async () => {
+    if (!newSubdomain || !subdomainAvailable) return;
+
+    setIsChangingSubdomain(true);
+    try {
+      const response = await fetch(`${API_URL}/api/v1/stores/change-subdomain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ newSubdomain }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to change subdomain');
+      }
+
+      // Update form data with new subdomain
+      setFormData((prev) => prev ? {
+        ...prev,
+        subdomain: data.newSubdomain,
+        subdomainChangeCount: (prev.subdomainChangeCount || 0) + 1,
+      } : null);
+
+      setNewSubdomain('');
+      setSubdomainAvailable(null);
+      setShowSubdomainConfirm(false);
+      setSuccess(data.message);
+
+      // Refresh auth to update store in context
+      await refreshAuth();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to change subdomain');
+    } finally {
+      setIsChangingSubdomain(false);
+    }
+  };
 
   // Fetch store data
   useEffect(() => {
@@ -875,12 +974,14 @@ export default function StoreSettingsPage() {
           </div>
         </div>
 
-        {/* Store URL (read-only) */}
+        {/* Store URL & Subdomain Change */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
             Store URL
           </h2>
-          <div className="flex items-center gap-3">
+          
+          {/* Current URL */}
+          <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
               <span className="text-gray-500 dark:text-gray-400">https://</span>
               <span className="font-medium text-gray-900 dark:text-white">
@@ -904,10 +1005,163 @@ export default function StoreSettingsPage() {
               Copy
             </button>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            Your store subdomain cannot be changed after creation.
-          </p>
+
+          {/* Subdomain Change Section */}
+          <div className="border-t border-gray-200 dark:border-zinc-700 pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                  Change Subdomain
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {isFreeSubdomainChange ? (
+                    <span className="text-green-600 dark:text-green-400 font-medium">
+                      ✨ Your first change is free!
+                    </span>
+                  ) : (
+                    <span>
+                      Changing your subdomain costs <span className="font-semibold text-gray-900 dark:text-white">₾{subdomainChangeCost}</span>
+                    </span>
+                  )}
+                </p>
+              </div>
+              {(formData.subdomainChangeCount || 0) > 0 && (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  Changed {formData.subdomainChangeCount} time{(formData.subdomainChangeCount || 0) > 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
+
+            {/* New Subdomain Input */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <div className="flex items-center border border-gray-300 dark:border-zinc-700 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent">
+                  <span className="px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 text-sm border-r border-gray-300 dark:border-zinc-700">
+                    https://
+                  </span>
+                  <input
+                    type="text"
+                    value={newSubdomain}
+                    onChange={(e) => handleSubdomainInputChange(e.target.value)}
+                    placeholder="new-subdomain"
+                    maxLength={30}
+                    className="flex-1 px-3 py-2.5 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 text-sm border-l border-gray-300 dark:border-zinc-700">
+                    .shopit.ge
+                  </span>
+                </div>
+                
+                {/* Status Messages */}
+                <div className="mt-2 min-h-[20px]">
+                  {isCheckingSubdomain && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Checking availability...
+                    </p>
+                  )}
+                  {!isCheckingSubdomain && subdomainError && (
+                    <p className="text-xs text-red-600 dark:text-red-400">
+                      ✕ {subdomainError}
+                    </p>
+                  )}
+                  {!isCheckingSubdomain && subdomainAvailable && (
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      ✓ This subdomain is available!
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowSubdomainConfirm(true)}
+                disabled={!subdomainAvailable || isCheckingSubdomain}
+                className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                Change
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Subdomain Change Confirmation Modal */}
+        {showSubdomainConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Confirm Subdomain Change
+              </h3>
+              
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Current</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {formData.subdomain}.shopit.ge
+                  </span>
+                </div>
+                <div className="flex justify-center">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+                <div className="flex items-center justify-between py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                  <span className="text-sm text-indigo-600 dark:text-indigo-400">New</span>
+                  <span className="font-medium text-indigo-700 dark:text-indigo-300">
+                    {newSubdomain}.shopit.ge
+                  </span>
+                </div>
+
+                {!isFreeSubdomainChange && (
+                  <div className="flex items-center justify-between py-3 px-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <span className="text-sm text-amber-700 dark:text-amber-400">Cost</span>
+                    <span className="font-semibold text-amber-700 dark:text-amber-300">
+                      ₾{subdomainChangeCost}
+                    </span>
+                  </div>
+                )}
+
+                {isFreeSubdomainChange && (
+                  <div className="text-center py-2 px-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <span className="text-sm text-green-700 dark:text-green-400 font-medium">
+                      ✨ This change is free! Future changes will cost ₾10.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+                <p className="mb-1">⚠️ <strong>Important:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Your old URL will stop working immediately</li>
+                  <li>Existing links and bookmarks will break</li>
+                  <li>This action cannot be undone</li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSubdomainConfirm(false)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubdomainChange}
+                  disabled={isChangingSubdomain}
+                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isChangingSubdomain ? 'Changing...' : isFreeSubdomainChange ? 'Confirm Change' : `Pay ₾${subdomainChangeCost} & Change`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">

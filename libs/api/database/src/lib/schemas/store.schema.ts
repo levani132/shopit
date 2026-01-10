@@ -19,6 +19,13 @@ export class Store {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   subdomain!: string;
 
+  /**
+   * Track how many times the subdomain has been changed.
+   * First change is free, subsequent changes cost 10 GEL.
+   */
+  @Prop({ default: 0 })
+  subdomainChangeCount!: number;
+
   // Legacy field for backward compatibility - will be populated from nameLocalized.en or nameLocalized.ka
   @Prop({ required: true, trim: true })
   name!: string;

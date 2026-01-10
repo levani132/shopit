@@ -1,9 +1,11 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
+  Query,
   NotFoundException,
   UseGuards,
   UseInterceptors,
@@ -48,6 +50,7 @@ export class StoresController {
     return {
       _id: store._id,
       subdomain: store.subdomain,
+      subdomainChangeCount: store.subdomainChangeCount || 0,
       name: store.name,
       nameLocalized: store.nameLocalized || { ka: '', en: store.name },
       description: store.description,
@@ -67,6 +70,61 @@ export class StoresController {
       address: store.address,
       isVerified: store.isVerified ?? false,
       homepageProductOrder: store.homepageProductOrder || 'popular',
+    };
+  }
+
+  @Get('subdomain-info')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get subdomain change info for current user\'s store' })
+  @ApiResponse({ status: 200, description: 'Subdomain info retrieved' })
+  async getSubdomainInfo(@CurrentUser() user: UserDocument) {
+    return this.storesService.getSubdomainChangeInfo(user._id.toString());
+  }
+
+  @Get('check-subdomain')
+  @ApiOperation({ summary: 'Check if a subdomain is available' })
+  @ApiResponse({ status: 200, description: 'Availability check result' })
+  async checkSubdomainAvailability(@Query('subdomain') subdomain: string) {
+    if (!subdomain) {
+      return { available: false, error: 'Subdomain is required' };
+    }
+
+    // Validate format first
+    const validation = this.storesService.validateSubdomain(subdomain);
+    if (!validation.valid) {
+      return { available: false, error: validation.error };
+    }
+
+    // Check availability
+    const available = await this.storesService.isSubdomainAvailable(subdomain);
+    return { available, error: available ? null : 'This subdomain is already taken' };
+  }
+
+  @Post('change-subdomain')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change store subdomain (first change free, then 10 GEL)' })
+  @ApiResponse({ status: 200, description: 'Subdomain changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid subdomain' })
+  @ApiResponse({ status: 409, description: 'Subdomain already taken' })
+  async changeSubdomain(
+    @CurrentUser() user: UserDocument,
+    @Body() body: { newSubdomain: string },
+  ) {
+    const result = await this.storesService.changeSubdomain(
+      user._id.toString(),
+      body.newSubdomain,
+    );
+
+    return {
+      success: true,
+      newSubdomain: result.store.subdomain,
+      wasFree: !result.requiresPayment,
+      cost: result.cost,
+      message: result.requiresPayment
+        ? `Subdomain changed. You will be charged ₾${result.cost}.`
+        : 'Subdomain changed for free!',
     };
   }
 
