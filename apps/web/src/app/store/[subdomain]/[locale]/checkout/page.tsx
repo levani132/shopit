@@ -259,8 +259,8 @@ export default function CheckoutPage() {
               email: guestInfo?.email,
               phone: guestInfo?.phoneNumber,
             },
-        successUrl: `${window.location.origin}/${locale}/checkout/success`,
-        failUrl: `${window.location.origin}/${locale}/checkout/fail`,
+        successUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/success`,
+        failUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/fail`,
       };
 
       const paymentResponse = await fetch(`${API_URL}/api/v1/payments/initiate`, {

@@ -9,6 +9,7 @@ export default function CheckoutFailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'ka';
+  const subdomain = params?.subdomain as string;
   const errorMessage = searchParams.get('error');
 
   return (
@@ -45,14 +46,14 @@ export default function CheckoutFailPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Link
-          href={`/${locale}/checkout`}
+          href={`/store/${subdomain}/${locale}/checkout`}
           className="inline-block px-6 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
         >
           {t('tryAgain')}
         </Link>
 
         <Link
-          href={`/${locale}/cart`}
+          href={`/store/${subdomain}/${locale}/cart`}
           className="inline-block px-6 py-3 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
         >
           {t('returnToCart')}

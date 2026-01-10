@@ -91,7 +91,7 @@ export default function DashboardOrdersPage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/orders/seller`, {
+        const response = await fetch(`${API_URL}/api/v1/orders/store-orders`, {
           credentials: 'include',
         });
 
