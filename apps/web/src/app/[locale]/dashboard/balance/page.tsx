@@ -77,10 +77,13 @@ export default function BalancePage() {
         ]);
 
         if (balanceRes.ok) {
-          setBalance(await balanceRes.json());
+          const balanceData = await balanceRes.json();
+          setBalance(balanceData);
         }
         if (transactionsRes.ok) {
-          setTransactions(await transactionsRes.json());
+          const txData = await transactionsRes.json();
+          // Handle both array response and object with transactions property
+          setTransactions(Array.isArray(txData) ? txData : txData.transactions || []);
         }
       } catch (err) {
         console.error('Error fetching balance data:', err);
