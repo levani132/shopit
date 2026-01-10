@@ -309,9 +309,12 @@ export class OrdersService {
    * Find orders for a user
    */
   async findUserOrders(userId: string): Promise<OrderDocument[]> {
-    return this.orderModel
+    this.logger.log(`Finding orders for user: ${userId}`);
+    const orders = await this.orderModel
       .find({ user: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 });
+    this.logger.log(`Found ${orders.length} orders for user ${userId}`);
+    return orders;
   }
 
   /**

@@ -65,23 +65,30 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
       if (authLoading) return;
       if (!isAuthenticated) {
+        console.log('[Orders] Not authenticated, skipping fetch');
         setLoading(false);
         return;
       }
 
       try {
+        console.log('[Orders] Fetching orders from:', `${API_URL}/api/v1/orders/my-orders`);
         const response = await fetch(`${API_URL}/api/v1/orders/my-orders`, {
           credentials: 'include',
         });
 
+        console.log('[Orders] Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('[Orders] Received orders:', data.length, data);
           setOrders(data);
         } else {
+          const errorText = await response.text();
+          console.error('[Orders] Failed to load orders:', response.status, errorText);
           setError('Failed to load orders');
         }
       } catch (err) {
-        console.error('Error fetching orders:', err);
+        console.error('[Orders] Error fetching orders:', err);
         setError('Failed to load orders');
       } finally {
         setLoading(false);

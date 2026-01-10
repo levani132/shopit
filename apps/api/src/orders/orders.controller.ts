@@ -69,7 +69,10 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   async getMyOrders(@CurrentUser() user: { _id: any; id?: string }) {
     const userId = user.id || user._id?.toString();
-    return this.ordersService.findUserOrders(userId);
+    console.log('[Orders] my-orders called for userId:', userId, 'user._id:', user._id, 'user.id:', user.id);
+    const orders = await this.ordersService.findUserOrders(userId);
+    console.log('[Orders] Found orders:', orders.length);
+    return orders;
   }
 
   /**
