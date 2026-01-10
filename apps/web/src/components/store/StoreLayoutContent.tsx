@@ -41,6 +41,7 @@ interface StoreLayoutContentProps {
     };
     categories?: CategoryData[];
     initial?: string; // Pre-computed English initial for avatar display
+    authorInitial?: string; // Pre-computed English initial for author avatar
   };
   accentColors: React.CSSProperties;
 }
@@ -51,7 +52,7 @@ export function StoreLayoutContent({
   accentColors,
 }: StoreLayoutContentProps) {
   const pathname = usePathname();
-  
+
   // Check if current path is an auth route
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname?.endsWith(route));
 
@@ -66,4 +67,3 @@ export function StoreLayoutContent({
     </div>
   );
 }
-

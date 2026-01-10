@@ -44,8 +44,17 @@ async function getStoreData(subdomain: string, locale: string) {
     const categories = await getCategoriesByStoreId(apiStore.id);
 
     // Get English name for initial (fallback to store name, then subdomain)
-    const englishName = apiStore.nameLocalized?.en || apiStore.name || subdomain;
-    const initial = getLatinInitial(englishName, subdomain.charAt(0).toUpperCase());
+    const englishName =
+      apiStore.nameLocalized?.en || apiStore.name || subdomain;
+    const initial = getLatinInitial(
+      englishName,
+      subdomain.charAt(0).toUpperCase(),
+    );
+
+    // Get English author name for initial
+    const englishAuthorName =
+      apiStore.authorNameLocalized?.en || apiStore.authorName || '';
+    const authorInitial = getLatinInitial(englishAuthorName, initial);
 
     return {
       id: apiStore.id,
@@ -70,14 +79,19 @@ async function getStoreData(subdomain: string, locale: string) {
       socialLinks: apiStore.socialLinks,
       categories,
       initial, // Pre-computed English initial for avatar display
+      authorInitial, // Pre-computed English initial for author avatar
     };
   }
 
   // Fallback to mock
   const mockStore = getMockStore(subdomain);
   if (mockStore) {
-    const initial = getLatinInitial(mockStore.name, subdomain.charAt(0).toUpperCase());
-    
+    const initial = getLatinInitial(
+      mockStore.name,
+      subdomain.charAt(0).toUpperCase(),
+    );
+    const authorInitial = getLatinInitial(mockStore.owner.name, initial);
+
     return {
       id: mockStore.subdomain, // Use subdomain as ID for mock stores
       name: mockStore.name,
@@ -93,6 +107,7 @@ async function getStoreData(subdomain: string, locale: string) {
       socialLinks: undefined,
       categories: [] as CategoryData[],
       initial, // Pre-computed English initial for avatar display
+      authorInitial, // Pre-computed English initial for author avatar
     };
   }
 
@@ -151,6 +166,7 @@ export default async function StoreLayout({
     socialLinks: store.socialLinks,
     categories: store.categories,
     initial: store.initial, // Pre-computed English initial
+    authorInitial: store.authorInitial, // Pre-computed English author initial
   };
 
   return (

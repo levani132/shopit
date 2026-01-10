@@ -14,6 +14,7 @@ interface StoreHeroProps {
     showAuthorName?: boolean;
     accentColor?: string;
     initial?: string; // Pre-computed English initial for avatar display
+    authorInitial?: string; // Pre-computed English initial for author avatar
   };
 }
 
@@ -102,7 +103,7 @@ export function StoreHero({ store }: StoreHeroProps) {
                 className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium"
                 style={{ backgroundColor: 'var(--store-accent-800)' }}
               >
-                {getLatinInitial(authorName)}
+                {store.authorInitial || getLatinInitial(authorName)}
               </div>
               <span className="font-medium">{authorName}</span>
             </div>
