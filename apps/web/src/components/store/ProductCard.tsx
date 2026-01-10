@@ -198,21 +198,36 @@ export function ProductCard({
         {/* Action Buttons */}
         {showBuyNow && (
           <div className="flex gap-2">
+            {/* Add to Cart - Icon only */}
             <button
               onClick={handleAddToCart}
               disabled={isOutOfStock}
-              className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              title={product.hasVariants ? t('selectOptions') : t('addToCart')}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
                 isOutOfStock
                   ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 cursor-not-allowed'
                   : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
               }`}
             >
-              {product.hasVariants ? t('selectOptions') : t('addToCart')}
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                />
+              </svg>
             </button>
+            {/* Buy Now - Takes rest of width */}
             <button
               onClick={handleBuyNow}
               disabled={isOutOfStock}
-              className={`flex-1 px-3 py-2 text-xs font-medium rounded-lg transition-colors ${
+              className={`flex-1 h-10 px-4 text-sm font-medium rounded-lg transition-colors ${
                 isOutOfStock
                   ? 'bg-gray-300 dark:bg-zinc-600 text-gray-500 cursor-not-allowed'
                   : 'text-white'
@@ -223,7 +238,7 @@ export function ProductCard({
                   : undefined
               }
             >
-              {product.hasVariants ? t('view') : t('buyNow')}
+              {t('buyNow')}
             </button>
           </div>
         )}

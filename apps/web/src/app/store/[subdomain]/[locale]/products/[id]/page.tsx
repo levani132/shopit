@@ -71,7 +71,6 @@ interface Product {
 export default function ProductDetailPage() {
   const t = useTranslations('store');
   const tCommon = useTranslations('common');
-  const tCart = useTranslations('cart');
   const params = useParams();
   const router = useRouter();
   const locale = (params?.locale as string) || 'en';
@@ -298,6 +297,34 @@ export default function ProductDetailPage() {
     // Reset after 2 seconds
     setTimeout(() => setAddedToCart(false), 2000);
   }, [product, storeInfo, selectedVariant, effectivePrice, effectiveSalePrice, effectiveStock, displayImages, quantity, subdomain, addItem]);
+
+  const handleBuyNow = useCallback(() => {
+    if (!product || !storeInfo) return;
+
+    // For variant products, must have a selected variant
+    if (product.hasVariants && !selectedVariant) return;
+
+    const cartItem = {
+      productId: product._id,
+      variantId: selectedVariant?._id,
+      name: product.name,
+      nameLocalized: product.nameLocalized,
+      price: effectivePrice,
+      salePrice: effectiveSalePrice,
+      isOnSale: product.isOnSale,
+      image: displayImages[0],
+      stock: effectiveStock,
+      variantAttributes: selectedVariant?.attributes,
+      storeId: storeInfo.id,
+      storeName: storeInfo.name,
+      storeSubdomain: subdomain,
+    };
+
+    addItem(cartItem, quantity);
+    
+    // Redirect to checkout
+    router.push(`/${locale}/checkout`);
+  }, [product, storeInfo, selectedVariant, effectivePrice, effectiveSalePrice, effectiveStock, displayImages, quantity, subdomain, addItem, router, locale]);
 
   if (isLoading) {
     return (
@@ -554,26 +581,43 @@ export default function ProductDetailPage() {
               </button>
             </div>
 
+            {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
               disabled={effectiveStock <= 0 || (product.hasVariants && !selectedVariant) || addedToCart}
-              className={`flex-1 px-6 py-3 font-medium rounded-lg transition-colors disabled:cursor-not-allowed ${
+              title={t('addToCart')}
+              className={`w-14 h-12 flex items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed ${
                 addedToCart
                   ? 'bg-green-500 text-white'
-                  : 'bg-[var(--accent-600)] text-white hover:bg-[var(--accent-700)] disabled:opacity-50'
+                  : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:opacity-50'
               }`}
             >
               {addedToCart ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {tCart('addedToCart')}
-                </span>
-              ) : product.hasVariants && !selectedVariant ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              )}
+            </button>
+
+            {/* Buy Now Button */}
+            <button
+              onClick={handleBuyNow}
+              disabled={effectiveStock <= 0 || (product.hasVariants && !selectedVariant)}
+              className="flex-1 px-6 py-3 font-medium rounded-lg transition-colors disabled:cursor-not-allowed bg-[var(--accent-600)] text-white hover:bg-[var(--accent-700)] disabled:opacity-50"
+            >
+              {product.hasVariants && !selectedVariant ? (
                 t('selectVariant')
               ) : (
-                t('addToCart')
+                t('buyNow')
               )}
             </button>
           </div>
