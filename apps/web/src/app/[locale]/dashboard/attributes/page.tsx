@@ -392,6 +392,38 @@ interface AttributeModalProps {
   onSaved: () => void;
 }
 
+// Predefined color palette with English and Georgian names
+const PREDEFINED_COLORS = [
+  // Row 1 - Neutrals
+  { hex: '#000000', en: 'Black', ka: 'შავი' },
+  { hex: '#FFFFFF', en: 'White', ka: 'თეთრი' },
+  { hex: '#808080', en: 'Gray', ka: 'ნაცრისფერი' },
+  { hex: '#C0C0C0', en: 'Silver', ka: 'ვერცხლისფერი' },
+  { hex: '#8B4513', en: 'Brown', ka: 'ყავისფერი' },
+  { hex: '#F5F5DC', en: 'Beige', ka: 'ბეჟი' },
+  // Row 2 - Reds/Oranges
+  { hex: '#FF0000', en: 'Red', ka: 'წითელი' },
+  { hex: '#DC143C', en: 'Crimson', ka: 'ჟოლოსფერი' },
+  { hex: '#FF6347', en: 'Tomato', ka: 'პამიდვრისფერი' },
+  { hex: '#FF4500', en: 'Orange Red', ka: 'ნარინჯისფერ-წითელი' },
+  { hex: '#FFA500', en: 'Orange', ka: 'ნარინჯისფერი' },
+  { hex: '#FFD700', en: 'Gold', ka: 'ოქროსფერი' },
+  // Row 3 - Yellows/Greens
+  { hex: '#FFFF00', en: 'Yellow', ka: 'ყვითელი' },
+  { hex: '#9ACD32', en: 'Yellow Green', ka: 'ყვითელ-მწვანე' },
+  { hex: '#32CD32', en: 'Lime Green', ka: 'ლაიმისფერი' },
+  { hex: '#008000', en: 'Green', ka: 'მწვანე' },
+  { hex: '#006400', en: 'Dark Green', ka: 'მუქი მწვანე' },
+  { hex: '#20B2AA', en: 'Teal', ka: 'ზურმუხტისფერი' },
+  // Row 4 - Blues/Purples
+  { hex: '#00FFFF', en: 'Cyan', ka: 'ციანი' },
+  { hex: '#00BFFF', en: 'Sky Blue', ka: 'ცისფერი' },
+  { hex: '#0000FF', en: 'Blue', ka: 'ლურჯი' },
+  { hex: '#000080', en: 'Navy', ka: 'მუქი ლურჯი' },
+  { hex: '#800080', en: 'Purple', ka: 'იასამნისფერი' },
+  { hex: '#FF69B4', en: 'Pink', ka: 'ვარდისფერი' },
+];
+
 function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
   const t = useTranslations('dashboard');
   const [formData, setFormData] = useState({
@@ -407,6 +439,7 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
   const [newValue, setNewValue] = useState({ value: '', colorHex: '#000000' });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCustomColor, setShowCustomColor] = useState(false);
 
   const API_URL_MODAL = (
     process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
@@ -466,6 +499,38 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
     }
   };
 
+  // Select a predefined color and auto-fill the name
+  const selectPredefinedColor = (color: typeof PREDEFINED_COLORS[0]) => {
+    // Check if this color is already added
+    const alreadyExists = values.some(
+      (v) => v.colorHex?.toLowerCase() === color.hex.toLowerCase()
+    );
+    
+    if (alreadyExists) {
+      // Just select the color in the input without adding
+      setNewValue({ value: color.en, colorHex: color.hex });
+      return;
+    }
+
+    // Add the color directly
+    const slug = color.en
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    setValues([
+      ...values,
+      {
+        _id: `temp-${Date.now()}`,
+        value: color.en,
+        valueLocalized: { en: color.en, ka: color.ka },
+        slug,
+        colorHex: color.hex,
+        order: values.length,
+      },
+    ]);
+  };
+
   const addValue = () => {
     if (!newValue.value.trim()) return;
 
@@ -473,6 +538,17 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
       .toLowerCase()
       .replace(/[^a-z0-9\u10D0-\u10FF]+/g, '-')
       .replace(/^-+|-+$/g, '');
+
+    // Check if this color already exists
+    if (formData.type === 'color') {
+      const alreadyExists = values.some(
+        (v) => v.colorHex?.toLowerCase() === newValue.colorHex.toLowerCase()
+      );
+      if (alreadyExists) {
+        setError(t('colorAlreadyExists'));
+        return;
+      }
+    }
 
     setValues([
       ...values,
@@ -486,6 +562,7 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
       },
     ]);
     setNewValue({ value: '', colorHex: '#000000' });
+    setShowCustomColor(false);
   };
 
   const removeValue = (id: string) => {
@@ -647,40 +724,137 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
             </div>
 
             {/* Add new value */}
-            <div className="flex gap-2">
-              {formData.type === 'color' && (
+            {formData.type === 'color' ? (
+              <div className="space-y-4">
+                {/* Predefined Color Palette */}
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    {t('selectFromPalette')}
+                  </p>
+                  <div className="grid grid-cols-6 gap-2">
+                    {PREDEFINED_COLORS.map((color) => {
+                      const isAdded = values.some(
+                        (v) => v.colorHex?.toLowerCase() === color.hex.toLowerCase()
+                      );
+                      return (
+                        <button
+                          key={color.hex}
+                          type="button"
+                          onClick={() => selectPredefinedColor(color)}
+                          disabled={isAdded}
+                          className={`group relative w-full aspect-square rounded-lg border-2 transition-all ${
+                            isAdded
+                              ? 'border-green-500 cursor-default'
+                              : 'border-gray-200 dark:border-zinc-600 hover:border-[var(--accent-500)] hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color.hex }}
+                          title={`${color.en} / ${color.ka}`}
+                        >
+                          {isAdded && (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <svg
+                                className="w-5 h-5 text-white drop-shadow-md"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                            </span>
+                          )}
+                          {/* Tooltip */}
+                          <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                            {color.en}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Custom Color Toggle */}
+                <div className="border-t border-gray-200 dark:border-zinc-700 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomColor(!showCustomColor)}
+                    className="text-sm text-[var(--accent-600)] hover:text-[var(--accent-700)] flex items-center gap-2"
+                  >
+                    <svg
+                      className={`w-4 h-4 transition-transform ${showCustomColor ? 'rotate-90' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    {t('addCustomColor')}
+                  </button>
+
+                  {showCustomColor && (
+                    <div className="flex gap-2 mt-3">
+                      <input
+                        type="color"
+                        value={newValue.colorHex}
+                        onChange={(e) =>
+                          setNewValue({ ...newValue, colorHex: e.target.value })
+                        }
+                        className="w-12 h-10 p-1 rounded border border-gray-300 dark:border-zinc-600 cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={newValue.value}
+                        onChange={(e) =>
+                          setNewValue({ ...newValue, value: e.target.value })
+                        }
+                        placeholder={t('colorName')}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addValue();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={addValue}
+                        className="px-4 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
+                      >
+                        {t('add')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
                 <input
-                  type="color"
-                  value={newValue.colorHex}
+                  type="text"
+                  value={newValue.value}
                   onChange={(e) =>
-                    setNewValue({ ...newValue, colorHex: e.target.value })
+                    setNewValue({ ...newValue, value: e.target.value })
                   }
-                  className="w-12 h-10 p-1 rounded border border-gray-300 dark:border-zinc-600 cursor-pointer"
+                  placeholder={t('valueName')}
+                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addValue();
+                    }
+                  }}
                 />
-              )}
-              <input
-                type="text"
-                value={newValue.value}
-                onChange={(e) =>
-                  setNewValue({ ...newValue, value: e.target.value })
-                }
-                placeholder={t('valueName')}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addValue();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                onClick={addValue}
-                className="px-4 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
-              >
-                {t('addValue')}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={addValue}
+                  className="px-4 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  {t('addValue')}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
