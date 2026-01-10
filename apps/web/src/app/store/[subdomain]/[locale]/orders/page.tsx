@@ -63,20 +63,30 @@ const statusColors: Record<string, string> = {
 
 // Georgian month names
 const georgianMonths = [
-  'იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი',
-  'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'
+  'იანვარი',
+  'თებერვალი',
+  'მარტი',
+  'აპრილი',
+  'მაისი',
+  'ივნისი',
+  'ივლისი',
+  'აგვისტო',
+  'სექტემბერი',
+  'ოქტომბერი',
+  'ნოემბერი',
+  'დეკემბერი',
 ];
 
 function formatDateLocalized(dateString: string, locale: string): string {
   const date = new Date(dateString);
-  
+
   if (locale === 'ka') {
     const day = date.getDate();
     const month = georgianMonths[date.getMonth()];
     const year = date.getFullYear();
     return `${day} ${month}, ${year}`;
   }
-  
+
   return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -85,20 +95,23 @@ function formatDateLocalized(dateString: string, locale: string): string {
 }
 
 // Status Timeline Component
-function StatusTimeline({ 
-  currentStatus, 
-  t 
-}: { 
-  currentStatus: string; 
+function StatusTimeline({
+  currentStatus,
+  t,
+}: {
+  currentStatus: string;
   t: (key: string) => string;
 }) {
-  const isCancelled = currentStatus === 'cancelled' || currentStatus === 'refunded';
+  const isCancelled =
+    currentStatus === 'cancelled' || currentStatus === 'refunded';
   const currentIndex = statusOrder.indexOf(currentStatus);
-  
+
   if (isCancelled) {
     return (
       <div className="flex items-center justify-center py-3">
-        <span className={`px-4 py-2 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}>
+        <span
+          className={`px-4 py-2 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}
+        >
           {t(`status.${currentStatus}`)}
         </span>
       </div>
@@ -112,7 +125,7 @@ function StatusTimeline({
           const isCompleted = index <= currentIndex;
           const isCurrent = index === currentIndex;
           const isLast = index === statusOrder.length - 1;
-          
+
           return (
             <div key={status} className="flex items-center flex-1">
               {/* Status dot and label */}
@@ -127,8 +140,18 @@ function StatusTimeline({
                   }`}
                 >
                   {isCompleted && !isCurrent ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   ) : (
                     index + 1
@@ -144,7 +167,7 @@ function StatusTimeline({
                   {t(`status.${status}`)}
                 </span>
               </div>
-              
+
               {/* Connector line */}
               {!isLast && (
                 <div
@@ -164,17 +187,17 @@ function StatusTimeline({
 }
 
 // Expandable Order Footer Component
-function OrderFooter({ 
-  order, 
+function OrderFooter({
+  order,
   t,
-  locale 
-}: { 
-  order: Order; 
+  locale,
+}: {
+  order: Order;
   t: (key: string) => string;
   locale: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   return (
     <div className="border-t border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900/50">
       {/* Collapsed view - clickable header */}
@@ -183,15 +206,22 @@ function OrderFooter({
         className="w-full p-4 flex justify-between items-center hover:bg-gray-100 dark:hover:bg-zinc-800/50 transition-colors"
       >
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-          <svg 
-            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
-            fill="none" 
-            viewBox="0 0 24 24" 
+          <svg
+            className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
-          <span>{order.shippingDetails.city}, {order.shippingDetails.country}</span>
+          <span>
+            {order.shippingDetails.city}, {order.shippingDetails.country}
+          </span>
           <span className="text-gray-300 dark:text-zinc-600">•</span>
           <span>{t('viewDetails')}</span>
         </div>
@@ -199,7 +229,7 @@ function OrderFooter({
           {t('total')}: ₾{order.totalPrice.toFixed(2)}
         </div>
       </button>
-      
+
       {/* Expanded content */}
       {isExpanded && (
         <div className="px-4 pb-4 space-y-4 border-t border-gray-200 dark:border-zinc-700">
@@ -212,20 +242,31 @@ function OrderFooter({
               <p>{order.shippingDetails.address}</p>
               <p>
                 {order.shippingDetails.city}
-                {order.shippingDetails.postalCode && `, ${order.shippingDetails.postalCode}`}
+                {order.shippingDetails.postalCode &&
+                  `, ${order.shippingDetails.postalCode}`}
               </p>
               <p>{order.shippingDetails.country}</p>
               {order.shippingDetails.phoneNumber && (
                 <p className="flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                    />
                   </svg>
                   {order.shippingDetails.phoneNumber}
                 </p>
               )}
             </div>
           </div>
-          
+
           {/* Price Breakdown */}
           <div className="pt-4 border-t border-gray-200 dark:border-zinc-700">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
@@ -234,15 +275,20 @@ function OrderFooter({
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>{t('subtotal')}</span>
-                <span>₾{(order.itemsPrice || order.totalPrice - (order.shippingPrice || 0)).toFixed(2)}</span>
+                <span>
+                  ₾
+                  {(
+                    order.itemsPrice ||
+                    order.totalPrice - (order.shippingPrice || 0)
+                  ).toFixed(2)}
+                </span>
               </div>
               <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>{t('shipping')}</span>
                 <span>
-                  {order.shippingPrice > 0 
-                    ? `₾${order.shippingPrice.toFixed(2)}` 
-                    : t('free')
-                  }
+                  {order.shippingPrice > 0
+                    ? `₾${order.shippingPrice.toFixed(2)}`
+                    : t('free')}
                 </span>
               </div>
               <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
@@ -372,7 +418,7 @@ export default function OrdersPage() {
           {t('noOrdersDescription')}
         </p>
         <Link
-          href={`/store/${subdomain}/${locale}/products`}
+          href={`/${locale}/products`}
           className="inline-block px-6 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
         >
           {t('startShopping')}
@@ -432,7 +478,7 @@ export default function OrdersPage() {
               {order.orderItems.map((item, idx) => (
                 <Link
                   key={idx}
-                  href={`/store/${subdomain}/${locale}/products/${item.productId}`}
+                  href={`/${locale}/products/${item.productId}`}
                   className="flex gap-4 p-2 -mx-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors group"
                 >
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0 ring-2 ring-transparent group-hover:ring-[var(--store-accent-300)] transition-all">
@@ -467,8 +513,18 @@ export default function OrdersPage() {
                   </div>
                   {/* Arrow indicator */}
                   <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    <svg
+                      className="w-5 h-5 text-gray-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
                     </svg>
                   </div>
                 </Link>
