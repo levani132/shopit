@@ -71,3 +71,4 @@ CategoryAttributeStatsSchema.index(
 CategoryAttributeStatsSchema.index({ storeId: 1, attributeId: 1 });
 CategoryAttributeStatsSchema.index({ categoryId: 1, storeId: 1 });
 
+

@@ -86,3 +86,4 @@ AttributeSchema.index({ storeId: 1, slug: 1 }, { unique: true });
 AttributeSchema.index({ storeId: 1, order: 1 });
 AttributeSchema.index({ storeId: 1, isActive: 1 });
 
+

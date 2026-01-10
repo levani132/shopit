@@ -3,6 +3,8 @@ import {
   BadRequestException,
   NotFoundException,
   Logger,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectModel, InjectConnection } from '@nestjs/mongoose';
 import { Model, Connection, Types, ClientSession } from 'mongoose';
@@ -20,6 +22,7 @@ import {
 } from '@sellit/api-database';
 import { CreateOrderDto, ValidateCartDto } from './dto/order.dto';
 import { StockReservationService } from './stock-reservation.service';
+import { BalanceService } from './balance.service';
 
 @Injectable()
 export class OrdersService {
@@ -32,6 +35,8 @@ export class OrdersService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectConnection() private connection: Connection,
     private stockReservationService: StockReservationService,
+    @Inject(forwardRef(() => BalanceService))
+    private balanceService: BalanceService,
   ) {}
 
   /**
@@ -422,6 +427,11 @@ export class OrdersService {
     if (newStatus === OrderStatus.DELIVERED) {
       order.isDelivered = true;
       order.deliveredAt = new Date();
+
+      // Process seller earnings when order is delivered
+      await order.save();
+      await this.balanceService.processOrderEarnings(order);
+      return order;
     }
 
     return order.save();

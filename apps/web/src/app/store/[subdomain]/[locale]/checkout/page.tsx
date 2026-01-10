@@ -204,7 +204,12 @@ export default function CheckoutPage() {
           price: item.isOnSale && item.salePrice ? item.salePrice : item.price,
           qty: item.quantity,
           variantId: item.variantId,
-          variantAttributes: item.variantAttributes,
+          // Only send the fields the backend expects (attributeName, value, colorHex)
+          variantAttributes: item.variantAttributes?.map((attr) => ({
+            attributeName: attr.attributeName,
+            value: attr.value,
+            colorHex: attr.colorHex,
+          })),
           storeId: item.storeId,
           storeName: item.storeName,
         })),

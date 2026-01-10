@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
@@ -33,14 +34,18 @@ export class OrdersController {
   /**
    * Create a new order
    * Can be used for both authenticated and guest checkout
+   * Uses OptionalJwtAuthGuard to populate req.user if authenticated
    */
   @Post()
+  @UseGuards(OptionalJwtAuthGuard)
   async createOrder(
     @Body() dto: CreateOrderDto,
     @Request() req: any,
   ) {
-    // Try to get user ID if authenticated (optional guard)
-    const userId = req.user?.id;
+    // req.user is populated if authenticated, null otherwise
+    // Convert ObjectId to string if necessary
+    const rawUserId = req.user?.id || req.user?._id;
+    const userId = rawUserId ? String(rawUserId) : undefined;
     return this.ordersService.createOrder(dto, userId);
   }
 

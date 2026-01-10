@@ -600,7 +600,7 @@ export class ProductsService {
         break;
 
       case 'popular':
-      default:
+      default: {
         // Get more products than needed, then shuffle top ones for minor randomness
         const topProducts = await this.productModel
           .find(filter)
@@ -622,6 +622,7 @@ export class ProductsService {
         }
         products = topProducts.slice(0, limit);
         break;
+      }
     }
 
     // Get total count for "See All" button logic
