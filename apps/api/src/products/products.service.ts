@@ -558,11 +558,7 @@ export class ProductsService {
    * Get homepage products for a store with specified ordering
    * Returns up to `limit` products with some randomness for 'popular' order
    */
-  async getHomepageProducts(
-    storeId: string,
-    order: string = 'popular',
-    limit: number = 6,
-  ) {
+  async getHomepageProducts(storeId: string, order = 'popular', limit = 6) {
     const filter = {
       storeId: new Types.ObjectId(storeId),
       isActive: true,

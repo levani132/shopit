@@ -261,8 +261,8 @@ export function DashboardSidebar() {
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors ${
                     isActive(item.href)
-                      ? 'bg-[var(--accent-100)] dark:bg-[var(--accent-800)]/50 text-[var(--accent-700)] dark:text-[var(--accent-200)] font-semibold'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
+                      ? 'bg-[var(--accent-100)] dark:bg-zinc-800 text-[var(--accent-700)] dark:text-white border-l-2 border-[var(--accent-500)]'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 border-l-2 border-transparent'
                   }`}
                 >
                   {item.icon}
