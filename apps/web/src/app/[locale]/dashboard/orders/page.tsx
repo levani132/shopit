@@ -12,12 +12,11 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 interface OrderItem {
   productId: string;
-  productName: string;
-  productNameLocalized?: { ka?: string; en?: string };
-  productImage: string;
-  quantity: number;
+  name: string;
+  nameEn?: string;
+  image: string;
+  qty: number;
   price: number;
-  salePrice?: number;
   variantAttributes?: Array<{
     attributeName: string;
     value: string;
@@ -281,8 +280,8 @@ export default function DashboardOrdersPage() {
                       className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700"
                     >
                       <Image
-                        src={item.productImage || '/placeholder.webp'}
-                        alt={item.productName}
+                        src={item.image || '/placeholder.webp'}
+                        alt={item.name}
                         width={48}
                         height={48}
                         className="w-full h-full object-cover"
@@ -298,7 +297,7 @@ export default function DashboardOrdersPage() {
 
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {order.orderItems.reduce((sum, item) => sum + item.quantity, 0)} items
+                    {order.orderItems.reduce((sum, item) => sum + item.qty, 0)} items
                   </p>
                   <p className="font-semibold text-gray-900 dark:text-white">
                     ₾{order.totalPrice.toFixed(2)}
@@ -363,8 +362,8 @@ export default function DashboardOrdersPage() {
                       <div key={idx} className="flex gap-3">
                         <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
                           <Image
-                            src={item.productImage || '/placeholder.webp'}
-                            alt={item.productName}
+                            src={item.image || '/placeholder.webp'}
+                            alt={item.name}
                             width={48}
                             height={48}
                             className="w-full h-full object-cover"
@@ -372,11 +371,7 @@ export default function DashboardOrdersPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {getLocalizedText(
-                              item.productNameLocalized,
-                              item.productName,
-                              locale,
-                            )}
+                            {locale === 'en' && item.nameEn ? item.nameEn : item.name}
                           </p>
                           {item.variantAttributes &&
                             item.variantAttributes.length > 0 && (
@@ -388,10 +383,10 @@ export default function DashboardOrdersPage() {
                             )}
                           <div className="flex justify-between mt-1">
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              x{item.quantity}
+                              x{item.qty}
                             </span>
                             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              ₾{((item.salePrice || item.price) * item.quantity).toFixed(2)}
+                              ₾{(item.price * item.qty).toFixed(2)}
                             </span>
                           </div>
                         </div>

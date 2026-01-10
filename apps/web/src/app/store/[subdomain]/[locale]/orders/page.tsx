@@ -13,17 +13,14 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 interface OrderItem {
   productId: string;
-  productName: string;
-  productNameLocalized?: { ka?: string; en?: string };
-  productImage: string;
-  quantity: number;
+  name: string;
+  nameEn?: string;
+  image: string;
+  qty: number;
   price: number;
-  salePrice?: number;
   variantAttributes?: Array<{
     attributeName: string;
-    attributeNameLocalized?: { ka?: string; en?: string };
     value: string;
-    valueLocalized?: { ka?: string; en?: string };
   }>;
 }
 
@@ -224,8 +221,8 @@ export default function OrdersPage() {
                 <div key={idx} className="flex gap-4">
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
                     <Image
-                      src={item.productImage || '/placeholder.webp'}
-                      alt={item.productName}
+                      src={item.image || '/placeholder.webp'}
+                      alt={item.name}
                       width={64}
                       height={64}
                       className="w-full h-full object-cover"
@@ -233,11 +230,7 @@ export default function OrdersPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white truncate">
-                      {getLocalizedText(
-                        item.productNameLocalized,
-                        item.productName,
-                        locale,
-                      )}
+                      {locale === 'en' && item.nameEn ? item.nameEn : item.name}
                     </p>
                     {item.variantAttributes &&
                       item.variantAttributes.length > 0 && (
@@ -249,10 +242,10 @@ export default function OrdersPage() {
                       )}
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        x{item.quantity}
+                        x{item.qty}
                       </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        ₾{((item.salePrice || item.price) * item.quantity).toFixed(2)}
+                        ₾{(item.price * item.qty).toFixed(2)}
                       </span>
                     </div>
                   </div>
