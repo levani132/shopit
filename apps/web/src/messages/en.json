@@ -427,6 +427,12 @@
     "orderNumber": "Order Number",
     "orderDate": "Date",
     "total": "Total",
+    "viewDetails": "View Details",
+    "shippingDetails": "Shipping Details",
+    "priceBreakdown": "Price Breakdown",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "free": "Free",
     "status": {
       "pending": "Pending",
       "paid": "Paid",

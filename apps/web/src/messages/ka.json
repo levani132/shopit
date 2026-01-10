@@ -427,6 +427,12 @@
     "orderNumber": "შეკვეთის ნომერი",
     "orderDate": "თარიღი",
     "total": "სულ",
+    "viewDetails": "დეტალების ნახვა",
+    "shippingDetails": "მიტანის დეტალები",
+    "priceBreakdown": "ფასის დეტალები",
+    "subtotal": "პროდუქტების ფასი",
+    "shipping": "მიტანა",
+    "free": "უფასო",
     "status": {
       "pending": "მოლოდინში",
       "paid": "გადახდილი",
