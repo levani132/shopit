@@ -612,7 +612,9 @@ export default function VariantEditor({
                     <button
                       type="button"
                       onClick={() => {
-                        const input = document.getElementById('bulk-stock-input') as HTMLInputElement;
+                        const input = document.getElementById(
+                          'bulk-stock-input',
+                        ) as HTMLInputElement;
                         const value = parseInt(input?.value || '0', 10);
                         if (!isNaN(value) && value >= 0) {
                           const updatedVariants = variants.map((v) => ({

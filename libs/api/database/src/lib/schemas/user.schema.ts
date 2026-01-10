@@ -15,6 +15,36 @@ export enum AuthProvider {
   GOOGLE = 'GOOGLE',
 }
 
+// Shipping address for checkout
+@Schema({ _id: false })
+export class ShippingAddress {
+  @Prop({ required: true })
+  _id!: string; // UUID for each address
+
+  @Prop({ default: 'Home' })
+  label?: string; // e.g., "Home", "Work"
+
+  @Prop({ required: true })
+  address!: string;
+
+  @Prop({ required: true })
+  city!: string;
+
+  @Prop()
+  postalCode?: string;
+
+  @Prop({ required: true, default: 'Georgia' })
+  country!: string;
+
+  @Prop({ required: true })
+  phoneNumber!: string;
+
+  @Prop({ default: false })
+  isDefault!: boolean;
+}
+
+export const ShippingAddressSchema = SchemaFactory.createForClass(ShippingAddress);
+
 // Device tracking for multi-device support
 @Schema({ _id: false })
 export class KnownDevice {
@@ -108,6 +138,25 @@ export class User {
   // Multi-device support
   @Prop({ type: [KnownDeviceSchema], default: [] })
   knownDevices!: KnownDevice[];
+
+  // Shipping addresses for checkout
+  @Prop({ type: [ShippingAddressSchema], default: [] })
+  shippingAddresses!: ShippingAddress[];
+
+  // ================== SELLER BALANCE ==================
+  // Only applicable for sellers
+  
+  @Prop({ default: 0, min: 0 })
+  balance!: number; // Current available balance (GEL)
+
+  @Prop({ default: 0, min: 0 })
+  totalEarnings!: number; // Total earned from all orders
+
+  @Prop({ default: 0, min: 0 })
+  pendingWithdrawals!: number; // Amount currently being withdrawn
+
+  @Prop({ default: 0, min: 0 })
+  totalWithdrawn!: number; // Total amount successfully withdrawn
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

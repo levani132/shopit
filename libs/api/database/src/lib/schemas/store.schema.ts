@@ -107,6 +107,47 @@ export class Store {
   // Homepage product display order: 'popular', 'newest', 'price_asc', 'price_desc', 'random'
   @Prop({ default: 'popular' })
   homepageProductOrder!: string;
+
+  // ================== SHIPPING SETTINGS ==================
+  
+  /**
+   * Courier type: 'shopit' or 'seller'
+   * - 'shopit': ShopIt courier handles delivery (standard shipping fees apply)
+   * - 'seller': Seller handles their own delivery (+10 GEL fee per order)
+   */
+  @Prop({ default: 'shopit' })
+  courierType!: string;
+
+  /**
+   * Preparation time in days (how long seller needs to prepare item for shipping)
+   * This is added to delivery estimates regardless of courier type
+   */
+  @Prop({ default: 1, min: 0 })
+  prepTimeMinDays!: number;
+
+  @Prop({ default: 3, min: 0 })
+  prepTimeMaxDays!: number;
+
+  /**
+   * For seller-handled delivery: estimated delivery time (added to prep time)
+   * Only applicable when courierType is 'seller'
+   */
+  @Prop({ min: 0 })
+  deliveryMinDays?: number;
+
+  @Prop({ min: 0 })
+  deliveryMaxDays?: number;
+
+  // ================== SELLER BANK DETAILS ==================
+  
+  @Prop()
+  bankAccountNumber?: string; // IBAN for withdrawals
+
+  @Prop()
+  bankAccountHolderName?: string;
+
+  @Prop({ default: 'BAGAGE22' }) // Default to Bank of Georgia
+  bankCode?: string; // SWIFT/BIC code
 }
 
 export const StoreSchema = SchemaFactory.createForClass(Store);

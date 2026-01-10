@@ -10,6 +10,8 @@ import { CategoriesModule } from '../categories/categories.module';
 import { ProductsModule } from '../products/products.module';
 import { AttributesModule } from '../attributes/attributes.module';
 import { UploadModule } from '../upload/upload.module';
+import { OrdersModule } from '../orders/orders.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
@@ -35,6 +37,8 @@ import { UploadModule } from '../upload/upload.module';
     ProductsModule,
     AttributesModule,
     UploadModule,
+    OrdersModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

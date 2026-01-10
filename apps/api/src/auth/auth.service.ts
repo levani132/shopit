@@ -803,4 +803,105 @@ export class AuthService {
       },
     });
   }
+
+  // =============== Address Management ===============
+
+  /**
+   * Get user's shipping addresses
+   */
+  async getUserAddresses(userId: string): Promise<any[]> {
+    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    return user?.shippingAddresses || [];
+  }
+
+  /**
+   * Add a new shipping address
+   */
+  async addUserAddress(
+    userId: string,
+    addressData: {
+      label?: string;
+      address: string;
+      city: string;
+      postalCode?: string;
+      country?: string;
+      phoneNumber: string;
+      isDefault?: boolean;
+    },
+  ): Promise<any> {
+    const newAddress = {
+      _id: randomUUID(),
+      label: addressData.label || 'Home',
+      address: addressData.address,
+      city: addressData.city,
+      postalCode: addressData.postalCode || '',
+      country: addressData.country || 'Georgia',
+      phoneNumber: addressData.phoneNumber,
+      isDefault: addressData.isDefault || false,
+    };
+
+    // If this is the first address or marked as default, unset other defaults
+    if (newAddress.isDefault) {
+      await this.userModel.findByIdAndUpdate(userId, {
+        $set: { 'shippingAddresses.$[].isDefault': false },
+      });
+    }
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      $push: { shippingAddresses: newAddress },
+    });
+
+    // If no other addresses exist, make this the default
+    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    if (user?.shippingAddresses?.length === 1) {
+      await this.userModel.findOneAndUpdate(
+        { _id: userId, 'shippingAddresses._id': newAddress._id },
+        { $set: { 'shippingAddresses.$.isDefault': true } },
+      );
+      newAddress.isDefault = true;
+    }
+
+    return newAddress;
+  }
+
+  /**
+   * Delete a shipping address
+   */
+  async deleteUserAddress(userId: string, addressId: string): Promise<void> {
+    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    const addressToDelete = user?.shippingAddresses?.find(
+      (a) => a._id === addressId,
+    );
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      $pull: { shippingAddresses: { _id: addressId } },
+    });
+
+    // If the deleted address was default, set the first remaining as default
+    if (addressToDelete?.isDefault) {
+      const updatedUser = await this.userModel.findById(userId).select('shippingAddresses');
+      if (updatedUser?.shippingAddresses?.length) {
+        await this.userModel.findOneAndUpdate(
+          { _id: userId, 'shippingAddresses._id': updatedUser.shippingAddresses[0]._id },
+          { $set: { 'shippingAddresses.$.isDefault': true } },
+        );
+      }
+    }
+  }
+
+  /**
+   * Set an address as default
+   */
+  async setDefaultAddress(userId: string, addressId: string): Promise<void> {
+    // First, unset all defaults
+    await this.userModel.findByIdAndUpdate(userId, {
+      $set: { 'shippingAddresses.$[].isDefault': false },
+    });
+
+    // Then set the specified address as default
+    await this.userModel.findOneAndUpdate(
+      { _id: userId, 'shippingAddresses._id': addressId },
+      { $set: { 'shippingAddresses.$.isDefault': true } },
+    );
+  }
 }

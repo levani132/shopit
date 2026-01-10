@@ -10,6 +10,11 @@ import { Post, PostSchema } from './schemas/post.schema';
 import { PostLike, PostLikeSchema } from './schemas/post-like.schema';
 import { PostComment, PostCommentSchema } from './schemas/post-comment.schema';
 import { InfoPage, InfoPageSchema } from './schemas/info-page.schema';
+import { Order, OrderSchema } from './schemas/order.schema';
+import {
+  BalanceTransaction,
+  BalanceTransactionSchema,
+} from './schemas/balance-transaction.schema';
 
 const schemas = MongooseModule.forFeature([
   { name: User.name, schema: UserSchema },
@@ -22,6 +27,8 @@ const schemas = MongooseModule.forFeature([
   { name: PostLike.name, schema: PostLikeSchema },
   { name: PostComment.name, schema: PostCommentSchema },
   { name: InfoPage.name, schema: InfoPageSchema },
+  { name: Order.name, schema: OrderSchema },
+  { name: BalanceTransaction.name, schema: BalanceTransactionSchema },
 ]);
 
 @Global()

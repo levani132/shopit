@@ -548,6 +548,67 @@ export class AuthController {
     };
   }
 
+  // ============ Address Management ============
+
+  @Get('addresses')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user shipping addresses' })
+  async getAddresses(@CurrentUser() user: UserDocument) {
+    const addresses = await this.authService.getUserAddresses(
+      user._id.toString(),
+    );
+    return addresses;
+  }
+
+  @Post('addresses')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add a new shipping address' })
+  async addAddress(
+    @CurrentUser() user: UserDocument,
+    @Body()
+    dto: {
+      label?: string;
+      address: string;
+      city: string;
+      postalCode?: string;
+      country?: string;
+      phoneNumber: string;
+      isDefault?: boolean;
+    },
+  ) {
+    const address = await this.authService.addUserAddress(
+      user._id.toString(),
+      dto,
+    );
+    return address;
+  }
+
+  @Delete('addresses/:addressId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a shipping address' })
+  async deleteAddress(
+    @CurrentUser() user: UserDocument,
+    @Param('addressId') addressId: string,
+  ) {
+    await this.authService.deleteUserAddress(user._id.toString(), addressId);
+    return { success: true, message: 'Address deleted successfully' };
+  }
+
+  @Post('addresses/:addressId/default')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set address as default' })
+  async setDefaultAddress(
+    @CurrentUser() user: UserDocument,
+    @Param('addressId') addressId: string,
+  ) {
+    await this.authService.setDefaultAddress(user._id.toString(), addressId);
+    return { success: true, message: 'Default address updated' };
+  }
+
   // ============ Device Management ============
 
   @Get('devices')

@@ -16,6 +16,10 @@ export * from './product.schema';
 export * from './attribute.schema';
 export * from './category-attribute-stats.schema';
 
+// Orders & Payments
+export * from './order.schema';
+export * from './balance-transaction.schema';
+
 // Posts (Social feed)
 export * from './post.schema';
 export * from './post-like.schema';
