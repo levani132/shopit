@@ -53,7 +53,10 @@ export function HomepageProducts({
           {products.map((product) => (
             <ProductCard
               key={product._id}
-              product={product}
+              product={{
+                ...product,
+                variantsCount: product.variants?.length ?? 0,
+              }}
               locale={locale}
               subdomain={subdomain}
               storeId={storeId}

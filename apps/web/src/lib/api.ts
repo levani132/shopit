@@ -191,6 +191,7 @@ export interface HomepageProduct {
   stock: number;
   totalStock?: number; // For products with variants
   hasVariants?: boolean;
+  variants?: unknown[]; // Used to calculate variantsCount
   categoryId?: { name: string; nameLocalized?: LocalizedText };
 }
 

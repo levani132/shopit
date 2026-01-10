@@ -17,6 +17,7 @@ export interface ProductCardData {
   stock: number;
   totalStock?: number;
   hasVariants?: boolean;
+  variantsCount?: number; // Number of variants
 }
 
 interface ProductCardProps {
@@ -61,6 +62,11 @@ export function ProductCard({
     ? (product.totalStock ?? 0)
     : product.stock;
   const isOutOfStock = effectiveStock <= 0;
+
+  // Determine if we need to show "Choose Options" instead of direct buy buttons
+  // Show choose options if product has more than 1 variant
+  const needsOptionSelection =
+    product.hasVariants && (product.variantsCount ?? 0) > 1;
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -198,48 +204,82 @@ export function ProductCard({
         {/* Action Buttons */}
         {showBuyNow && (
           <div className="flex gap-2">
-            {/* Add to Cart - Icon only */}
-            <button
-              onClick={handleAddToCart}
-              disabled={isOutOfStock}
-              title={product.hasVariants ? t('selectOptions') : t('addToCart')}
-              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
-                isOutOfStock
-                  ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
-              }`}
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {needsOptionSelection ? (
+              /* Choose Options - Single full-width button for multi-variant products */
+              <Link
+                href={`/${locale}/products/${product._id}`}
+                className={`flex-1 h-10 flex items-center justify-center gap-2 text-sm font-medium rounded-lg transition-colors ${
+                  isOutOfStock
+                    ? 'bg-gray-300 dark:bg-zinc-600 text-gray-500 cursor-not-allowed pointer-events-none'
+                    : 'text-white'
+                }`}
+                style={
+                  !isOutOfStock
+                    ? { backgroundColor: 'var(--store-accent-600)' }
+                    : undefined
+                }
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </button>
-            {/* Buy Now - Takes rest of width */}
-            <button
-              onClick={handleBuyNow}
-              disabled={isOutOfStock}
-              className={`flex-1 h-10 px-4 text-sm font-medium rounded-lg transition-colors ${
-                isOutOfStock
-                  ? 'bg-gray-300 dark:bg-zinc-600 text-gray-500 cursor-not-allowed'
-                  : 'text-white'
-              }`}
-              style={
-                !isOutOfStock
-                  ? { backgroundColor: 'var(--store-accent-600)' }
-                  : undefined
-              }
-            >
-              {t('buyNow')}
-            </button>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h7"
+                  />
+                </svg>
+                {t('chooseOptions')}
+              </Link>
+            ) : (
+              <>
+                {/* Add to Cart - Icon only */}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock}
+                  title={t('addToCart')}
+                  className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors ${
+                    isOutOfStock
+                      ? 'bg-gray-200 dark:bg-zinc-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                    />
+                  </svg>
+                </button>
+                {/* Buy Now - Takes rest of width */}
+                <button
+                  onClick={handleBuyNow}
+                  disabled={isOutOfStock}
+                  className={`flex-1 h-10 px-4 text-sm font-medium rounded-lg transition-colors ${
+                    isOutOfStock
+                      ? 'bg-gray-300 dark:bg-zinc-600 text-gray-500 cursor-not-allowed'
+                      : 'text-white'
+                  }`}
+                  style={
+                    !isOutOfStock
+                      ? { backgroundColor: 'var(--store-accent-600)' }
+                      : undefined
+                  }
+                >
+                  {t('buyNow')}
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>

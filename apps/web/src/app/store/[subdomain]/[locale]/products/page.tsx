@@ -34,6 +34,7 @@ interface Product {
   stock: number;
   totalStock?: number;
   hasVariants?: boolean;
+  variants?: unknown[]; // Used to calculate variantsCount
   viewCount: number;
   categoryId?: {
     _id: string;
@@ -649,7 +650,10 @@ export default function StoreProductsPage() {
                   {products.map((product) => (
                     <div key={product._id} onClick={() => trackView(product._id)}>
                       <ProductCard
-                        product={product}
+                        product={{
+                          ...product,
+                          variantsCount: product.variants?.length ?? 0,
+                        }}
                         locale={locale}
                         subdomain={subdomain}
                         storeId={storeId || undefined}
