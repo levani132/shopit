@@ -94,8 +94,43 @@ function formatDateLocalized(dateString: string, locale: string): string {
   });
 }
 
+// Status icons for timeline
+const statusIcons: Record<string, React.ReactNode> = {
+  pending: (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  paid: (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  processing: (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    </svg>
+  ),
+  shipped: (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+    </svg>
+  ),
+  delivered: (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    </svg>
+  ),
+};
+
 // Compact Inline Status Timeline Component
-function CompactTimeline({ currentStatus }: { currentStatus: string }) {
+function CompactTimeline({
+  currentStatus,
+  t,
+}: {
+  currentStatus: string;
+  t: (key: string) => string;
+}) {
   const isCancelled =
     currentStatus === 'cancelled' || currentStatus === 'refunded';
   const currentIndex = statusOrder.indexOf(currentStatus);
@@ -105,39 +140,43 @@ function CompactTimeline({ currentStatus }: { currentStatus: string }) {
       <span
         className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}
       >
-        {currentStatus === 'cancelled' ? '✕' : '↩'} {currentStatus}
+        {currentStatus === 'cancelled' ? '✕' : '↩'} {t(`status.${currentStatus}`)}
       </span>
     );
   }
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center">
       {statusOrder.map((status, index) => {
         const isCompleted = index <= currentIndex;
-        const isCurrent = index === currentIndex;
         const isLast = index === statusOrder.length - 1;
 
         return (
-          <div key={status} className="flex items-center">
-            {/* Status dot */}
+          <div key={status} className="flex items-center group/step relative">
+            {/* Status dot with icon */}
             <div
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                 isCompleted
-                  ? isCurrent
-                    ? 'bg-[var(--store-accent-500)] ring-2 ring-[var(--store-accent-200)] dark:ring-[var(--store-accent-800)]'
-                    : 'bg-green-500'
-                  : 'bg-gray-300 dark:bg-zinc-600'
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500'
               }`}
-              title={status}
-            />
+            >
+              {statusIcons[status]}
+            </div>
+
+            {/* Tooltip on hover */}
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10">
+              {t(`status.${status}`)}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-zinc-700" />
+            </div>
 
             {/* Connector line */}
             {!isLast && (
               <div
-                className={`w-3 h-0.5 ${
+                className={`w-4 h-0.5 ${
                   index < currentIndex
                     ? 'bg-green-500'
-                    : 'bg-gray-300 dark:bg-zinc-600'
+                    : 'bg-gray-200 dark:bg-zinc-700'
                 }`}
               />
             )}
@@ -421,13 +460,8 @@ export default function OrdersPage() {
                     {formatDateLocalized(order.createdAt, locale)}
                   </p>
                 </div>
-                {/* Compact Timeline instead of status badge */}
-                <div className="flex flex-col items-end gap-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t(`status.${order.status}`)}
-                  </p>
-                  <CompactTimeline currentStatus={order.status} />
-                </div>
+                {/* Compact Timeline with icons */}
+                <CompactTimeline currentStatus={order.status} t={t} />
               </div>
             </div>
 
