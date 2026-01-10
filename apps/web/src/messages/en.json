@@ -296,6 +296,7 @@
     "variantImages": "Variant Images",
     "variantImagesDescription": "Upload images for each variant group. Images are required for attributes marked as 'requires image'.",
     "variantImageRequired": "This variant group requires at least one image",
+    "imagesOptionalOutOfStock": "Images are optional for out-of-stock variants",
     "image": "image",
     "images": "images",
     "noVariantsGenerated": "No Variants Generated",

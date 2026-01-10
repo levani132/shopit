@@ -170,10 +170,14 @@ export default function ProductDetailPage() {
   }, [subdomain, productId]);
 
   // Get available values for each attribute based on current selection
-  const availableValues = useMemo(() => {
-    if (!product?.hasVariants || !product.variants) return {};
+  // Returns two sets: available (exists in variants) and inStock (has stock > 0)
+  const { availableValues, inStockValues } = useMemo(() => {
+    if (!product?.hasVariants || !product.variants) {
+      return { availableValues: {}, inStockValues: {} };
+    }
 
-    const result: Record<string, Set<string>> = {};
+    const available: Record<string, Set<string>> = {};
+    const inStock: Record<string, Set<string>> = {};
 
     // For each attribute, find which values are available given other selections
     attributes.forEach((attr) => {
@@ -190,15 +194,24 @@ export default function ProductDetailPage() {
       });
 
       // Get available values from matching variants
-      result[attr._id] = new Set(
+      available[attr._id] = new Set(
         matchingVariants
+          .flatMap((v) => v.attributes)
+          .filter((va) => va.attributeId === attr._id)
+          .map((va) => va.valueId),
+      );
+
+      // Get values that have stock > 0
+      inStock[attr._id] = new Set(
+        matchingVariants
+          .filter((v) => v.stock > 0)
           .flatMap((v) => v.attributes)
           .filter((va) => va.attributeId === attr._id)
           .map((va) => va.valueId),
       );
     });
 
-    return result;
+    return { availableValues: available, inStockValues: inStock };
   }, [product, attributes, selectedValues]);
 
   // Get currently selected variant
@@ -448,42 +461,69 @@ export default function ProductDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       {usedValues.map((value) => {
                         const isAvailable = available.has(value._id);
+                        const hasStock = inStockValues[attr._id]?.has(value._id) ?? false;
                         const isSelected = selectedValueId === value._id;
+                        const isOutOfStock = isAvailable && !hasStock;
+
+                        // Tooltip text
+                        const tooltipText = isOutOfStock
+                          ? `${getLocalizedText(value.valueLocalized, value.value)} - ${t('outOfStock')}`
+                          : getLocalizedText(value.valueLocalized, value.value);
 
                         if (attr.type === 'color' && value.colorHex) {
                           return (
-                            <button
-                              key={value._id}
-                              onClick={() => handleValueSelect(attr._id, value._id)}
-                              disabled={!isAvailable}
-                              className={`w-10 h-10 rounded-full border-2 transition-all ${
-                                isSelected
-                                  ? 'border-[var(--accent-500)] ring-2 ring-[var(--accent-500)] ring-offset-2 dark:ring-offset-zinc-900'
-                                  : isAvailable
-                                    ? 'border-gray-300 dark:border-zinc-600 hover:border-[var(--accent-400)]'
-                                    : 'border-gray-200 dark:border-zinc-700 opacity-30 cursor-not-allowed'
-                              }`}
-                              style={{ backgroundColor: value.colorHex }}
-                              title={getLocalizedText(value.valueLocalized, value.value)}
-                            />
+                            <div key={value._id} className="relative group">
+                              <button
+                                onClick={() => handleValueSelect(attr._id, value._id)}
+                                disabled={!isAvailable || isOutOfStock}
+                                className={`w-10 h-10 rounded-full border-2 transition-all relative ${
+                                  isSelected
+                                    ? 'border-[var(--accent-500)] ring-2 ring-[var(--accent-500)] ring-offset-2 dark:ring-offset-zinc-900'
+                                    : isAvailable && hasStock
+                                      ? 'border-gray-300 dark:border-zinc-600 hover:border-[var(--accent-400)]'
+                                      : 'border-gray-200 dark:border-zinc-700 opacity-40 cursor-not-allowed'
+                                }`}
+                                style={{ backgroundColor: value.colorHex }}
+                                title={tooltipText}
+                              >
+                                {isOutOfStock && (
+                                  <span className="absolute inset-0 flex items-center justify-center">
+                                    <span className="w-full h-0.5 bg-gray-500 dark:bg-gray-400 rotate-45 absolute" />
+                                  </span>
+                                )}
+                              </button>
+                              {isOutOfStock && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                  {t('outOfStock')}
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-zinc-700" />
+                                </div>
+                              )}
+                            </div>
                           );
                         }
 
                         return (
-                          <button
-                            key={value._id}
-                            onClick={() => handleValueSelect(attr._id, value._id)}
-                            disabled={!isAvailable}
-                            className={`px-4 py-2 rounded-lg border transition-all ${
-                              isSelected
-                                ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-400)] font-medium'
-                                : isAvailable
-                                  ? 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-[var(--accent-400)]'
-                                  : 'border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-gray-600 cursor-not-allowed'
-                            }`}
-                          >
-                            {getLocalizedText(value.valueLocalized, value.value)}
-                          </button>
+                          <div key={value._id} className="relative group">
+                            <button
+                              onClick={() => handleValueSelect(attr._id, value._id)}
+                              disabled={!isAvailable || isOutOfStock}
+                              className={`px-4 py-2 rounded-lg border transition-all ${
+                                isSelected
+                                  ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-400)] font-medium'
+                                  : isAvailable && hasStock
+                                    ? 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-[var(--accent-400)]'
+                                    : 'border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-gray-600 cursor-not-allowed line-through'
+                              }`}
+                            >
+                              {getLocalizedText(value.valueLocalized, value.value)}
+                            </button>
+                            {isOutOfStock && (
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                {t('outOfStock')}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-zinc-700" />
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

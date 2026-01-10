@@ -62,6 +62,7 @@ interface ImageGroup {
   }[];
   images: string[];
   previewImages: { file: File; preview: string }[];
+  totalStock: number; // Sum of stock for all variants in this group
 }
 
 interface VariantEditorProps {
@@ -149,7 +150,12 @@ export default function VariantEditor({
           })),
           images: variant.images || [],
           previewImages: [],
+          totalStock: variant.stock || 0,
         });
+      } else {
+        // Add stock from this variant to the group
+        const existingGroup = groupMap.get(key)!;
+        existingGroup.totalStock += variant.stock || 0;
       }
     }
 
@@ -725,29 +731,41 @@ export default function VariantEditor({
                           className="border border-gray-200 dark:border-zinc-700 rounded-lg p-4"
                         >
                           {/* Group Header */}
-                          <div className="flex items-center gap-3 mb-4">
-                            {group.attributes.map((attr, i) => (
-                              <span
-                                key={i}
-                                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-700 rounded-lg"
-                              >
-                                {attr.colorHex && (
-                                  <span
-                                    className="w-4 h-4 rounded-full border border-gray-300 dark:border-zinc-600"
-                                    style={{ backgroundColor: attr.colorHex }}
-                                  />
-                                )}
-                                <span className="font-medium text-gray-900 dark:text-white">
-                                  {attr.value}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                              {group.attributes.map((attr, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-zinc-700 rounded-lg"
+                                >
+                                  {attr.colorHex && (
+                                    <span
+                                      className="w-4 h-4 rounded-full border border-gray-300 dark:border-zinc-600"
+                                      style={{ backgroundColor: attr.colorHex }}
+                                    />
+                                  )}
+                                  <span className="font-medium text-gray-900 dark:text-white">
+                                    {attr.value}
+                                  </span>
                                 </span>
+                              ))}
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
+                                ({groupImages.length}{' '}
+                                {groupImages.length === 1
+                                  ? t('image')
+                                  : t('images')}
+                                )
                               </span>
-                            ))}
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              ({groupImages.length}{' '}
-                              {groupImages.length === 1
-                                ? t('image')
-                                : t('images')}
-                              )
+                            </div>
+                            {/* Stock indicator */}
+                            <span className={`text-sm px-2 py-1 rounded ${
+                              group.totalStock > 0
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                : 'bg-gray-100 dark:bg-zinc-700 text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {group.totalStock > 0
+                                ? `${t('stock')}: ${group.totalStock}`
+                                : t('outOfStock')}
                             </span>
                           </div>
 
@@ -835,10 +853,15 @@ export default function VariantEditor({
                             />
                           </div>
 
-                          {/* No images hint */}
-                          {groupImages.length === 0 && (
+                          {/* No images hint - only warn for in-stock variants */}
+                          {groupImages.length === 0 && group.totalStock > 0 && (
                             <p className="text-sm text-yellow-600 dark:text-yellow-500">
                               ⚠️ {t('variantImageRequired')}
+                            </p>
+                          )}
+                          {groupImages.length === 0 && group.totalStock === 0 && (
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {t('imagesOptionalOutOfStock')}
                             </p>
                           )}
                         </div>
