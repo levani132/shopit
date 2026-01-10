@@ -3,4 +3,3 @@
   "buildCommand": "cd ../.. && npx nx build web --configuration=production",
   "outputDirectory": ".next"
 }
-
