@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import { useCart } from '../../../../../../contexts/CartContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -70,18 +71,23 @@ interface Product {
 export default function ProductDetailPage() {
   const t = useTranslations('store');
   const tCommon = useTranslations('common');
+  const tCart = useTranslations('cart');
   const params = useParams();
   const router = useRouter();
   const locale = (params?.locale as string) || 'en';
   const subdomain = params?.subdomain as string;
   const productId = params?.id as string;
 
+  const { addItem, isInCart } = useCart();
+
   const [product, setProduct] = useState<Product | null>(null);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [storeInfo, setStoreInfo] = useState<{ id: string; name: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [addedToCart, setAddedToCart] = useState(false);
 
   // Selected attribute values: { attributeId: valueId }
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({});
@@ -107,6 +113,7 @@ export default function ProductDetailPage() {
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         const storeId = store._id || store.id;
+        setStoreInfo({ id: storeId, name: store.name });
 
         // Fetch product
         const productRes = await fetch(
@@ -250,14 +257,34 @@ export default function ProductDetailPage() {
   };
 
   // Handle add to cart
-  const handleAddToCart = () => {
-    // TODO: Implement cart functionality
-    console.log('Add to cart:', {
-      productId: product?._id,
+  const handleAddToCart = useCallback(() => {
+    if (!product || !storeInfo) return;
+
+    // For variant products, must have a selected variant
+    if (product.hasVariants && !selectedVariant) return;
+
+    const cartItem = {
+      productId: product._id,
       variantId: selectedVariant?._id,
-      quantity,
-    });
-  };
+      name: product.name,
+      nameLocalized: product.nameLocalized,
+      price: effectivePrice,
+      salePrice: effectiveSalePrice,
+      isOnSale: product.isOnSale,
+      image: displayImages[0],
+      stock: effectiveStock,
+      variantAttributes: selectedVariant?.attributes,
+      storeId: storeInfo.id,
+      storeName: storeInfo.name,
+      storeSubdomain: subdomain,
+    };
+
+    addItem(cartItem, quantity);
+    setAddedToCart(true);
+    
+    // Reset after 2 seconds
+    setTimeout(() => setAddedToCart(false), 2000);
+  }, [product, storeInfo, selectedVariant, effectivePrice, effectiveSalePrice, effectiveStock, displayImages, quantity, subdomain, addItem]);
 
   if (isLoading) {
     return (
@@ -489,12 +516,25 @@ export default function ProductDetailPage() {
 
             <button
               onClick={handleAddToCart}
-              disabled={effectiveStock <= 0 || (product.hasVariants && !selectedVariant)}
-              className="flex-1 px-6 py-3 bg-[var(--accent-600)] text-white font-medium rounded-lg hover:bg-[var(--accent-700)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={effectiveStock <= 0 || (product.hasVariants && !selectedVariant) || addedToCart}
+              className={`flex-1 px-6 py-3 font-medium rounded-lg transition-colors disabled:cursor-not-allowed ${
+                addedToCart
+                  ? 'bg-green-500 text-white'
+                  : 'bg-[var(--accent-600)] text-white hover:bg-[var(--accent-700)] disabled:opacity-50'
+              }`}
             >
-              {product.hasVariants && !selectedVariant
-                ? t('selectVariant')
-                : t('addToCart')}
+              {addedToCart ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {tCart('addedToCart')}
+                </span>
+              ) : product.hasVariants && !selectedVariant ? (
+                t('selectVariant')
+              ) : (
+                t('addToCart')
+              )}
             </button>
           </div>
 

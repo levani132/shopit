@@ -367,5 +367,19 @@
     "priceHighToLow": "Price: High to Low",
     "popularity": "Popularity",
     "newest": "Newest"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "subtotal": "Subtotal",
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove",
+    "quantity": "Quantity",
+    "addedToCart": "Added to cart",
+    "viewCart": "View Cart",
+    "itemAdded": "{name} added to cart",
+    "outOfStock": "Out of stock",
+    "maxQuantity": "Maximum quantity reached"
   }
 }

@@ -11,6 +11,7 @@ import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-store
 import { StoreLayoutContent } from '../../../../components/store/StoreLayoutContent';
 import { ThemeProvider } from '../../../../components/theme/ThemeProvider';
 import { AuthProvider } from '../../../../contexts/AuthContext';
+import { CartProvider } from '../../../../contexts/CartContext';
 import { routing } from '../../../../i18n/routing';
 import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
 import '../../../global.css';
@@ -166,12 +167,14 @@ export default async function StoreLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <AuthProvider>
-              <StoreLayoutContent
-                store={storeForComponents}
-                accentColors={accentColors as React.CSSProperties}
-              >
-                {children}
-              </StoreLayoutContent>
+              <CartProvider>
+                <StoreLayoutContent
+                  store={storeForComponents}
+                  accentColors={accentColors as React.CSSProperties}
+                >
+                  {children}
+                </StoreLayoutContent>
+              </CartProvider>
             </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
