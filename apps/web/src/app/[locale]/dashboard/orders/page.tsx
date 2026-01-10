@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { getLocalizedText } from '../../../../lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -57,11 +56,15 @@ interface Order {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  pending:
+    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   paid: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  shipped: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  processing:
+    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  shipped:
+    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  delivered:
+    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   refunded: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
 };
@@ -111,12 +114,15 @@ export default function DashboardOrdersPage() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdating(orderId);
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/${orderId}/status`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/${orderId}/status`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
 
       if (response.ok) {
         setOrders(
@@ -127,7 +133,9 @@ export default function DashboardOrdersPage() {
                   status: newStatus,
                   isDelivered: newStatus === 'delivered',
                   deliveredAt:
-                    newStatus === 'delivered' ? new Date().toISOString() : order.deliveredAt,
+                    newStatus === 'delivered'
+                      ? new Date().toISOString()
+                      : order.deliveredAt,
                 }
               : order,
           ),
@@ -138,7 +146,9 @@ export default function DashboardOrdersPage() {
             status: newStatus,
             isDelivered: newStatus === 'delivered',
             deliveredAt:
-              newStatus === 'delivered' ? new Date().toISOString() : selectedOrder.deliveredAt,
+              newStatus === 'delivered'
+                ? new Date().toISOString()
+                : selectedOrder.deliveredAt,
           });
         }
       }
@@ -161,7 +171,10 @@ export default function DashboardOrdersPage() {
           <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-48 mb-8" />
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl" />
+              <div
+                key={i}
+                className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl"
+              />
             ))}
           </div>
         </div>
@@ -232,8 +245,8 @@ export default function DashboardOrdersPage() {
               No Orders Yet
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-              When customers place orders, they&apos;ll appear here. Share your store to
-              start receiving orders!
+              When customers place orders, they&apos;ll appear here. Share your
+              store to start receiving orders!
             </p>
           </div>
         </div>
@@ -297,7 +310,8 @@ export default function DashboardOrdersPage() {
 
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {order.orderItems.reduce((sum, item) => sum + item.qty, 0)} items
+                    {order.orderItems.reduce((sum, item) => sum + item.qty, 0)}{' '}
+                    items
                   </p>
                   <p className="font-semibold text-gray-900 dark:text-white">
                     ₾{order.totalPrice.toFixed(2)}
@@ -317,14 +331,18 @@ export default function DashboardOrdersPage() {
 
                 <div className="space-y-4 mb-6">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Order ID</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Order ID
+                    </p>
                     <p className="font-mono text-sm text-gray-900 dark:text-white">
                       {selectedOrder._id}
                     </p>
                   </div>
 
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Customer</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Customer
+                    </p>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {selectedOrder.isGuestOrder
                         ? selectedOrder.guestInfo?.fullName
@@ -356,7 +374,9 @@ export default function DashboardOrdersPage() {
 
                 {/* Items */}
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 mb-6">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Items</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                    Items
+                  </p>
                   <div className="space-y-3">
                     {selectedOrder.orderItems.map((item, idx) => (
                       <div key={idx} className="flex gap-3">
@@ -371,7 +391,9 @@ export default function DashboardOrdersPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {locale === 'en' && item.nameEn ? item.nameEn : item.name}
+                            {locale === 'en' && item.nameEn
+                              ? item.nameEn
+                              : item.name}
                           </p>
                           {item.variantAttributes &&
                             item.variantAttributes.length > 0 && (
@@ -398,13 +420,19 @@ export default function DashboardOrdersPage() {
                 {/* Totals */}
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 mb-6 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Subtotal
+                    </span>
                     <span className="text-gray-900 dark:text-white">
-                      ₾{selectedOrder.itemsPrice?.toFixed(2) || selectedOrder.totalPrice.toFixed(2)}
+                      ₾
+                      {selectedOrder.itemsPrice?.toFixed(2) ||
+                        selectedOrder.totalPrice.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Shipping</span>
+                    <span className="text-gray-600 dark:text-gray-400">
+                      Shipping
+                    </span>
                     <span className="text-gray-900 dark:text-white">
                       ₾{selectedOrder.shippingPrice?.toFixed(2) || '0.00'}
                     </span>
@@ -426,7 +454,9 @@ export default function DashboardOrdersPage() {
                     {statusOrder.map((status) => (
                       <button
                         key={status}
-                        onClick={() => updateOrderStatus(selectedOrder._id, status)}
+                        onClick={() =>
+                          updateOrderStatus(selectedOrder._id, status)
+                        }
                         disabled={
                           updating === selectedOrder._id ||
                           selectedOrder.status === status
