@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getLatinInitial } from '../../../../lib/utils';
 
@@ -78,6 +79,8 @@ const PRODUCT_ORDER_OPTIONS = [
 export default function StoreSettingsPage() {
   const t = useTranslations('dashboard');
   const { refreshAuth } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,39 +158,66 @@ export default function StoreSettingsPage() {
   };
 
   const handleSubdomainChange = async () => {
-    if (!newSubdomain || !subdomainAvailable) return;
+    if (!newSubdomain || !subdomainAvailable || !formData) return;
 
     setIsChangingSubdomain(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/stores/change-subdomain`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ newSubdomain }),
-      });
+      if (isFreeSubdomainChange) {
+        // Free change - direct API call
+        const response = await fetch(`${API_URL}/api/v1/stores/change-subdomain-free`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ newSubdomain }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to change subdomain');
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to change subdomain');
+        }
+
+        // Update form data with new subdomain
+        setFormData((prev) => prev ? {
+          ...prev,
+          subdomain: data.newSubdomain,
+          subdomainChangeCount: 1,
+        } : null);
+
+        setNewSubdomain('');
+        setSubdomainAvailable(null);
+        setShowSubdomainConfirm(false);
+        setSuccess(data.message);
+
+        // Refresh auth to update store in context
+        await refreshAuth();
+      } else {
+        // Paid change - initiate payment flow
+        const currentUrl = window.location.href.split('?')[0];
+        const response = await fetch(`${API_URL}/api/v1/payments/subdomain-change`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            storeId: formData._id,
+            newSubdomain,
+            successUrl: `${currentUrl}?subdomain_changed=true&new_subdomain=${encodeURIComponent(newSubdomain)}`,
+            failUrl: `${currentUrl}?subdomain_change_failed=true`,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to initiate payment');
+        }
+
+        // Redirect to BOG payment page
+        window.location.href = data.redirectUrl;
       }
-
-      // Update form data with new subdomain
-      setFormData((prev) => prev ? {
-        ...prev,
-        subdomain: data.newSubdomain,
-        subdomainChangeCount: (prev.subdomainChangeCount || 0) + 1,
-      } : null);
-
-      setNewSubdomain('');
-      setSubdomainAvailable(null);
-      setShowSubdomainConfirm(false);
-      setSuccess(data.message);
-
-      // Refresh auth to update store in context
-      await refreshAuth();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to change subdomain');
+      setShowSubdomainConfirm(false);
     } finally {
       setIsChangingSubdomain(false);
     }
@@ -226,6 +256,28 @@ export default function StoreSettingsPage() {
 
     fetchStore();
   }, []);
+
+  // Handle return from subdomain change payment
+  useEffect(() => {
+    const subdomainChanged = searchParams.get('subdomain_changed');
+    const subdomainChangeFailed = searchParams.get('subdomain_change_failed');
+    const newSubdomainParam = searchParams.get('new_subdomain');
+
+    if (subdomainChanged === 'true') {
+      setSuccess(
+        newSubdomainParam
+          ? `Subdomain successfully changed to ${newSubdomainParam}!`
+          : 'Subdomain successfully changed!'
+      );
+      // Clean up URL
+      router.replace(window.location.pathname, { scroll: false });
+      // Refresh store data
+      refreshAuth();
+    } else if (subdomainChangeFailed === 'true') {
+      setError('Subdomain change payment failed. Please try again.');
+      router.replace(window.location.pathname, { scroll: false });
+    }
+  }, [searchParams, router, refreshAuth]);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

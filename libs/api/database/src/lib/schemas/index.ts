@@ -19,6 +19,7 @@ export * from './category-attribute-stats.schema';
 // Orders & Payments
 export * from './order.schema';
 export * from './balance-transaction.schema';
+export * from './service-payment.schema';
 
 // Posts (Social feed)
 export * from './post.schema';

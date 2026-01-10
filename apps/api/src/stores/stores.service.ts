@@ -250,21 +250,28 @@ export class StoresService {
   }
 
   /**
-   * Change store subdomain
-   * First change is free, subsequent changes cost 10 GEL
+   * Change store subdomain (FREE change only - first change)
+   * For paid changes, use the payment flow via ServicePaymentService
    */
-  async changeSubdomain(
+  async changeSubdomainFree(
     ownerId: string,
     newSubdomain: string,
   ): Promise<{
     store: StoreDocument;
-    requiresPayment: boolean;
-    cost: number;
+    success: boolean;
   }> {
     const store = await this.findByOwnerId(ownerId);
 
     if (!store) {
       throw new NotFoundException('Store not found');
+    }
+
+    // Check if this is the first change (free)
+    const changeCount = store.subdomainChangeCount || 0;
+    if (changeCount >= 1) {
+      throw new BadRequestException(
+        'Your free subdomain change has been used. Subsequent changes require a payment of ₾10.',
+      );
     }
 
     const normalizedSubdomain = newSubdomain.toLowerCase().trim();
@@ -286,20 +293,14 @@ export class StoresService {
       throw new ConflictException('This subdomain is already taken');
     }
 
-    // Check if this is a paid change (not the first one)
-    const changeCount = store.subdomainChangeCount || 0;
-    const requiresPayment = changeCount >= 1;
-    const cost = requiresPayment ? 10 : 0;
-
-    // Update subdomain
+    // Update subdomain (free change)
     store.subdomain = normalizedSubdomain;
-    store.subdomainChangeCount = changeCount + 1;
+    store.subdomainChangeCount = 1;
     await store.save();
 
     return {
       store,
-      requiresPayment,
-      cost,
+      success: true,
     };
   }
 

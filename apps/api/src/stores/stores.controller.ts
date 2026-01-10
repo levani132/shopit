@@ -101,18 +101,18 @@ export class StoresController {
     return { available, error: available ? null : 'This subdomain is already taken' };
   }
 
-  @Post('change-subdomain')
+  @Post('change-subdomain-free')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change store subdomain (first change free, then 10 GEL)' })
+  @ApiOperation({ summary: 'Change store subdomain (free - first change only)' })
   @ApiResponse({ status: 200, description: 'Subdomain changed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid subdomain' })
+  @ApiResponse({ status: 400, description: 'Invalid subdomain or free change already used' })
   @ApiResponse({ status: 409, description: 'Subdomain already taken' })
-  async changeSubdomain(
+  async changeSubdomainFree(
     @CurrentUser() user: UserDocument,
     @Body() body: { newSubdomain: string },
   ) {
-    const result = await this.storesService.changeSubdomain(
+    const result = await this.storesService.changeSubdomainFree(
       user._id.toString(),
       body.newSubdomain,
     );
@@ -120,11 +120,7 @@ export class StoresController {
     return {
       success: true,
       newSubdomain: result.store.subdomain,
-      wasFree: !result.requiresPayment,
-      cost: result.cost,
-      message: result.requiresPayment
-        ? `Subdomain changed. You will be charged ₾${result.cost}.`
-        : 'Subdomain changed for free!',
+      message: 'Subdomain changed for free! Future changes will cost ₾10.',
     };
   }
 

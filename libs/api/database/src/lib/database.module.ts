@@ -15,6 +15,10 @@ import {
   BalanceTransaction,
   BalanceTransactionSchema,
 } from './schemas/balance-transaction.schema';
+import {
+  ServicePayment,
+  ServicePaymentSchema,
+} from './schemas/service-payment.schema';
 
 const schemas = MongooseModule.forFeature([
   { name: User.name, schema: UserSchema },
@@ -29,6 +33,7 @@ const schemas = MongooseModule.forFeature([
   { name: InfoPage.name, schema: InfoPageSchema },
   { name: Order.name, schema: OrderSchema },
   { name: BalanceTransaction.name, schema: BalanceTransactionSchema },
+  { name: ServicePayment.name, schema: ServicePaymentSchema },
 ]);
 
 @Global()
