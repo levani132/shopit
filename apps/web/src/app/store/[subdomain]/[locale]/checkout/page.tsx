@@ -198,7 +198,8 @@ export default function CheckoutPage() {
         orderItems: storeItems.map((item) => ({
           productId: item.productId,
           name: item.name,
-          image: item.image,
+          nameEn: item.nameLocalized?.en || item.name, // Include English name for localization
+          image: item.image || '/placeholder.webp',
           price: item.isOnSale && item.salePrice ? item.salePrice : item.price,
           qty: item.quantity,
           variantId: item.variantId,
