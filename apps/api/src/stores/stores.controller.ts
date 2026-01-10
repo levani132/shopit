@@ -19,7 +19,8 @@ import {
   ApiBearerAuth,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { StoresService, UpdateStoreDto } from './stores.service';
+import { StoresService } from './stores.service';
+import type { UpdateStoreDto } from './stores.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
@@ -37,7 +38,7 @@ export class StoresController {
   @Get('my-store')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user\'s store' })
+  @ApiOperation({ summary: "Get current user's store" })
   @ApiResponse({ status: 200, description: 'Store found' })
   @ApiResponse({ status: 404, description: 'Store not found' })
   async getMyStore(@CurrentUser() user: UserDocument) {
@@ -54,9 +55,15 @@ export class StoresController {
       name: store.name,
       nameLocalized: store.nameLocalized || { ka: '', en: store.name },
       description: store.description,
-      descriptionLocalized: store.descriptionLocalized || { ka: '', en: store.description || '' },
+      descriptionLocalized: store.descriptionLocalized || {
+        ka: '',
+        en: store.description || '',
+      },
       aboutUs: store.aboutUs,
-      aboutUsLocalized: store.aboutUsLocalized || { ka: '', en: store.aboutUs || '' },
+      aboutUsLocalized: store.aboutUsLocalized || {
+        ka: '',
+        en: store.aboutUs || '',
+      },
       logo: store.logo,
       coverImage: store.coverImage,
       useDefaultCover: store.useDefaultCover ?? true,
@@ -64,7 +71,10 @@ export class StoresController {
       accentColor: store.accentColor || '#6366f1',
       useInitialAsLogo: store.useInitialAsLogo ?? false,
       authorName: store.authorName,
-      authorNameLocalized: store.authorNameLocalized || { ka: '', en: store.authorName || '' },
+      authorNameLocalized: store.authorNameLocalized || {
+        ka: '',
+        en: store.authorName || '',
+      },
       showAuthorName: store.showAuthorName ?? true,
       categories: store.categories || [],
       socialLinks: store.socialLinks,
@@ -78,7 +88,9 @@ export class StoresController {
   @Get('subdomain-info')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get subdomain change info for current user\'s store' })
+  @ApiOperation({
+    summary: "Get subdomain change info for current user's store",
+  })
   @ApiResponse({ status: 200, description: 'Subdomain info retrieved' })
   async getSubdomainInfo(@CurrentUser() user: UserDocument) {
     return this.storesService.getSubdomainChangeInfo(user._id.toString());
@@ -100,15 +112,23 @@ export class StoresController {
 
     // Check availability
     const available = await this.storesService.isSubdomainAvailable(subdomain);
-    return { available, error: available ? null : 'This subdomain is already taken' };
+    return {
+      available,
+      error: available ? null : 'This subdomain is already taken',
+    };
   }
 
   @Post('change-subdomain-free')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change store subdomain (free - first change only)' })
+  @ApiOperation({
+    summary: 'Change store subdomain (free - first change only)',
+  })
   @ApiResponse({ status: 200, description: 'Subdomain changed successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid subdomain or free change already used' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid subdomain or free change already used',
+  })
   @ApiResponse({ status: 409, description: 'Subdomain already taken' })
   async changeSubdomainFree(
     @CurrentUser() user: UserDocument,
@@ -129,7 +149,7 @@ export class StoresController {
   @Patch('my-store')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update current user\'s store' })
+  @ApiOperation({ summary: "Update current user's store" })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 200, description: 'Store updated successfully' })
   @ApiResponse({ status: 404, description: 'Store not found' })
@@ -195,7 +215,10 @@ export class StoresController {
       name: store.name,
       nameLocalized: store.nameLocalized || { ka: '', en: store.name },
       description: store.description,
-      descriptionLocalized: store.descriptionLocalized || { ka: '', en: store.description || '' },
+      descriptionLocalized: store.descriptionLocalized || {
+        ka: '',
+        en: store.description || '',
+      },
       logo: store.logo,
       coverImage: store.coverImage,
       useDefaultCover: store.useDefaultCover ?? true,
@@ -203,7 +226,10 @@ export class StoresController {
       accentColor: store.accentColor || '#6366f1',
       useInitialAsLogo: store.useInitialAsLogo ?? false,
       authorName: store.authorName,
-      authorNameLocalized: store.authorNameLocalized || { ka: '', en: store.authorName || '' },
+      authorNameLocalized: store.authorNameLocalized || {
+        ka: '',
+        en: store.authorName || '',
+      },
       showAuthorName: store.showAuthorName ?? true,
       categories: store.categories || [],
       socialLinks: store.socialLinks,
@@ -230,7 +256,10 @@ export class StoresController {
       name: store.name,
       nameLocalized: store.nameLocalized || { ka: store.name, en: store.name },
       description: store.description,
-      descriptionLocalized: store.descriptionLocalized || { ka: store.description || '', en: store.description || '' },
+      descriptionLocalized: store.descriptionLocalized || {
+        ka: store.description || '',
+        en: store.description || '',
+      },
       logo: store.logo,
       coverImage: store.coverImage,
       useDefaultCover: store.useDefaultCover ?? true,
@@ -238,7 +267,10 @@ export class StoresController {
       accentColor: store.accentColor || '#6366f1',
       useInitialAsLogo: store.useInitialAsLogo ?? false,
       authorName: store.authorName,
-      authorNameLocalized: store.authorNameLocalized || { ka: store.authorName || '', en: store.authorName || '' },
+      authorNameLocalized: store.authorNameLocalized || {
+        ka: store.authorName || '',
+        en: store.authorName || '',
+      },
       showAuthorName: store.showAuthorName ?? true,
       categories: store.categories || [],
       socialLinks: store.socialLinks,
@@ -268,9 +300,15 @@ export class StoresController {
         id: store._id,
         subdomain: store.subdomain,
         name: store.name,
-        nameLocalized: store.nameLocalized || { ka: store.name, en: store.name },
+        nameLocalized: store.nameLocalized || {
+          ka: store.name,
+          en: store.name,
+        },
         description: store.description,
-        descriptionLocalized: store.descriptionLocalized || { ka: store.description || '', en: store.description || '' },
+        descriptionLocalized: store.descriptionLocalized || {
+          ka: store.description || '',
+          en: store.description || '',
+        },
         logo: store.logo,
         coverImage: store.coverImage,
         useDefaultCover: store.useDefaultCover ?? true,
@@ -278,7 +316,10 @@ export class StoresController {
         accentColor: store.accentColor || '#6366f1',
         useInitialAsLogo: store.useInitialAsLogo ?? false,
         authorName: store.authorName,
-        authorNameLocalized: store.authorNameLocalized || { ka: store.authorName || '', en: store.authorName || '' },
+        authorNameLocalized: store.authorNameLocalized || {
+          ka: store.authorName || '',
+          en: store.authorName || '',
+        },
         showAuthorName: store.showAuthorName ?? true,
         categories: store.categories || [],
         socialLinks: store.socialLinks,
@@ -314,4 +355,3 @@ export class StoresController {
     };
   }
 }
-
