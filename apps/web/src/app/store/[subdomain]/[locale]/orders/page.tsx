@@ -75,9 +75,11 @@ export default function OrdersPage() {
 
       try {
         // Filter orders by the current store subdomain
+        console.log('[Orders FE] Subdomain from params:', subdomain);
         const url = subdomain
           ? `${API_URL}/api/v1/orders/my-orders?storeSubdomain=${encodeURIComponent(subdomain)}`
           : `${API_URL}/api/v1/orders/my-orders`;
+        console.log('[Orders FE] Fetching from:', url);
 
         const response = await fetch(url, {
           credentials: 'include',
