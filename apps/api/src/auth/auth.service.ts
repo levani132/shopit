@@ -904,4 +904,75 @@ export class AuthService {
       { $set: { 'shippingAddresses.$.isDefault': true } },
     );
   }
+
+  /**
+   * Update user profile
+   */
+  async updateUserProfile(
+    userId: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      phoneNumber?: string;
+      identificationNumber?: string;
+      accountNumber?: string;
+      beneficiaryBankCode?: string;
+    },
+  ): Promise<UserDocument> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Update fields if provided
+    if (data.firstName !== undefined) user.firstName = data.firstName;
+    if (data.lastName !== undefined) user.lastName = data.lastName;
+    if (data.phoneNumber !== undefined) user.phoneNumber = data.phoneNumber;
+    if (data.identificationNumber !== undefined) user.identificationNumber = data.identificationNumber;
+    if (data.accountNumber !== undefined) user.accountNumber = data.accountNumber;
+    if (data.beneficiaryBankCode !== undefined) user.beneficiaryBankCode = data.beneficiaryBankCode;
+
+    // Check if profile is now complete
+    const hasRequiredFields = !!(
+      user.firstName &&
+      user.lastName &&
+      user.phoneNumber &&
+      user.identificationNumber &&
+      user.accountNumber &&
+      user.beneficiaryBankCode
+    );
+
+    if (hasRequiredFields && !user.isProfileComplete) {
+      user.isProfileComplete = true;
+    }
+
+    await user.save();
+    return user;
+  }
+
+  /**
+   * Change user password
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<boolean> {
+    const user = await this.userModel.findById(userId).select('+password');
+    if (!user || !user.password) {
+      throw new NotFoundException('User not found or no password set');
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return false;
+    }
+
+    // Hash and save new password
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    return true;
+  }
 }

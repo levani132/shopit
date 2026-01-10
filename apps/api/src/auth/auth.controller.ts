@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   Get,
   Param,
@@ -13,6 +14,7 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -534,7 +536,11 @@ export class AuthController {
         lastName: user.lastName,
         role: user.role,
         phoneNumber: user.phoneNumber,
+        identificationNumber: user.identificationNumber,
+        accountNumber: user.accountNumber,
+        beneficiaryBankCode: user.beneficiaryBankCode,
         isProfileComplete: user.isProfileComplete,
+        authProvider: user.authProvider,
       },
       store: store
         ? {
@@ -546,6 +552,75 @@ export class AuthController {
           }
         : null,
     };
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(
+    @CurrentUser() user: UserDocument,
+    @Body()
+    dto: {
+      firstName?: string;
+      lastName?: string;
+      phoneNumber?: string;
+      identificationNumber?: string;
+      accountNumber?: string;
+      beneficiaryBankCode?: string;
+    },
+  ) {
+    const updatedUser = await this.authService.updateUserProfile(
+      user._id.toString(),
+      dto,
+    );
+
+    return {
+      message: 'Profile updated successfully',
+      user: {
+        id: updatedUser._id,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        phoneNumber: updatedUser.phoneNumber,
+        identificationNumber: updatedUser.identificationNumber,
+        accountNumber: updatedUser.accountNumber,
+        beneficiaryBankCode: updatedUser.beneficiaryBankCode,
+        isProfileComplete: updatedUser.isProfileComplete,
+      },
+    };
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid current password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async changePassword(
+    @CurrentUser() user: UserDocument,
+    @Body() dto: { currentPassword: string; newPassword: string },
+  ) {
+    // Google users cannot change password
+    if (user.authProvider === 'GOOGLE') {
+      throw new BadRequestException('Google users cannot change password');
+    }
+
+    const success = await this.authService.changePassword(
+      user._id.toString(),
+      dto.currentPassword,
+      dto.newPassword,
+    );
+
+    if (!success) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    return { message: 'Password changed successfully' };
   }
 
   // ============ Address Management ============

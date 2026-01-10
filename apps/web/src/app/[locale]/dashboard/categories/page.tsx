@@ -261,11 +261,11 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
             {t('categories')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">

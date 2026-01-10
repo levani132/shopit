@@ -17,7 +17,12 @@ export interface User {
   firstName: string;
   lastName: string;
   role: 'admin' | 'seller' | 'user';
+  phoneNumber?: string;
+  identificationNumber?: string;
+  accountNumber?: string;
+  beneficiaryBankCode?: string;
   isProfileComplete?: boolean;
+  authProvider?: 'EMAIL' | 'GOOGLE';
 }
 
 export interface Store {

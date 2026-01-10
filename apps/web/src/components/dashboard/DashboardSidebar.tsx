@@ -242,9 +242,9 @@ export function DashboardSidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800">
+    <aside className="hidden lg:flex lg:flex-col w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
       {/* Navigation */}
-      <nav className="flex-1 p-4 pt-6 space-y-6 overflow-y-auto">
+      <nav className="flex-1 p-4 pt-6 space-y-6">
         {NAV_SECTIONS.map((section, sectionIndex) => (
           <div key={sectionIndex}>
             {/* Section title */}
