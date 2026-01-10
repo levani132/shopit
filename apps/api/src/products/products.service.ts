@@ -121,26 +121,34 @@ export class ProductsService {
 
       if (attrFilters.size > 0) {
         // We need to find products that have variants matching the selected attribute values
-        // Using $elemMatch on variants.attributes for each attribute filter
+        // First, look up attributes by slug to get the actual value IDs
         const attrConditions: FilterQuery<ProductDocument>[] = [];
 
-        for (const [_attrSlug, valueIds] of attrFilters) {
-          // Match products where at least one variant has any of the selected values
-          // Note: We're matching by valueId or value slug depending on what frontend sends
-          attrConditions.push({
-            'variants.attributes': {
-              $elemMatch: {
-                $or: [
-                  {
-                    valueId: {
-                      $in: valueIds.map((v) => new Types.ObjectId(v)),
-                    },
-                  },
-                  // Also try matching by value string for flexibility
-                ],
-              },
-            },
+        for (const [attrSlug, valueSlugs] of attrFilters) {
+          // Find attribute by slug
+          const attribute = await this.attributeModel.findOne({
+            storeId: new Types.ObjectId(storeId),
+            slug: attrSlug,
           });
+
+          if (attribute) {
+            // Get value IDs from slugs
+            const valueIds = attribute.values
+              .filter((v) => valueSlugs.includes(v.slug))
+              .map((v) => v._id);
+
+            if (valueIds.length > 0) {
+              // Match products where at least one variant has any of the selected values
+              attrConditions.push({
+                'variants.attributes': {
+                  $elemMatch: {
+                    attributeId: attribute._id,
+                    valueId: { $in: valueIds },
+                  },
+                },
+              });
+            }
+          }
         }
 
         if (attrConditions.length > 0) {

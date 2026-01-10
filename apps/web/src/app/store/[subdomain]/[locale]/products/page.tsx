@@ -539,7 +539,7 @@ export default function StoreProductsPage() {
                         // Text/checkbox filters
                         <div className="space-y-2">
                           {attr.values.map((value) => {
-                            const isSelected = selectedAttributes[attr.attributeSlug]?.includes(value.valueSlug);
+                            const isSelected = selectedAttributes[attr.attributeSlug]?.includes(value.valueSlug) ?? false;
                             return (
                               <label key={value.valueId} className="flex items-center gap-2 cursor-pointer">
                                 <input
