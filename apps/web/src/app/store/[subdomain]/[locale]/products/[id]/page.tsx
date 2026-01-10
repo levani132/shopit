@@ -81,7 +81,10 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [storeInfo, setStoreInfo] = useState<{ id: string; name: string } | null>(null);
+  const [storeInfo, setStoreInfo] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -89,7 +92,9 @@ export default function ProductDetailPage() {
   const [addedToCart, setAddedToCart] = useState(false);
 
   // Selected attribute values: { attributeId: valueId }
-  const [selectedValues, setSelectedValues] = useState<Record<string, string>>({});
+  const [selectedValues, setSelectedValues] = useState<Record<string, string>>(
+    {},
+  );
 
   // Get localized text
   const getLocalizedText = (
@@ -108,7 +113,9 @@ export default function ProductDetailPage() {
         setError(null);
 
         // Get store ID first
-        const storeRes = await fetch(`${API_URL}/api/v1/stores/subdomain/${subdomain}`);
+        const storeRes = await fetch(
+          `${API_URL}/api/v1/stores/subdomain/${subdomain}`,
+        );
         if (!storeRes.ok) throw new Error('Store not found');
         const store = await storeRes.json();
         const storeId = store._id || store.id;
@@ -123,17 +130,20 @@ export default function ProductDetailPage() {
         setProduct(productData);
 
         // If product has variants, fetch attributes
-        if (productData.hasVariants && productData.productAttributes?.length > 0) {
+        if (
+          productData.hasVariants &&
+          productData.productAttributes?.length > 0
+        ) {
           const attrIds = productData.productAttributes.map(
             (pa: ProductAttribute) => String(pa.attributeId),
           );
-          
+
           const attrsRes = await fetch(
             `${API_URL}/api/v1/attributes/store/${storeId}`,
           );
           if (attrsRes.ok) {
             const allAttrs = await attrsRes.json();
-            
+
             // Filter to only attributes used by this product (compare as strings)
             const productAttrs = allAttrs.filter((attr: Attribute) =>
               attrIds.includes(String(attr._id)),
@@ -155,7 +165,9 @@ export default function ProductDetailPage() {
         // Track view
         fetch(`${API_URL}/api/v1/products/${productId}/view`, {
           method: 'POST',
-        }).catch(() => {});
+        }).catch(() => {
+          /* empty */
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load product');
       } finally {
@@ -232,7 +244,8 @@ export default function ProductDetailPage() {
   }, [product, selectedVariant]);
 
   const effectiveSalePrice = useMemo(() => {
-    if (selectedVariant?.salePrice !== undefined) return selectedVariant.salePrice;
+    if (selectedVariant?.salePrice !== undefined)
+      return selectedVariant.salePrice;
     return product?.salePrice;
   }, [product, selectedVariant]);
 
@@ -246,7 +259,7 @@ export default function ProductDetailPage() {
   const displayImages = useMemo(() => {
     const variantImages = selectedVariant?.images || [];
     const productImages = product?.images || [];
-    
+
     // Combine variant images with product images, avoiding duplicates
     const allImages = [...variantImages];
     productImages.forEach((img) => {
@@ -254,7 +267,7 @@ export default function ProductDetailPage() {
         allImages.push(img);
       }
     });
-    
+
     return allImages;
   }, [product, selectedVariant]);
 
@@ -293,10 +306,21 @@ export default function ProductDetailPage() {
 
     addItem(cartItem, quantity);
     setAddedToCart(true);
-    
+
     // Reset after 2 seconds
     setTimeout(() => setAddedToCart(false), 2000);
-  }, [product, storeInfo, selectedVariant, effectivePrice, effectiveSalePrice, effectiveStock, displayImages, quantity, subdomain, addItem]);
+  }, [
+    product,
+    storeInfo,
+    selectedVariant,
+    effectivePrice,
+    effectiveSalePrice,
+    effectiveStock,
+    displayImages,
+    quantity,
+    subdomain,
+    addItem,
+  ]);
 
   const handleBuyNow = useCallback(() => {
     if (!product || !storeInfo) return;
@@ -321,10 +345,23 @@ export default function ProductDetailPage() {
     };
 
     addItem(cartItem, quantity);
-    
+
     // Redirect to checkout
     router.push(`/${locale}/checkout`);
-  }, [product, storeInfo, selectedVariant, effectivePrice, effectiveSalePrice, effectiveStock, displayImages, quantity, subdomain, addItem, router, locale]);
+  }, [
+    product,
+    storeInfo,
+    selectedVariant,
+    effectivePrice,
+    effectiveSalePrice,
+    effectiveStock,
+    displayImages,
+    quantity,
+    subdomain,
+    addItem,
+    router,
+    locale,
+  ]);
 
   if (isLoading) {
     return (
@@ -344,7 +381,9 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-        <p className="text-red-600 dark:text-red-400 text-lg">{error || 'Product not found'}</p>
+        <p className="text-red-600 dark:text-red-400 text-lg">
+          {error || 'Product not found'}
+        </p>
         <button
           onClick={() => router.back()}
           className="mt-4 text-[var(--accent-600)] hover:underline"
@@ -363,17 +402,28 @@ export default function ProductDetailPage() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-        <button onClick={() => router.push(`/${locale}`)} className="hover:text-[var(--accent-600)]">
+        <button
+          onClick={() => router.push(`/${locale}`)}
+          className="hover:text-[var(--accent-600)]"
+        >
           {t('home')}
         </button>
         <span className="mx-2">/</span>
-        <button onClick={() => router.push(`/${locale}/products`)} className="hover:text-[var(--accent-600)]">
+        <button
+          onClick={() => router.push(`/${locale}/products`)}
+          className="hover:text-[var(--accent-600)]"
+        >
           {t('products')}
         </button>
         {product.categoryId && (
           <>
             <span className="mx-2">/</span>
-            <span>{getLocalizedText(product.categoryId.nameLocalized, product.categoryId.name)}</span>
+            <span>
+              {getLocalizedText(
+                product.categoryId.nameLocalized,
+                product.categoryId.name,
+              )}
+            </span>
           </>
         )}
       </nav>
@@ -393,8 +443,18 @@ export default function ProductDetailPage() {
               />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600">
-                <svg className="w-24 h-24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-24 h-24"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
             )}
@@ -418,7 +478,12 @@ export default function ProductDetailPage() {
                       : 'border-transparent hover:border-gray-300 dark:hover:border-zinc-600'
                   }`}
                 >
-                  <Image src={img} alt={`${product.name} ${idx + 1}`} fill className="object-cover" />
+                  <Image
+                    src={img}
+                    alt={`${product.name} ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -448,15 +513,31 @@ export default function ProductDetailPage() {
           <div>
             {effectiveStock > 0 ? (
               <span className="inline-flex items-center gap-2 text-green-600 dark:text-green-400">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {t('inStock')} ({effectiveStock})
               </span>
             ) : (
               <span className="inline-flex items-center gap-2 text-red-600 dark:text-red-400">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 {t('outOfStock')}
               </span>
@@ -488,7 +569,8 @@ export default function ProductDetailPage() {
                     <div className="flex flex-wrap gap-2">
                       {usedValues.map((value) => {
                         const isAvailable = available.has(value._id);
-                        const hasStock = inStockValues[attr._id]?.has(value._id) ?? false;
+                        const hasStock =
+                          inStockValues[attr._id]?.has(value._id) ?? false;
                         const isSelected = selectedValueId === value._id;
                         const isOutOfStock = isAvailable && !hasStock;
 
@@ -501,7 +583,9 @@ export default function ProductDetailPage() {
                           return (
                             <div key={value._id} className="relative group">
                               <button
-                                onClick={() => handleValueSelect(attr._id, value._id)}
+                                onClick={() =>
+                                  handleValueSelect(attr._id, value._id)
+                                }
                                 disabled={!isAvailable || isOutOfStock}
                                 className={`w-10 h-10 rounded-full border-2 transition-all relative ${
                                   isSelected
@@ -532,7 +616,9 @@ export default function ProductDetailPage() {
                         return (
                           <div key={value._id} className="relative group">
                             <button
-                              onClick={() => handleValueSelect(attr._id, value._id)}
+                              onClick={() =>
+                                handleValueSelect(attr._id, value._id)
+                              }
                               disabled={!isAvailable || isOutOfStock}
                               className={`px-4 py-2 rounded-lg border transition-all ${
                                 isSelected
@@ -542,7 +628,10 @@ export default function ProductDetailPage() {
                                     : 'border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-gray-600 cursor-not-allowed line-through'
                               }`}
                             >
-                              {getLocalizedText(value.valueLocalized, value.value)}
+                              {getLocalizedText(
+                                value.valueLocalized,
+                                value.value,
+                              )}
                             </button>
                             {isOutOfStock && (
                               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
@@ -573,7 +662,9 @@ export default function ProductDetailPage() {
                 {quantity}
               </span>
               <button
-                onClick={() => setQuantity((q) => Math.min(effectiveStock, q + 1))}
+                onClick={() =>
+                  setQuantity((q) => Math.min(effectiveStock, q + 1))
+                }
                 disabled={quantity >= effectiveStock}
                 className="px-3 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50"
               >
@@ -584,7 +675,11 @@ export default function ProductDetailPage() {
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              disabled={effectiveStock <= 0 || (product.hasVariants && !selectedVariant) || addedToCart}
+              disabled={
+                effectiveStock <= 0 ||
+                (product.hasVariants && !selectedVariant) ||
+                addedToCart
+              }
               title={t('addToCart')}
               className={`w-14 h-12 flex items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed ${
                 addedToCart
@@ -593,11 +688,26 @@ export default function ProductDetailPage() {
               }`}
             >
               {addedToCart ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -611,14 +721,14 @@ export default function ProductDetailPage() {
             {/* Buy Now Button */}
             <button
               onClick={handleBuyNow}
-              disabled={effectiveStock <= 0 || (product.hasVariants && !selectedVariant)}
+              disabled={
+                effectiveStock <= 0 || (product.hasVariants && !selectedVariant)
+              }
               className="flex-1 px-6 py-3 font-medium rounded-lg transition-colors disabled:cursor-not-allowed bg-[var(--accent-600)] text-white hover:bg-[var(--accent-700)] disabled:opacity-50"
             >
-              {product.hasVariants && !selectedVariant ? (
-                t('selectVariant')
-              ) : (
-                t('buyNow')
-              )}
+              {product.hasVariants && !selectedVariant
+                ? t('selectVariant')
+                : t('buyNow')}
             </button>
           </div>
 
@@ -629,7 +739,10 @@ export default function ProductDetailPage() {
                 {t('description')}
               </h2>
               <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                {getLocalizedText(product.descriptionLocalized, product.description || '')}
+                {getLocalizedText(
+                  product.descriptionLocalized,
+                  product.description || '',
+                )}
               </p>
             </div>
           )}
@@ -638,4 +751,3 @@ export default function ProductDetailPage() {
     </div>
   );
 }
-
