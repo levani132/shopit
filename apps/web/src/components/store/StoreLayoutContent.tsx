@@ -40,6 +40,7 @@ interface StoreLayoutContentProps {
       tiktok?: string;
     };
     categories?: CategoryData[];
+    initial?: string; // Pre-computed English initial for avatar display
   };
   accentColors: React.CSSProperties;
 }

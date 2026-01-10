@@ -15,6 +15,7 @@ import { CartProvider } from '../../../../contexts/CartContext';
 import { CheckoutProvider } from '../../../../contexts/CheckoutContext';
 import { routing } from '../../../../i18n/routing';
 import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
+import { getLatinInitial } from '../../../../lib/utils';
 import '../../../global.css';
 
 interface StoreLayoutProps {
@@ -42,6 +43,10 @@ async function getStoreData(subdomain: string, locale: string) {
     // Fetch categories for this store
     const categories = await getCategoriesByStoreId(apiStore.id);
 
+    // Get English name for initial (fallback to store name, then subdomain)
+    const englishName = apiStore.nameLocalized?.en || apiStore.name || subdomain;
+    const initial = getLatinInitial(englishName, subdomain.charAt(0).toUpperCase());
+
     return {
       id: apiStore.id,
       name: getLocalizedText(apiStore.nameLocalized, apiStore.name, locale),
@@ -64,12 +69,15 @@ async function getStoreData(subdomain: string, locale: string) {
       address: apiStore.address,
       socialLinks: apiStore.socialLinks,
       categories,
+      initial, // Pre-computed English initial for avatar display
     };
   }
 
   // Fallback to mock
   const mockStore = getMockStore(subdomain);
   if (mockStore) {
+    const initial = getLatinInitial(mockStore.name, subdomain.charAt(0).toUpperCase());
+    
     return {
       id: mockStore.subdomain, // Use subdomain as ID for mock stores
       name: mockStore.name,
@@ -84,6 +92,7 @@ async function getStoreData(subdomain: string, locale: string) {
       address: undefined,
       socialLinks: undefined,
       categories: [] as CategoryData[],
+      initial, // Pre-computed English initial for avatar display
     };
   }
 
@@ -141,6 +150,7 @@ export default async function StoreLayout({
     address: store.address,
     socialLinks: store.socialLinks,
     categories: store.categories,
+    initial: store.initial, // Pre-computed English initial
   };
 
   return (

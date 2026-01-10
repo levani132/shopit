@@ -8,6 +8,7 @@ import {
 import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-stores';
 import { StoreHero } from '../../../../components/store/StoreHero';
 import { HomepageProducts } from '../../../../components/store/HomepageProducts';
+import { getLatinInitial } from '../../../../lib/utils';
 
 interface StorePageProps {
   params: Promise<{ subdomain: string; locale: string }>;
@@ -35,6 +36,7 @@ interface StoreForHero {
   authorName?: string;
   showAuthorName?: boolean;
   accentColor: string;
+  initial?: string; // Pre-computed English initial for avatar display
 }
 
 async function getStoreData(subdomain: string): Promise<{
@@ -105,6 +107,10 @@ export default async function StorePage({ params }: StorePageProps) {
   const localizedDescription = getLocalizedText(store.descriptionLocalized, store.description, locale);
   const localizedAuthorName = getLocalizedText(store.authorNameLocalized, store.authorName, locale);
 
+  // Pre-compute initial from English name (for consistent display across locales)
+  const englishName = store.nameLocalized?.en || store.name || subdomain;
+  const storeInitial = getLatinInitial(englishName, subdomain.charAt(0).toUpperCase());
+
   // Transform store data for components
   const storeForHero: StoreForHero = {
     name: localizedName,
@@ -115,6 +121,7 @@ export default async function StorePage({ params }: StorePageProps) {
     authorName: localizedAuthorName,
     showAuthorName: store.showAuthorName,
     accentColor: store.accentColor,
+    initial: storeInitial,
   };
 
   return (

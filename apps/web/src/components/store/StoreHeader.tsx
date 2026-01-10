@@ -34,6 +34,7 @@ interface StoreHeaderProps {
     authorName?: string;
     showAuthorName?: boolean;
     categories?: CategoryData[];
+    initial?: string; // Pre-computed English initial for avatar display
   };
 }
 
@@ -226,7 +227,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
                   style={{ backgroundColor: 'var(--store-accent-500)' }}
                 >
-                  {getLatinInitial(store.name)}
+                  {store.initial || getLatinInitial(store.name)}
                 </div>
               )}
               <span className="font-semibold text-gray-900 dark:text-white text-lg">
