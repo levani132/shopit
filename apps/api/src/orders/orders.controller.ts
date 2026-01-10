@@ -56,9 +56,10 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard)
   async createAuthenticatedOrder(
     @Body() dto: CreateOrderDto,
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: { _id: any; id?: string },
   ) {
-    return this.ordersService.createOrder(dto, user.id);
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.createOrder(dto, userId);
   }
 
   /**
@@ -66,8 +67,9 @@ export class OrdersController {
    */
   @Get('my-orders')
   @UseGuards(JwtAuthGuard)
-  async getMyOrders(@CurrentUser() user: { id: string }) {
-    return this.ordersService.findUserOrders(user.id);
+  async getMyOrders(@CurrentUser() user: { _id: any; id?: string }) {
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.findUserOrders(userId);
   }
 
   /**
