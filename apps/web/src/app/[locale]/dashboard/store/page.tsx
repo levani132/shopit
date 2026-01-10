@@ -1080,7 +1080,8 @@ export default function StoreSettingsPage() {
                 type="button"
                 onClick={() => setShowSubdomainConfirm(true)}
                 disabled={!subdomainAvailable || isCheckingSubdomain}
-                className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                className="h-[42px] px-6 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                style={{ backgroundColor: subdomainAvailable ? accentColor : undefined }}
               >
                 Change
               </button>
@@ -1154,7 +1155,8 @@ export default function StoreSettingsPage() {
                   type="button"
                   onClick={handleSubdomainChange}
                   disabled={isChangingSubdomain}
-                  className="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+                  style={{ backgroundColor: accentColor }}
                 >
                   {isChangingSubdomain ? 'Changing...' : isFreeSubdomainChange ? 'Confirm Change' : `Pay ₾${subdomainChangeCost} & Change`}
                 </button>
