@@ -58,6 +58,7 @@ export default function OrdersPage() {
   const t = useTranslations('orders');
   const params = useParams();
   const locale = (params?.locale as string) || 'ka';
+  const subdomain = params?.subdomain as string;
 
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -68,33 +69,24 @@ export default function OrdersPage() {
     const fetchOrders = async () => {
       if (authLoading) return;
       if (!isAuthenticated) {
-        console.log('[Orders] Not authenticated, skipping fetch');
         setLoading(false);
         return;
       }
 
       try {
-        console.log(
-          '[Orders] Fetching orders from:',
-          `${API_URL}/api/v1/orders/my-orders`,
-        );
-        const response = await fetch(`${API_URL}/api/v1/orders/my-orders`, {
+        // Filter orders by the current store subdomain
+        const url = subdomain
+          ? `${API_URL}/api/v1/orders/my-orders?storeSubdomain=${encodeURIComponent(subdomain)}`
+          : `${API_URL}/api/v1/orders/my-orders`;
+
+        const response = await fetch(url, {
           credentials: 'include',
         });
 
-        console.log('[Orders] Response status:', response.status);
-
         if (response.ok) {
           const data = await response.json();
-          console.log('[Orders] Received orders:', data.length, data);
           setOrders(data);
         } else {
-          const errorText = await response.text();
-          console.error(
-            '[Orders] Failed to load orders:',
-            response.status,
-            errorText,
-          );
           setError('Failed to load orders');
         }
       } catch (err) {
@@ -106,7 +98,7 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, subdomain]);
 
   if (authLoading || loading) {
     return (

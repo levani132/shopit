@@ -307,13 +307,26 @@ export class OrdersService {
 
   /**
    * Find orders for a user
+   * Optionally filter by store subdomain
    */
-  async findUserOrders(userId: string): Promise<OrderDocument[]> {
-    this.logger.log(`Finding orders for user: ${userId}`);
-    const orders = await this.orderModel
-      .find({ user: new Types.ObjectId(userId) })
-      .sort({ createdAt: -1 });
-    this.logger.log(`Found ${orders.length} orders for user ${userId}`);
+  async findUserOrders(
+    userId: string,
+    storeSubdomain?: string,
+  ): Promise<OrderDocument[]> {
+    const query: any = { user: new Types.ObjectId(userId) };
+
+    // If store subdomain is provided, find the store and filter by its ID
+    if (storeSubdomain) {
+      const store = await this.storeModel.findOne({ subdomain: storeSubdomain });
+      if (store) {
+        query['orderItems.storeId'] = store._id;
+      } else {
+        // Store not found, return empty array
+        return [];
+      }
+    }
+
+    const orders = await this.orderModel.find(query).sort({ createdAt: -1 });
     return orders;
   }
 

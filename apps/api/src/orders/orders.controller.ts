@@ -64,14 +64,16 @@ export class OrdersController {
 
   /**
    * Get current user's orders
+   * Optionally filter by store subdomain
    */
   @Get('my-orders')
   @UseGuards(JwtAuthGuard)
-  async getMyOrders(@CurrentUser() user: { _id: any; id?: string }) {
+  async getMyOrders(
+    @CurrentUser() user: { _id: any; id?: string },
+    @Query('storeSubdomain') storeSubdomain?: string,
+  ) {
     const userId = user.id || user._id?.toString();
-    console.log('[Orders] my-orders called for userId:', userId, 'user._id:', user._id, 'user.id:', user.id);
-    const orders = await this.ordersService.findUserOrders(userId);
-    console.log('[Orders] Found orders:', orders.length);
+    const orders = await this.ordersService.findUserOrders(userId, storeSubdomain);
     return orders;
   }
 
