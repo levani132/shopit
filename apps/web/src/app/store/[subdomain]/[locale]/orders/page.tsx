@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '../../../../../contexts/AuthContext';
-import { getLocalizedText } from '../../../../../lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -42,11 +41,15 @@ interface Order {
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  pending:
+    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   paid: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  shipped: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  delivered: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  processing:
+    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  shipped:
+    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  delivered:
+    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   refunded: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
 };
@@ -71,20 +74,27 @@ export default function OrdersPage() {
       }
 
       try {
-        console.log('[Orders] Fetching orders from:', `${API_URL}/api/v1/orders/my-orders`);
+        console.log(
+          '[Orders] Fetching orders from:',
+          `${API_URL}/api/v1/orders/my-orders`,
+        );
         const response = await fetch(`${API_URL}/api/v1/orders/my-orders`, {
           credentials: 'include',
         });
 
         console.log('[Orders] Response status:', response.status);
-        
+
         if (response.ok) {
           const data = await response.json();
           console.log('[Orders] Received orders:', data.length, data);
           setOrders(data);
         } else {
           const errorText = await response.text();
-          console.error('[Orders] Failed to load orders:', response.status, errorText);
+          console.error(
+            '[Orders] Failed to load orders:',
+            response.status,
+            errorText,
+          );
           setError('Failed to load orders');
         }
       } catch (err) {
@@ -277,4 +287,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
