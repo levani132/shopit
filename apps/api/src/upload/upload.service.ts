@@ -38,6 +38,12 @@ export class UploadService {
       this.configService.get<string>('AWS_REGION') || 'eu-central-1';
     this.bucket = this.configService.get<string>('AWS_S3_BUCKET') || '';
 
+    // Debug logging for S3 configuration
+    console.log(`[UploadService] Initializing S3 client:`);
+    console.log(`  - Region: ${this.region}`);
+    console.log(`  - Bucket: ${this.bucket}`);
+    console.log(`  - AWS_REGION env: ${this.configService.get<string>('AWS_REGION')}`);
+
     this.s3Client = new S3Client({
       region: this.region,
       credentials: {
