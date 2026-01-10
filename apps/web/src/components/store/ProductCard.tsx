@@ -73,19 +73,22 @@ export function ProductCard({
     }
 
     // Add to cart
-    addItem({
-      productId: product._id,
-      storeId: storeId || '',
-      storeName: storeName || subdomain,
-      storeSubdomain: subdomain,
-      name: product.name,
-      nameLocalized: product.nameLocalized,
-      price: product.price,
-      salePrice: product.salePrice,
-      isOnSale: product.isOnSale,
-      quantity: 1,
-      image: product.images?.[0],
-    });
+    addItem(
+      {
+        productId: product._id,
+        storeId: storeId || '',
+        storeName: storeName || subdomain,
+        storeSubdomain: subdomain,
+        name: product.name,
+        nameLocalized: product.nameLocalized,
+        price: product.price,
+        salePrice: product.salePrice,
+        isOnSale: product.isOnSale,
+        image: product.images?.[0],
+        stock: effectiveStock,
+      },
+      1,
+    );
 
     // Redirect to checkout
     router.push(`/${locale}/checkout`);
@@ -102,19 +105,22 @@ export function ProductCard({
     }
 
     // Add to cart
-    addItem({
-      productId: product._id,
-      storeId: storeId || '',
-      storeName: storeName || subdomain,
-      storeSubdomain: subdomain,
-      name: product.name,
-      nameLocalized: product.nameLocalized,
-      price: product.price,
-      salePrice: product.salePrice,
-      isOnSale: product.isOnSale,
-      quantity: 1,
-      image: product.images?.[0],
-    });
+    addItem(
+      {
+        productId: product._id,
+        storeId: storeId || '',
+        storeName: storeName || subdomain,
+        storeSubdomain: subdomain,
+        name: product.name,
+        nameLocalized: product.nameLocalized,
+        price: product.price,
+        salePrice: product.salePrice,
+        isOnSale: product.isOnSale,
+        image: product.images?.[0],
+        stock: effectiveStock,
+      },
+      1,
+    );
   };
 
   return (
