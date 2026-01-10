@@ -300,6 +300,8 @@
     "totalVariantStock": "Total Stock (all variants)",
     "variantConfiguration": "Variant Configuration",
     "configureVariantStock": "Set stock quantity for each variant",
+    "setAllStock": "Set stock for all",
+    "applyToAll": "Apply to All",
     "allVariants": "All Variants",
     "activeVariants": "Active Variants",
     "outOfStockVariants": "Out of Stock Variants",

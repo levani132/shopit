@@ -300,6 +300,8 @@
     "totalVariantStock": "სულ მარაგი (ყველა ვარიანტი)",
     "variantConfiguration": "ვარიანტის კონფიგურაცია",
     "configureVariantStock": "დააყენეთ მარაგის რაოდენობა თითოეული ვარიანტისთვის",
+    "setAllStock": "მარაგი ყველასთვის",
+    "applyToAll": "გამოყენება ყველაზე",
     "allVariants": "ყველა ვარიანტი",
     "activeVariants": "აქტიური ვარიანტები",
     "outOfStockVariants": "ამოწურული ვარიანტები",

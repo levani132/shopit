@@ -597,6 +597,37 @@ export default function VariantEditor({
                     </span>
                   </div>
 
+                  {/* Bulk Stock Assignment */}
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 dark:bg-zinc-800/50 rounded-lg">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {t('setAllStock')}:
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      id="bulk-stock-input"
+                      className="w-24 px-3 py-1.5 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('bulk-stock-input') as HTMLInputElement;
+                        const value = parseInt(input?.value || '0', 10);
+                        if (!isNaN(value) && value >= 0) {
+                          const updatedVariants = variants.map((v) => ({
+                            ...v,
+                            stock: value,
+                          }));
+                          onVariantsChange(updatedVariants);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-[var(--accent-600)] text-white text-sm rounded-lg hover:bg-[var(--accent-700)] transition-colors"
+                    >
+                      {t('applyToAll')}
+                    </button>
+                  </div>
+
                   <div className="border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden">
                     <table className="w-full">
                       <thead className="bg-gray-50 dark:bg-zinc-900/50">
