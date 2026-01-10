@@ -12,6 +12,7 @@ import { StoreLayoutContent } from '../../../../components/store/StoreLayoutCont
 import { ThemeProvider } from '../../../../components/theme/ThemeProvider';
 import { AuthProvider } from '../../../../contexts/AuthContext';
 import { CartProvider } from '../../../../contexts/CartContext';
+import { CheckoutProvider } from '../../../../contexts/CheckoutContext';
 import { routing } from '../../../../i18n/routing';
 import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
 import '../../../global.css';
@@ -168,12 +169,14 @@ export default async function StoreLayout({
           <ThemeProvider>
             <AuthProvider>
               <CartProvider>
-                <StoreLayoutContent
-                  store={storeForComponents}
-                  accentColors={accentColors as React.CSSProperties}
-                >
-                  {children}
-                </StoreLayoutContent>
+                <CheckoutProvider>
+                  <StoreLayoutContent
+                    store={storeForComponents}
+                    accentColors={accentColors as React.CSSProperties}
+                  >
+                    {children}
+                  </StoreLayoutContent>
+                </CheckoutProvider>
               </CartProvider>
             </AuthProvider>
           </ThemeProvider>

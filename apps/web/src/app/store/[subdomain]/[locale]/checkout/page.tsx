@@ -1,0 +1,727 @@
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useAuth } from '../../../../../contexts/AuthContext';
+import { useCart } from '../../../../../contexts/CartContext';
+import {
+  useCheckout,
+  ShippingAddress,
+  GuestInfo,
+} from '../../../../../contexts/CheckoutContext';
+import { getLocalizedText } from '../../../../../lib/utils';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
+type CheckoutStep = 'auth' | 'guest' | 'shipping' | 'review';
+
+export default function CheckoutPage() {
+  const t = useTranslations('checkout');
+  const tCommon = useTranslations('common');
+  const params = useParams();
+  const router = useRouter();
+  const locale = (params?.locale as string) || 'ka';
+  const subdomain = params?.subdomain as string;
+
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { items: cart, clearCart } = useCart();
+  const {
+    shippingAddress,
+    setShippingAddress,
+    guestInfo,
+    setGuestInfo,
+    paymentMethod,
+    clearCheckout,
+  } = useCheckout();
+
+  const [currentStep, setCurrentStep] = useState<CheckoutStep>('auth');
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Form states
+  const [guestForm, setGuestForm] = useState<GuestInfo>({
+    email: '',
+    phoneNumber: '',
+    fullName: '',
+  });
+  const [addressForm, setAddressForm] = useState<ShippingAddress>({
+    label: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    country: 'Georgia',
+    phoneNumber: '',
+  });
+  const [saveNewAddress, setSaveNewAddress] = useState(true);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+
+  // Calculate totals
+  const storeItems = useMemo(
+    () => cart.filter((item) => item.storeId === subdomain || true), // For now, show all
+    [cart, subdomain],
+  );
+
+  const itemsPrice = useMemo(
+    () =>
+      storeItems.reduce(
+        (sum, item) =>
+          sum +
+          (item.isOnSale && item.salePrice ? item.salePrice : item.price) *
+            item.quantity,
+        0,
+      ),
+    [storeItems],
+  );
+
+  const shippingPrice = 0; // Will be calculated based on courier type
+  const totalPrice = itemsPrice + shippingPrice;
+
+  // Fetch saved addresses when authenticated
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!isAuthenticated || addressesLoaded) return;
+
+      try {
+        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const addresses = await response.json();
+          setSavedAddresses(addresses);
+
+          // Auto-select default address
+          const defaultAddr = addresses.find(
+            (a: ShippingAddress) => a.isDefault,
+          );
+          if (defaultAddr && !shippingAddress) {
+            setShippingAddress(defaultAddr);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching addresses:', err);
+      } finally {
+        setAddressesLoaded(true);
+      }
+    };
+
+    fetchAddresses();
+  }, [isAuthenticated, addressesLoaded, shippingAddress, setShippingAddress]);
+
+  // Auto-advance steps
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (isAuthenticated) {
+      if (!addressesLoaded) return;
+      if (!shippingAddress) {
+        setCurrentStep('shipping');
+      } else {
+        setCurrentStep('review');
+      }
+    } else if (isGuestCheckout) {
+      if (!guestInfo) {
+        setCurrentStep('guest');
+      } else if (!shippingAddress) {
+        setCurrentStep('shipping');
+      } else {
+        setCurrentStep('review');
+      }
+    } else {
+      setCurrentStep('auth');
+    }
+  }, [
+    authLoading,
+    isAuthenticated,
+    isGuestCheckout,
+    guestInfo,
+    shippingAddress,
+    addressesLoaded,
+  ]);
+
+  // Handle guest info submit
+  const handleGuestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setGuestInfo(guestForm);
+    setCurrentStep('shipping');
+  };
+
+  // Handle address selection
+  const selectAddress = (address: ShippingAddress) => {
+    setShippingAddress(address);
+    setShowNewAddressForm(false);
+    setCurrentStep('review');
+  };
+
+  // Handle new address submit
+  const handleNewAddressSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (isAuthenticated && saveNewAddress) {
+      // Save to backend
+      try {
+        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(addressForm),
+        });
+
+        if (response.ok) {
+          const newAddress = await response.json();
+          setSavedAddresses([...savedAddresses, newAddress]);
+          selectAddress(newAddress);
+        }
+      } catch (err) {
+        console.error('Error saving address:', err);
+        selectAddress({ ...addressForm, _id: 'temp' });
+      }
+    } else {
+      selectAddress({ ...addressForm, _id: 'temp' });
+    }
+  };
+
+  // Process checkout
+  const handleCheckout = async () => {
+    if (!shippingAddress || storeItems.length === 0) return;
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // 1. Create order
+      const orderPayload = {
+        orderItems: storeItems.map((item) => ({
+          productId: item.productId,
+          name: item.name,
+          image: item.image,
+          price: item.isOnSale && item.salePrice ? item.salePrice : item.price,
+          qty: item.quantity,
+          variantId: item.variantId,
+          variantAttributes: item.variantAttributes,
+          storeId: item.storeId,
+          storeName: item.storeName,
+        })),
+        shippingDetails: {
+          address: shippingAddress.address,
+          city: shippingAddress.city,
+          postalCode: shippingAddress.postalCode,
+          country: shippingAddress.country,
+          phoneNumber: shippingAddress.phoneNumber,
+        },
+        paymentMethod: 'BOG',
+        isGuestOrder: !isAuthenticated,
+        guestInfo: !isAuthenticated ? guestInfo : undefined,
+      };
+
+      const orderResponse = await fetch(`${API_URL}/api/v1/orders`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload),
+      });
+
+      if (!orderResponse.ok) {
+        const errorData = await orderResponse.json();
+        throw new Error(errorData.message || 'Failed to create order');
+      }
+
+      const order = await orderResponse.json();
+
+      // 2. Initiate payment
+      const paymentPayload = {
+        orderId: order._id,
+        totalPrice: order.totalPrice,
+        items: storeItems.map((item) => ({
+          productId: item.productId,
+          name: item.productName,
+          quantity: item.quantity,
+          price: item.salePrice || item.price,
+        })),
+        customer: isAuthenticated
+          ? {
+              firstName: user?.firstName,
+              lastName: user?.lastName,
+              email: user?.email,
+            }
+          : {
+              firstName: guestInfo?.fullName.split(' ')[0],
+              lastName: guestInfo?.fullName.split(' ').slice(1).join(' '),
+              email: guestInfo?.email,
+              phone: guestInfo?.phoneNumber,
+            },
+        successUrl: `${window.location.origin}/${locale}/checkout/success`,
+        failUrl: `${window.location.origin}/${locale}/checkout/fail`,
+      };
+
+      const paymentResponse = await fetch(`${API_URL}/api/v1/payments/initiate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentPayload),
+      });
+
+      if (!paymentResponse.ok) {
+        const errorData = await paymentResponse.json();
+        throw new Error(errorData.message || 'Failed to initiate payment');
+      }
+
+      const paymentData = await paymentResponse.json();
+
+      // 3. Redirect to BOG payment page
+      if (paymentData.redirectUrl) {
+        // Clear cart and checkout state before redirecting
+        clearCart();
+        clearCheckout();
+        window.location.href = paymentData.redirectUrl;
+      } else {
+        throw new Error('No payment URL received');
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      setError(err.message || 'An error occurred during checkout');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Empty cart check
+  if (storeItems.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12 text-center">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          {t('emptyCart')}
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
+          {t('emptyCartDescription')}
+        </p>
+        <Link
+          href={`/${locale}/products`}
+          className="inline-block px-6 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
+        >
+          {t('continueShopping')}
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
+        {t('title')}
+      </h1>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main checkout flow */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Step 1: Auth/Guest */}
+          {currentStep === 'auth' && !authLoading && (
+            <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {t('accountStep')}
+              </h2>
+
+              <div className="space-y-4">
+                <Link
+                  href={`/${locale}/login?returnUrl=/${locale}/checkout`}
+                  className="block w-full text-center py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
+                >
+                  {t('loginToContinue')}
+                </Link>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300 dark:border-zinc-600" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white dark:bg-zinc-800 text-gray-500 dark:text-gray-400">
+                      {t('or')}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsGuestCheckout(true)}
+                  className="block w-full text-center py-3 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+                >
+                  {t('continueAsGuest')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Guest Info */}
+          {currentStep === 'guest' && (
+            <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {t('contactInfo')}
+              </h2>
+
+              <form onSubmit={handleGuestSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('fullName')} *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={guestForm.fullName}
+                    onChange={(e) =>
+                      setGuestForm({ ...guestForm, fullName: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('email')} *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={guestForm.email}
+                    onChange={(e) =>
+                      setGuestForm({ ...guestForm, email: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('phone')} *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    value={guestForm.phoneNumber}
+                    onChange={(e) =>
+                      setGuestForm({ ...guestForm, phoneNumber: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
+                >
+                  {t('continue')}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Step 3: Shipping Address */}
+          {currentStep === 'shipping' && (
+            <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {t('shippingAddress')}
+              </h2>
+
+              {/* Saved addresses */}
+              {savedAddresses.length > 0 && !showNewAddressForm && (
+                <div className="space-y-3 mb-4">
+                  {savedAddresses.map((addr) => (
+                    <button
+                      key={addr._id}
+                      onClick={() => selectAddress(addr)}
+                      className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                        shippingAddress?._id === addr._id
+                          ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]'
+                          : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {addr.label || t('address')}
+                            {addr.isDefault && (
+                              <span className="ml-2 text-xs text-[var(--store-accent-600)]">
+                                ({t('default')})
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {addr.address}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {addr.city}, {addr.country}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {addr.phoneNumber}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* New address button */}
+              {!showNewAddressForm && (
+                <button
+                  onClick={() => setShowNewAddressForm(true)}
+                  className="w-full py-3 border border-dashed border-gray-300 dark:border-zinc-600 text-gray-600 dark:text-gray-400 rounded-lg hover:border-gray-400 dark:hover:border-zinc-500 transition-colors"
+                >
+                  + {t('addNewAddress')}
+                </button>
+              )}
+
+              {/* New address form */}
+              {showNewAddressForm && (
+                <form onSubmit={handleNewAddressSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('addressLine')} *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={addressForm.address}
+                        onChange={(e) =>
+                          setAddressForm({ ...addressForm, address: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('city')} *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={addressForm.city}
+                        onChange={(e) =>
+                          setAddressForm({ ...addressForm, city: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('postalCode')}
+                      </label>
+                      <input
+                        type="text"
+                        value={addressForm.postalCode}
+                        onChange={(e) =>
+                          setAddressForm({ ...addressForm, postalCode: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('phone')} *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={addressForm.phoneNumber}
+                        onChange={(e) =>
+                          setAddressForm({ ...addressForm, phoneNumber: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        {t('country')}
+                      </label>
+                      <select
+                        value={addressForm.country}
+                        onChange={(e) =>
+                          setAddressForm({ ...addressForm, country: e.target.value })
+                        }
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="Georgia">{t('georgia')}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {isAuthenticated && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={saveNewAddress}
+                        onChange={(e) => setSaveNewAddress(e.target.checked)}
+                        className="w-4 h-4 rounded"
+                        style={{ accentColor: 'var(--store-accent-500)' }}
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">
+                        {t('saveAddress')}
+                      </span>
+                    </label>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
+                    >
+                      {t('useThisAddress')}
+                    </button>
+                    {savedAddresses.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowNewAddressForm(false)}
+                        className="px-6 py-3 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+                      >
+                        {tCommon('cancel')}
+                      </button>
+                    )}
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
+          {/* Step 4: Review & Pay */}
+          {currentStep === 'review' && (
+            <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {t('reviewOrder')}
+              </h2>
+
+              {/* Shipping address summary */}
+              {shippingAddress && (
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {t('shippingTo')}:
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {shippingAddress.address}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {shippingAddress.city}, {shippingAddress.country}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {shippingAddress.phoneNumber}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setCurrentStep('shipping')}
+                      className="text-sm text-[var(--store-accent-600)] hover:underline"
+                    >
+                      {t('change')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment method */}
+              <div className="mb-6">
+                <p className="font-medium text-gray-900 dark:text-white mb-2">
+                  {t('paymentMethod')}
+                </p>
+                <div className="flex items-center gap-3 p-4 border border-gray-200 dark:border-zinc-600 rounded-lg">
+                  <div className="w-12 h-8 bg-white rounded flex items-center justify-center text-xs font-bold text-blue-600">
+                    BOG
+                  </div>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {t('bankOfGeorgia')}
+                  </span>
+                </div>
+              </div>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handleCheckout}
+                disabled={isProcessing}
+                className="w-full py-4 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
+              >
+                {isProcessing ? t('processing') : t('payNow')} - ₾{totalPrice.toFixed(2)}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Order summary sidebar */}
+        <div className="lg:col-span-1">
+          <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700 sticky top-24">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {t('orderSummary')}
+            </h2>
+
+            <div className="space-y-4 mb-6">
+              {storeItems.map((item) => (
+                <div
+                  key={`${item.productId}-${item.variantId}`}
+                  className="flex gap-3"
+                >
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
+                    <Image
+                      src={item.image || '/placeholder.webp'}
+                      alt={item.name}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                      {getLocalizedText(item.nameLocalized, item.name, locale)}
+                    </p>
+                    {item.variantAttributes && item.variantAttributes.length > 0 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {item.variantAttributes
+                          .map((a) => `${a.attributeName}: ${a.value}`)
+                          .join(', ')}
+                      </p>
+                    )}
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        x{item.quantity}
+                      </span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        ₾{((item.isOnSale && item.salePrice ? item.salePrice : item.price) * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 space-y-2">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>{t('subtotal')}</span>
+                <span>₾{itemsPrice.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>{t('shipping')}</span>
+                <span>{shippingPrice > 0 ? `₾${shippingPrice.toFixed(2)}` : t('free')}</span>
+              </div>
+              <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
+                <span>{t('total')}</span>
+                <span>₾{totalPrice.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
