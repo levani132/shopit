@@ -17,7 +17,12 @@ interface NavSection {
 
 // Icons
 const OverviewIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -28,7 +33,12 @@ const OverviewIcon = (
 );
 
 const StoreIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -39,7 +49,12 @@ const StoreIcon = (
 );
 
 const ProfileIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -50,7 +65,12 @@ const ProfileIcon = (
 );
 
 const AttributesIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -61,7 +81,12 @@ const AttributesIcon = (
 );
 
 const CategoriesIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -72,7 +97,12 @@ const CategoriesIcon = (
 );
 
 const ProductsIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -83,7 +113,12 @@ const ProductsIcon = (
 );
 
 const OrdersIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -94,7 +129,12 @@ const OrdersIcon = (
 );
 
 const BalanceIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -105,7 +145,12 @@ const BalanceIcon = (
 );
 
 const AnalyticsIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -116,7 +161,12 @@ const AnalyticsIcon = (
 );
 
 const ExternalLinkIcon = (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -144,8 +194,16 @@ const NAV_SECTIONS: NavSection[] = [
   {
     titleKey: 'sectionProducts',
     items: [
-      { href: '/dashboard/attributes', labelKey: 'attributes', icon: AttributesIcon },
-      { href: '/dashboard/categories', labelKey: 'categories', icon: CategoriesIcon },
+      {
+        href: '/dashboard/attributes',
+        labelKey: 'attributes',
+        icon: AttributesIcon,
+      },
+      {
+        href: '/dashboard/categories',
+        labelKey: 'categories',
+        icon: CategoriesIcon,
+      },
       { href: '/dashboard/products', labelKey: 'products', icon: ProductsIcon },
     ],
   },
@@ -155,7 +213,11 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { href: '/dashboard/orders', labelKey: 'orders', icon: OrdersIcon },
       { href: '/dashboard/balance', labelKey: 'balance', icon: BalanceIcon },
-      { href: '/dashboard/analytics', labelKey: 'analytics', icon: AnalyticsIcon },
+      {
+        href: '/dashboard/analytics',
+        labelKey: 'analytics',
+        icon: AnalyticsIcon,
+      },
     ],
   },
 ];
@@ -166,12 +228,17 @@ export function DashboardSidebar() {
 
   // Check if current path matches the nav item
   const isActive = (href: string) => {
-    // Remove locale prefix for comparison
-    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '');
-    if (href === '/dashboard') {
-      return pathWithoutLocale === '/dashboard';
+    // Remove locale prefix for comparison (handles /ka, /en, etc.)
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '');
+    
+    // Normalize paths (remove trailing slashes)
+    const normalizedPath = pathWithoutLocale.replace(/\/$/, '') || '/dashboard';
+    const normalizedHref = href.replace(/\/$/, '');
+    
+    if (normalizedHref === '/dashboard') {
+      return normalizedPath === '/dashboard';
     }
-    return pathWithoutLocale.startsWith(href);
+    return normalizedPath.startsWith(normalizedHref);
   };
 
   return (
@@ -199,7 +266,9 @@ export function DashboardSidebar() {
                   }`}
                 >
                   {item.icon}
-                  <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                  <span className="font-medium text-sm">
+                    {t(item.labelKey)}
+                  </span>
                 </Link>
               ))}
             </div>
