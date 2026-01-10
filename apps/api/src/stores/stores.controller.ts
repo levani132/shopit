@@ -267,6 +267,11 @@ export class StoresController {
         ka: store.description || '',
         en: store.description || '',
       },
+      aboutUs: store.aboutUs,
+      aboutUsLocalized: store.aboutUsLocalized || {
+        ka: store.aboutUs || '',
+        en: store.aboutUs || '',
+      },
       logo: store.logo,
       coverImage: store.coverImage,
       useDefaultCover: store.useDefaultCover ?? true,
