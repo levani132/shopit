@@ -212,12 +212,18 @@ export class StoresController {
     return {
       _id: store._id,
       subdomain: store.subdomain,
+      subdomainChangeCount: store.subdomainChangeCount || 0,
       name: store.name,
       nameLocalized: store.nameLocalized || { ka: '', en: store.name },
       description: store.description,
       descriptionLocalized: store.descriptionLocalized || {
         ka: '',
         en: store.description || '',
+      },
+      aboutUs: store.aboutUs,
+      aboutUsLocalized: store.aboutUsLocalized || {
+        ka: '',
+        en: store.aboutUs || '',
       },
       logo: store.logo,
       coverImage: store.coverImage,
@@ -236,6 +242,7 @@ export class StoresController {
       phone: store.phone,
       address: store.address,
       isVerified: store.isVerified ?? false,
+      homepageProductOrder: store.homepageProductOrder || 'popular',
     };
   }
 
