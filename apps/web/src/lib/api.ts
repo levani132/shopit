@@ -189,6 +189,8 @@ export interface HomepageProduct {
   isOnSale: boolean;
   images: string[];
   stock: number;
+  totalStock?: number; // For products with variants
+  hasVariants?: boolean;
   categoryId?: { name: string; nameLocalized?: LocalizedText };
 }
 
@@ -204,7 +206,7 @@ export interface HomepageProductsResponse {
 export async function getHomepageProducts(
   storeId: string,
   order: string = 'popular',
-  limit: number = 6,
+  limit: number = 8,
 ): Promise<HomepageProductsResponse> {
   try {
     const response = await fetch(

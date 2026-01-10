@@ -98,7 +98,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   if (!isMock && store.id) {
     const productOrder = store.homepageProductOrder || 'popular';
-    const result = await getHomepageProducts(store.id, productOrder, 6);
+    const result = await getHomepageProducts(store.id, productOrder, 8);
     homepageProducts = result.products;
     hasMoreProducts = result.hasMore;
   }
@@ -133,11 +133,13 @@ export default async function StorePage({ params }: StorePageProps) {
   return (
     <>
       <StoreHero store={storeForHero} locale={locale} />
-      <HomepageProducts 
-        products={homepageProducts} 
+      <HomepageProducts
+        products={homepageProducts}
         hasMore={hasMoreProducts}
         locale={locale}
         subdomain={subdomain}
+        storeId={store.id}
+        storeName={localizedName}
       />
     </>
   );

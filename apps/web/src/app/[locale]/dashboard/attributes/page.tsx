@@ -756,8 +756,18 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                         : 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-zinc-500'
                     }`}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     {t('addCustomColor')}
                   </button>
@@ -770,7 +780,8 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
                       {PREDEFINED_COLORS.map((color) => {
                         const isAdded = values.some(
                           (v) =>
-                            v.colorHex?.toLowerCase() === color.hex.toLowerCase(),
+                            v.colorHex?.toLowerCase() ===
+                            color.hex.toLowerCase(),
                         );
                         return (
                           <button
