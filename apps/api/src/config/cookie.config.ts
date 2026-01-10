@@ -2,10 +2,17 @@ import { CookieOptions } from 'express';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// When using a proxy (same-origin), we can use 'lax' for better compatibility
+// When cross-origin, we need 'none' with secure: true
+// Set COOKIE_SAME_SITE=lax when using a proxy, or leave default for cross-origin
+const sameSite = process.env.COOKIE_SAME_SITE as 'lax' | 'none' | 'strict' | undefined;
+
 const baseCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? 'none' : 'lax',
+  // Default: 'none' for cross-origin in production (requires secure: true)
+  // Use 'lax' when proxying through same origin for better incognito support
+  sameSite: sameSite || (isProduction ? 'none' : 'lax'),
   path: '/',
 };
 

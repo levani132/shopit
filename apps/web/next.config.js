@@ -30,6 +30,21 @@ const nextConfig = {
       },
     ],
   },
+
+  // Proxy API requests through Next.js to avoid third-party cookie issues
+  // This makes cookies "first-party" since they're on the same domain
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Remove any trailing slash and /api/v1 suffix for the destination
+    const apiBase = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+    
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiBase}/api/:path*`,
+      },
+    ];
+  },
 };
 
 const plugins = [
