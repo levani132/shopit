@@ -52,7 +52,7 @@ export default function AboutPage() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/stores/${subdomain}`);
+        const response = await fetch(`${API_URL}/api/v1/stores/subdomain/${subdomain}`);
         if (response.ok) {
           const data = await response.json();
           setStore(data);
