@@ -317,16 +317,30 @@ export class OrdersService {
 
     // If store subdomain is provided, find the store and filter by its ID
     if (storeSubdomain) {
+      this.logger.log(`Filtering orders by store subdomain: ${storeSubdomain}`);
       const store = await this.storeModel.findOne({ subdomain: storeSubdomain });
       if (store) {
+        this.logger.log(`Found store: ${store._id} for subdomain: ${storeSubdomain}`);
         query['orderItems.storeId'] = store._id;
       } else {
+        this.logger.log(`Store not found for subdomain: ${storeSubdomain}`);
         // Store not found, return empty array
         return [];
       }
+    } else {
+      this.logger.log(`No store subdomain filter provided`);
     }
 
+    this.logger.log(`Query: ${JSON.stringify(query)}`);
     const orders = await this.orderModel.find(query).sort({ createdAt: -1 });
+    this.logger.log(`Found ${orders.length} orders`);
+    
+    // Log storeIds in found orders for debugging
+    if (orders.length > 0) {
+      const storeIds = orders.flatMap(o => o.orderItems.map(i => i.storeId?.toString()));
+      this.logger.log(`Order storeIds: ${storeIds.join(', ')}`);
+    }
+    
     return orders;
   }
 

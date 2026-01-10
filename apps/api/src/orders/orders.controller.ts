@@ -73,6 +73,7 @@ export class OrdersController {
     @Query('storeSubdomain') storeSubdomain?: string,
   ) {
     const userId = user.id || user._id?.toString();
+    console.log(`[Orders] my-orders request - userId: ${userId}, storeSubdomain: ${storeSubdomain}`);
     const orders = await this.ordersService.findUserOrders(userId, storeSubdomain);
     return orders;
   }
