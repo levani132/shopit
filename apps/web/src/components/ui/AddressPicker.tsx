@@ -8,6 +8,12 @@ import dynamic from 'next/dynamic';
 const TBILISI_CENTER = { lat: 41.7151, lng: 44.8271 };
 const DEFAULT_ZOOM = 13;
 
+// Map tile URLs for light and dark modes
+const TILE_URLS = {
+  light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+};
+
 // Photon API for geocoding (free, OpenStreetMap-based)
 const PHOTON_API_SEARCH = 'https://photon.komoot.io/api';
 const PHOTON_API_REVERSE = 'https://photon.komoot.io/reverse';
@@ -91,6 +97,37 @@ function AddressPickerMap({
   );
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dark mode detection
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Check for dark mode on mount
+    const checkDarkMode = () => {
+      const isDark = 
+        document.documentElement.classList.contains('dark') ||
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setIsDarkMode(isDark);
+    };
+
+    checkDarkMode();
+
+    // Watch for dark mode changes
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
+
+    // Also listen for system preference changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', checkDarkMode);
+
+    return () => {
+      observer.disconnect();
+      mediaQuery.removeEventListener('change', checkDarkMode);
+    };
+  }, []);
 
   // Import Leaflet dynamically
   const [L, setL] = useState<typeof import('leaflet') | null>(null);
@@ -333,10 +370,11 @@ function AddressPickerMap({
           style={{ height: '280px', width: '100%' }}
           className="z-0"
         >
-          {/* CartoDB Voyager tiles - beautiful, Google Maps-like */}
+          {/* CartoDB tiles - Voyager for light, Dark Matter for dark mode */}
           <TileLayer
+            key={isDarkMode ? 'dark' : 'light'}
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            url={isDarkMode ? TILE_URLS.dark : TILE_URLS.light}
           />
           
           <MapClickHandler />
