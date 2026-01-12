@@ -66,8 +66,16 @@ export function ProfileCompletion() {
 
     if (!data.phoneNumber.trim()) {
       newErrors.phoneNumber = t('phoneRequired');
-    } else if (!/^\+995\d{9}$/.test(data.phoneNumber)) {
-      newErrors.phoneNumber = t('phoneInvalid');
+    } else {
+      // Validate Georgian phone: +995XXXXXXXXX, 995XXXXXXXXX, or 5XXXXXXXX
+      const cleaned = data.phoneNumber.replace(/[\s\-\(\)]/g, '');
+      const isValid = 
+        /^\+995[5]\d{8}$/.test(cleaned) || // +995 5XX XXX XXX
+        /^995[5]\d{8}$/.test(cleaned) ||   // 995 5XX XXX XXX  
+        /^5\d{8}$/.test(cleaned);          // 5XX XXX XXX (local)
+      if (!isValid) {
+        newErrors.phoneNumber = t('phoneInvalid');
+      }
     }
 
     if (!data.identificationNumber.trim()) {
@@ -268,7 +276,7 @@ export function ProfileCompletion() {
                 type="tel"
                 value={data.phoneNumber}
                 onChange={(e) => updateData({ phoneNumber: e.target.value })}
-                placeholder="+995555123456"
+                placeholder="596000054"
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
               {errors.phoneNumber && (
