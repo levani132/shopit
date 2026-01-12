@@ -11,7 +11,8 @@ const DEFAULT_ZOOM = 13;
 // Map tile URLs for light and dark modes
 const TILE_URLS = {
   // CartoDB Voyager - colorful, Google Maps-like for light mode
-  light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  light:
+    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
   // Esri World Gray Canvas - nicer dark theme with better visibility
   dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
 };
@@ -87,38 +88,49 @@ function AddressPickerMap({
   className,
 }: AddressPickerProps) {
   const t = useTranslations('common');
-  const [searchQuery, setSearchQuery] = useState('');
+  // Initialize searchQuery from value prop
+  const [searchQuery, setSearchQuery] = useState(value?.address || '');
   const [searchResults, setSearchResults] = useState<PhotonFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [mapCenter, setMapCenter] = useState<Location>(
-    value?.location || TBILISI_CENTER
+    value?.location || TBILISI_CENTER,
   );
   const [markerPosition, setMarkerPosition] = useState<Location | null>(
-    value?.location || null
+    value?.location || null,
   );
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync searchQuery when value prop changes (e.g., on page load with saved data)
+  useEffect(() => {
+    if (value?.address && value.address !== searchQuery) {
+      setSearchQuery(value.address);
+    }
+    if (value?.location) {
+      setMarkerPosition(value.location);
+      setMapCenter(value.location);
+    }
+  }, [value?.address, value?.location]);
 
   // Dark mode detection
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    // Check for dark mode on mount
+    // Check for dark mode - prioritize the 'dark' class on html element
     const checkDarkMode = () => {
-      const isDark = 
-        document.documentElement.classList.contains('dark') ||
-        window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(isDark);
+      // Check if html has 'dark' class (Tailwind dark mode)
+      const hasDarkClass = document.documentElement.classList.contains('dark');
+      setIsDarkMode(hasDarkClass);
     };
 
     checkDarkMode();
 
-    // Watch for dark mode changes
+    // Watch for dark mode changes on html element
     const observer = new MutationObserver(checkDarkMode);
-    observer.observe(document.documentElement, { 
-      attributes: true, 
-      attributeFilter: ['class'] 
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
     });
 
     // Also listen for system preference changes
@@ -133,33 +145,47 @@ function AddressPickerMap({
 
   // Import Leaflet dynamically
   const [L, setL] = useState<typeof import('leaflet') | null>(null);
-  const [MapContainer, setMapContainer] = useState<typeof import('react-leaflet').MapContainer | null>(null);
-  const [TileLayer, setTileLayer] = useState<typeof import('react-leaflet').TileLayer | null>(null);
-  const [Marker, setMarker] = useState<typeof import('react-leaflet').Marker | null>(null);
-  const [useMapEvents, setUseMapEvents] = useState<typeof import('react-leaflet').useMapEvents | null>(null);
-  const [useMap, setUseMap] = useState<typeof import('react-leaflet').useMap | null>(null);
+  const [MapContainer, setMapContainer] = useState<
+    typeof import('react-leaflet').MapContainer | null
+  >(null);
+  const [TileLayer, setTileLayer] = useState<
+    typeof import('react-leaflet').TileLayer | null
+  >(null);
+  const [Marker, setMarker] = useState<
+    typeof import('react-leaflet').Marker | null
+  >(null);
+  const [useMapEvents, setUseMapEvents] = useState<
+    typeof import('react-leaflet').useMapEvents | null
+  >(null);
+  const [useMap, setUseMap] = useState<
+    typeof import('react-leaflet').useMap | null
+  >(null);
 
   useEffect(() => {
     // Dynamic imports for Leaflet (SSR-safe)
-    Promise.all([
-      import('leaflet'),
-      import('react-leaflet'),
-    ]).then(([leaflet, reactLeaflet]) => {
-      // Fix default marker icons
-      delete (leaflet.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
-      leaflet.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-      });
+    Promise.all([import('leaflet'), import('react-leaflet')]).then(
+      ([leaflet, reactLeaflet]) => {
+        // Fix default marker icons
+        delete (
+          leaflet.Icon.Default.prototype as unknown as { _getIconUrl?: unknown }
+        )._getIconUrl;
+        leaflet.Icon.Default.mergeOptions({
+          iconRetinaUrl:
+            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl:
+            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl:
+            'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
 
-      setL(leaflet);
-      setMapContainer(() => reactLeaflet.MapContainer);
-      setTileLayer(() => reactLeaflet.TileLayer);
-      setMarker(() => reactLeaflet.Marker);
-      setUseMapEvents(() => reactLeaflet.useMapEvents);
-      setUseMap(() => reactLeaflet.useMap);
-    });
+        setL(leaflet);
+        setMapContainer(() => reactLeaflet.MapContainer);
+        setTileLayer(() => reactLeaflet.TileLayer);
+        setMarker(() => reactLeaflet.Marker);
+        setUseMapEvents(() => reactLeaflet.useMapEvents);
+        setUseMap(() => reactLeaflet.useMap);
+      },
+    );
   }, []);
 
   // Search for addresses using Photon API
@@ -173,7 +199,7 @@ function AddressPickerMap({
     try {
       // Bias results towards Georgia
       const response = await fetch(
-        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=5&lang=en`
+        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=5&lang=en`,
       );
       const data = await response.json();
       setSearchResults(data.features || []);
@@ -214,34 +240,37 @@ function AddressPickerMap({
   };
 
   // Reverse geocode from coordinates
-  const reverseGeocode = useCallback(async (location: Location) => {
-    try {
-      const response = await fetch(
-        `${PHOTON_API_REVERSE}?lat=${location.lat}&lon=${location.lng}&lang=en`
-      );
-      const data = await response.json();
-      if (data.features && data.features.length > 0) {
-        const address = formatAddress(data.features[0].properties);
-        setSearchQuery(address);
-        onChange({ address, location });
-      } else {
-        // If no address found, use coordinates
+  const reverseGeocode = useCallback(
+    async (location: Location) => {
+      try {
+        const response = await fetch(
+          `${PHOTON_API_REVERSE}?lat=${location.lat}&lon=${location.lng}&lang=en`,
+        );
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+          const address = formatAddress(data.features[0].properties);
+          setSearchQuery(address);
+          onChange({ address, location });
+        } else {
+          // If no address found, use coordinates
+          const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
+          setSearchQuery(address);
+          onChange({ address, location });
+        }
+      } catch (err) {
+        console.error('Reverse geocode error:', err);
         const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
         setSearchQuery(address);
         onChange({ address, location });
       }
-    } catch (err) {
-      console.error('Reverse geocode error:', err);
-      const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
-      setSearchQuery(address);
-      onChange({ address, location });
-    }
-  }, [onChange]);
+    },
+    [onChange],
+  );
 
   // Map click handler component
   const MapClickHandler = () => {
     if (!useMapEvents) return null;
-    
+
     useMapEvents({
       click: (e) => {
         if (disabled) return;
@@ -267,7 +296,10 @@ function AddressPickerMap({
   // Close results when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setShowResults(false);
       }
     };
@@ -298,7 +330,9 @@ function AddressPickerMap({
     return (
       <div className={`rounded-xl overflow-hidden ${className}`}>
         <div className="h-64 bg-gray-100 dark:bg-zinc-800 animate-pulse flex items-center justify-center">
-          <span className="text-gray-400 dark:text-gray-500">{t('loadingMap')}</span>
+          <span className="text-gray-400 dark:text-gray-500">
+            {t('loadingMap')}
+          </span>
         </div>
       </div>
     );
@@ -324,13 +358,38 @@ function AddressPickerMap({
           />
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
             {isSearching ? (
-              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              <svg
+                className="w-5 h-5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
             )}
           </div>
@@ -346,13 +405,30 @@ function AddressPickerMap({
                 onClick={() => handleSelectAddress(feature)}
                 className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors flex items-start gap-3 border-b border-gray-100 dark:border-zinc-700 last:border-0"
               >
-                <svg className="w-5 h-5 text-[var(--accent-500)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                <svg
+                  className="w-5 h-5 text-[var(--accent-500)] flex-shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
                 </svg>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {feature.properties.name || feature.properties.street || 'Unknown'}
+                    {feature.properties.name ||
+                      feature.properties.street ||
+                      'Unknown'}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {formatAddress(feature.properties)}
@@ -382,10 +458,10 @@ function AddressPickerMap({
             }
             url={isDarkMode ? TILE_URLS.dark : TILE_URLS.light}
           />
-          
+
           <MapClickHandler />
           {markerPosition && <MapCenterUpdater center={markerPosition} />}
-          
+
           {markerPosition && (
             <Marker
               position={[markerPosition.lat, markerPosition.lng]}
@@ -411,27 +487,21 @@ function AddressPickerMap({
       </p>
 
       {/* Error message */}
-      {error && (
-        <p className="text-sm text-red-500">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
 }
 
 // Export with dynamic import (no SSR)
-export const AddressPicker = dynamic(
-  () => Promise.resolve(AddressPickerMap),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="rounded-xl overflow-hidden">
-        <div className="h-64 bg-gray-100 dark:bg-zinc-800 animate-pulse flex items-center justify-center">
-          <span className="text-gray-400 dark:text-gray-500">Loading map...</span>
-        </div>
+export const AddressPicker = dynamic(() => Promise.resolve(AddressPickerMap), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-xl overflow-hidden">
+      <div className="h-64 bg-gray-100 dark:bg-zinc-800 animate-pulse flex items-center justify-center">
+        <span className="text-gray-400 dark:text-gray-500">Loading map...</span>
       </div>
-    ),
-  }
-);
+    </div>
+  ),
+});
 
 export type { AddressResult, Location };
-
