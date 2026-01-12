@@ -34,8 +34,10 @@ export default function CourierLayout({
         <NextIntlClientProvider locale={locale} messages={localeMessages}>
           <AuthProvider>
             <CartProvider>
-              {/* ShopIt global bar */}
+              {/* ShopIt global bar - fixed at top */}
               <ShopItBar variant="standalone" showCreateShop={false} />
+              {/* Spacer for fixed ShopItBar (h-10 = 40px) */}
+              <div className="h-10" />
               <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
                 {children}
               </div>

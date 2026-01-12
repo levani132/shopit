@@ -15,8 +15,8 @@ export default function CourierLandingPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
+      {/* Header - offset by ShopItBar height (h-10 = 40px) */}
+      <header className="fixed top-10 left-0 right-0 z-40 bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
@@ -76,8 +76,8 @@ export default function CourierLandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      {/* Hero Section - account for ShopItBar (40px) + header (64px) + extra padding */}
+      <section className="pt-40 pb-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/20 rounded-full border border-indigo-500/30 mb-8">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />

@@ -113,7 +113,9 @@ export default function StoreSettingsPage() {
   // Subdomain change state
   const [newSubdomain, setNewSubdomain] = useState('');
   const [subdomainError, setSubdomainError] = useState<string | null>(null);
-  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(
+    null,
+  );
   const [isCheckingSubdomain, setIsCheckingSubdomain] = useState(false);
   const [isChangingSubdomain, setIsChangingSubdomain] = useState(false);
   const [showSubdomainConfirm, setShowSubdomainConfirm] = useState(false);
@@ -127,7 +129,9 @@ export default function StoreSettingsPage() {
   const checkSubdomainAvailability = async (subdomain: string) => {
     if (!subdomain || subdomain.length < 3) {
       setSubdomainAvailable(null);
-      setSubdomainError(subdomain.length > 0 ? 'Subdomain must be at least 3 characters' : null);
+      setSubdomainError(
+        subdomain.length > 0 ? 'Subdomain must be at least 3 characters' : null,
+      );
       return;
     }
 
@@ -141,7 +145,7 @@ export default function StoreSettingsPage() {
     try {
       const response = await fetch(
         `${API_URL}/api/v1/stores/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`,
-        { credentials: 'include' }
+        { credentials: 'include' },
       );
       const data = await response.json();
       setSubdomainAvailable(data.available);
@@ -176,12 +180,15 @@ export default function StoreSettingsPage() {
     try {
       if (isFreeSubdomainChange) {
         // Free change - direct API call
-        const response = await fetch(`${API_URL}/api/v1/stores/change-subdomain-free`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ newSubdomain }),
-        });
+        const response = await fetch(
+          `${API_URL}/api/v1/stores/change-subdomain-free`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ newSubdomain }),
+          },
+        );
 
         const data = await response.json();
 
@@ -190,11 +197,15 @@ export default function StoreSettingsPage() {
         }
 
         // Update form data with new subdomain
-        setFormData((prev) => prev ? {
-          ...prev,
-          subdomain: data.newSubdomain,
-          subdomainChangeCount: 1,
-        } : null);
+        setFormData((prev) =>
+          prev
+            ? {
+                ...prev,
+                subdomain: data.newSubdomain,
+                subdomainChangeCount: 1,
+              }
+            : null,
+        );
 
         setNewSubdomain('');
         setSubdomainAvailable(null);
@@ -206,17 +217,20 @@ export default function StoreSettingsPage() {
       } else {
         // Paid change - initiate payment flow
         const currentUrl = window.location.href.split('?')[0];
-        const response = await fetch(`${API_URL}/api/v1/payments/subdomain-change`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            storeId: formData._id,
-            newSubdomain,
-            successUrl: `${currentUrl}?subdomain_changed=true&new_subdomain=${encodeURIComponent(newSubdomain)}`,
-            failUrl: `${currentUrl}?subdomain_change_failed=true`,
-          }),
-        });
+        const response = await fetch(
+          `${API_URL}/api/v1/payments/subdomain-change`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              storeId: formData._id,
+              newSubdomain,
+              successUrl: `${currentUrl}?subdomain_changed=true&new_subdomain=${encodeURIComponent(newSubdomain)}`,
+              failUrl: `${currentUrl}?subdomain_change_failed=true`,
+            }),
+          },
+        );
 
         const data = await response.json();
 
@@ -228,7 +242,9 @@ export default function StoreSettingsPage() {
         window.location.href = data.redirectUrl;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change subdomain');
+      setError(
+        err instanceof Error ? err.message : 'Failed to change subdomain',
+      );
       setShowSubdomainConfirm(false);
     } finally {
       setIsChangingSubdomain(false);
@@ -279,7 +295,7 @@ export default function StoreSettingsPage() {
       setSuccess(
         newSubdomainParam
           ? `Subdomain successfully changed to ${newSubdomainParam}!`
-          : 'Subdomain successfully changed!'
+          : 'Subdomain successfully changed!',
       );
       // Clean up URL
       router.replace(window.location.pathname, { scroll: false });
@@ -458,7 +474,10 @@ export default function StoreSettingsPage() {
           String(formData.deliveryMaxDays ?? 5),
         );
         submitData.append('deliveryFee', String(formData.deliveryFee ?? 0));
-        submitData.append('freeDelivery', String(formData.freeDelivery || false));
+        submitData.append(
+          'freeDelivery',
+          String(formData.freeDelivery || false),
+        );
       }
 
       // Files
@@ -891,9 +910,7 @@ export default function StoreSettingsPage() {
                 </div>
                 <textarea
                   value={
-                    formData.aboutUsLocalized?.en ||
-                    formData.aboutUs ||
-                    ''
+                    formData.aboutUsLocalized?.en || formData.aboutUs || ''
                   }
                   onChange={(e) =>
                     updateField('aboutUsLocalized', {
@@ -908,7 +925,8 @@ export default function StoreSettingsPage() {
               </div>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Tell your customers more about your brand, story, mission, and what makes you unique.
+              Tell your customers more about your brand, story, mission, and
+              what makes you unique.
             </p>
           </div>
 
@@ -1036,11 +1054,13 @@ export default function StoreSettingsPage() {
                   htmlFor="hideAddress"
                   className="text-sm text-gray-600 dark:text-gray-400"
                 >
-                  <span className="font-medium">Hide address from customers</span>
+                  <span className="font-medium">
+                    Hide address from customers
+                  </span>
                   <br />
                   <span className="text-xs text-gray-500 dark:text-gray-500">
-                    Your address is still required for courier pickup, but won&apos;t
-                    be shown on your public store page.
+                    Your address is still required for courier pickup, but
+                    won&apos;t be shown on your public store page.
                   </span>
                 </label>
               </div>
@@ -1093,8 +1113,18 @@ export default function StoreSettingsPage() {
                       {t('shopitDeliveryDescription')}
                     </p>
                     <div className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-600)] dark:text-[var(--accent-400)]">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                       {t('shopitDeliveryIncluded')}
                     </div>
@@ -1132,8 +1162,18 @@ export default function StoreSettingsPage() {
                       {t('selfDeliveryDescription')}
                     </p>
                     <div className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
                       </svg>
                       +10 ₾ {t('platformFee')}
                     </div>
@@ -1162,7 +1202,10 @@ export default function StoreSettingsPage() {
                   max="30"
                   value={formData.prepTimeMinDays ?? 1}
                   onChange={(e) =>
-                    updateField('prepTimeMinDays', parseInt(e.target.value) || 0)
+                    updateField(
+                      'prepTimeMinDays',
+                      parseInt(e.target.value) || 0,
+                    )
                   }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
                 />
@@ -1178,7 +1221,10 @@ export default function StoreSettingsPage() {
                   max="30"
                   value={formData.prepTimeMaxDays ?? 3}
                   onChange={(e) =>
-                    updateField('prepTimeMaxDays', parseInt(e.target.value) || 0)
+                    updateField(
+                      'prepTimeMaxDays',
+                      parseInt(e.target.value) || 0,
+                    )
                   }
                   className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
                 />
@@ -1193,8 +1239,18 @@ export default function StoreSettingsPage() {
           {formData.courierType === 'seller' && (
             <div className="space-y-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl">
               <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 text-amber-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 {t('selfDeliverySettings')}
               </h4>
@@ -1215,7 +1271,10 @@ export default function StoreSettingsPage() {
                       max="60"
                       value={formData.deliveryMinDays ?? 1}
                       onChange={(e) =>
-                        updateField('deliveryMinDays', parseInt(e.target.value) || 0)
+                        updateField(
+                          'deliveryMinDays',
+                          parseInt(e.target.value) || 0,
+                        )
                       }
                       className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
                     />
@@ -1228,7 +1287,10 @@ export default function StoreSettingsPage() {
                       max="60"
                       value={formData.deliveryMaxDays ?? 5}
                       onChange={(e) =>
-                        updateField('deliveryMaxDays', parseInt(e.target.value) || 0)
+                        updateField(
+                          'deliveryMaxDays',
+                          parseInt(e.target.value) || 0,
+                        )
                       }
                       className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
                     />
@@ -1252,7 +1314,10 @@ export default function StoreSettingsPage() {
                       step="0.01"
                       value={formData.deliveryFee ?? 0}
                       onChange={(e) =>
-                        updateField('deliveryFee', parseFloat(e.target.value) || 0)
+                        updateField(
+                          'deliveryFee',
+                          parseFloat(e.target.value) || 0,
+                        )
                       }
                       disabled={formData.freeDelivery}
                       className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-zinc-800"
@@ -1265,7 +1330,9 @@ export default function StoreSettingsPage() {
                     <input
                       type="checkbox"
                       checked={formData.freeDelivery || false}
-                      onChange={(e) => updateField('freeDelivery', e.target.checked)}
+                      onChange={(e) =>
+                        updateField('freeDelivery', e.target.checked)
+                      }
                       className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-600)] focus:ring-[var(--accent-500)]"
                     />
                     <span className="text-sm text-gray-700 dark:text-gray-300">
@@ -1277,8 +1344,18 @@ export default function StoreSettingsPage() {
 
               {/* Info about platform fee */}
               <div className="flex items-start gap-2 p-3 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
-                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
                 <p className="text-sm text-amber-800 dark:text-amber-300">
                   {t('selfDeliveryPlatformFeeNote')}
@@ -1410,7 +1487,7 @@ export default function StoreSettingsPage() {
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
             Store URL
           </h2>
-          
+
           {/* Current URL */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
@@ -1451,14 +1528,18 @@ export default function StoreSettingsPage() {
                     </span>
                   ) : (
                     <span>
-                      Changing your subdomain costs <span className="font-semibold text-gray-900 dark:text-white">₾{subdomainChangeCost}</span>
+                      Changing your subdomain costs{' '}
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        ₾{subdomainChangeCost}
+                      </span>
                     </span>
                   )}
                 </p>
               </div>
               {(formData.subdomainChangeCount || 0) > 0 && (
                 <span className="text-xs text-gray-400 dark:text-gray-500">
-                  Changed {formData.subdomainChangeCount} time{(formData.subdomainChangeCount || 0) > 1 ? 's' : ''}
+                  Changed {formData.subdomainChangeCount} time
+                  {(formData.subdomainChangeCount || 0) > 1 ? 's' : ''}
                 </span>
               )}
             </div>
@@ -1482,14 +1563,26 @@ export default function StoreSettingsPage() {
                     .shopit.ge
                   </span>
                 </div>
-                
+
                 {/* Status Messages */}
                 <div className="mt-2 min-h-[20px]">
                   {isCheckingSubdomain && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                       <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       Checking availability...
                     </p>
@@ -1512,7 +1605,9 @@ export default function StoreSettingsPage() {
                 onClick={() => setShowSubdomainConfirm(true)}
                 disabled={!subdomainAvailable || isCheckingSubdomain}
                 className="h-[42px] px-6 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-                style={{ backgroundColor: subdomainAvailable ? accentColor : undefined }}
+                style={{
+                  backgroundColor: subdomainAvailable ? accentColor : undefined,
+                }}
               >
                 Change
               </button>
@@ -1527,21 +1622,35 @@ export default function StoreSettingsPage() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Confirm Subdomain Change
               </h3>
-              
+
               <div className="space-y-4 mb-6">
                 <div className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Current</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Current
+                  </span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {formData.subdomain}.shopit.ge
                   </span>
                 </div>
                 <div className="flex justify-center">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                    />
                   </svg>
                 </div>
                 <div className="flex items-center justify-between py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                  <span className="text-sm text-indigo-600 dark:text-indigo-400">New</span>
+                  <span className="text-sm text-indigo-600 dark:text-indigo-400">
+                    New
+                  </span>
                   <span className="font-medium text-indigo-700 dark:text-indigo-300">
                     {newSubdomain}.shopit.ge
                   </span>
@@ -1549,7 +1658,9 @@ export default function StoreSettingsPage() {
 
                 {!isFreeSubdomainChange && (
                   <div className="flex items-center justify-between py-3 px-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <span className="text-sm text-amber-700 dark:text-amber-400">Cost</span>
+                    <span className="text-sm text-amber-700 dark:text-amber-400">
+                      Cost
+                    </span>
                     <span className="font-semibold text-amber-700 dark:text-amber-300">
                       ₾{subdomainChangeCost}
                     </span>
@@ -1566,7 +1677,9 @@ export default function StoreSettingsPage() {
               </div>
 
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-                <p className="mb-1">⚠️ <strong>Important:</strong></p>
+                <p className="mb-1">
+                  ⚠️ <strong>Important:</strong>
+                </p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>Your old URL will stop working immediately</li>
                   <li>Existing links and bookmarks will break</li>
@@ -1589,7 +1702,11 @@ export default function StoreSettingsPage() {
                   className="flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
                   style={{ backgroundColor: accentColor }}
                 >
-                  {isChangingSubdomain ? 'Changing...' : isFreeSubdomainChange ? 'Confirm Change' : `Pay ₾${subdomainChangeCost} & Change`}
+                  {isChangingSubdomain
+                    ? 'Changing...'
+                    : isFreeSubdomainChange
+                      ? 'Confirm Change'
+                      : `Pay ₾${subdomainChangeCost} & Change`}
                 </button>
               </div>
             </div>
