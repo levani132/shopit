@@ -24,7 +24,9 @@ function PaymentAwaitingModal({
   onPaymentComplete: (orderId: string, status: string) => void;
   t: (key: string) => string;
 }) {
-  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>('waiting');
+  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>(
+    'waiting',
+  );
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Poll for payment status
@@ -33,9 +35,12 @@ function PaymentAwaitingModal({
 
     const pollStatus = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/payments/order-status/${orderId}`, {
-          credentials: 'include',
-        });
+        const response = await fetch(
+          `${API_URL}/api/v1/payments/order-status/${orderId}`,
+          {
+            credentials: 'include',
+          },
+        );
         if (response.ok) {
           const data = await response.json();
           if (data.isPaid) {
@@ -82,8 +87,18 @@ function PaymentAwaitingModal({
               <div className="absolute inset-0 border-4 border-[var(--store-accent-200)] dark:border-[var(--store-accent-800)] rounded-full"></div>
               <div className="absolute inset-0 border-4 border-transparent border-t-[var(--store-accent-500)] rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-8 h-8 text-[var(--store-accent-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                <svg
+                  className="w-8 h-8 text-[var(--store-accent-500)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
                 </svg>
               </div>
             </div>
@@ -102,8 +117,18 @@ function PaymentAwaitingModal({
         {status === 'success' && (
           <>
             <div className="w-20 h-20 mx-auto mb-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-10 h-10 text-green-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -118,8 +143,18 @@ function PaymentAwaitingModal({
         {status === 'failed' && (
           <>
             <div className="w-20 h-20 mx-auto mb-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-10 h-10 text-red-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -497,11 +532,13 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
-  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  const [processingPayment, setProcessingPayment] = useState<string | null>(
+    null,
+  );
 
   const fetchOrders = useCallback(async () => {
     if (authLoading) return;
@@ -544,15 +581,18 @@ export default function OrdersPage() {
 
     try {
       // Get payment URL from API
-      const response = await fetch(`${API_URL}/api/v1/payments/retry/${orderId}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          successUrl: `${window.location.origin}/${locale}/orders?payment=success&orderId=${orderId}`,
-          failUrl: `${window.location.origin}/${locale}/orders?payment=failed&orderId=${orderId}`,
-        }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/payments/retry/${orderId}`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            successUrl: `${window.location.origin}/${locale}/orders?payment=success&orderId=${orderId}`,
+            failUrl: `${window.location.origin}/${locale}/orders?payment=failed&orderId=${orderId}`,
+          }),
+        },
+      );
 
       if (!response.ok) {
         const data = await response.json();
@@ -563,8 +603,12 @@ export default function OrdersPage() {
 
       if (data.redirectUrl) {
         // Open payment in new tab/popup
-        const paymentWindow = window.open(data.redirectUrl, '_blank', 'width=600,height=700');
-        
+        const paymentWindow = window.open(
+          data.redirectUrl,
+          '_blank',
+          'width=600,height=700',
+        );
+
         // If popup was blocked, redirect in same window
         if (!paymentWindow) {
           window.location.href = data.redirectUrl;
@@ -577,20 +621,25 @@ export default function OrdersPage() {
       }
     } catch (err: unknown) {
       console.error('Payment error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to process payment');
+      setError(
+        err instanceof Error ? err.message : 'Failed to process payment',
+      );
     } finally {
       setProcessingPayment(null);
     }
   };
 
   // Handle payment completion from modal
-  const handlePaymentComplete = useCallback((orderId: string, status: string) => {
-    setPaymentModalOpen(false);
-    setPayingOrderId(null);
-    
-    // Refresh orders to get updated status
-    fetchOrders();
-  }, [fetchOrders]);
+  const handlePaymentComplete = useCallback(
+    (orderId: string, status: string) => {
+      setPaymentModalOpen(false);
+      setPayingOrderId(null);
+
+      // Refresh orders to get updated status
+      fetchOrders();
+    },
+    [fetchOrders],
+  );
 
   // Handle modal close
   const handleModalClose = () => {
@@ -710,7 +759,7 @@ export default function OrdersPage() {
                     {formatDateLocalized(order.createdAt, locale)}
                   </p>
                 </div>
-                
+
                 {/* Pay Now button for pending orders */}
                 {order.status === 'pending' && !order.isPaid && (
                   <button
@@ -720,23 +769,48 @@ export default function OrdersPage() {
                   >
                     {processingPayment === order._id ? (
                       <>
-                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <svg
+                          className="w-4 h-4 animate-spin"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
                         </svg>
                         {t('processing')}
                       </>
                     ) : (
                       <>
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                          />
                         </svg>
                         {t('payNow')}
                       </>
                     )}
                   </button>
                 )}
-                
+
                 {/* Compact Timeline with icons */}
                 <CompactTimeline currentStatus={order.status} t={t} />
               </div>

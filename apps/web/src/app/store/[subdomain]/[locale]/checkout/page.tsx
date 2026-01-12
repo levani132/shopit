@@ -29,7 +29,9 @@ function PaymentAwaitingModal({
   onPaymentComplete: (success: boolean) => void;
   t: (key: string) => string;
 }) {
-  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>('waiting');
+  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>(
+    'waiting',
+  );
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -37,9 +39,12 @@ function PaymentAwaitingModal({
 
     const pollStatus = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/payments/order-status/${orderId}`, {
-          credentials: 'include',
-        });
+        const response = await fetch(
+          `${API_URL}/api/v1/payments/order-status/${orderId}`,
+          {
+            credentials: 'include',
+          },
+        );
         if (response.ok) {
           const data = await response.json();
           if (data.isPaid) {
@@ -83,8 +88,18 @@ function PaymentAwaitingModal({
               <div className="absolute inset-0 border-4 border-[var(--store-accent-200)] dark:border-[var(--store-accent-800)] rounded-full"></div>
               <div className="absolute inset-0 border-4 border-transparent border-t-[var(--store-accent-500)] rounded-full animate-spin"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-8 h-8 text-[var(--store-accent-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                <svg
+                  className="w-8 h-8 text-[var(--store-accent-500)]"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
                 </svg>
               </div>
             </div>
@@ -103,8 +118,18 @@ function PaymentAwaitingModal({
         {status === 'success' && (
           <>
             <div className="w-20 h-20 mx-auto mb-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-10 h-10 text-green-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -119,8 +144,18 @@ function PaymentAwaitingModal({
         {status === 'failed' && (
           <>
             <div className="w-20 h-20 mx-auto mb-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-10 h-10 text-red-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
@@ -162,14 +197,14 @@ export default function CheckoutPage() {
   } = useCheckout();
 
   const router = useRouter();
-  
+
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('auth');
   const [isGuestCheckout, setIsGuestCheckout] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
@@ -395,12 +430,15 @@ export default function CheckoutPage() {
         failUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/fail`,
       };
 
-      const paymentResponse = await fetch(`${API_URL}/api/v1/payments/initiate`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paymentPayload),
-      });
+      const paymentResponse = await fetch(
+        `${API_URL}/api/v1/payments/initiate`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(paymentPayload),
+        },
+      );
 
       if (!paymentResponse.ok) {
         const errorData = await paymentResponse.json();
@@ -414,19 +452,23 @@ export default function CheckoutPage() {
         // Clear cart and checkout state
         clearCart();
         clearCheckout();
-        
+
         // Store order ID for polling
         setCurrentOrderId(order._id);
-        
+
         // Open payment in new tab
-        const paymentWindow = window.open(paymentData.redirectUrl, '_blank', 'width=600,height=700');
-        
+        const paymentWindow = window.open(
+          paymentData.redirectUrl,
+          '_blank',
+          'width=600,height=700',
+        );
+
         // If popup was blocked, redirect in same window
         if (!paymentWindow) {
           window.location.href = paymentData.redirectUrl;
           return;
         }
-        
+
         // Show payment awaiting modal
         setPaymentModalOpen(true);
       } else {
@@ -434,22 +476,44 @@ export default function CheckoutPage() {
       }
     } catch (err: unknown) {
       console.error('Checkout error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred during checkout');
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'An error occurred during checkout',
+      );
     } finally {
       setIsProcessing(false);
     }
   };
-  
+
   // Handle payment completion
-  const handlePaymentComplete = useCallback((success: boolean) => {
-    setPaymentModalOpen(false);
-    setCurrentOrderId(null);
-    
-    if (success) {
-      // Redirect to success page
-      router.push(`/${locale}/orders`);
-    }
-  }, [router, locale]);
+  const handlePaymentComplete = useCallback(
+    (success: boolean) => {
+      setPaymentModalOpen(false);
+      setCurrentOrderId(null);
+
+      if (success) {
+        // Redirect to success page
+        router.push(`/${locale}/orders`);
+      }
+    },
+    [router, locale],
+  );
+
+  // Show payment modal when cart is empty but payment is in progress
+  if (storeItems.length === 0 && paymentModalOpen) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        {/* Payment Awaiting Modal */}
+        <PaymentAwaitingModal
+          isOpen={paymentModalOpen}
+          orderId={currentOrderId}
+          onPaymentComplete={handlePaymentComplete}
+          t={t}
+        />
+      </div>
+    );
+  }
 
   // Empty cart check
   if (storeItems.length === 0) {
@@ -563,7 +627,10 @@ export default function CheckoutPage() {
                     required
                     value={guestForm.phoneNumber}
                     onChange={(e) =>
-                      setGuestForm({ ...guestForm, phoneNumber: e.target.value })
+                      setGuestForm({
+                        ...guestForm,
+                        phoneNumber: e.target.value,
+                      })
                     }
                     className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                   />
@@ -648,7 +715,10 @@ export default function CheckoutPage() {
                         required
                         value={addressForm.address}
                         onChange={(e) =>
-                          setAddressForm({ ...addressForm, address: e.target.value })
+                          setAddressForm({
+                            ...addressForm,
+                            address: e.target.value,
+                          })
                         }
                         className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       />
@@ -663,7 +733,10 @@ export default function CheckoutPage() {
                         required
                         value={addressForm.city}
                         onChange={(e) =>
-                          setAddressForm({ ...addressForm, city: e.target.value })
+                          setAddressForm({
+                            ...addressForm,
+                            city: e.target.value,
+                          })
                         }
                         className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       />
@@ -677,7 +750,10 @@ export default function CheckoutPage() {
                         type="text"
                         value={addressForm.postalCode}
                         onChange={(e) =>
-                          setAddressForm({ ...addressForm, postalCode: e.target.value })
+                          setAddressForm({
+                            ...addressForm,
+                            postalCode: e.target.value,
+                          })
                         }
                         className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       />
@@ -692,7 +768,10 @@ export default function CheckoutPage() {
                         required
                         value={addressForm.phoneNumber}
                         onChange={(e) =>
-                          setAddressForm({ ...addressForm, phoneNumber: e.target.value })
+                          setAddressForm({
+                            ...addressForm,
+                            phoneNumber: e.target.value,
+                          })
                         }
                         className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       />
@@ -705,7 +784,10 @@ export default function CheckoutPage() {
                       <select
                         value={addressForm.country}
                         onChange={(e) =>
-                          setAddressForm({ ...addressForm, country: e.target.value })
+                          setAddressForm({
+                            ...addressForm,
+                            country: e.target.value,
+                          })
                         }
                         className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       >
@@ -812,7 +894,8 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 className="w-full py-4 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
               >
-                {isProcessing ? t('processing') : t('payNow')} - ₾{totalPrice.toFixed(2)}
+                {isProcessing ? t('processing') : t('payNow')} - ₾
+                {totalPrice.toFixed(2)}
               </button>
             </div>
           )}
@@ -844,19 +927,25 @@ export default function CheckoutPage() {
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                       {getLocalizedText(item.nameLocalized, item.name, locale)}
                     </p>
-                    {item.variantAttributes && item.variantAttributes.length > 0 && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {item.variantAttributes
-                          .map((a) => `${a.attributeName}: ${a.value}`)
-                          .join(', ')}
-                      </p>
-                    )}
+                    {item.variantAttributes &&
+                      item.variantAttributes.length > 0 && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.variantAttributes
+                            .map((a) => `${a.attributeName}: ${a.value}`)
+                            .join(', ')}
+                        </p>
+                      )}
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         x{item.quantity}
                       </span>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        ₾{((item.isOnSale && item.salePrice ? item.salePrice : item.price) * item.quantity).toFixed(2)}
+                        ₾
+                        {(
+                          (item.isOnSale && item.salePrice
+                            ? item.salePrice
+                            : item.price) * item.quantity
+                        ).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -871,7 +960,11 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>{t('shipping')}</span>
-                <span>{shippingPrice > 0 ? `₾${shippingPrice.toFixed(2)}` : t('free')}</span>
+                <span>
+                  {shippingPrice > 0
+                    ? `₾${shippingPrice.toFixed(2)}`
+                    : t('free')}
+                </span>
               </div>
               <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
                 <span>{t('total')}</span>
@@ -881,7 +974,7 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-      
+
       {/* Payment Awaiting Modal */}
       <PaymentAwaitingModal
         isOpen={paymentModalOpen}
@@ -892,4 +985,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
