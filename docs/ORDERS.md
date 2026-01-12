@@ -12,11 +12,29 @@ Orders are filtered by the current store subdomain. Users only see orders from t
 
 **API Endpoint**: `GET /api/v1/orders/my-orders?storeSubdomain={subdomain}`
 
+### 2. Cancelled Orders Filter
+
+Cancelled orders are hidden by default to keep the order list clean. A checkbox appears in the page header (only when there are cancelled orders) allowing users to toggle visibility:
+
+- **Default**: Cancelled orders are hidden
+- **Toggle**: "Show cancelled orders" checkbox
+- **Empty state**: If a user only has cancelled orders, a special message is shown prompting them to enable the filter
+
+```tsx
+const [showCancelled, setShowCancelled] = useState(false);
+
+const filteredOrders = useMemo(() => {
+  if (showCancelled) return orders;
+  return orders.filter((order) => order.status !== 'cancelled');
+}, [orders, showCancelled]);
+```
+
 ### 2. Payment Retry for Pending Orders
 
 Orders in "pending" status display a "Pay Now" button that allows users to retry payment if their initial payment failed or was abandoned.
 
 **Flow**:
+
 1. User clicks "Pay Now" on a pending order
 2. Frontend calls `POST /api/v1/payments/retry/{orderId}` with success/fail URLs
 3. Payment page opens in a new tab/popup
@@ -25,6 +43,7 @@ Orders in "pending" status display a "Pay Now" button that allows users to retry
 6. When payment completes, modal shows success/failure and refreshes orders
 
 **API Endpoints**:
+
 - `POST /api/v1/payments/retry/:orderId` - Creates new BOG payment for existing order
 - `GET /api/v1/payments/order-status/:orderId` - Returns current payment status for polling
 
@@ -35,8 +54,11 @@ A full-screen modal that appears while payment is being processed in a separate 
 - **Waiting state**: Shows spinning payment icon and message
 - **Success state**: Shows green checkmark, auto-redirects after 2 seconds
 - **Failed state**: Shows red X, allows user to close and try again
+- **Closed state**: Shows warning when payment window was closed without completing
 
 The modal uses polling (every 2 seconds) to check payment status without requiring page refresh.
+
+**Window Close Handling**: When the payment window is closed, the modal continues polling for up to 10 more seconds (5 retries) to catch delayed payment confirmations. This handles cases where BOG's callback hasn't been processed yet when the user closes the window.
 
 ### 2. Order Items as Links
 
@@ -77,8 +99,18 @@ Georgian month names are defined locally since `toLocaleDateString` may not full
 
 ```typescript
 const georgianMonths = [
-  'იანვარი', 'თებერვალი', 'მარტი', 'აპრილი', 'მაისი', 'ივნისი',
-  'ივლისი', 'აგვისტო', 'სექტემბერი', 'ოქტომბერი', 'ნოემბერი', 'დეკემბერი'
+  'იანვარი',
+  'თებერვალი',
+  'მარტი',
+  'აპრილი',
+  'მაისი',
+  'ივნისი',
+  'ივლისი',
+  'აგვისტო',
+  'სექტემბერი',
+  'ოქტომბერი',
+  'ნოემბერი',
+  'დეკემბერი',
 ];
 ```
 
@@ -99,9 +131,9 @@ The footer is collapsed by default to keep the UI clean. Uses a responsive 2-col
 interface Order {
   _id: string;
   orderItems: OrderItem[];
-  itemsPrice: number;      // Sum of item prices
-  shippingPrice: number;   // Delivery cost
-  totalPrice: number;      // itemsPrice + shippingPrice
+  itemsPrice: number; // Sum of item prices
+  shippingPrice: number; // Delivery cost
+  totalPrice: number; // itemsPrice + shippingPrice
   status: string;
   isPaid: boolean;
   paidAt?: string;
@@ -133,36 +165,38 @@ interface OrderItem {
 
 ## Order Statuses
 
-| Status | Description | Color |
-|--------|-------------|-------|
-| `pending` | Order created, awaiting payment | Yellow |
-| `paid` | Payment successful | Blue |
-| `processing` | Seller is preparing the order | Purple |
-| `shipped` | Order shipped by courier | Indigo |
-| `delivered` | Order delivered to customer | Green |
-| `cancelled` | Order cancelled | Red |
-| `refunded` | Order refunded | Gray |
+| Status       | Description                     | Color  |
+| ------------ | ------------------------------- | ------ |
+| `pending`    | Order created, awaiting payment | Yellow |
+| `paid`       | Payment successful              | Blue   |
+| `processing` | Seller is preparing the order   | Purple |
+| `shipped`    | Order shipped by courier        | Indigo |
+| `delivered`  | Order delivered to customer     | Green  |
+| `cancelled`  | Order cancelled                 | Red    |
+| `refunded`   | Order refunded                  | Gray   |
 
 ## Translations
 
 Translation keys for orders feature:
 
-| Key | English | Georgian |
-|-----|---------|----------|
-| `orders.viewDetails` | View Details | დეტალების ნახვა |
-| `orders.shippingDetails` | Shipping Details | მიტანის დეტალები |
-| `orders.priceBreakdown` | Price Breakdown | ფასის დეტალები |
-| `orders.subtotal` | Subtotal | პროდუქტების ფასი |
-| `orders.shipping` | Shipping | მიტანა |
-| `orders.free` | Free | უფასო |
-| `orders.payNow` | Pay Now | გადახდა |
-| `orders.processing` | Processing... | მუშავდება... |
-| `orders.awaitingPayment` | Waiting for Payment | გადახდის მოლოდინი |
-| `orders.awaitingPaymentDescription` | Complete your payment in the new window... | დაასრულეთ გადახდა ახალ ფანჯარაში... |
-| `orders.paymentWindowOpen` | Payment window is open in another tab | გადახდის ფანჯარა ღიაა სხვა ტაბში |
-| `orders.paymentSuccessful` | Payment Successful! | გადახდა წარმატებულია! |
-| `orders.paymentFailed` | Payment Failed | გადახდა ვერ მოხერხდა |
-| `orders.close` | Close | დახურვა |
+| Key                                 | English                                    | Georgian                                   |
+| ----------------------------------- | ------------------------------------------ | ------------------------------------------ |
+| `orders.viewDetails`                | View Details                               | დეტალების ნახვა                            |
+| `orders.shippingDetails`            | Shipping Details                           | მიტანის დეტალები                           |
+| `orders.priceBreakdown`             | Price Breakdown                            | ფასის დეტალები                             |
+| `orders.subtotal`                   | Subtotal                                   | პროდუქტების ფასი                           |
+| `orders.shipping`                   | Shipping                                   | მიტანა                                     |
+| `orders.free`                       | Free                                       | უფასო                                      |
+| `orders.payNow`                     | Pay Now                                    | გადახდა                                    |
+| `orders.processing`                 | Processing...                              | მუშავდება...                               |
+| `orders.awaitingPayment`            | Waiting for Payment                        | გადახდის მოლოდინი                          |
+| `orders.awaitingPaymentDescription` | Complete your payment in the new window... | დაასრულეთ გადახდა ახალ ფანჯარაში...        |
+| `orders.paymentWindowOpen`          | Payment window is open in another tab      | გადახდის ფანჯარა ღიაა სხვა ტაბში           |
+| `orders.paymentSuccessful`          | Payment Successful!                        | გადახდა წარმატებულია!                      |
+| `orders.paymentFailed`              | Payment Failed                             | გადახდა ვერ მოხერხდა                       |
+| `orders.close`                      | Close                                      | დახურვა                                    |
+| `orders.showCancelledOrders`        | Show cancelled orders                      | გაუქმებული შეკვეთების ჩვენება              |
+| `orders.onlyCancelledOrders`        | You only have cancelled orders...          | თქვენ მხოლოდ გაუქმებული შეკვეთები გაქვთ... |
 
 ## File Locations
 
@@ -173,10 +207,10 @@ Translation keys for orders feature:
 ## Usage
 
 The page automatically:
+
 1. Detects the store subdomain from the URL
 2. Checks if the user is authenticated
 3. Fetches orders filtered by the current store
 4. Displays orders with the timeline and expandable details
 
 No props or configuration needed - it works based on route parameters.
-

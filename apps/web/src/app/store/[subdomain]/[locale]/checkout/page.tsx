@@ -42,14 +42,35 @@ function PaymentAwaitingModal({
   useEffect(() => {
     if (!isOpen || !orderId) return;
 
-    // Poll for payment status
-    const pollStatus = async () => {
+    // Track if window was detected as closed
+    let windowClosedDetected = false;
+    let retryCount = 0;
+    const MAX_RETRIES_AFTER_CLOSE = 5; // Keep polling for ~10 seconds after window closes
+
+    // Check if payment window was closed
+    const checkWindowClosed = () => {
+      if (
+        paymentWindow &&
+        paymentWindow.closed &&
+        status === 'waiting' &&
+        !windowClosedDetected
+      ) {
+        windowClosedDetected = true;
+        // Stop window check interval but keep polling for payment status
+        if (windowCheckRef.current) {
+          clearInterval(windowCheckRef.current);
+          windowCheckRef.current = null;
+        }
+        console.log('Payment window closed, continuing to poll for status...');
+      }
+    };
+
+    // Enhanced poll that handles window close
+    const pollStatusWithRetry = async () => {
       try {
         const response = await fetch(
           `${API_URL}/api/v1/payments/order-status/${orderId}`,
-          {
-            credentials: 'include',
-          },
+          { credentials: 'include' },
         );
         if (response.ok) {
           const data = await response.json();
@@ -58,19 +79,26 @@ function PaymentAwaitingModal({
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
-            if (windowCheckRef.current) {
-              clearInterval(windowCheckRef.current);
-            }
             setTimeout(() => {
               onPaymentComplete(true);
             }, 2000);
+            return;
           } else if (data.status === 'cancelled') {
             setStatus('failed');
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
-            if (windowCheckRef.current) {
-              clearInterval(windowCheckRef.current);
+            return;
+          }
+        }
+
+        // If window was closed and we've retried enough times, show closed status
+        if (windowClosedDetected) {
+          retryCount++;
+          if (retryCount >= MAX_RETRIES_AFTER_CLOSE) {
+            setStatus('closed');
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
             }
           }
         }
@@ -79,21 +107,8 @@ function PaymentAwaitingModal({
       }
     };
 
-    // Check if payment window was closed
-    const checkWindowClosed = () => {
-      if (paymentWindow && paymentWindow.closed && status === 'waiting') {
-        setStatus('closed');
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-        }
-        if (windowCheckRef.current) {
-          clearInterval(windowCheckRef.current);
-        }
-      }
-    };
-
-    pollStatus();
-    pollIntervalRef.current = setInterval(pollStatus, 2000);
+    pollStatusWithRetry();
+    pollIntervalRef.current = setInterval(pollStatusWithRetry, 2000);
 
     // Check window status every 500ms
     if (paymentWindow) {

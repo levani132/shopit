@@ -462,6 +462,8 @@
     "paymentWindowClosedDescription": "The payment window was closed. You can try again from your orders page.",
     "cancelPayment": "Cancel Payment",
     "close": "Close",
+    "showCancelledOrders": "Show cancelled orders",
+    "onlyCancelledOrders": "You only have cancelled orders. Enable the checkbox above to view them.",
     "status": {
       "pending": "Pending",
       "paid": "Paid",

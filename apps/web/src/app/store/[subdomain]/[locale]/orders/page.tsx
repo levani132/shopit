@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -36,13 +36,35 @@ function PaymentAwaitingModal({
   useEffect(() => {
     if (!isOpen || !orderId) return;
 
-    const pollStatus = async () => {
+    // Track if window was detected as closed
+    let windowClosedDetected = false;
+    let retryCount = 0;
+    const MAX_RETRIES_AFTER_CLOSE = 5; // Keep polling for ~10 seconds after window closes
+
+    // Check if payment window was closed
+    const checkWindowClosed = () => {
+      if (
+        paymentWindow &&
+        paymentWindow.closed &&
+        status === 'waiting' &&
+        !windowClosedDetected
+      ) {
+        windowClosedDetected = true;
+        // Stop window check interval but keep polling for payment status
+        if (windowCheckRef.current) {
+          clearInterval(windowCheckRef.current);
+          windowCheckRef.current = null;
+        }
+        console.log('Payment window closed, continuing to poll for status...');
+      }
+    };
+
+    // Enhanced poll that handles window close
+    const pollStatusWithRetry = async () => {
       try {
         const response = await fetch(
           `${API_URL}/api/v1/payments/order-status/${orderId}`,
-          {
-            credentials: 'include',
-          },
+          { credentials: 'include' },
         );
         if (response.ok) {
           const data = await response.json();
@@ -51,20 +73,26 @@ function PaymentAwaitingModal({
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
-            if (windowCheckRef.current) {
-              clearInterval(windowCheckRef.current);
-            }
-            // Notify parent after a short delay
             setTimeout(() => {
               onPaymentComplete(orderId, 'paid');
             }, 2000);
+            return;
           } else if (data.status === 'cancelled') {
             setStatus('failed');
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
-            if (windowCheckRef.current) {
-              clearInterval(windowCheckRef.current);
+            return;
+          }
+        }
+
+        // If window was closed and we've retried enough times, show closed status
+        if (windowClosedDetected) {
+          retryCount++;
+          if (retryCount >= MAX_RETRIES_AFTER_CLOSE) {
+            setStatus('closed');
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
             }
           }
         }
@@ -73,22 +101,9 @@ function PaymentAwaitingModal({
       }
     };
 
-    // Check if payment window was closed
-    const checkWindowClosed = () => {
-      if (paymentWindow && paymentWindow.closed && status === 'waiting') {
-        setStatus('closed');
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-        }
-        if (windowCheckRef.current) {
-          clearInterval(windowCheckRef.current);
-        }
-      }
-    };
-
     // Start polling every 2 seconds
-    pollStatus(); // Initial check
-    pollIntervalRef.current = setInterval(pollStatus, 2000);
+    pollStatusWithRetry(); // Initial check
+    pollIntervalRef.current = setInterval(pollStatusWithRetry, 2000);
 
     // Check window status every 500ms
     if (paymentWindow) {
@@ -607,6 +622,18 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelled, setShowCancelled] = useState(false);
+
+  // Filter orders - hide cancelled by default
+  const filteredOrders = useMemo(() => {
+    if (showCancelled) return orders;
+    return orders.filter((order) => order.status !== 'cancelled');
+  }, [orders, showCancelled]);
+
+  // Check if there are any cancelled orders
+  const hasCancelledOrders = useMemo(() => {
+    return orders.some((order) => order.status === 'cancelled');
+  }, [orders]);
 
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -813,14 +840,69 @@ export default function OrdersPage() {
     );
   }
 
+  // Show empty state when all visible orders are filtered out (only cancelled)
+  if (filteredOrders.length === 0 && hasCancelledOrders) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {t('title')}
+          </h1>
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showCancelled}
+              onChange={(e) => setShowCancelled(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--store-accent-500)] focus:ring-[var(--store-accent-500)]"
+            />
+            {t('showCancelledOrders')}
+          </label>
+        </div>
+        <div className="text-center py-12">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center">
+            <svg
+              className="w-10 h-10 text-gray-400 dark:text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
+            </svg>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {t('onlyCancelledOrders')}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">
-        {t('title')}
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {t('title')}
+        </h1>
+        {hasCancelledOrders && (
+          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showCancelled}
+              onChange={(e) => setShowCancelled(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--store-accent-500)] focus:ring-[var(--store-accent-500)]"
+            />
+            {t('showCancelledOrders')}
+          </label>
+        )}
+      </div>
 
       <div className="space-y-6">
-        {orders.map((order) => (
+        {filteredOrders.map((order) => (
           <div
             key={order._id}
             className="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700 overflow-hidden"
