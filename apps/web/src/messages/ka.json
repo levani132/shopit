@@ -182,6 +182,11 @@
   "dashboard": {
     "overview": "მიმოხილვა",
     "storeSettings": "მაღაზიის პარამეტრები",
+    "tabGeneral": "ზოგადი",
+    "tabAppearance": "გარეგნობა",
+    "tabContact": "კონტაქტი",
+    "tabShipping": "მიწოდება",
+    "tabUrl": "მისამართი",
     "products": "პროდუქტები",
     "categories": "კატეგორიები",
     "attributes": "ატრიბუტები",

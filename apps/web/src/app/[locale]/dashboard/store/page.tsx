@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -12,6 +12,17 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
+// Tab definitions
+const TABS = [
+  { id: 'general', labelKey: 'tabGeneral', icon: 'info' },
+  { id: 'appearance', labelKey: 'tabAppearance', icon: 'palette' },
+  { id: 'contact', labelKey: 'tabContact', icon: 'phone' },
+  { id: 'shipping', labelKey: 'tabShipping', icon: 'truck' },
+  { id: 'url', labelKey: 'tabUrl', icon: 'link' },
+] as const;
+
+type TabId = (typeof TABS)[number]['id'];
 
 const BRAND_COLORS = [
   { name: 'indigo', hex: '#6366f1' },
@@ -94,7 +105,7 @@ const PRODUCT_ORDER_OPTIONS = [
   },
 ];
 
-export default function StoreSettingsPage() {
+function StoreSettingsPageContent() {
   const t = useTranslations('dashboard');
   const { refreshAuth } = useAuth();
   const searchParams = useSearchParams();
@@ -104,8 +115,29 @@ export default function StoreSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Tab state - read from URL or default to 'general'
+  const tabParam = searchParams.get('tab') as TabId | null;
+  const [activeTab, setActiveTab] = useState<TabId>(
+    tabParam && TABS.some((t) => t.id === tabParam) ? tabParam : 'general',
+  );
+
   // Form state
   const [formData, setFormData] = useState<StoreData | null>(null);
+
+  // Update tab when URL changes
+  useEffect(() => {
+    if (tabParam && TABS.some((t) => t.id === tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  // Handle tab change
+  const handleTabChange = (tabId: TabId) => {
+    setActiveTab(tabId);
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', tabId);
+    router.replace(url.pathname + url.search, { scroll: false });
+  };
 
   // File states
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -595,15 +627,74 @@ export default function StoreSettingsPage() {
   const accentColor =
     BRAND_COLORS.find((c) => c.name === formData.brandColor)?.hex || '#6366f1';
 
+  // Tab icon components
+  const TabIcon = ({ icon }: { icon: string }) => {
+    switch (icon) {
+      case 'info':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        );
+      case 'palette':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          </svg>
+        );
+      case 'phone':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+        );
+      case 'truck':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+          </svg>
+        );
+      case 'link':
+        return (
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
           {t('storeSettings')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
           Manage your store branding, description, and settings.
         </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="mb-6 border-b border-gray-200 dark:border-zinc-700">
+        <nav className="-mb-px flex gap-1 overflow-x-auto scrollbar-hide">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'border-[var(--accent-500)] text-[var(--accent-600)] dark:text-[var(--accent-400)]'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-zinc-600'
+              }`}
+            >
+              <TabIcon icon={tab.icon} />
+              {t(tab.labelKey)}
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Messages */}
@@ -619,11 +710,14 @@ export default function StoreSettingsPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Logo & Cover Section */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            Branding
-          </h2>
+        {/* ============ APPEARANCE TAB ============ */}
+        {activeTab === 'appearance' && (
+          <>
+            {/* Logo & Cover Section */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                Branding
+              </h2>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Logo */}
@@ -780,24 +874,29 @@ export default function StoreSettingsPage() {
                 />
               ))}
             </div>
+            </div>
           </div>
-        </div>
+        </>
+        )}
 
-        {/* Bilingual Store Information */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            Store Information
-          </h2>
+        {/* ============ GENERAL TAB ============ */}
+        {activeTab === 'general' && (
+          <>
+            {/* Bilingual Store Information */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                Store Information
+              </h2>
 
-          {/* Store Name */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Store Name
-            </label>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              {/* Store Name */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Store Name
+                </label>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                     🇬🇪 Georgian
                   </span>
                 </div>
@@ -1005,29 +1104,34 @@ export default function StoreSettingsPage() {
               <span className="text-sm text-gray-700 dark:text-gray-200">
                 Show author name on store homepage
               </span>
-            </label>
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            Contact Information
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            This information will be visible to your customers on your store
-            page.
-          </p>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Phone Number
               </label>
-              <input
-                type="tel"
-                value={formData.phone || ''}
-                onChange={(e) => updateField('phone', e.target.value)}
+            </div>
+          </div>
+        </>
+        )}
+
+        {/* ============ CONTACT TAB ============ */}
+        {activeTab === 'contact' && (
+          <>
+            {/* Contact Information */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Contact Information
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                This information will be visible to your customers on your store
+                page.
+              </p>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.phone || ''}
+                    onChange={(e) => updateField('phone', e.target.value)}
                 placeholder="+995 555 123 456"
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
@@ -1079,20 +1183,25 @@ export default function StoreSettingsPage() {
                   <span className="text-xs text-gray-500 dark:text-gray-500">
                     {t('hideAddressNote')}
                   </span>
-                </label>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </>
+        )}
 
-        {/* Shipping & Delivery Settings */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            {t('shippingSettings')}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            {t('shippingSettingsDescription')}
-          </p>
+        {/* ============ SHIPPING TAB ============ */}
+        {activeTab === 'shipping' && (
+          <>
+            {/* Shipping & Delivery Settings */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                {t('shippingSettings')}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {t('shippingSettingsDescription')}
+              </p>
 
           {/* Courier Type Selection */}
           <div className="mb-6">
@@ -1400,78 +1509,83 @@ export default function StoreSettingsPage() {
                 <p className="text-sm text-blue-800 dark:text-blue-300">
                   {t('selfDeliveryNote')}
                 </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+        )}
+
+        {/* Social Links - Part of Contact Tab */}
+        {activeTab === 'contact' && (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+              Social Media Links
+            </h2>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Facebook
+                </label>
+                <input
+                  type="url"
+                  value={formData.socialLinks?.facebook || ''}
+                  onChange={(e) =>
+                    updateField('socialLinks.facebook', e.target.value)
+                  }
+                  placeholder="https://facebook.com/yourpage"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Instagram
+                </label>
+                <input
+                  type="url"
+                  value={formData.socialLinks?.instagram || ''}
+                  onChange={(e) =>
+                    updateField('socialLinks.instagram', e.target.value)
+                  }
+                  placeholder="https://instagram.com/yourprofile"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  TikTok
+                </label>
+                <input
+                  type="url"
+                  value={formData.socialLinks?.tiktok || ''}
+                  onChange={(e) =>
+                    updateField('socialLinks.tiktok', e.target.value)
+                  }
+                  placeholder="https://tiktok.com/@yourprofile"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Twitter / X
+                </label>
+                <input
+                  type="url"
+                  value={formData.socialLinks?.twitter || ''}
+                  onChange={(e) =>
+                    updateField('socialLinks.twitter', e.target.value)
+                  }
+                  placeholder="https://twitter.com/yourprofile"
+                  className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                />
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Social Links */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            Social Media Links
-          </h2>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Facebook
-              </label>
-              <input
-                type="url"
-                value={formData.socialLinks?.facebook || ''}
-                onChange={(e) =>
-                  updateField('socialLinks.facebook', e.target.value)
-                }
-                placeholder="https://facebook.com/yourpage"
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Instagram
-              </label>
-              <input
-                type="url"
-                value={formData.socialLinks?.instagram || ''}
-                onChange={(e) =>
-                  updateField('socialLinks.instagram', e.target.value)
-                }
-                placeholder="https://instagram.com/yourprofile"
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                TikTok
-              </label>
-              <input
-                type="url"
-                value={formData.socialLinks?.tiktok || ''}
-                onChange={(e) =>
-                  updateField('socialLinks.tiktok', e.target.value)
-                }
-                placeholder="https://tiktok.com/@yourprofile"
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Twitter / X
-              </label>
-              <input
-                type="url"
-                value={formData.socialLinks?.twitter || ''}
-                onChange={(e) =>
-                  updateField('socialLinks.twitter', e.target.value)
-                }
-                placeholder="https://twitter.com/yourprofile"
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
           </div>
-        </div>
+        )}
 
-        {/* Homepage Product Order */}
+        {/* Homepage Product Order - Part of Appearance Tab */}
+        {activeTab === 'appearance' && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Homepage Product Display
@@ -1521,33 +1635,37 @@ export default function StoreSettingsPage() {
             })}
           </div>
         </div>
+        )}
 
-        {/* Store URL & Subdomain Change */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-            Store URL
-          </h2>
+        {/* ============ URL TAB ============ */}
+        {activeTab === 'url' && (
+          <>
+            {/* Store URL & Subdomain Change */}
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                Store URL
+              </h2>
 
-          {/* Current URL */}
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
-              <span className="text-gray-500 dark:text-gray-400">https://</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {formData.subdomain}
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                .shopit.ge
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  `https://${formData.subdomain}.shopit.ge`,
-                );
-                setSuccess('Store URL copied to clipboard!');
-                setTimeout(() => setSuccess(null), 3000);
-              }}
+              {/* Current URL */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
+                  <span className="text-gray-500 dark:text-gray-400">https://</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {formData.subdomain}
+                  </span>
+                  <span className="text-gray-500 dark:text-gray-400">
+                    .shopit.ge
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `https://${formData.subdomain}.shopit.ge`,
+                    );
+                    setSuccess('Store URL copied to clipboard!');
+                    setTimeout(() => setSuccess(null), 3000);
+                  }}
               className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition font-medium"
             >
               Copy
@@ -1650,12 +1768,14 @@ export default function StoreSettingsPage() {
                 }}
               >
                 Change
-              </button>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
+        )}
 
-        {/* Subdomain Change Confirmation Modal */}
+        {/* Subdomain Change Confirmation Modal - Outside tabs */}
         {showSubdomainConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
@@ -1766,5 +1886,24 @@ export default function StoreSettingsPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+// Wrapper component with Suspense for useSearchParams
+export default function StoreSettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-1/3 mb-4" />
+            <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded w-1/2 mb-8" />
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl p-8 h-96" />
+          </div>
+        </div>
+      }
+    >
+      <StoreSettingsPageContent />
+    </Suspense>
   );
 }

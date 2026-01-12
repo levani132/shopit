@@ -37,6 +37,32 @@ const FIELD_LABELS: Record<string, string> = {
   courierType: 'fieldCourierType',
 };
 
+// Map store fields to their corresponding tabs
+const FIELD_TO_TAB: Record<string, string> = {
+  logo: 'appearance',
+  cover: 'appearance',
+  nameKa: 'general',
+  nameEn: 'general',
+  description: 'general',
+  phone: 'contact',
+  address: 'contact',
+  location: 'contact',
+  courierType: 'shipping',
+};
+
+// Get the primary tab to link to based on missing store fields
+const getStoreTab = (missingFields: string[]): string => {
+  if (missingFields.length === 0) return 'general';
+  // Prioritize: general > appearance > contact > shipping
+  const priorities = ['general', 'appearance', 'contact', 'shipping'];
+  for (const tab of priorities) {
+    if (missingFields.some((field) => FIELD_TO_TAB[field] === tab)) {
+      return tab;
+    }
+  }
+  return 'general';
+};
+
 export default function SetupRequirements() {
   const t = useTranslations('dashboard');
   const [status, setStatus] = useState<PublishStatus | null>(null);
@@ -286,7 +312,7 @@ export default function SetupRequirements() {
                     {t('missingStoreFields')}
                   </h4>
                   <Link
-                    href="/dashboard/store"
+                    href={`/dashboard/store?tab=${getStoreTab(missingFields.store)}`}
                     className="text-sm font-medium text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:underline"
                   >
                     {t('goToStoreSettings')} →

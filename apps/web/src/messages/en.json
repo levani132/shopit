@@ -182,6 +182,11 @@
   "dashboard": {
     "overview": "Overview",
     "storeSettings": "Store Settings",
+    "tabGeneral": "General",
+    "tabAppearance": "Appearance",
+    "tabContact": "Contact",
+    "tabShipping": "Shipping",
+    "tabUrl": "Store URL",
     "products": "Products",
     "categories": "Categories",
     "attributes": "Attributes",
