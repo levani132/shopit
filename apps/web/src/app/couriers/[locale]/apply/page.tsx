@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { CourierHeader } from '../../../../components/courier/CourierHeader';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -88,21 +89,24 @@ export default function CourierApplyPage() {
   // If user is already a courier, redirect to dashboard
   if (user?.role === 'courier') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+        <CourierHeader />
+        <div className="flex items-center justify-center px-4 py-20">
+          <div className="max-w-md w-full text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-green-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-4">{t('alreadyCourier')}</h1>
+            <p className="text-gray-400 mb-8">{t('alreadyCourierDescription')}</p>
+            <Link
+              href={`/${locale}/dashboard`}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
+            >
+              {t('goToDashboard')}
+            </Link>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">{t('alreadyCourier')}</h1>
-          <p className="text-gray-400 mb-8">{t('alreadyCourierDescription')}</p>
-          <Link
-            href={`/${locale}/dashboard`}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
-          >
-            {t('goToDashboard')}
-          </Link>
         </div>
       </div>
     );
@@ -111,21 +115,24 @@ export default function CourierApplyPage() {
   // Success state
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-indigo-500/20 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+        <CourierHeader />
+        <div className="flex items-center justify-center px-4 py-20">
+          <div className="max-w-md w-full text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-indigo-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-4">{t('applicationSubmitted')}</h1>
+            <p className="text-gray-400 mb-8">{t('applicationSubmittedDescription')}</p>
+            <Link
+              href={`/couriers/${locale}`}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
+            >
+              {t('backToHome')}
+            </Link>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-4">{t('applicationSubmitted')}</h1>
-          <p className="text-gray-400 mb-8">{t('applicationSubmittedDescription')}</p>
-          <Link
-            href={`/couriers/${locale}`}
-            className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
-          >
-            {t('backToHome')}
-          </Link>
         </div>
       </div>
     );
@@ -134,28 +141,31 @@ export default function CourierApplyPage() {
   // Not authenticated - show login prompt
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-yellow-500/20 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-4">{t('loginToApply')}</h1>
-          <p className="text-gray-400 mb-8">{t('loginToApplyDescription')}</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href={`/${locale}/login?redirect=/couriers/${locale}/apply`}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
-            >
-              {t('login')}
-            </Link>
-            <Link
-              href={`/${locale}/register?redirect=/couriers/${locale}/apply`}
-              className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-colors border border-white/20"
-            >
-              {t('register')}
-            </Link>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+        <CourierHeader />
+        <div className="flex items-center justify-center px-4 py-20">
+          <div className="max-w-md w-full text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-yellow-500/20 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-4">{t('loginToApply')}</h1>
+            <p className="text-gray-400 mb-8">{t('loginToApplyDescription')}</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href={`/${locale}/login?redirect=/couriers/${locale}/apply`}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+              >
+                {t('login')}
+              </Link>
+              <Link
+                href={`/${locale}/register?redirect=/couriers/${locale}/apply`}
+                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-colors border border-white/20"
+              >
+                {t('register')}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -163,18 +173,20 @@ export default function CourierApplyPage() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-            </svg>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+      <CourierHeader />
+      <div className="py-12 px-4">
+        <div className="max-w-2xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">{t('applyTitle')}</h1>
+            <p className="text-gray-400">{t('applyDescription')}</p>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">{t('applyTitle')}</h1>
-          <p className="text-gray-400">{t('applyDescription')}</p>
-        </div>
 
         {/* Application Form */}
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -282,6 +294,7 @@ export default function CourierApplyPage() {
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -53,11 +53,7 @@ export default function CourierLayout({
         <NextIntlClientProvider locale={locale} messages={localeMessages}>
           <ThemeProvider>
             <AuthProvider>
-              <CartProvider>
-                <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900">
-                  {children}
-                </div>
-              </CartProvider>
+              <CartProvider>{children}</CartProvider>
             </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
