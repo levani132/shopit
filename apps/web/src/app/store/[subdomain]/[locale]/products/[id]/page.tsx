@@ -386,7 +386,7 @@ export default function ProductDetailPage() {
         </p>
         <button
           onClick={() => router.back()}
-          className="mt-4 text-[var(--accent-600)] hover:underline"
+          className="mt-4 text-[var(--store-accent-600)] hover:underline"
         >
           {tCommon('goBack')}
         </button>
@@ -404,14 +404,14 @@ export default function ProductDetailPage() {
       <nav className="mb-6 text-sm text-gray-500 dark:text-gray-400">
         <button
           onClick={() => router.push(`/${locale}`)}
-          className="hover:text-[var(--accent-600)]"
+          className="hover:text-[var(--store-accent-600)]"
         >
           {t('home')}
         </button>
         <span className="mx-2">/</span>
         <button
           onClick={() => router.push(`/${locale}/products`)}
-          className="hover:text-[var(--accent-600)]"
+          className="hover:text-[var(--store-accent-600)]"
         >
           {t('products')}
         </button>
@@ -474,7 +474,7 @@ export default function ProductDetailPage() {
                   onClick={() => setSelectedImage(idx)}
                   className={`relative w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-colors ${
                     selectedImage === idx
-                      ? 'border-[var(--accent-500)]'
+                      ? 'border-[var(--store-accent-500)]'
                       : 'border-transparent hover:border-gray-300 dark:hover:border-zinc-600'
                   }`}
                 >
@@ -589,9 +589,9 @@ export default function ProductDetailPage() {
                                 disabled={!isAvailable || isOutOfStock}
                                 className={`w-10 h-10 rounded-full border-2 transition-all relative ${
                                   isSelected
-                                    ? 'border-[var(--accent-500)] ring-2 ring-[var(--accent-500)] ring-offset-2 dark:ring-offset-zinc-900'
+                                    ? 'border-[var(--store-accent-500)] ring-2 ring-[var(--store-accent-500)] ring-offset-2 dark:ring-offset-zinc-900'
                                     : isAvailable && hasStock
-                                      ? 'border-gray-300 dark:border-zinc-600 hover:border-[var(--accent-400)]'
+                                      ? 'border-gray-300 dark:border-zinc-600 hover:border-[var(--store-accent-400)]'
                                       : 'border-gray-200 dark:border-zinc-700 opacity-40 cursor-not-allowed'
                                 }`}
                                 style={{ backgroundColor: value.colorHex }}
@@ -622,9 +622,9 @@ export default function ProductDetailPage() {
                               disabled={!isAvailable || isOutOfStock}
                               className={`px-4 py-2 rounded-lg border transition-all ${
                                 isSelected
-                                  ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-400)] font-medium'
+                                  ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/30 text-[var(--store-accent-700)] dark:text-[var(--store-accent-400)] font-medium'
                                   : isAvailable && hasStock
-                                    ? 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-[var(--accent-400)]'
+                                    ? 'border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 hover:border-[var(--store-accent-400)]'
                                     : 'border-gray-200 dark:border-zinc-700 text-gray-400 dark:text-gray-600 cursor-not-allowed line-through'
                               }`}
                             >
@@ -724,7 +724,7 @@ export default function ProductDetailPage() {
               disabled={
                 effectiveStock <= 0 || (product.hasVariants && !selectedVariant)
               }
-              className="flex-1 px-6 py-3 font-medium rounded-lg transition-colors disabled:cursor-not-allowed bg-[var(--accent-600)] text-white hover:bg-[var(--accent-700)] disabled:opacity-50"
+              className="flex-1 px-6 py-3 font-medium rounded-lg transition-colors disabled:cursor-not-allowed bg-[var(--store-accent-600)] text-white hover:bg-[var(--store-accent-700)] disabled:opacity-50"
             >
               {product.hasVariants && !selectedVariant
                 ? t('selectVariant')
