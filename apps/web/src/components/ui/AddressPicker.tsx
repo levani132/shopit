@@ -9,7 +9,8 @@ const TBILISI_CENTER = { lat: 41.7151, lng: 44.8271 };
 const DEFAULT_ZOOM = 13;
 
 // Photon API for geocoding (free, OpenStreetMap-based)
-const PHOTON_API = 'https://photon.komoot.io/api';
+const PHOTON_API_SEARCH = 'https://photon.komoot.io/api';
+const PHOTON_API_REVERSE = 'https://photon.komoot.io/reverse';
 
 interface Location {
   lat: number;
@@ -97,6 +98,7 @@ function AddressPickerMap({
   const [TileLayer, setTileLayer] = useState<typeof import('react-leaflet').TileLayer | null>(null);
   const [Marker, setMarker] = useState<typeof import('react-leaflet').Marker | null>(null);
   const [useMapEvents, setUseMapEvents] = useState<typeof import('react-leaflet').useMapEvents | null>(null);
+  const [useMap, setUseMap] = useState<typeof import('react-leaflet').useMap | null>(null);
 
   useEffect(() => {
     // Dynamic imports for Leaflet (SSR-safe)
@@ -117,6 +119,7 @@ function AddressPickerMap({
       setTileLayer(() => reactLeaflet.TileLayer);
       setMarker(() => reactLeaflet.Marker);
       setUseMapEvents(() => reactLeaflet.useMapEvents);
+      setUseMap(() => reactLeaflet.useMap);
     });
   }, []);
 
@@ -131,7 +134,7 @@ function AddressPickerMap({
     try {
       // Bias results towards Georgia
       const response = await fetch(
-        `${PHOTON_API}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=5&lang=en`
+        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=5&lang=en`
       );
       const data = await response.json();
       setSearchResults(data.features || []);
@@ -175,7 +178,7 @@ function AddressPickerMap({
   const reverseGeocode = useCallback(async (location: Location) => {
     try {
       const response = await fetch(
-        `${PHOTON_API}/reverse?lat=${location.lat}&lon=${location.lng}&lang=en`
+        `${PHOTON_API_REVERSE}?lat=${location.lat}&lon=${location.lng}&lang=en`
       );
       const data = await response.json();
       if (data.features && data.features.length > 0) {
@@ -208,6 +211,17 @@ function AddressPickerMap({
         reverseGeocode(location);
       },
     });
+    return null;
+  };
+
+  // Component to update map center when it changes
+  const MapCenterUpdater = ({ center }: { center: Location }) => {
+    const map = useMap?.();
+    useEffect(() => {
+      if (map && center) {
+        map.flyTo([center.lat, center.lng], 16, { duration: 0.5 });
+      }
+    }, [map, center]);
     return null;
   };
 
@@ -326,6 +340,7 @@ function AddressPickerMap({
           />
           
           <MapClickHandler />
+          {markerPosition && <MapCenterUpdater center={markerPosition} />}
           
           {markerPosition && (
             <Marker

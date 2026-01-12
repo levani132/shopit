@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { AddressPicker, type AddressResult } from '../../../../components/ui/AddressPicker';
+import {
+  AddressPicker,
+  type AddressResult,
+} from '../../../../components/ui/AddressPicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -382,7 +385,10 @@ export default function AddressesPage() {
                 <AddressPicker
                   value={
                     formData.address && formData.location
-                      ? { address: formData.address, location: formData.location }
+                      ? {
+                          address: formData.address,
+                          location: formData.location,
+                        }
                       : undefined
                   }
                   onChange={(result: AddressResult) => {

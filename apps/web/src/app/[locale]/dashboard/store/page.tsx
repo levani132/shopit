@@ -5,7 +5,10 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getLatinInitial } from '../../../../lib/utils';
-import { AddressPicker, type AddressResult } from '../../../../components/ui/AddressPicker';
+import {
+  AddressPicker,
+  type AddressResult,
+} from '../../../../components/ui/AddressPicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
