@@ -21,6 +21,9 @@ export * from './order.schema';
 export * from './balance-transaction.schema';
 export * from './service-payment.schema';
 
+// Wishlist
+export * from './wishlist.schema';
+
 // Posts (Social feed)
 export * from './post.schema';
 export * from './post-like.schema';

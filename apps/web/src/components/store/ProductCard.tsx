@@ -1,10 +1,15 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export interface ProductCardData {
   _id: string;
@@ -51,6 +56,62 @@ export function ProductCard({
   const t = useTranslations('store');
   const router = useRouter();
   const { addItem } = useCart();
+  const { isAuthenticated } = useAuth();
+
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  // Check wishlist status
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const checkWishlist = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/api/v1/wishlist/check/${product._id}`,
+          { credentials: 'include' },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setIsInWishlist(data.isInWishlist);
+        }
+      } catch (err) {
+        // Silently fail
+      }
+    };
+
+    checkWishlist();
+  }, [isAuthenticated, product._id]);
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      router.push(`/${locale}/login`);
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const res = await fetch(
+        `${API_URL}/api/v1/wishlist/${product._id}/toggle`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsInWishlist(data.added);
+      }
+    } catch (err) {
+      console.error('Error toggling wishlist:', err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   const name = getLocalizedText(product.nameLocalized, product.name, locale);
   const hasDiscount =
@@ -134,6 +195,53 @@ export function ProductCard({
       {/* Product Image - Clickable */}
       <Link href={`/${locale}/products/${product._id}`} className="block">
         <div className="aspect-square relative bg-gray-100 dark:bg-zinc-700 overflow-hidden">
+          {/* Wishlist Button */}
+          <button
+            onClick={handleToggleWishlist}
+            disabled={wishlistLoading}
+            className={`absolute top-2 right-2 z-10 w-8 h-8 flex items-center justify-center rounded-full shadow-md transition-all ${
+              isInWishlist
+                ? 'bg-red-500 text-white'
+                : 'bg-white/90 dark:bg-zinc-800/90 text-gray-600 dark:text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100'
+            }`}
+          >
+            {wishlistLoading ? (
+              <svg
+                className="w-4 h-4 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            ) : (
+              <svg
+                className="w-4 h-4"
+                fill={isInWishlist ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+            )}
+          </button>
+
           {product.images?.[0] ? (
             <Image
               src={product.images[0]}

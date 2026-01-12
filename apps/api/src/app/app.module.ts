@@ -12,6 +12,7 @@ import { AttributesModule } from '../attributes/attributes.module';
 import { UploadModule } from '../upload/upload.module';
 import { OrdersModule } from '../orders/orders.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { WishlistModule } from '../wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { PaymentsModule } from '../payments/payments.module';
     UploadModule,
     OrdersModule,
     PaymentsModule,
+    WishlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],

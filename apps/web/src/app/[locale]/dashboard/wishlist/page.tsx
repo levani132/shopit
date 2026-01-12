@@ -61,16 +61,16 @@ export default function WishlistPage() {
     }
   }, [authLoading, user, fetchWishlist]);
 
-  const handleRemove = async (itemId: string) => {
-    setRemovingId(itemId);
+  const handleRemove = async (productId: string) => {
+    setRemovingId(productId);
     try {
-      const response = await fetch(`${API_URL}/api/v1/wishlist/${itemId}`, {
+      const response = await fetch(`${API_URL}/api/v1/wishlist/${productId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
 
       if (response.ok) {
-        setItems((prev) => prev.filter((item) => item._id !== itemId));
+        setItems((prev) => prev.filter((item) => item.productId !== productId));
       } else {
         const data = await response.json();
         setError(data.message || 'Failed to remove item');
@@ -184,11 +184,11 @@ export default function WishlistPage() {
 
                 {/* Remove Button */}
                 <button
-                  onClick={() => handleRemove(item._id)}
+                  onClick={() => handleRemove(item.productId)}
                   disabled={!!removingId}
                   className="absolute top-2 right-2 p-2 bg-white dark:bg-zinc-800 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500"
                 >
-                  {removingId === item._id ? (
+                  {removingId === item.productId ? (
                     <svg
                       className="w-4 h-4 animate-spin"
                       fill="none"
