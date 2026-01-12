@@ -85,6 +85,11 @@ export class StoresController {
       location: store.location,
       hideAddress: store.hideAddress ?? false,
       isVerified: store.isVerified ?? false,
+      // Publish status
+      publishStatus: store.publishStatus || 'draft',
+      publishRequestedAt: store.publishRequestedAt,
+      publishedAt: store.publishedAt,
+      publishRejectionReason: store.publishRejectionReason,
       homepageProductOrder: store.homepageProductOrder || 'popular',
       // Delivery settings
       courierType: store.courierType || 'shopit',
@@ -257,6 +262,11 @@ export class StoresController {
       location: store.location,
       hideAddress: store.hideAddress ?? false,
       isVerified: store.isVerified ?? false,
+      // Publish status
+      publishStatus: store.publishStatus || 'draft',
+      publishRequestedAt: store.publishRequestedAt,
+      publishedAt: store.publishedAt,
+      publishRejectionReason: store.publishRejectionReason,
       homepageProductOrder: store.homepageProductOrder || 'popular',
       // Delivery settings
       courierType: store.courierType || 'shopit',
@@ -266,6 +276,23 @@ export class StoresController {
       deliveryMaxDays: store.deliveryMaxDays,
       deliveryFee: store.deliveryFee ?? 0,
       freeDelivery: store.freeDelivery ?? false,
+    };
+  }
+
+  @Get('subdomain/:subdomain/status')
+  @ApiOperation({ summary: 'Get store publish status by subdomain' })
+  @ApiResponse({ status: 200, description: 'Store status returned' })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  async getStoreStatus(@Param('subdomain') subdomain: string) {
+    const store = await this.storesService.findBySubdomain(subdomain);
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    return {
+      publishStatus: store.publishStatus || 'draft',
+      isActive: store.isActive ?? true,
     };
   }
 

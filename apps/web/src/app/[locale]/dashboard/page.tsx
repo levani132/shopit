@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import SetupRequirements from '../../../components/dashboard/SetupRequirements';
 
 export default async function DashboardPage() {
   const t = await getTranslations('dashboard');
@@ -22,6 +23,9 @@ export default async function DashboardPage() {
           {t('overviewDescription')}
         </p>
       </div>
+
+      {/* Setup Requirements Alert */}
+      <SetupRequirements />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

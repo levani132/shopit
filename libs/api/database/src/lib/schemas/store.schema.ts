@@ -182,6 +182,42 @@ export class Store {
   @Prop({ default: false })
   freeDelivery?: boolean;
 
+  // ================== PUBLISH STATUS ==================
+
+  /**
+   * Store publish status:
+   * - 'draft': Store is being set up, not visible to public
+   * - 'pending_review': Seller requested to publish, waiting for admin approval
+   * - 'published': Store is live and visible to public
+   * - 'rejected': Admin rejected the publish request
+   */
+  @Prop({ default: 'draft' })
+  publishStatus!: string;
+
+  /**
+   * When the seller requested to publish the store
+   */
+  @Prop()
+  publishRequestedAt?: Date;
+
+  /**
+   * When the store was approved and published
+   */
+  @Prop()
+  publishedAt?: Date;
+
+  /**
+   * Motivational message from seller (private, only visible to admins)
+   */
+  @Prop({ trim: true })
+  publishMessage?: string;
+
+  /**
+   * If rejected, the reason provided by admin
+   */
+  @Prop({ trim: true })
+  publishRejectionReason?: string;
+
   // ================== SELLER BANK DETAILS ==================
   
   @Prop()
@@ -200,4 +236,5 @@ export const StoreSchema = SchemaFactory.createForClass(Store);
 StoreSchema.index({ ownerId: 1 });
 StoreSchema.index({ isActive: 1 });
 StoreSchema.index({ isFeatured: 1 });
+StoreSchema.index({ publishStatus: 1 });
 StoreSchema.index({ name: 'text', description: 'text' }); // Full-text search

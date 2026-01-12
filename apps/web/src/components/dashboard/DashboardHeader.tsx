@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
+import PublishButton from './PublishButton';
 
 interface NavItem {
   href: string;
@@ -150,8 +151,11 @@ export function DashboardHeader() {
             </Link>
           </div>
 
-          {/* Right: Language switcher + Theme toggle + User menu */}
+          {/* Right: Publish button + Language switcher + Theme toggle + User menu */}
           <div className="flex items-center gap-2">
+            {/* Publish Button */}
+            <PublishButton />
+
             {/* Language Switcher */}
             <LanguageSwitcher />
 

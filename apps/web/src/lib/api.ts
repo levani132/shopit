@@ -4,6 +4,73 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export const apiUrl = `${API_URL}/api/v1`;
 
+/**
+ * API helper for making authenticated requests from client components
+ */
+export const api = {
+  /**
+   * GET request with credentials
+   */
+  async get(path: string, options?: RequestInit): Promise<Response> {
+    return fetch(`${apiUrl}${path}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      ...options,
+    });
+  },
+
+  /**
+   * POST request with credentials
+   */
+  async post(path: string, body?: unknown, options?: RequestInit): Promise<Response> {
+    return fetch(`${apiUrl}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      ...options,
+    });
+  },
+
+  /**
+   * PUT request with credentials
+   */
+  async put(path: string, body?: unknown, options?: RequestInit): Promise<Response> {
+    return fetch(`${apiUrl}${path}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      ...options,
+    });
+  },
+
+  /**
+   * DELETE request with credentials
+   */
+  async delete(path: string, options?: RequestInit): Promise<Response> {
+    return fetch(`${apiUrl}${path}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      ...options,
+    });
+  },
+};
+
 export interface ApiError {
   statusCode: number;
   message: string;

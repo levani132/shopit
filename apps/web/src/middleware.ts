@@ -15,6 +15,13 @@ const MAIN_DOMAINS = [
   'shopit-dev.vercel.app',
 ];
 
+// API base URL for checking store status
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+// Cache store status for a short time to avoid repeated API calls
+const storeStatusCache = new Map<string, { publishStatus: string; expires: number }>();
+const CACHE_TTL = 60 * 1000; // 1 minute cache
+
 // Create middleware with locale detection enabled
 const intlMiddleware = createMiddleware(routing);
 
@@ -24,6 +31,45 @@ const intlMiddleware = createMiddleware(routing);
  * e.g., "mystore.shopit.ge" -> "mystore"
  * e.g., "localhost" -> null (main site)
  */
+/**
+ * Check if a store is published
+ * Returns the publish status or null if store doesn't exist
+ */
+async function getStorePublishStatus(subdomain: string): Promise<string | null> {
+  // Check cache first
+  const cached = storeStatusCache.get(subdomain);
+  if (cached && cached.expires > Date.now()) {
+    return cached.publishStatus;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/stores/subdomain/${subdomain}/status`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      // Don't cache this request in fetch layer
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      // Store not found
+      storeStatusCache.set(subdomain, { publishStatus: 'not_found', expires: Date.now() + CACHE_TTL });
+      return null;
+    }
+
+    const data = await response.json();
+    const publishStatus = data.publishStatus || 'draft';
+
+    // Cache the result
+    storeStatusCache.set(subdomain, { publishStatus, expires: Date.now() + CACHE_TTL });
+
+    return publishStatus;
+  } catch (error) {
+    console.error('[Middleware] Error checking store status:', error);
+    // On error, allow access (fail open)
+    return 'published';
+  }
+}
+
 function getSubdomain(hostname: string): string | null {
   // Remove port if present
   const host = hostname.split(':')[0];
@@ -54,7 +100,7 @@ function getSubdomain(hostname: string): string | null {
   return null;
 }
 
-export default function middleware(request: NextRequest) {
+export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
@@ -107,6 +153,31 @@ export default function middleware(request: NextRequest) {
   }
 
   if (subdomain) {
+    // Check if store is published before allowing access
+    const publishStatus = await getStorePublishStatus(subdomain);
+
+    // If store not found or not published, show appropriate page
+    if (!publishStatus || publishStatus !== 'published') {
+      const url = request.nextUrl.clone();
+      const pathnameHasLocale = routing.locales.some(
+        (locale) =>
+          pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+      );
+      const locale = pathnameHasLocale ? pathname.split('/')[1] : routing.defaultLocale;
+
+      // Rewrite to coming-soon page for the store
+      if (publishStatus === 'pending_review') {
+        url.pathname = `/store/${subdomain}/${locale}/coming-soon`;
+      } else {
+        // Store not found or draft - show 404
+        url.pathname = `/store/${subdomain}/${locale}/not-found`;
+      }
+
+      const response = NextResponse.rewrite(url);
+      response.headers.set('x-store-status', publishStatus || 'not_found');
+      return response;
+    }
+
     // This is a store subdomain - rewrite to the store page
     const url = request.nextUrl.clone();
 
