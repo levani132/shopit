@@ -311,7 +311,7 @@ function AddressPickerMap({
         width: 32px;
         height: 42px;
         position: relative;
-        ${isDarkMode ? 'filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(1.1);' : ''}
+        ${isDarkMode ? 'filter: invert(1) hue-rotate(200deg) brightness(1.15) contrast(1.2) saturate(0.85);' : ''}
       ">
         <svg viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
           <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="var(--accent-500, #6366f1)"/>
@@ -445,8 +445,9 @@ function AddressPickerMap({
         style={
           isDarkMode
             ? {
+                // More bluish tint: hue-rotate(200deg) shifts colors towards blue
                 filter:
-                  'invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9)',
+                  'invert(1) hue-rotate(200deg) brightness(0.9) contrast(0.85) saturate(1.2)',
               }
             : undefined
         }
