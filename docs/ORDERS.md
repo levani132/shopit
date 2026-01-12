@@ -179,15 +179,15 @@ interface OrderItem {
 
 Sellers can only change order statuses according to these rules:
 
-| Current Status | Allowed Transitions | Restrictions |
-| -------------- | ------------------- | ------------ |
-| `pending`      | None                | Must wait for payment system |
-| `paid`         | → processing, shipped, delivered | Cannot go back to pending |
-| `processing`   | → paid, shipped, delivered | Normal workflow |
-| `shipped`      | → processing, delivered | Can correct mistakes |
-| `delivered`    | → shipped | Only to fix errors |
-| `cancelled`    | None | Permanently locked |
-| `refunded`     | None | Permanently locked |
+| Current Status | Allowed Transitions              | Restrictions                 |
+| -------------- | -------------------------------- | ---------------------------- |
+| `pending`      | None                             | Must wait for payment system |
+| `paid`         | → processing, shipped, delivered | Cannot go back to pending    |
+| `processing`   | → paid, shipped, delivered       | Normal workflow              |
+| `shipped`      | → processing, delivered          | Can correct mistakes         |
+| `delivered`    | → shipped                        | Only to fix errors           |
+| `cancelled`    | None                             | Permanently locked           |
+| `refunded`     | None                             | Permanently locked           |
 
 ### Validation Rules
 
