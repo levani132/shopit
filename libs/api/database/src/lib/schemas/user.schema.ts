@@ -40,6 +40,15 @@ export class ShippingAddress {
   @Prop({ required: true })
   phoneNumber!: string;
 
+  /**
+   * Location coordinates for delivery distance calculation
+   */
+  @Prop({ type: Object })
+  location?: {
+    lat: number;
+    lng: number;
+  };
+
   @Prop({ default: false })
   isDefault!: boolean;
 }

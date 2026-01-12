@@ -122,6 +122,15 @@ export class Store {
   @Prop()
   address?: string;
 
+  /**
+   * Store location coordinates for delivery distance calculation
+   */
+  @Prop({ type: Object })
+  location?: {
+    lat: number;
+    lng: number;
+  };
+
   @Prop({ default: false })
   hideAddress?: boolean;
 

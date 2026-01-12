@@ -6,7 +6,10 @@
     "georgian": "ქართული",
     "english": "English",
     "loading": "Loading...",
-    "goBack": "Go Back"
+    "goBack": "Go Back",
+    "loadingMap": "Loading map...",
+    "searchAddress": "Search for an address...",
+    "addressPickerHelp": "Search for an address or click on the map to set location. You can drag the pin to adjust."
   },
   "nav": {
     "home": "Home",

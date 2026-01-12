@@ -18,6 +18,7 @@ import { BalanceController } from './balance.controller';
 import { OrdersService } from './orders.service';
 import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
+import { DeliveryFeeService } from './delivery-fee.service';
 import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
@@ -33,8 +34,8 @@ import { PaymentsModule } from '../payments/payments.module';
     forwardRef(() => PaymentsModule),
   ],
   controllers: [OrdersController, BalanceController],
-  providers: [OrdersService, StockReservationService, BalanceService],
-  exports: [OrdersService, StockReservationService, BalanceService],
+  providers: [OrdersService, StockReservationService, BalanceService, DeliveryFeeService],
+  exports: [OrdersService, StockReservationService, BalanceService, DeliveryFeeService],
 })
 export class OrdersModule {}
 
