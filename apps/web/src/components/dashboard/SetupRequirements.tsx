@@ -52,7 +52,10 @@ export default function SetupRequirements() {
           setError(`API error: ${response.status}`);
         }
       } catch (err) {
-        console.error('[SetupRequirements] Failed to fetch publish status:', err);
+        console.error(
+          '[SetupRequirements] Failed to fetch publish status:',
+          err,
+        );
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
@@ -80,10 +83,22 @@ export default function SetupRequirements() {
     return (
       <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 mb-8">
         <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
-          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-5 h-5 flex-shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
-          <span className="text-sm">Failed to load publish status. Please refresh the page.</span>
+          <span className="text-sm">
+            Failed to load publish status. Please refresh the page.
+          </span>
         </div>
       </div>
     );
@@ -288,4 +303,3 @@ export default function SetupRequirements() {
     </div>
   );
 }
-

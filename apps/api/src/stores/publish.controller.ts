@@ -68,8 +68,8 @@ export class PublishController {
       user._id.toString(),
     );
 
-    // Get store to return status
-    const store = await this.publishService['storeModel'].findById(user.store);
+    // Get store by ownerId (stores have ownerId pointing to user)
+    const store = await this.publishService['storeModel'].findOne({ ownerId: user._id });
 
     return {
       publishStatus: store?.publishStatus || 'draft',

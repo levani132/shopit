@@ -53,7 +53,8 @@ export class PublishService {
       throw new NotFoundException('User not found');
     }
 
-    const store = await this.storeModel.findById(user.store);
+    // Find store by ownerId (stores have ownerId pointing to user)
+    const store = await this.storeModel.findOne({ ownerId: userId });
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -97,7 +98,8 @@ export class PublishService {
       throw new NotFoundException('User not found');
     }
 
-    const store = await this.storeModel.findById(user.store);
+    // Find store by ownerId (stores have ownerId pointing to user)
+    const store = await this.storeModel.findOne({ ownerId: userId });
     if (!store) {
       throw new NotFoundException('Store not found');
     }
