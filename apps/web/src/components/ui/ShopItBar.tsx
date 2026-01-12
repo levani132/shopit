@@ -6,7 +6,6 @@ import { useTranslations } from 'next-intl';
 import { ShopItLogo } from './ShopItLogo';
 import { useAuth } from '../../contexts/AuthContext';
 import { getUserInitials } from '../../lib/utils';
-import Link from 'next/link';
 
 interface ShopItBarProps {
   variant?: 'store' | 'standalone';
