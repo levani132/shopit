@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
@@ -9,6 +9,137 @@ import { useAuth } from '../../../../../contexts/AuthContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
+// Payment awaiting modal component
+function PaymentAwaitingModal({
+  isOpen,
+  orderId,
+  onClose,
+  onPaymentComplete,
+  t,
+}: {
+  isOpen: boolean;
+  orderId: string | null;
+  onClose: () => void;
+  onPaymentComplete: (orderId: string, status: string) => void;
+  t: (key: string) => string;
+}) {
+  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>('waiting');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Poll for payment status
+  useEffect(() => {
+    if (!isOpen || !orderId) return;
+
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/payments/order-status/${orderId}`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.isPaid) {
+            setStatus('success');
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+            }
+            // Notify parent after a short delay
+            setTimeout(() => {
+              onPaymentComplete(orderId, 'paid');
+            }, 2000);
+          } else if (data.status === 'cancelled') {
+            setStatus('failed');
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+      }
+    };
+
+    // Start polling every 2 seconds
+    pollStatus(); // Initial check
+    pollIntervalRef.current = setInterval(pollStatus, 2000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [isOpen, orderId, onPaymentComplete]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
+        {status === 'waiting' && (
+          <>
+            {/* Animated payment icon */}
+            <div className="w-20 h-20 mx-auto mb-6 relative">
+              <div className="absolute inset-0 border-4 border-[var(--store-accent-200)] dark:border-[var(--store-accent-800)] rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-[var(--store-accent-500)] rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-8 h-8 text-[var(--store-accent-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('awaitingPayment')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {t('awaitingPaymentDescription')}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              {t('paymentWindowOpen')}
+            </p>
+          </>
+        )}
+
+        {status === 'success' && (
+          <>
+            <div className="w-20 h-20 mx-auto mb-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('paymentSuccessful')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              {t('paymentSuccessfulDescription')}
+            </p>
+          </>
+        )}
+
+        {status === 'failed' && (
+          <>
+            <div className="w-20 h-20 mx-auto mb-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('paymentFailed')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {t('paymentFailedDescription')}
+            </p>
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
+            >
+              {t('close')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface OrderItem {
   productId: string;
@@ -366,40 +497,108 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Payment modal state
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const url = subdomain
+        ? `${API_URL}/api/v1/orders/my-orders?storeSubdomain=${encodeURIComponent(subdomain)}`
+        : `${API_URL}/api/v1/orders/my-orders`;
+
+      const response = await fetch(url, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setOrders(data);
+      } else {
+        setError('Failed to load orders');
+      }
+    } catch (err) {
+      console.error('[Orders] Error fetching orders:', err);
+      setError('Failed to load orders');
+    } finally {
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated, subdomain]);
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      if (authLoading) return;
-      if (!isAuthenticated) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const url = subdomain
-          ? `${API_URL}/api/v1/orders/my-orders?storeSubdomain=${encodeURIComponent(subdomain)}`
-          : `${API_URL}/api/v1/orders/my-orders`;
-
-        const response = await fetch(url, {
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data);
-        } else {
-          setError('Failed to load orders');
-        }
-      } catch (err) {
-        console.error('[Orders] Error fetching orders:', err);
-        setError('Failed to load orders');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchOrders();
-  }, [isAuthenticated, authLoading, subdomain]);
+  }, [fetchOrders]);
+
+  // Handle Pay Now button click
+  const handlePayNow = async (orderId: string) => {
+    setProcessingPayment(orderId);
+    setError(null);
+
+    try {
+      // Get payment URL from API
+      const response = await fetch(`${API_URL}/api/v1/payments/retry/${orderId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          successUrl: `${window.location.origin}/${locale}/orders?payment=success&orderId=${orderId}`,
+          failUrl: `${window.location.origin}/${locale}/orders?payment=failed&orderId=${orderId}`,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to initiate payment');
+      }
+
+      const data = await response.json();
+
+      if (data.redirectUrl) {
+        // Open payment in new tab/popup
+        const paymentWindow = window.open(data.redirectUrl, '_blank', 'width=600,height=700');
+        
+        // If popup was blocked, redirect in same window
+        if (!paymentWindow) {
+          window.location.href = data.redirectUrl;
+          return;
+        }
+
+        // Show payment awaiting modal
+        setPayingOrderId(orderId);
+        setPaymentModalOpen(true);
+      }
+    } catch (err: unknown) {
+      console.error('Payment error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to process payment');
+    } finally {
+      setProcessingPayment(null);
+    }
+  };
+
+  // Handle payment completion from modal
+  const handlePaymentComplete = useCallback((orderId: string, status: string) => {
+    setPaymentModalOpen(false);
+    setPayingOrderId(null);
+    
+    // Refresh orders to get updated status
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setPaymentModalOpen(false);
+    setPayingOrderId(null);
+    // Refresh orders to check if payment was completed
+    fetchOrders();
+  };
 
   if (authLoading || loading) {
     return (
@@ -511,6 +710,33 @@ export default function OrdersPage() {
                     {formatDateLocalized(order.createdAt, locale)}
                   </p>
                 </div>
+                
+                {/* Pay Now button for pending orders */}
+                {order.status === 'pending' && !order.isPaid && (
+                  <button
+                    onClick={() => handlePayNow(order._id)}
+                    disabled={processingPayment === order._id}
+                    className="flex items-center gap-2 px-4 py-2 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                  >
+                    {processingPayment === order._id ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        {t('processing')}
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        {t('payNow')}
+                      </>
+                    )}
+                  </button>
+                )}
+                
                 {/* Compact Timeline with icons */}
                 <CompactTimeline currentStatus={order.status} t={t} />
               </div>
@@ -579,6 +805,15 @@ export default function OrdersPage() {
           </div>
         ))}
       </div>
+
+      {/* Payment Awaiting Modal */}
+      <PaymentAwaitingModal
+        isOpen={paymentModalOpen}
+        orderId={payingOrderId}
+        onClose={handleModalClose}
+        onPaymentComplete={handlePaymentComplete}
+        t={t}
+      />
     </div>
   );
 }

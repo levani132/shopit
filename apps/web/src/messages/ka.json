@@ -449,6 +449,16 @@
     "subtotal": "პროდუქტების ფასი",
     "shipping": "მიტანა",
     "free": "უფასო",
+    "payNow": "გადახდა",
+    "processing": "მუშავდება...",
+    "awaitingPayment": "გადახდის მოლოდინი",
+    "awaitingPaymentDescription": "დაასრულეთ გადახდა ახალ ფანჯარაში. ეს გვერდი ავტომატურად განახლდება.",
+    "paymentWindowOpen": "გადახდის ფანჯარა ღიაა სხვა ტაბში",
+    "paymentSuccessful": "გადახდა წარმატებულია!",
+    "paymentSuccessfulDescription": "თქვენი გადახდა მიღებულია. შეკვეთები განახლდება...",
+    "paymentFailed": "გადახდა ვერ მოხერხდა",
+    "paymentFailedDescription": "გადახდა ვერ დასრულდა. შეგიძლიათ სცადოთ თავიდან.",
+    "close": "დახურვა",
     "status": {
       "pending": "მოლოდინში",
       "paid": "გადახდილი",
@@ -503,6 +513,14 @@
     "failTitle": "გადახდა ვერ შესრულდა",
     "failDescription": "სამწუხაროდ, გადახდა ვერ შესრულდა. გთხოვთ სცადოთ ხელახლა.",
     "tryAgain": "თავიდან ცდა",
-    "returnToCart": "კალათაში დაბრუნება"
+    "returnToCart": "კალათაში დაბრუნება",
+    "awaitingPayment": "გადახდის მოლოდინი",
+    "awaitingPaymentDescription": "დაასრულეთ გადახდა ახალ ფანჯარაში. ეს გვერდი ავტომატურად განახლდება.",
+    "paymentWindowOpen": "გადახდის ფანჯარა ღიაა სხვა ტაბში",
+    "paymentSuccessful": "გადახდა წარმატებულია!",
+    "paymentSuccessfulDescription": "თქვენი გადახდა მიღებულია. გადამისამართება შეკვეთებზე...",
+    "paymentFailed": "გადახდა ვერ მოხერხდა",
+    "paymentFailedDescription": "გადახდა ვერ დასრულდა. შეგიძლიათ სცადოთ თავიდან.",
+    "close": "დახურვა"
   }
 }

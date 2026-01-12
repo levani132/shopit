@@ -302,5 +302,79 @@ export class PaymentsService {
       };
     }
   }
+
+  /**
+   * Retry payment for an existing pending order
+   */
+  async retryPaymentForOrder(
+    orderId: string,
+    successUrl: string,
+    failUrl: string,
+  ): Promise<{
+    orderId: string;
+    bogOrderId: string;
+    redirectUrl: string;
+    externalOrderId: string;
+  }> {
+    // Get the order
+    const order = await this.ordersService.findById(orderId);
+
+    // Validate order is in pending state
+    if (order.isPaid) {
+      throw new Error('Order is already paid');
+    }
+
+    if (order.status === 'cancelled') {
+      throw new Error('Cannot pay for a cancelled order');
+    }
+
+    // Build payment items from order
+    const items = order.orderItems.map((item) => ({
+      productId: item.productId.toString(),
+      name: item.name,
+      quantity: item.qty,
+      price: item.price,
+    }));
+
+    // Get customer info from order
+    const customer = order.user
+      ? undefined // Will be fetched from user if needed
+      : order.guestInfo
+        ? {
+            firstName: order.guestInfo.fullName.split(' ')[0],
+            lastName: order.guestInfo.fullName.split(' ').slice(1).join(' '),
+            email: order.guestInfo.email,
+            phone: order.guestInfo.phoneNumber,
+          }
+        : undefined;
+
+    // Create new BOG payment
+    return this.createPayment({
+      orderId,
+      totalPrice: order.totalPrice,
+      items,
+      customer,
+      successUrl,
+      failUrl,
+    });
+  }
+
+  /**
+   * Get order payment status (for polling from frontend)
+   */
+  async getOrderPaymentStatus(orderId: string): Promise<{
+    orderId: string;
+    status: string;
+    isPaid: boolean;
+    paidAt?: string;
+  }> {
+    const order = await this.ordersService.findById(orderId);
+    return {
+      orderId: order._id.toString(),
+      status: order.status,
+      isPaid: order.isPaid,
+      paidAt: order.paidAt?.toISOString(),
+    };
+  }
 }
 

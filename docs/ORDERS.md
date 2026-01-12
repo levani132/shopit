@@ -12,6 +12,32 @@ Orders are filtered by the current store subdomain. Users only see orders from t
 
 **API Endpoint**: `GET /api/v1/orders/my-orders?storeSubdomain={subdomain}`
 
+### 2. Payment Retry for Pending Orders
+
+Orders in "pending" status display a "Pay Now" button that allows users to retry payment if their initial payment failed or was abandoned.
+
+**Flow**:
+1. User clicks "Pay Now" on a pending order
+2. Frontend calls `POST /api/v1/payments/retry/{orderId}` with success/fail URLs
+3. Payment page opens in a new tab/popup
+4. PaymentAwaitingModal appears showing a spinning loader
+5. Modal polls `GET /api/v1/payments/order-status/{orderId}` every 2 seconds
+6. When payment completes, modal shows success/failure and refreshes orders
+
+**API Endpoints**:
+- `POST /api/v1/payments/retry/:orderId` - Creates new BOG payment for existing order
+- `GET /api/v1/payments/order-status/:orderId` - Returns current payment status for polling
+
+### 3. Payment Awaiting Modal
+
+A full-screen modal that appears while payment is being processed in a separate tab:
+
+- **Waiting state**: Shows spinning payment icon and message
+- **Success state**: Shows green checkmark, auto-redirects after 2 seconds
+- **Failed state**: Shows red X, allows user to close and try again
+
+The modal uses polling (every 2 seconds) to check payment status without requiring page refresh.
+
 ### 2. Order Items as Links
 
 Each order item is clickable and navigates to the product page, allowing users to easily repurchase or view the product again.
@@ -119,7 +145,7 @@ interface OrderItem {
 
 ## Translations
 
-New translation keys added for this feature:
+Translation keys for orders feature:
 
 | Key | English | Georgian |
 |-----|---------|----------|
@@ -129,6 +155,14 @@ New translation keys added for this feature:
 | `orders.subtotal` | Subtotal | პროდუქტების ფასი |
 | `orders.shipping` | Shipping | მიტანა |
 | `orders.free` | Free | უფასო |
+| `orders.payNow` | Pay Now | გადახდა |
+| `orders.processing` | Processing... | მუშავდება... |
+| `orders.awaitingPayment` | Waiting for Payment | გადახდის მოლოდინი |
+| `orders.awaitingPaymentDescription` | Complete your payment in the new window... | დაასრულეთ გადახდა ახალ ფანჯარაში... |
+| `orders.paymentWindowOpen` | Payment window is open in another tab | გადახდის ფანჯარა ღიაა სხვა ტაბში |
+| `orders.paymentSuccessful` | Payment Successful! | გადახდა წარმატებულია! |
+| `orders.paymentFailed` | Payment Failed | გადახდა ვერ მოხერხდა |
+| `orders.close` | Close | დახურვა |
 
 ## File Locations
 

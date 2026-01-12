@@ -107,6 +107,35 @@ export class PaymentsController {
   }
 
   /**
+   * Retry payment for an existing pending order
+   * Creates a new BOG payment for an order that failed or was abandoned
+   */
+  @Post('retry/:orderId')
+  async retryPayment(
+    @Param('orderId') orderId: string,
+    @Body()
+    body: {
+      successUrl: string;
+      failUrl: string;
+    },
+  ) {
+    return this.paymentsService.retryPaymentForOrder(
+      orderId,
+      body.successUrl,
+      body.failUrl,
+    );
+  }
+
+  /**
+   * Get order payment status (for polling)
+   * Returns the current order status
+   */
+  @Get('order-status/:orderId')
+  async getOrderPaymentStatus(@Param('orderId') orderId: string) {
+    return this.paymentsService.getOrderPaymentStatus(orderId);
+  }
+
+  /**
    * Initiate subdomain change payment
    * Requires authentication
    */

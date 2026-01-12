@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,6 +16,131 @@ import { getLocalizedText } from '../../../../../lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+
+// Payment awaiting modal component
+function PaymentAwaitingModal({
+  isOpen,
+  orderId,
+  onPaymentComplete,
+  t,
+}: {
+  isOpen: boolean;
+  orderId: string | null;
+  onPaymentComplete: (success: boolean) => void;
+  t: (key: string) => string;
+}) {
+  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>('waiting');
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || !orderId) return;
+
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/payments/order-status/${orderId}`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.isPaid) {
+            setStatus('success');
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+            }
+            setTimeout(() => {
+              onPaymentComplete(true);
+            }, 2000);
+          } else if (data.status === 'cancelled') {
+            setStatus('failed');
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error polling payment status:', error);
+      }
+    };
+
+    pollStatus();
+    pollIntervalRef.current = setInterval(pollStatus, 2000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [isOpen, orderId, onPaymentComplete]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-8 text-center">
+        {status === 'waiting' && (
+          <>
+            <div className="w-20 h-20 mx-auto mb-6 relative">
+              <div className="absolute inset-0 border-4 border-[var(--store-accent-200)] dark:border-[var(--store-accent-800)] rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-transparent border-t-[var(--store-accent-500)] rounded-full animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-8 h-8 text-[var(--store-accent-500)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('awaitingPayment')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {t('awaitingPaymentDescription')}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              {t('paymentWindowOpen')}
+            </p>
+          </>
+        )}
+
+        {status === 'success' && (
+          <>
+            <div className="w-20 h-20 mx-auto mb-6 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('paymentSuccessful')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              {t('paymentSuccessfulDescription')}
+            </p>
+          </>
+        )}
+
+        {status === 'failed' && (
+          <>
+            <div className="w-20 h-20 mx-auto mb-6 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('paymentFailed')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {t('paymentFailedDescription')}
+            </p>
+            <button
+              onClick={() => onPaymentComplete(false)}
+              className="px-6 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
+            >
+              {t('close')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type CheckoutStep = 'auth' | 'guest' | 'shipping' | 'review';
 
@@ -36,12 +161,18 @@ export default function CheckoutPage() {
     clearCheckout,
   } = useCheckout();
 
+  const router = useRouter();
+  
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('auth');
   const [isGuestCheckout, setIsGuestCheckout] = useState(false);
   const [savedAddresses, setSavedAddresses] = useState<ShippingAddress[]>([]);
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Payment modal state
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
 
   // Form states
   const [guestForm, setGuestForm] = useState<GuestInfo>({
@@ -278,22 +409,47 @@ export default function CheckoutPage() {
 
       const paymentData = await paymentResponse.json();
 
-      // 3. Redirect to BOG payment page
+      // 3. Open BOG payment page in popup/new tab
       if (paymentData.redirectUrl) {
-        // Clear cart and checkout state before redirecting
+        // Clear cart and checkout state
         clearCart();
         clearCheckout();
-        window.location.href = paymentData.redirectUrl;
+        
+        // Store order ID for polling
+        setCurrentOrderId(order._id);
+        
+        // Open payment in new tab
+        const paymentWindow = window.open(paymentData.redirectUrl, '_blank', 'width=600,height=700');
+        
+        // If popup was blocked, redirect in same window
+        if (!paymentWindow) {
+          window.location.href = paymentData.redirectUrl;
+          return;
+        }
+        
+        // Show payment awaiting modal
+        setPaymentModalOpen(true);
       } else {
         throw new Error('No payment URL received');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Checkout error:', err);
-      setError(err.message || 'An error occurred during checkout');
+      setError(err instanceof Error ? err.message : 'An error occurred during checkout');
     } finally {
       setIsProcessing(false);
     }
   };
+  
+  // Handle payment completion
+  const handlePaymentComplete = useCallback((success: boolean) => {
+    setPaymentModalOpen(false);
+    setCurrentOrderId(null);
+    
+    if (success) {
+      // Redirect to success page
+      router.push(`/${locale}/orders`);
+    }
+  }, [router, locale]);
 
   // Empty cart check
   if (storeItems.length === 0) {
@@ -725,6 +881,14 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      
+      {/* Payment Awaiting Modal */}
+      <PaymentAwaitingModal
+        isOpen={paymentModalOpen}
+        orderId={currentOrderId}
+        onPaymentComplete={handlePaymentComplete}
+        t={t}
+      />
     </div>
   );
 }
