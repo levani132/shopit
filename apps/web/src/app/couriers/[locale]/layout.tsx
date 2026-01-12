@@ -5,6 +5,9 @@ import { NextIntlClientProvider } from 'next-intl';
 import { AuthProvider } from '../../../contexts/AuthContext';
 import { CartProvider } from '../../../contexts/CartContext';
 
+// Import global CSS
+import '../../global.css';
+
 // Import messages statically for client components
 import enMessages from '../../../messages/en.json';
 import kaMessages from '../../../messages/ka.json';
@@ -25,15 +28,19 @@ export default function CourierLayout({
   const localeMessages = messages[locale] || messages.en;
 
   return (
-    <NextIntlClientProvider locale={locale} messages={localeMessages}>
-      <AuthProvider>
-        <CartProvider>
-          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
-            {children}
-          </div>
-        </CartProvider>
-      </AuthProvider>
-    </NextIntlClientProvider>
+    <html lang={locale} suppressHydrationWarning>
+      <body className="antialiased">
+        <NextIntlClientProvider locale={locale} messages={localeMessages}>
+          <AuthProvider>
+            <CartProvider>
+              <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+                {children}
+              </div>
+            </CartProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }
 

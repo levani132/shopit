@@ -131,10 +131,22 @@ export default function AddressesPage() {
         const data = await response.json();
         if (editingAddress) {
           setAddresses((prev) =>
-            prev.map((a) => (a._id === editingAddress._id ? data : a)),
+            prev.map((a) => {
+              if (a._id === editingAddress._id) return data;
+              // If the edited address is now default, unset others
+              if (data.isDefault && a.isDefault) return { ...a, isDefault: false };
+              return a;
+            }),
           );
         } else {
-          setAddresses((prev) => [...prev, data]);
+          // When adding a new address
+          setAddresses((prev) => {
+            // If new address is default, unset all others
+            if (data.isDefault) {
+              return [...prev.map((a) => ({ ...a, isDefault: false })), data];
+            }
+            return [...prev, data];
+          });
         }
         closeModal();
       } else {
@@ -173,10 +185,13 @@ export default function AddressesPage() {
 
   const handleSetDefault = async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/addresses/${id}/default`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/auth/addresses/${id}/default`,
+        {
+          method: 'POST',
+          credentials: 'include',
+        },
+      );
 
       if (response.ok) {
         setAddresses((prev) =>
@@ -194,7 +209,10 @@ export default function AddressesPage() {
         <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-48" />
         <div className="space-y-4">
           {[1, 2].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 dark:bg-zinc-700 rounded-xl" />
+            <div
+              key={i}
+              className="h-32 bg-gray-200 dark:bg-zinc-700 rounded-xl"
+            />
           ))}
         </div>
       </div>
@@ -442,4 +460,3 @@ export default function AddressesPage() {
     </div>
   );
 }
-
