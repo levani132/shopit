@@ -8,14 +8,9 @@ import dynamic from 'next/dynamic';
 const TBILISI_CENTER = { lat: 41.7151, lng: 44.8271 };
 const DEFAULT_ZOOM = 13;
 
-// Map tile URLs for light and dark modes
-const TILE_URLS = {
-  // CartoDB Voyager - colorful, Google Maps-like for light mode
-  light:
-    'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-  // Esri World Gray Canvas - nicer dark theme with better visibility
-  dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-};
+// CartoDB Voyager tiles - we'll use CSS filters for dark mode
+const TILE_URL =
+  'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 
 // Photon API for geocoding (free, OpenStreetMap-based)
 const PHOTON_API_SEARCH = 'https://photon.komoot.io/api';
@@ -308,6 +303,7 @@ function AddressPickerMap({
   }, []);
 
   // Custom marker icon with accent color
+  // Note: When dark mode filter is applied, we counter-invert the marker
   const customIcon = L?.divIcon({
     className: 'custom-marker',
     html: `
@@ -315,6 +311,7 @@ function AddressPickerMap({
         width: 32px;
         height: 42px;
         position: relative;
+        ${isDarkMode ? 'filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(1.1);' : ''}
       ">
         <svg viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
           <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="var(--accent-500, #6366f1)"/>
@@ -441,22 +438,29 @@ function AddressPickerMap({
       </div>
 
       {/* Map */}
-      <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm">
+      <div
+        className={`rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 ${
+          isDarkMode ? 'map-dark-mode' : ''
+        }`}
+        style={
+          isDarkMode
+            ? {
+                filter:
+                  'invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9)',
+              }
+            : undefined
+        }
+      >
         <MapContainer
           center={[mapCenter.lat, mapCenter.lng]}
           zoom={DEFAULT_ZOOM}
           style={{ height: '280px', width: '100%' }}
           className="z-0"
         >
-          {/* Map tiles - CartoDB Voyager for light, Esri Dark Gray for dark mode */}
+          {/* CartoDB Voyager tiles - CSS filter applied for dark mode */}
           <TileLayer
-            key={isDarkMode ? 'dark' : 'light'}
-            attribution={
-              isDarkMode
-                ? '&copy; <a href="https://www.esri.com/">Esri</a>'
-                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
-            }
-            url={isDarkMode ? TILE_URLS.dark : TILE_URLS.light}
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+            url={TILE_URL}
           />
 
           <MapClickHandler />
