@@ -49,6 +49,14 @@ interface StoreData {
     tiktok?: string;
   };
   homepageProductOrder?: string;
+  // Shipping settings
+  courierType?: 'shopit' | 'seller';
+  prepTimeMinDays?: number;
+  prepTimeMaxDays?: number;
+  deliveryMinDays?: number;
+  deliveryMaxDays?: number;
+  deliveryFee?: number;
+  freeDelivery?: boolean;
 }
 
 const PRODUCT_ORDER_OPTIONS = [
@@ -428,6 +436,29 @@ export default function StoreSettingsPage() {
           'homepageProductOrder',
           formData.homepageProductOrder,
         );
+      }
+
+      // Shipping settings
+      submitData.append('courierType', formData.courierType || 'shopit');
+      submitData.append(
+        'prepTimeMinDays',
+        String(formData.prepTimeMinDays ?? 1),
+      );
+      submitData.append(
+        'prepTimeMaxDays',
+        String(formData.prepTimeMaxDays ?? 3),
+      );
+      if (formData.courierType === 'seller') {
+        submitData.append(
+          'deliveryMinDays',
+          String(formData.deliveryMinDays ?? 1),
+        );
+        submitData.append(
+          'deliveryMaxDays',
+          String(formData.deliveryMaxDays ?? 5),
+        );
+        submitData.append('deliveryFee', String(formData.deliveryFee ?? 0));
+        submitData.append('freeDelivery', String(formData.freeDelivery || false));
       }
 
       // Files
@@ -1015,6 +1046,246 @@ export default function StoreSettingsPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Shipping & Delivery Settings */}
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            {t('shippingSettings')}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            {t('shippingSettingsDescription')}
+          </p>
+
+          {/* Courier Type Selection */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              {t('deliveryMethod')}
+            </label>
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* ShopIt Delivery Option */}
+              <button
+                type="button"
+                onClick={() => updateField('courierType', 'shopit')}
+                className={`p-4 border-2 rounded-xl text-left transition-all ${
+                  formData.courierType !== 'seller'
+                    ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20'
+                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                      formData.courierType !== 'seller'
+                        ? 'border-[var(--accent-500)]'
+                        : 'border-gray-300 dark:border-zinc-600'
+                    }`}
+                  >
+                    {formData.courierType !== 'seller' && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-500)]" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {t('shopitDelivery')}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {t('shopitDeliveryDescription')}
+                    </p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent-600)] dark:text-[var(--accent-400)]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {t('shopitDeliveryIncluded')}
+                    </div>
+                  </div>
+                </div>
+              </button>
+
+              {/* Self Delivery Option */}
+              <button
+                type="button"
+                onClick={() => updateField('courierType', 'seller')}
+                className={`p-4 border-2 rounded-xl text-left transition-all ${
+                  formData.courierType === 'seller'
+                    ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20'
+                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                      formData.courierType === 'seller'
+                        ? 'border-[var(--accent-500)]'
+                        : 'border-gray-300 dark:border-zinc-600'
+                    }`}
+                  >
+                    {formData.courierType === 'seller' && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-500)]" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900 dark:text-white">
+                      {t('selfDelivery')}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {t('selfDeliveryDescription')}
+                    </p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      +10 ₾ {t('platformFee')}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Preparation Time (for both options) */}
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-800 rounded-xl">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t('preparationTime')}
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              {t('preparationTimeDescription')}
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  {t('minDays')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={formData.prepTimeMinDays ?? 1}
+                  onChange={(e) =>
+                    updateField('prepTimeMinDays', parseInt(e.target.value) || 0)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                />
+              </div>
+              <span className="text-gray-400 mt-5">—</span>
+              <div className="flex-1">
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  {t('maxDays')}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="30"
+                  value={formData.prepTimeMaxDays ?? 3}
+                  onChange={(e) =>
+                    updateField('prepTimeMaxDays', parseInt(e.target.value) || 0)
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                />
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400 mt-5">
+                {t('days')}
+              </span>
+            </div>
+          </div>
+
+          {/* Self Delivery Settings (only shown when courierType is 'seller') */}
+          {formData.courierType === 'seller' && (
+            <div className="space-y-4 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-xl">
+              <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {t('selfDeliverySettings')}
+              </h4>
+
+              {/* Delivery Time Range */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('deliveryTime')}
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                  {t('deliveryTimeDescription')}
+                </p>
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={formData.deliveryMinDays ?? 1}
+                      onChange={(e) =>
+                        updateField('deliveryMinDays', parseInt(e.target.value) || 0)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                    />
+                  </div>
+                  <span className="text-gray-400">—</span>
+                  <div className="flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="60"
+                      value={formData.deliveryMaxDays ?? 5}
+                      onChange={(e) =>
+                        updateField('deliveryMaxDays', parseInt(e.target.value) || 0)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                    />
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {t('days')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Delivery Fee */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('deliveryFee')}
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.deliveryFee ?? 0}
+                      onChange={(e) =>
+                        updateField('deliveryFee', parseFloat(e.target.value) || 0)
+                      }
+                      disabled={formData.freeDelivery}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-zinc-800"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                      ₾
+                    </span>
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.freeDelivery || false}
+                      onChange={(e) => updateField('freeDelivery', e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-600)] focus:ring-[var(--accent-500)]"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {t('freeDelivery')}
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Info about platform fee */}
+              <div className="flex items-start gap-2 p-3 bg-amber-100 dark:bg-amber-900/20 rounded-lg">
+                <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-amber-800 dark:text-amber-300">
+                  {t('selfDeliveryPlatformFeeNote')}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Social Links */}

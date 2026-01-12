@@ -789,7 +789,9 @@ export default function ProductDetailPage() {
             <button
               onClick={handleToggleWishlist}
               disabled={wishlistLoading}
-              title={isInWishlist ? t('removeFromWishlist') : t('addToWishlist')}
+              title={
+                isInWishlist ? t('removeFromWishlist') : t('addToWishlist')
+              }
               className={`w-12 h-12 flex items-center justify-center rounded-lg border transition-colors disabled:opacity-50 ${
                 isInWishlist
                   ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-500'
