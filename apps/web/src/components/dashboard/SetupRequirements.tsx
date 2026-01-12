@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '../../lib/api';
 
@@ -65,38 +66,51 @@ const getStoreTab = (missingFields: string[]): string => {
 
 export default function SetupRequirements() {
   const t = useTranslations('dashboard');
+  const pathname = usePathname();
   const [status, setStatus] = useState<PublishStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchStatus = useCallback(async () => {
+    try {
+      setError(null);
+      const response = await api.get('/stores/publish/status');
+      if (response.ok) {
+        const data = await response.json();
+        // Ensure publishStatus defaults to 'draft' if null/undefined
+        setStatus({
+          ...data,
+          publishStatus: data.publishStatus || 'draft',
+        });
+      } else {
+        setError(`API error: ${response.status}`);
+      }
+    } catch (err) {
+      console.error('[SetupRequirements] Failed to fetch publish status:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch status on mount and when pathname changes (navigation)
   useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        setError(null);
-        const response = await api.get('/stores/publish/status');
-        if (response.ok) {
-          const data = await response.json();
-          // Ensure publishStatus defaults to 'draft' if null/undefined
-          setStatus({
-            ...data,
-            publishStatus: data.publishStatus || 'draft',
-          });
-        } else {
-          setError(`API error: ${response.status}`);
-        }
-      } catch (err) {
-        console.error(
-          '[SetupRequirements] Failed to fetch publish status:',
-          err,
-        );
-        setError(err instanceof Error ? err.message : 'Unknown error');
-      } finally {
-        setLoading(false);
+    fetchStatus();
+  }, [fetchStatus, pathname]);
+
+  // Also refetch when page becomes visible (user comes back to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStatus();
       }
     };
 
-    fetchStatus();
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchStatus]);
 
   if (loading) {
     return (

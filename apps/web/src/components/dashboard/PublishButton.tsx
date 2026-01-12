@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { api } from '../../lib/api';
 
 interface PublishStatus {
@@ -18,6 +19,7 @@ interface PublishStatus {
 
 export default function PublishButton() {
   const t = useTranslations('dashboard');
+  const pathname = usePathname();
   const [status, setStatus] = useState<PublishStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [, setError] = useState(false);
@@ -56,8 +58,23 @@ export default function PublishButton() {
     }
   }, []);
 
+  // Fetch status on mount and when pathname changes (navigation)
   useEffect(() => {
     fetchStatus();
+  }, [fetchStatus, pathname]);
+
+  // Also refetch when page becomes visible (user comes back to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchStatus();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchStatus]);
 
   const handleSubmit = async () => {
