@@ -93,8 +93,9 @@ export class StoresController {
       homepageProductOrder: store.homepageProductOrder || 'popular',
       // Delivery settings
       courierType: store.courierType || 'shopit',
-      prepTimeMinDays: store.prepTimeMinDays ?? 1,
-      prepTimeMaxDays: store.prepTimeMaxDays ?? 3,
+      noPrepRequired: store.noPrepRequired ?? true,
+      prepTimeMinDays: store.prepTimeMinDays ?? 0,
+      prepTimeMaxDays: store.prepTimeMaxDays ?? 0,
       deliveryMinDays: store.deliveryMinDays,
       deliveryMaxDays: store.deliveryMaxDays,
       deliveryFee: store.deliveryFee ?? 0,
@@ -270,8 +271,9 @@ export class StoresController {
       homepageProductOrder: store.homepageProductOrder || 'popular',
       // Delivery settings
       courierType: store.courierType || 'shopit',
-      prepTimeMinDays: store.prepTimeMinDays ?? 1,
-      prepTimeMaxDays: store.prepTimeMaxDays ?? 3,
+      noPrepRequired: store.noPrepRequired ?? true,
+      prepTimeMinDays: store.prepTimeMinDays ?? 0,
+      prepTimeMaxDays: store.prepTimeMaxDays ?? 0,
       deliveryMinDays: store.deliveryMinDays,
       deliveryMaxDays: store.deliveryMaxDays,
       deliveryFee: store.deliveryFee ?? 0,

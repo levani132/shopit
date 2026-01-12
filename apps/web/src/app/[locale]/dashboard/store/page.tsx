@@ -56,6 +56,7 @@ interface StoreData {
   homepageProductOrder?: string;
   // Shipping settings
   courierType?: 'shopit' | 'seller';
+  noPrepRequired?: boolean;
   prepTimeMinDays?: number;
   prepTimeMaxDays?: number;
   deliveryMinDays?: number;
@@ -465,12 +466,16 @@ export default function StoreSettingsPage() {
       // Shipping settings
       submitData.append('courierType', formData.courierType || 'shopit');
       submitData.append(
+        'noPrepRequired',
+        String(formData.noPrepRequired ?? true),
+      );
+      submitData.append(
         'prepTimeMinDays',
-        String(formData.prepTimeMinDays ?? 1),
+        String(formData.noPrepRequired ? 0 : (formData.prepTimeMinDays ?? 0)),
       );
       submitData.append(
         'prepTimeMaxDays',
-        String(formData.prepTimeMaxDays ?? 3),
+        String(formData.noPrepRequired ? 0 : (formData.prepTimeMaxDays ?? 0)),
       );
       if (formData.courierType === 'seller') {
         submitData.append(
@@ -1203,48 +1208,71 @@ export default function StoreSettingsPage() {
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
               {t('preparationTimeDescription')}
             </p>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {t('minDays')}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={formData.prepTimeMinDays ?? 1}
-                  onChange={(e) =>
-                    updateField(
-                      'prepTimeMinDays',
-                      parseInt(e.target.value) || 0,
-                    )
+
+            {/* No prep required checkbox */}
+            <label className="flex items-center gap-3 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.noPrepRequired ?? true}
+                onChange={(e) => {
+                  updateField('noPrepRequired', e.target.checked);
+                  if (e.target.checked) {
+                    updateField('prepTimeMinDays', 0);
+                    updateField('prepTimeMaxDays', 0);
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
-                />
-              </div>
-              <span className="text-gray-400 mt-5">—</span>
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {t('maxDays')}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="30"
-                  value={formData.prepTimeMaxDays ?? 3}
-                  onChange={(e) =>
-                    updateField(
-                      'prepTimeMaxDays',
-                      parseInt(e.target.value) || 0,
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
-                />
-              </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400 mt-5">
-                {t('days')}
+                }}
+                className="w-5 h-5 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                {t('noPrepRequired')}
               </span>
-            </div>
+            </label>
+
+            {/* Prep time inputs - only shown when prep is required */}
+            {!(formData.noPrepRequired ?? true) && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    {t('minDays')}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={formData.prepTimeMinDays ?? 1}
+                    onChange={(e) =>
+                      updateField(
+                        'prepTimeMinDays',
+                        parseInt(e.target.value) || 1,
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                  />
+                </div>
+                <span className="text-gray-400 mt-5">—</span>
+                <div className="flex-1">
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                    {t('maxDays')}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="30"
+                    value={formData.prepTimeMaxDays ?? 3}
+                    onChange={(e) =>
+                      updateField(
+                        'prepTimeMaxDays',
+                        parseInt(e.target.value) || 1,
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+                  />
+                </div>
+                <span className="text-sm text-gray-500 dark:text-gray-400 mt-5">
+                  {t('days')}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Self Delivery Settings (only shown when courierType is 'seller') */}

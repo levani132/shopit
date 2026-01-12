@@ -143,7 +143,8 @@ export class PublishService {
     if (!isValidGeorgianPhone(store.phone)) missingStore.push('phone');
     if (!store.address?.trim()) missingStore.push('address');
     // Location on map
-    if (!store.location?.lat || !store.location?.lng) missingStore.push('location');
+    if (!store.location?.lat || !store.location?.lng)
+      missingStore.push('location');
     // Courier/delivery type
     if (!store.courierType) missingStore.push('courierType');
 

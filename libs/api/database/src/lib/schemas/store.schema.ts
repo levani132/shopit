@@ -149,13 +149,21 @@ export class Store {
   courierType!: string;
 
   /**
+   * If true, no preparation time is needed (items ship same day)
+   * Defaults to true - most sellers don't need prep time
+   */
+  @Prop({ default: true })
+  noPrepRequired!: boolean;
+
+  /**
    * Preparation time in days (how long seller needs to prepare item for shipping)
+   * Only used when noPrepRequired is false
    * This is added to delivery estimates regardless of courier type
    */
-  @Prop({ default: 1, min: 0 })
+  @Prop({ default: 0, min: 0 })
   prepTimeMinDays!: number;
 
-  @Prop({ default: 3, min: 0 })
+  @Prop({ default: 0, min: 0 })
   prepTimeMaxDays!: number;
 
   /**

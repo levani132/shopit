@@ -39,6 +39,7 @@ export interface UpdateStoreDto {
   homepageProductOrder?: string; // 'popular', 'newest', 'price_asc', 'price_desc', 'random'
   // Delivery settings
   courierType?: string; // 'shopit' or 'seller'
+  noPrepRequired?: string; // 'true' or 'false' (from form data)
   prepTimeMinDays?: number;
   prepTimeMaxDays?: number;
   deliveryMinDays?: number;
@@ -220,6 +221,9 @@ export class StoresService {
       if (validCourierTypes.includes(dto.courierType)) {
         store.courierType = dto.courierType;
       }
+    }
+    if (dto.noPrepRequired !== undefined) {
+      store.noPrepRequired = dto.noPrepRequired === 'true';
     }
     if (dto.prepTimeMinDays !== undefined) {
       store.prepTimeMinDays = Math.max(0, Number(dto.prepTimeMinDays));

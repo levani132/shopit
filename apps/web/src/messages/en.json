@@ -425,6 +425,7 @@
     "selfDeliveryNoFee": "No extra platform fees",
     "preparationTime": "Preparation Time",
     "preparationTimeDescription": "How long you need to prepare items for shipping after an order is placed.",
+    "noPrepRequired": "No preparation needed (items can ship same day)",
     "minDays": "Min",
     "maxDays": "Max",
     "days": "days",
