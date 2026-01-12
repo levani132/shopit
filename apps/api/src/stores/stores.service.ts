@@ -33,6 +33,7 @@ export interface UpdateStoreDto {
   phone?: string;
   email?: string;
   address?: string;
+  location?: string; // JSON string with { lat, lng }
   hideAddress?: string; // "true" or "false" from form data
   socialLinks?: string; // JSON string
   homepageProductOrder?: string; // 'popular', 'newest', 'price_asc', 'price_desc', 'random'
@@ -128,6 +129,13 @@ export class StoresService {
     if (dto.phone !== undefined) store.phone = dto.phone;
     if (dto.email !== undefined) store.email = dto.email;
     if (dto.address !== undefined) store.address = dto.address;
+    if (dto.location !== undefined) {
+      try {
+        store.location = JSON.parse(dto.location);
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
     if (dto.hideAddress !== undefined)
       store.hideAddress = dto.hideAddress === 'true';
 

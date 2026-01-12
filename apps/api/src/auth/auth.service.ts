@@ -853,6 +853,7 @@ export class AuthService {
       postalCode?: string;
       country?: string;
       phoneNumber: string;
+      location?: { lat: number; lng: number };
       isDefault?: boolean;
     },
   ): Promise<any> {
@@ -864,6 +865,7 @@ export class AuthService {
       postalCode: addressData.postalCode || '',
       country: addressData.country || 'Georgia',
       phoneNumber: addressData.phoneNumber,
+      location: addressData.location,
       isDefault: addressData.isDefault || false,
     };
 
@@ -904,6 +906,7 @@ export class AuthService {
       postalCode?: string;
       country?: string;
       phoneNumber?: string;
+      location?: { lat: number; lng: number };
       isDefault?: boolean;
     },
   ): Promise<any> {
@@ -937,6 +940,8 @@ export class AuthService {
       updateFields['shippingAddresses.$.country'] = updateData.country;
     if (updateData.phoneNumber !== undefined)
       updateFields['shippingAddresses.$.phoneNumber'] = updateData.phoneNumber;
+    if (updateData.location !== undefined)
+      updateFields['shippingAddresses.$.location'] = updateData.location;
     if (updateData.isDefault !== undefined)
       updateFields['shippingAddresses.$.isDefault'] = updateData.isDefault;
 

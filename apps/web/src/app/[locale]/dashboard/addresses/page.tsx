@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { AddressPicker, type AddressResult } from '../../../../components/ui/AddressPicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -15,6 +16,7 @@ interface Address {
   postalCode?: string;
   country: string;
   phoneNumber: string;
+  location?: { lat: number; lng: number };
   isDefault: boolean;
 }
 
@@ -38,6 +40,7 @@ export default function AddressesPage() {
     postalCode: '',
     country: 'Georgia',
     phoneNumber: '',
+    location: undefined as { lat: number; lng: number } | undefined,
     isDefault: false,
   });
 
@@ -78,6 +81,7 @@ export default function AddressesPage() {
         postalCode: address.postalCode || '',
         country: address.country,
         phoneNumber: address.phoneNumber,
+        location: address.location,
         isDefault: address.isDefault,
       });
     } else {
@@ -89,6 +93,7 @@ export default function AddressesPage() {
         postalCode: '',
         country: 'Georgia',
         phoneNumber: '',
+        location: undefined,
         isDefault: addresses.length === 0,
       });
     }
@@ -105,6 +110,7 @@ export default function AddressesPage() {
       postalCode: '',
       country: 'Georgia',
       phoneNumber: '',
+      location: undefined,
       isDefault: false,
     });
   };
@@ -370,17 +376,23 @@ export default function AddressesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {tCheckout('fullAddress')} *
                 </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
+                <AddressPicker
+                  value={
+                    formData.address && formData.location
+                      ? { address: formData.address, location: formData.location }
+                      : undefined
                   }
-                  required
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                  onChange={(result: AddressResult) => {
+                    setFormData({
+                      ...formData,
+                      address: result.address,
+                      location: result.location,
+                    });
+                  }}
+                  placeholder={tCheckout('searchAddress')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -395,6 +407,7 @@ export default function AddressesPage() {
                       setFormData({ ...formData, city: e.target.value })
                     }
                     required
+                    placeholder={t('enterCityManually')}
                     className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>

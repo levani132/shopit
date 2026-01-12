@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getLatinInitial } from '../../../../lib/utils';
+import { AddressPicker, type AddressResult } from '../../../../components/ui/AddressPicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -41,6 +42,7 @@ interface StoreData {
   phone?: string;
   email?: string;
   address?: string;
+  location?: { lat: number; lng: number };
   hideAddress?: boolean;
   socialLinks?: {
     facebook?: string;
@@ -439,6 +441,9 @@ export default function StoreSettingsPage() {
       submitData.append('phone', formData.phone || '');
       submitData.append('email', formData.email || '');
       submitData.append('address', formData.address || '');
+      if (formData.location) {
+        submitData.append('location', JSON.stringify(formData.location));
+      }
       submitData.append('hideAddress', String(formData.hideAddress || false));
 
       // Social links
@@ -1033,16 +1038,21 @@ export default function StoreSettingsPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Address
+                {t('storeAddress')}
               </label>
-              <input
-                type="text"
-                value={formData.address || ''}
-                onChange={(e) => updateField('address', e.target.value)}
-                placeholder="123 Main St, Tbilisi, Georgia"
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              <AddressPicker
+                value={
+                  formData.address && formData.location
+                    ? { address: formData.address, location: formData.location }
+                    : undefined
+                }
+                onChange={(result: AddressResult) => {
+                  updateField('address', result.address);
+                  updateField('location', result.location);
+                }}
+                placeholder={t('searchStoreAddress')}
               />
-              <div className="mt-3 flex items-start gap-3">
+              <div className="mt-4 flex items-start gap-3">
                 <input
                   type="checkbox"
                   id="hideAddress"
@@ -1055,12 +1065,11 @@ export default function StoreSettingsPage() {
                   className="text-sm text-gray-600 dark:text-gray-400"
                 >
                   <span className="font-medium">
-                    Hide address from customers
+                    {t('hideAddressFromCustomers')}
                   </span>
                   <br />
                   <span className="text-xs text-gray-500 dark:text-gray-500">
-                    Your address is still required for courier pickup, but
-                    won&apos;t be shown on your public store page.
+                    {t('hideAddressNote')}
                   </span>
                 </label>
               </div>
