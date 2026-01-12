@@ -40,7 +40,8 @@ export default function DevicesPage() {
         });
         if (response.ok) {
           const data = await response.json();
-          setDevices(data);
+          // API returns { devices: [...] }
+          setDevices(Array.isArray(data) ? data : data.devices || []);
         }
       } catch (err) {
         console.error('Error fetching devices:', err);
