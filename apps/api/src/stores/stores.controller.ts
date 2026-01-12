@@ -100,6 +100,7 @@ export class StoresController {
       deliveryMaxDays: store.deliveryMaxDays,
       deliveryFee: store.deliveryFee ?? 0,
       freeDelivery: store.freeDelivery ?? false,
+      selfPickupEnabled: store.selfPickupEnabled ?? false,
     };
   }
 
@@ -278,6 +279,7 @@ export class StoresController {
       deliveryMaxDays: store.deliveryMaxDays,
       deliveryFee: store.deliveryFee ?? 0,
       freeDelivery: store.freeDelivery ?? false,
+      selfPickupEnabled: store.selfPickupEnabled ?? false,
     };
   }
 

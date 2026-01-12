@@ -439,7 +439,12 @@
     "deliveryTimeDescription": "How long it takes to deliver after items are prepared.",
     "deliveryFee": "Delivery Fee",
     "freeDelivery": "Free Delivery",
-    "selfDeliveryNote": "With self-delivery, you handle shipping yourself. Customers will see your estimated delivery time and fee during checkout. ShopIt only takes the standard 10% commission on product sales."
+    "selfDeliveryNote": "With self-delivery, you handle shipping yourself. Customers will see your estimated delivery time and fee during checkout. ShopIt only takes the standard 10% commission on product sales.",
+    "selfPickupEnabled": "Allow self-pickup",
+    "selfPickupDescription": "Let customers pick up orders from your store. Shipping is free for self-pickup orders. Make sure your store address is set correctly.",
+    "selfPickupOption": "Pick up from store",
+    "selfPickupFree": "Free",
+    "selfPickupAddress": "Pickup address"
   },
   "auth": {
     "login": "Login",
@@ -635,6 +640,10 @@
     "saveAddress": "Save address for future use",
     "useThisAddress": "Use This Address",
     "reviewOrder": "Review Order",
+    "deliveryMethod": "Choose Delivery Method",
+    "homeDelivery": "Home Delivery",
+    "homeDeliveryDescription": "We'll deliver your order to your address",
+    "selfPickupDescription": "Pick up your order from the store address",
     "shippingTo": "Shipping to",
     "change": "Change",
     "paymentMethod": "Payment Method",

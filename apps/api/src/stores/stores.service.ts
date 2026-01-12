@@ -46,6 +46,7 @@ export interface UpdateStoreDto {
   deliveryMaxDays?: number;
   deliveryFee?: number;
   freeDelivery?: boolean;
+  selfPickupEnabled?: string; // 'true' or 'false' from form data
 }
 
 @Injectable()
@@ -242,6 +243,9 @@ export class StoresService {
     }
     if (dto.freeDelivery !== undefined) {
       store.freeDelivery = dto.freeDelivery === true || dto.freeDelivery === 'true' as unknown as boolean;
+    }
+    if (dto.selfPickupEnabled !== undefined) {
+      store.selfPickupEnabled = dto.selfPickupEnabled === 'true';
     }
 
     await store.save();

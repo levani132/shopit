@@ -129,6 +129,11 @@ export class CreateOrderDto {
   @IsOptional()
   paymentMethod?: string;
 
+  // Delivery method: 'delivery' (home delivery) or 'pickup' (self-pickup from store)
+  @IsString()
+  @IsOptional()
+  deliveryMethod?: 'delivery' | 'pickup';
+
   // Guest checkout info (required if not authenticated)
   @ValidateNested()
   @Type(() => GuestInfoDto)

@@ -162,6 +162,10 @@ export class Order {
   @Prop({ required: true, default: 'BOG' })
   paymentMethod!: string;
 
+  // Delivery method: 'delivery' (home delivery) or 'pickup' (self-pickup from store)
+  @Prop({ type: String, enum: ['delivery', 'pickup'], default: 'delivery' })
+  deliveryMethod!: 'delivery' | 'pickup';
+
   @Prop({ type: PaymentResultSchema })
   paymentResult?: PaymentResult;
 

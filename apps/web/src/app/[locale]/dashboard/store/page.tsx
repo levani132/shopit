@@ -74,6 +74,7 @@ interface StoreData {
   deliveryMaxDays?: number;
   deliveryFee?: number;
   freeDelivery?: boolean;
+  selfPickupEnabled?: boolean;
 }
 
 const PRODUCT_ORDER_OPTIONS = [
@@ -524,6 +525,12 @@ function StoreSettingsPageContent() {
           String(formData.freeDelivery || false),
         );
       }
+
+      // Self pickup option (applies to all courier types)
+      submitData.append(
+        'selfPickupEnabled',
+        String(formData.selfPickupEnabled || false),
+      );
 
       // Files
       if (logoFile) {
@@ -1567,6 +1574,28 @@ function StoreSettingsPageContent() {
                   </div>
                 </div>
               )}
+
+              {/* Self Pickup Option */}
+              <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30 rounded-xl">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.selfPickupEnabled || false}
+                    onChange={(e) =>
+                      updateField('selfPickupEnabled', e.target.checked)
+                    }
+                    className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-600)] focus:ring-[var(--accent-500)]"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {t('selfPickupEnabled')}
+                    </span>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      {t('selfPickupDescription')}
+                    </p>
+                  </div>
+                </label>
+              </div>
             </div>
           </>
         )}

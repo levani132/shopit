@@ -224,19 +224,28 @@ export class OrdersService {
           0,
         );
 
+        // Determine delivery method
+        const deliveryMethod = dto.deliveryMethod || 'delivery';
+
         // Calculate shipping price
+        // - Self-pickup: always free
         // - ShopIt courier: based on location (simplified to 0 for now)
         // - Seller courier: +10 GEL per store
-        const storeIds = new Set(enhancedOrderItems.map((i) => i.storeId.toString()));
         let shippingPrice = 0;
-        for (const storeId of storeIds) {
-          const storeItem = enhancedOrderItems.find(
-            (i) => i.storeId.toString() === storeId,
-          );
-          if (storeItem?.courierType === 'seller') {
-            shippingPrice += 10; // 10 GEL for seller courier
+        if (deliveryMethod === 'pickup') {
+          // Self-pickup is always free
+          shippingPrice = 0;
+        } else {
+          const storeIds = new Set(enhancedOrderItems.map((i) => i.storeId.toString()));
+          for (const storeId of storeIds) {
+            const storeItem = enhancedOrderItems.find(
+              (i) => i.storeId.toString() === storeId,
+            );
+            if (storeItem?.courierType === 'seller') {
+              shippingPrice += 10; // 10 GEL for seller courier
+            }
+            // ShopIt courier shipping will be calculated separately
           }
-          // ShopIt courier shipping will be calculated separately
         }
 
         const taxPrice = 0; // No tax for now
@@ -247,6 +256,7 @@ export class OrdersService {
           orderItems: enhancedOrderItems,
           shippingDetails: dto.shippingDetails,
           paymentMethod: dto.paymentMethod || 'BOG',
+          deliveryMethod,
           itemsPrice,
           shippingPrice,
           taxPrice,

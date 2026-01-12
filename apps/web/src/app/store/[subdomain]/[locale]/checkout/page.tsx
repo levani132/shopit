@@ -270,11 +270,21 @@ function PaymentAwaitingModal({
   );
 }
 
-type CheckoutStep = 'auth' | 'guest' | 'shipping' | 'review';
+type CheckoutStep = 'auth' | 'guest' | 'delivery' | 'shipping' | 'review';
+type DeliveryMethod = 'delivery' | 'pickup';
+
+interface StoreInfo {
+  id: string;
+  address?: string;
+  location?: { lat: number; lng: number };
+  selfPickupEnabled?: boolean;
+  courierType?: string;
+}
 
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
+  const tDashboard = useTranslations('dashboard');
   const params = useParams();
   const locale = (params?.locale as string) || 'ka';
   const subdomain = params?.subdomain as string;
@@ -297,6 +307,10 @@ export default function CheckoutPage() {
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Delivery method state
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('delivery');
+  const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
 
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -372,13 +386,49 @@ export default function CheckoutPage() {
     fetchAddresses();
   }, [isAuthenticated, addressesLoaded, shippingAddress, setShippingAddress]);
 
+  // Fetch store info for self-pickup
+  useEffect(() => {
+    const fetchStoreInfo = async () => {
+      try {
+        const response = await fetch(
+          `${API_URL}/api/v1/stores/subdomain/${subdomain}`,
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setStoreInfo({
+            id: data._id || data.id,
+            address: data.address,
+            location: data.location,
+            selfPickupEnabled: data.selfPickupEnabled,
+            courierType: data.courierType,
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching store info:', err);
+      }
+    };
+
+    if (subdomain) {
+      fetchStoreInfo();
+    }
+  }, [subdomain]);
+
+  // Check if self-pickup is available
+  const selfPickupAvailable = storeInfo?.selfPickupEnabled && storeInfo?.address;
+
   // Auto-advance steps
   useEffect(() => {
     if (authLoading) return;
 
     if (isAuthenticated) {
       if (!addressesLoaded) return;
-      if (!shippingAddress) {
+      // If self-pickup is available, go to delivery method selection first
+      if (selfPickupAvailable && currentStep === 'auth') {
+        setCurrentStep('delivery');
+      } else if (deliveryMethod === 'pickup') {
+        // For self-pickup, skip shipping address and go to review
+        setCurrentStep('review');
+      } else if (!shippingAddress) {
         setCurrentStep('shipping');
       } else {
         setCurrentStep('review');
@@ -386,6 +436,10 @@ export default function CheckoutPage() {
     } else if (isGuestCheckout) {
       if (!guestInfo) {
         setCurrentStep('guest');
+      } else if (selfPickupAvailable && currentStep === 'guest') {
+        setCurrentStep('delivery');
+      } else if (deliveryMethod === 'pickup') {
+        setCurrentStep('review');
       } else if (!shippingAddress) {
         setCurrentStep('shipping');
       } else {
@@ -401,13 +455,32 @@ export default function CheckoutPage() {
     guestInfo,
     shippingAddress,
     addressesLoaded,
+    selfPickupAvailable,
+    deliveryMethod,
+    currentStep,
   ]);
 
   // Handle guest info submit
   const handleGuestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setGuestInfo(guestForm);
-    setCurrentStep('shipping');
+    // If self-pickup is available, go to delivery method selection
+    if (selfPickupAvailable) {
+      setCurrentStep('delivery');
+    } else {
+      setCurrentStep('shipping');
+    }
+  };
+
+  // Handle delivery method selection
+  const handleDeliveryMethodSelect = (method: DeliveryMethod) => {
+    setDeliveryMethod(method);
+    if (method === 'pickup') {
+      // For self-pickup, skip shipping and go to review
+      setCurrentStep('review');
+    } else {
+      setCurrentStep('shipping');
+    }
   };
 
   // Handle address selection
@@ -447,7 +520,9 @@ export default function CheckoutPage() {
 
   // Process checkout
   const handleCheckout = async () => {
-    if (!shippingAddress || storeItems.length === 0) return;
+    // For self-pickup, we don't need shipping address
+    if (deliveryMethod === 'delivery' && !shippingAddress) return;
+    if (storeItems.length === 0) return;
 
     setIsProcessing(true);
     setError(null);
@@ -472,13 +547,24 @@ export default function CheckoutPage() {
           storeId: item.storeId,
           storeName: item.storeName,
         })),
-        shippingDetails: {
-          address: shippingAddress.address,
-          city: shippingAddress.city,
-          postalCode: shippingAddress.postalCode,
-          country: shippingAddress.country,
-          phoneNumber: shippingAddress.phoneNumber,
-        },
+        // For self-pickup, use store address; for delivery, use shipping address
+        shippingDetails:
+          deliveryMethod === 'pickup'
+            ? {
+                address: storeInfo?.address || 'Self Pickup',
+                city: 'Self Pickup',
+                postalCode: '',
+                country: 'Georgia',
+                phoneNumber: guestInfo?.phoneNumber || user?.phoneNumber || '',
+              }
+            : {
+                address: shippingAddress!.address,
+                city: shippingAddress!.city,
+                postalCode: shippingAddress!.postalCode,
+                country: shippingAddress!.country,
+                phoneNumber: shippingAddress!.phoneNumber,
+              },
+        deliveryMethod, // 'delivery' or 'pickup'
         paymentMethod: 'BOG',
         isGuestOrder: !isAuthenticated,
         guestInfo: !isAuthenticated ? guestInfo : undefined,
@@ -759,6 +845,110 @@ export default function CheckoutPage() {
             </div>
           )}
 
+          {/* Step 2.5: Delivery Method (when self-pickup is available) */}
+          {currentStep === 'delivery' && selfPickupAvailable && (
+            <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                {t('deliveryMethod')}
+              </h2>
+
+              <div className="space-y-3">
+                {/* Home Delivery Option */}
+                <button
+                  onClick={() => handleDeliveryMethodSelect('delivery')}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                    deliveryMethod === 'delivery'
+                      ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/20'
+                      : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 text-blue-600 dark:text-blue-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {t('homeDelivery')}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t('homeDeliveryDescription')}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Self Pickup Option */}
+                <button
+                  onClick={() => handleDeliveryMethodSelect('pickup')}
+                  className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                    deliveryMethod === 'pickup'
+                      ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/20'
+                      : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-5 h-5 text-green-600 dark:text-green-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {tDashboard('selfPickupOption')}
+                        </p>
+                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                          {tDashboard('selfPickupFree')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {t('selfPickupDescription')}
+                      </p>
+                      {storeInfo?.address && (
+                        <div className="mt-2 p-2 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {tDashboard('selfPickupAddress')}:
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {storeInfo.address}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Step 3: Shipping Address */}
           {currentStep === 'shipping' && (
             <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
@@ -953,8 +1143,37 @@ export default function CheckoutPage() {
                 {t('reviewOrder')}
               </h2>
 
-              {/* Shipping address summary */}
-              {shippingAddress && (
+              {/* Delivery method summary */}
+              {deliveryMethod === 'pickup' ? (
+                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="font-medium text-green-800 dark:text-green-300">
+                          {tDashboard('selfPickupOption')}
+                        </p>
+                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
+                          {tDashboard('selfPickupFree')}
+                        </span>
+                      </div>
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        {tDashboard('selfPickupAddress')}:
+                      </p>
+                      <p className="text-sm text-green-600 dark:text-green-500">
+                        {storeInfo?.address}
+                      </p>
+                    </div>
+                    {selfPickupAvailable && (
+                      <button
+                        onClick={() => setCurrentStep('delivery')}
+                        className="text-sm text-green-600 dark:text-green-400 hover:underline"
+                      >
+                        {t('change')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : shippingAddress ? (
                 <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
                   <div className="flex justify-between items-start">
                     <div>
@@ -972,14 +1191,18 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => setCurrentStep('shipping')}
+                      onClick={() =>
+                        setCurrentStep(
+                          selfPickupAvailable ? 'delivery' : 'shipping',
+                        )
+                      }
                       className="text-sm text-[var(--store-accent-600)] hover:underline"
                     >
                       {t('change')}
                     </button>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* Payment method */}
               <div className="mb-6">

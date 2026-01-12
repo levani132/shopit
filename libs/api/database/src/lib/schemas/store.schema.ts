@@ -190,6 +190,14 @@ export class Store {
   @Prop({ default: false })
   freeDelivery?: boolean;
 
+  /**
+   * Self-pickup option
+   * When enabled, customers can choose to pick up their orders from the store
+   * Shipping is free for self-pickup orders
+   */
+  @Prop({ default: false })
+  selfPickupEnabled?: boolean;
+
   // ================== PUBLISH STATUS ==================
 
   /**
