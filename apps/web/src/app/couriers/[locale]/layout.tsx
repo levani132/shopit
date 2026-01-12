@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { AuthProvider } from '../../../contexts/AuthContext';
 import { CartProvider } from '../../../contexts/CartContext';
+import { ShopItBar } from '../../../components/ui/ShopItBar';
 
 // Import global CSS
 import '../../global.css';
@@ -33,6 +34,8 @@ export default function CourierLayout({
         <NextIntlClientProvider locale={locale} messages={localeMessages}>
           <AuthProvider>
             <CartProvider>
+              {/* ShopIt global bar */}
+              <ShopItBar variant="standalone" showCreateShop={false} />
               <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
                 {children}
               </div>

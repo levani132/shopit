@@ -4,11 +4,11 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '../theme/ThemeProvider';
-import { ShopItLogo } from '../ui/ShopItLogo';
-import { UserMenu } from './UserMenu';
+import { ShopItBar } from '../ui/ShopItBar';
 import { CartButton } from './CartButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { getLatinInitial } from '../../lib/utils';
+import Link from 'next/link';
 
 interface SubcategoryData {
   _id: string;
@@ -152,55 +152,13 @@ export function StoreHeader({ store }: StoreHeaderProps) {
 
   return (
     <>
-      {/* Small Top Bar - Hides on scroll */}
+      {/* Small Top Bar - ShopIt global bar, hides on scroll */}
       <div
-        className={`bg-gray-900 dark:bg-zinc-950 text-white transition-all duration-300 ${
+        className={`transition-all duration-300 ${
           topBarVisible ? 'h-10 opacity-100' : 'h-0 opacity-0 overflow-hidden'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
-          <div className="flex items-center justify-between h-full">
-            {/* ShopIt Logo - links to main site */}
-            <a href={mainSiteUrl} className="flex items-center">
-              <ShopItLogo size="sm" variant="light" useStoreAccent />
-            </a>
-
-            {/* Right side buttons */}
-            <div className="flex items-center gap-3">
-              {authLoading ? (
-                // Loading skeleton
-                <div className="w-20 h-6 bg-gray-700 rounded animate-pulse" />
-              ) : isAuthenticated && user ? (
-                // User is logged in - show user menu
-                <UserMenu variant="light" mainSiteUrl={mainSiteUrl} />
-              ) : (
-                // User is not logged in - show login/register buttons
-                <>
-                  <a
-                    href="/login"
-                    className="text-xs text-gray-300 hover:text-white transition-colors"
-                  >
-                    {t('login')}
-                  </a>
-                  <a
-                    href="/register"
-                    className="text-xs text-gray-300 hover:text-white transition-colors"
-                  >
-                    {t('register')}
-                  </a>
-                  {/* Create Your Shop - links to main site registration */}
-                  <a
-                    href={`${mainSiteUrl}/register`}
-                    className="text-xs px-3 py-1 rounded-full text-white transition-colors"
-                    style={{ backgroundColor: 'var(--store-accent-500)' }}
-                  >
-                    {t('createYourShop')}
-                  </a>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+        <ShopItBar variant="store" showCreateShop />
       </div>
 
       {/* Main Store Header - Sticky */}
@@ -361,6 +319,52 @@ export function StoreHeader({ store }: StoreHeaderProps) {
 
               {/* Language Switcher */}
               <LanguageSwitcher />
+
+              {/* Wishlist - for logged in users */}
+              {isAuthenticated && (
+                <Link
+                  href={`/${locale}/wishlist`}
+                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hidden sm:block"
+                  title={t('wishlist')}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                </Link>
+              )}
+
+              {/* Orders - for logged in users */}
+              {isAuthenticated && (
+                <Link
+                  href={`/${locale}/orders`}
+                  className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 hidden sm:block"
+                  title={t('myOrders')}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </Link>
+              )}
 
               {/* Cart Button */}
               <CartButton />
