@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Store, StoreDocument } from '@sellit/api-database';
+import {
+  Store,
+  StoreDocument,
+  User,
+  UserDocument,
+} from '@sellit/api-database';
 
 export interface UpdateStoreDto {
   name?: string;
@@ -28,6 +33,7 @@ export interface UpdateStoreDto {
   phone?: string;
   email?: string;
   address?: string;
+  hideAddress?: string; // "true" or "false" from form data
   socialLinks?: string; // JSON string
   homepageProductOrder?: string; // 'popular', 'newest', 'price_asc', 'price_desc', 'random'
   // Delivery settings
@@ -44,6 +50,7 @@ export interface UpdateStoreDto {
 export class StoresService {
   constructor(
     @InjectModel(Store.name) private storeModel: Model<StoreDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
   ) {}
 
   async findBySubdomain(subdomain: string): Promise<StoreDocument | null> {
@@ -121,6 +128,8 @@ export class StoresService {
     if (dto.phone !== undefined) store.phone = dto.phone;
     if (dto.email !== undefined) store.email = dto.email;
     if (dto.address !== undefined) store.address = dto.address;
+    if (dto.hideAddress !== undefined)
+      store.hideAddress = dto.hideAddress === 'true';
 
     // Update localized fields
     if (dto.nameKa || dto.nameEn) {
@@ -378,6 +387,31 @@ export class StoresService {
       nextChangeCost,
       isFreeChangeAvailable,
     };
+  }
+
+  /**
+   * Delete a store and update user's role
+   */
+  async deleteStore(storeId: string, user: UserDocument): Promise<void> {
+    const store = await this.storeModel.findById(storeId);
+
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    // Verify ownership
+    if (store.ownerId.toString() !== user._id.toString()) {
+      throw new BadRequestException('You can only delete your own store');
+    }
+
+    // Delete the store
+    await this.storeModel.findByIdAndDelete(storeId);
+
+    // Update user: remove storeId and change role to 'user'
+    await this.userModel.findByIdAndUpdate(user._id, {
+      $unset: { storeId: 1 },
+      $set: { role: 'user' },
+    });
   }
 }
 

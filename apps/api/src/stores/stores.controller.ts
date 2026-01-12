@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -81,6 +82,7 @@ export class StoresController {
       phone: store.phone,
       email: store.email,
       address: store.address,
+      hideAddress: store.hideAddress ?? false,
       isVerified: store.isVerified ?? false,
       homepageProductOrder: store.homepageProductOrder || 'popular',
       // Delivery settings
@@ -251,6 +253,7 @@ export class StoresController {
       phone: store.phone,
       email: store.email,
       address: store.address,
+      hideAddress: store.hideAddress ?? false,
       isVerified: store.isVerified ?? false,
       homepageProductOrder: store.homepageProductOrder || 'popular',
       // Delivery settings
@@ -307,6 +310,7 @@ export class StoresController {
       phone: store.phone,
       email: store.email,
       address: store.address,
+      hideAddress: store.hideAddress ?? false,
       isVerified: store.isVerified ?? false,
     };
   }
@@ -357,6 +361,7 @@ export class StoresController {
         phone: store.phone,
         email: store.email,
         address: store.address,
+        hideAddress: store.hideAddress ?? false,
         isVerified: store.isVerified ?? false,
       },
       products,
@@ -385,5 +390,19 @@ export class StoresController {
       categories: store.categories,
       isVerified: store.isVerified,
     };
+  }
+
+  @Delete('my-store')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete current user store' })
+  @ApiResponse({ status: 200, description: 'Store deleted successfully' })
+  async deleteMyStore(@CurrentUser() user: UserDocument) {
+    if (!user.storeId) {
+      throw new NotFoundException('No store found for this user');
+    }
+
+    await this.storesService.deleteStore(user.storeId.toString(), user);
+    return { message: 'Store deleted successfully' };
   }
 }

@@ -134,7 +134,8 @@ export default function AddressesPage() {
             prev.map((a) => {
               if (a._id === editingAddress._id) return data;
               // If the edited address is now default, unset others
-              if (data.isDefault && a.isDefault) return { ...a, isDefault: false };
+              if (data.isDefault && a.isDefault)
+                return { ...a, isDefault: false };
               return a;
             }),
           );

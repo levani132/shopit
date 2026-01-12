@@ -122,6 +122,9 @@ export class Store {
   @Prop()
   address?: string;
 
+  @Prop({ default: false })
+  hideAddress?: boolean;
+
   // Homepage product display order: 'popular', 'newest', 'price_asc', 'price_desc', 'random'
   @Prop({ default: 'popular' })
   homepageProductOrder!: string;

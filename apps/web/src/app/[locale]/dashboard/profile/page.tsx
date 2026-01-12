@@ -72,6 +72,76 @@ export default function ProfilePage() {
   }, [user]);
 
   const isCourier = user?.role === 'courier';
+  const isSeller = user?.role === 'seller';
+  const [isDeletingStore, setIsDeletingStore] = useState(false);
+  const [isDeletingCourierRole, setIsDeletingCourierRole] = useState(false);
+
+  const handleDeleteStore = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to delete your store? All products, orders, and store data will be permanently deleted. Your user account will be kept.',
+      )
+    ) {
+      return;
+    }
+
+    setIsDeletingStore(true);
+    try {
+      const response = await fetch(`${API_URL}/api/v1/stores/my-store`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setErrors({ general: data.message || 'Failed to delete store' });
+        return;
+      }
+
+      await refreshAuth();
+      showSuccess('Store deleted successfully');
+      // Redirect to home or show a message
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Error deleting store:', err);
+      setErrors({ general: 'Failed to delete store' });
+    } finally {
+      setIsDeletingStore(false);
+    }
+  };
+
+  const handleDeleteCourierRole = async () => {
+    if (
+      !confirm(
+        'Are you sure you want to remove your courier account? You will no longer be able to deliver orders.',
+      )
+    ) {
+      return;
+    }
+
+    setIsDeletingCourierRole(true);
+    try {
+      const response = await fetch(`${API_URL}/api/v1/auth/courier/remove`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setErrors({ general: data.message || 'Failed to remove courier role' });
+        return;
+      }
+
+      await refreshAuth();
+      showSuccess('Courier account removed successfully');
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Error removing courier role:', err);
+      setErrors({ general: 'Failed to remove courier role' });
+    } finally {
+      setIsDeletingCourierRole(false);
+    }
+  };
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -464,6 +534,9 @@ export default function ProfilePage() {
                 onChange={(e) => handleIbanChange(e.target.value)}
                 placeholder="GE29TB7777777777777777"
                 maxLength={22}
+                autoComplete="off"
+                data-form-type="other"
+                data-lpignore="true"
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition font-mono"
               />
               {errors.accountNumber && (
@@ -640,17 +713,41 @@ export default function ProfilePage() {
           <p className="text-red-600 dark:text-red-400 text-sm mb-4">
             These actions are irreversible. Please be careful.
           </p>
-          <button
-            onClick={() => {
-              if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                // TODO: Implement account deletion
-                alert('Account deletion is not yet implemented.');
-              }
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Delete Account
-          </button>
+          <div className="flex flex-wrap gap-3">
+            {isSeller && (
+              <button
+                onClick={handleDeleteStore}
+                disabled={isDeletingStore}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isDeletingStore ? 'Deleting...' : 'Delete Store'}
+              </button>
+            )}
+            {isCourier && (
+              <button
+                onClick={handleDeleteCourierRole}
+                disabled={isDeletingCourierRole}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {isDeletingCourierRole ? 'Removing...' : 'Remove Courier Account'}
+              </button>
+            )}
+            <button
+              onClick={() => {
+                if (
+                  confirm(
+                    'Are you sure you want to delete your account? This action cannot be undone.',
+                  )
+                ) {
+                  // TODO: Implement account deletion
+                  alert('Account deletion is not yet implemented.');
+                }
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Delete Account
+            </button>
+          </div>
         </div>
       </div>
     </div>

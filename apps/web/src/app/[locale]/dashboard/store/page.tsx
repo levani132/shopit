@@ -41,6 +41,7 @@ interface StoreData {
   phone?: string;
   email?: string;
   address?: string;
+  hideAddress?: boolean;
   socialLinks?: {
     facebook?: string;
     instagram?: string;
@@ -414,6 +415,7 @@ export default function StoreSettingsPage() {
       submitData.append('phone', formData.phone || '');
       submitData.append('email', formData.email || '');
       submitData.append('address', formData.address || '');
+      submitData.append('hideAddress', String(formData.hideAddress || false));
 
       // Social links
       if (formData.socialLinks) {
@@ -947,9 +949,13 @@ export default function StoreSettingsPage() {
 
         {/* Contact Information */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
             Contact Information
           </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            This information will be visible to your customers on your store
+            page.
+          </p>
 
           <div className="grid md:grid-cols-2 gap-6">
             <div>
@@ -987,6 +993,26 @@ export default function StoreSettingsPage() {
                 placeholder="123 Main St, Tbilisi, Georgia"
                 className="w-full px-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
+              <div className="mt-3 flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="hideAddress"
+                  checked={formData.hideAddress || false}
+                  onChange={(e) => updateField('hideAddress', e.target.checked)}
+                  className="mt-1 w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500"
+                />
+                <label
+                  htmlFor="hideAddress"
+                  className="text-sm text-gray-600 dark:text-gray-400"
+                >
+                  <span className="font-medium">Hide address from customers</span>
+                  <br />
+                  <span className="text-xs text-gray-500 dark:text-gray-500">
+                    Your address is still required for courier pickup, but won&apos;t
+                    be shown on your public store page.
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
         </div>

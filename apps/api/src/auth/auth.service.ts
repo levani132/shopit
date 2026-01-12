@@ -805,6 +805,32 @@ export class AuthService {
     });
   }
 
+  /**
+   * Remove courier role from user
+   */
+  async removeCourierRole(userId: string): Promise<void> {
+    const user = await this.userModel.findById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.role !== 'courier') {
+      throw new BadRequestException('User is not a courier');
+    }
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      $set: { role: 'user' },
+      $unset: {
+        isCourierApproved: 1,
+        courierAppliedAt: 1,
+        courierApprovedAt: 1,
+        vehicleType: 1,
+        workingAreas: 1,
+      },
+    });
+  }
+
   // =============== Address Management ===============
 
   /**

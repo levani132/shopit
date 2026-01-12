@@ -744,6 +744,15 @@ export class AuthController {
     return { success: true, message: 'Device removed successfully' };
   }
 
+  @Delete('courier/remove')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove courier role from account' })
+  async removeCourierRole(@CurrentUser() user: UserDocument) {
+    await this.authService.removeCourierRole(user._id.toString());
+    return { success: true, message: 'Courier role removed successfully' };
+  }
+
   // ============ Google OAuth ============
 
   @Get('google')
