@@ -8,6 +8,18 @@ import { Model, Types } from 'mongoose';
 import { Store, StoreDocument, User, UserDocument } from '@sellit/api-database';
 
 /**
+ * Validate Georgian IBAN
+ * Format: GE + 2 check digits + 2 letter bank code + 16 alphanumeric characters = 22 chars total
+ * Example: GE29TB7777777777777777
+ */
+function isValidGeorgianIban(iban: string | undefined): boolean {
+  if (!iban) return false;
+  const cleaned = iban.replace(/\s/g, '').toUpperCase();
+  // Georgian IBAN: GE + 20 alphanumeric characters = 22 total
+  return /^GE\d{2}[A-Z]{2}[A-Z0-9]{16}$/.test(cleaned);
+}
+
+/**
  * Validate Georgian phone number
  * Accepts:
  * - Full international: +995XXXXXXXXX (12 chars total, 9 digits after +995)
@@ -16,27 +28,27 @@ import { Store, StoreDocument, User, UserDocument } from '@sellit/api-database';
  */
 function isValidGeorgianPhone(phone: string | undefined): boolean {
   if (!phone) return false;
-  
+
   // Remove all spaces, dashes, and parentheses
   const cleaned = phone.replace(/[\s\-\(\)]/g, '');
-  
+
   // Check for international format: +995 followed by 9 digits starting with 5
   if (cleaned.startsWith('+995')) {
     const localPart = cleaned.slice(4);
     return /^5\d{8}$/.test(localPart);
   }
-  
+
   // Check for local format: 9 digits starting with 5
   if (/^5\d{8}$/.test(cleaned)) {
     return true;
   }
-  
+
   // Also accept 995 without + prefix
   if (cleaned.startsWith('995')) {
     const localPart = cleaned.slice(3);
     return /^5\d{8}$/.test(localPart);
   }
-  
+
   return false;
 }
 
@@ -88,7 +100,9 @@ export class PublishService {
 
     // Find store by ownerId (stores have ownerId pointing to user)
     // ownerId is stored as ObjectId, so we need to convert the string
-    const store = await this.storeModel.findOne({ ownerId: new Types.ObjectId(userId) });
+    const store = await this.storeModel.findOne({
+      ownerId: new Types.ObjectId(userId),
+    });
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -100,16 +114,22 @@ export class PublishService {
     if (!user.firstName?.trim()) missingProfile.push('firstName');
     if (!user.lastName?.trim()) missingProfile.push('lastName');
     if (!isValidGeorgianPhone(user.phoneNumber)) missingProfile.push('phone');
+    if (!user.identificationNumber?.trim() || user.identificationNumber.length !== 11) {
+      missingProfile.push('idNumber');
+    }
+    if (!isValidGeorgianIban(user.accountNumber)) missingProfile.push('bankAccount');
 
     // Check store requirements
-    if (!store.name?.trim()) missingStore.push('name');
-    if (!store.description?.trim() && !store.descriptionLocalized?.en?.trim() && !store.descriptionLocalized?.ka?.trim()) {
-      missingStore.push('description');
-    }
-    if (!store.address?.trim()) missingStore.push('address');
-    if (!store.location?.lat || !store.location?.lng) missingStore.push('location');
+    // Logo: either uploaded OR useInitialAsLogo is checked
+    if (!store.logo && !store.useInitialAsLogo) missingStore.push('logo');
+    // Cover: either uploaded OR useDefaultCover is checked
+    if (!store.coverImage && !store.useDefaultCover) missingStore.push('cover');
+    // Store name required in BOTH languages
+    if (!store.nameLocalized?.ka?.trim()) missingStore.push('nameKa');
+    if (!store.nameLocalized?.en?.trim()) missingStore.push('nameEn');
+    // Phone and address
     if (!isValidGeorgianPhone(store.phone)) missingStore.push('phone');
-    if (!store.courierType) missingStore.push('courierType');
+    if (!store.address?.trim()) missingStore.push('address');
 
     const canPublish = missingProfile.length === 0 && missingStore.length === 0;
 
@@ -134,7 +154,9 @@ export class PublishService {
 
     // Find store by ownerId (stores have ownerId pointing to user)
     // ownerId is stored as ObjectId, so we need to convert the string
-    const store = await this.storeModel.findOne({ ownerId: new Types.ObjectId(userId) });
+    const store = await this.storeModel.findOne({
+      ownerId: new Types.ObjectId(userId),
+    });
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -190,10 +212,7 @@ export class PublishService {
   /**
    * Admin: Reject a store publish request
    */
-  async rejectPublish(
-    storeId: string,
-    reason: string,
-  ): Promise<StoreDocument> {
+  async rejectPublish(storeId: string, reason: string): Promise<StoreDocument> {
     const store = await this.storeModel.findById(storeId);
     if (!store) {
       throw new NotFoundException('Store not found');
@@ -253,4 +272,3 @@ export class PublishService {
     }
   }
 }
-

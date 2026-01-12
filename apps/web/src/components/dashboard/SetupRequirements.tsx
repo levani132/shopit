@@ -20,14 +20,18 @@ interface PublishStatus {
 }
 
 const FIELD_LABELS: Record<string, string> = {
+  // Profile fields
   firstName: 'fieldFirstName',
   lastName: 'fieldLastName',
   phone: 'fieldPhone',
-  name: 'fieldName',
-  description: 'fieldDescription',
+  idNumber: 'fieldIdNumber',
+  bankAccount: 'fieldBankAccount',
+  // Store fields
+  logo: 'fieldLogo',
+  cover: 'fieldCover',
+  nameKa: 'fieldNameKa',
+  nameEn: 'fieldNameEn',
   address: 'fieldAddress',
-  location: 'fieldLocation',
-  courierType: 'fieldCourierType',
 };
 
 export default function SetupRequirements() {
