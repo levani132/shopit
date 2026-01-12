@@ -14,7 +14,7 @@ export default function CourierLandingPage() {
   const pathname = usePathname();
   const locale = (params?.locale as string) || 'en';
   const { isAuthenticated, user } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -48,11 +48,6 @@ export default function CourierLandingPage() {
     const newLocale = locale === 'en' ? 'ka' : 'en';
     const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
     router.push(newPath);
-  };
-
-  // Toggle theme
-  const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
   return (

@@ -4,8 +4,8 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useCart } from '../../../../../contexts/CartContext';
-import { getLocalizedText } from '../../../../../lib/utils';
+import { useCart } from '../../../../../../contexts/CartContext';
+import { getLocalizedText } from '../../../../../../lib/utils';
 
 export default function CartPage() {
   const t = useTranslations('cart');

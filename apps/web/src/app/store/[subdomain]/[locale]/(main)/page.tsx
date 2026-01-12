@@ -4,11 +4,11 @@ import {
   getHomepageProducts,
   StoreData,
   HomepageProduct,
-} from '../../../../lib/api';
-import { getStoreBySubdomain as getMockStore } from '../../../../data/mock-stores';
-import { StoreHero } from '../../../../components/store/StoreHero';
-import { HomepageProducts } from '../../../../components/store/HomepageProducts';
-import { getLatinInitial } from '../../../../lib/utils';
+} from '../../../../../lib/api';
+import { getStoreBySubdomain as getMockStore } from '../../../../../data/mock-stores';
+import { StoreHero } from '../../../../../components/store/StoreHero';
+import { HomepageProducts } from '../../../../../components/store/HomepageProducts';
+import { getLatinInitial } from '../../../../../lib/utils';
 
 interface StorePageProps {
   params: Promise<{ subdomain: string; locale: string }>;

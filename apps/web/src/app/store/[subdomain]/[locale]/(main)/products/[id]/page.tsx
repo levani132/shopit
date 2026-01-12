@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { useCart } from '../../../../../../contexts/CartContext';
-import { useAuth } from '../../../../../../contexts/AuthContext';
+import { useCart } from '../../../../../../../contexts/CartContext';
+import { useAuth } from '../../../../../../../contexts/AuthContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');

@@ -5,14 +5,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useAuth } from '../../../../../contexts/AuthContext';
-import { useCart } from '../../../../../contexts/CartContext';
+import { useAuth } from '../../../../../../contexts/AuthContext';
+import { useCart } from '../../../../../../contexts/CartContext';
 import {
   useCheckout,
   ShippingAddress,
   GuestInfo,
-} from '../../../../../contexts/CheckoutContext';
-import { getLocalizedText } from '../../../../../lib/utils';
+} from '../../../../../../contexts/CheckoutContext';
+import { getLocalizedText } from '../../../../../../lib/utils';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');

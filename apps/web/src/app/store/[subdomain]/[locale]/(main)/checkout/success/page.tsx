@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useCart } from '../../../../../../contexts/CartContext';
-import { useCheckout } from '../../../../../../contexts/CheckoutContext';
+import { useCart } from '../../../../../../../contexts/CartContext';
+import { useCheckout } from '../../../../../../../contexts/CheckoutContext';
 
 export default function CheckoutSuccessPage() {
   const t = useTranslations('checkout');
