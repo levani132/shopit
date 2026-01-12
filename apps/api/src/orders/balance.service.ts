@@ -97,7 +97,10 @@ export class BalanceService {
       }
 
       const totalCommissions = siteCommission + deliveryCommission;
-      const finalAmount = itemsTotalPrice - totalCommissions;
+      // Ensure seller never gets negative earnings
+      // If commissions exceed item price, seller gets 0 (commissions are capped at item price)
+      const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
+      const actualCommissions = itemsTotalPrice - finalAmount;
 
       // Update seller's balance
       await this.userModel.findByIdAndUpdate(seller._id, {
