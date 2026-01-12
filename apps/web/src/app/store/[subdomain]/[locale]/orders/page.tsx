@@ -26,9 +26,9 @@ function PaymentAwaitingModal({
   onPaymentComplete: (orderId: string, status: string) => void;
   t: (key: string) => string;
 }) {
-  const [status, setStatus] = useState<'waiting' | 'success' | 'failed' | 'closed'>(
-    'waiting',
-  );
+  const [status, setStatus] = useState<
+    'waiting' | 'success' | 'failed' | 'closed'
+  >('waiting');
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const windowCheckRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -89,7 +89,7 @@ function PaymentAwaitingModal({
     // Start polling every 2 seconds
     pollStatus(); // Initial check
     pollIntervalRef.current = setInterval(pollStatus, 2000);
-    
+
     // Check window status every 500ms
     if (paymentWindow) {
       windowCheckRef.current = setInterval(checkWindowClosed, 500);
@@ -693,7 +693,7 @@ export default function OrdersPage() {
 
         // Store window reference for close detection
         setPaymentWindowRef(paymentWindow);
-        
+
         // Show payment awaiting modal
         setPayingOrderId(orderId);
         setPaymentModalOpen(true);
