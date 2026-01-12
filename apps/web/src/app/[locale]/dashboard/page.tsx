@@ -24,9 +24,6 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Setup Requirements Alert */}
-      <SetupRequirements />
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
@@ -196,6 +193,8 @@ export default async function DashboardPage() {
         </div>
       </div>
 
+      {/* Setup Requirements Alert */}
+      <SetupRequirements />
     </div>
   );
 }
@@ -261,5 +260,3 @@ function QuickActionButton({
     </a>
   );
 }
-
-
