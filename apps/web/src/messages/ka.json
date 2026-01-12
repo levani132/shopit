@@ -458,6 +458,9 @@
     "paymentSuccessfulDescription": "თქვენი გადახდა მიღებულია. შეკვეთები განახლდება...",
     "paymentFailed": "გადახდა ვერ მოხერხდა",
     "paymentFailedDescription": "გადახდა ვერ დასრულდა. შეგიძლიათ სცადოთ თავიდან.",
+    "paymentWindowClosed": "გადახდის ფანჯარა დაიხურა",
+    "paymentWindowClosedDescription": "გადახდის ფანჯარა დაიხურა. შეგიძლიათ სცადოთ თავიდან შეკვეთების გვერდიდან.",
+    "cancelPayment": "გადახდის გაუქმება",
     "close": "დახურვა",
     "status": {
       "pending": "მოლოდინში",
@@ -521,6 +524,9 @@
     "paymentSuccessfulDescription": "თქვენი გადახდა მიღებულია. გადამისამართება შეკვეთებზე...",
     "paymentFailed": "გადახდა ვერ მოხერხდა",
     "paymentFailedDescription": "გადახდა ვერ დასრულდა. შეგიძლიათ სცადოთ თავიდან.",
+    "paymentWindowClosed": "გადახდის ფანჯარა დაიხურა",
+    "paymentWindowClosedDescription": "გადახდის ფანჯარა დაიხურა. შეგიძლიათ სცადოთ თავიდან შეკვეთების გვერდიდან.",
+    "cancelPayment": "გადახდის გაუქმება",
     "close": "დახურვა"
   }
 }

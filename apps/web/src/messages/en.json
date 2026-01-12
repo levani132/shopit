@@ -458,6 +458,9 @@
     "paymentSuccessfulDescription": "Your payment has been received. Refreshing your orders...",
     "paymentFailed": "Payment Failed",
     "paymentFailedDescription": "The payment could not be completed. You can try again.",
+    "paymentWindowClosed": "Payment Window Closed",
+    "paymentWindowClosedDescription": "The payment window was closed. You can try again from your orders page.",
+    "cancelPayment": "Cancel Payment",
     "close": "Close",
     "status": {
       "pending": "Pending",
@@ -521,6 +524,9 @@
     "paymentSuccessfulDescription": "Your payment has been received. Redirecting to your orders...",
     "paymentFailed": "Payment Failed",
     "paymentFailedDescription": "The payment could not be completed. You can try again.",
+    "paymentWindowClosed": "Payment Window Closed",
+    "paymentWindowClosedDescription": "The payment window was closed. You can try again from your orders page.",
+    "cancelPayment": "Cancel Payment",
     "close": "Close"
   }
 }

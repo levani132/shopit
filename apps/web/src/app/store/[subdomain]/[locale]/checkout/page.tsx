@@ -21,22 +21,28 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 function PaymentAwaitingModal({
   isOpen,
   orderId,
+  paymentWindow,
   onPaymentComplete,
+  onCancel,
   t,
 }: {
   isOpen: boolean;
   orderId: string | null;
+  paymentWindow: Window | null;
   onPaymentComplete: (success: boolean) => void;
+  onCancel: () => void;
   t: (key: string) => string;
 }) {
-  const [status, setStatus] = useState<'waiting' | 'success' | 'failed'>(
+  const [status, setStatus] = useState<'waiting' | 'success' | 'failed' | 'closed'>(
     'waiting',
   );
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const windowCheckRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!isOpen || !orderId) return;
 
+    // Poll for payment status
     const pollStatus = async () => {
       try {
         const response = await fetch(
@@ -52,6 +58,9 @@ function PaymentAwaitingModal({
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
+            if (windowCheckRef.current) {
+              clearInterval(windowCheckRef.current);
+            }
             setTimeout(() => {
               onPaymentComplete(true);
             }, 2000);
@@ -60,6 +69,9 @@ function PaymentAwaitingModal({
             if (pollIntervalRef.current) {
               clearInterval(pollIntervalRef.current);
             }
+            if (windowCheckRef.current) {
+              clearInterval(windowCheckRef.current);
+            }
           }
         }
       } catch (error) {
@@ -67,15 +79,43 @@ function PaymentAwaitingModal({
       }
     };
 
+    // Check if payment window was closed
+    const checkWindowClosed = () => {
+      if (paymentWindow && paymentWindow.closed && status === 'waiting') {
+        setStatus('closed');
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+        }
+        if (windowCheckRef.current) {
+          clearInterval(windowCheckRef.current);
+        }
+      }
+    };
+
     pollStatus();
     pollIntervalRef.current = setInterval(pollStatus, 2000);
+    
+    // Check window status every 500ms
+    if (paymentWindow) {
+      windowCheckRef.current = setInterval(checkWindowClosed, 500);
+    }
 
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      if (windowCheckRef.current) {
+        clearInterval(windowCheckRef.current);
+      }
     };
-  }, [isOpen, orderId, onPaymentComplete]);
+  }, [isOpen, orderId, paymentWindow, onPaymentComplete, status]);
+
+  // Reset status when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setStatus('waiting');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -109,9 +149,47 @@ function PaymentAwaitingModal({
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {t('awaitingPaymentDescription')}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
               {t('paymentWindowOpen')}
             </p>
+            <button
+              onClick={onCancel}
+              className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 underline"
+            >
+              {t('cancelPayment')}
+            </button>
+          </>
+        )}
+
+        {status === 'closed' && (
+          <>
+            <div className="w-20 h-20 mx-auto mb-6 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
+              <svg
+                className="w-10 h-10 text-yellow-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t('paymentWindowClosed')}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              {t('paymentWindowClosedDescription')}
+            </p>
+            <button
+              onClick={onCancel}
+              className="px-6 py-2 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
+            >
+              {t('close')}
+            </button>
           </>
         )}
 
@@ -208,6 +286,7 @@ export default function CheckoutPage() {
   // Payment modal state
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [paymentWindowRef, setPaymentWindowRef] = useState<Window | null>(null);
 
   // Form states
   const [guestForm, setGuestForm] = useState<GuestInfo>({
@@ -469,6 +548,9 @@ export default function CheckoutPage() {
           return;
         }
 
+        // Store window reference for close detection
+        setPaymentWindowRef(paymentWindow);
+        
         // Show payment awaiting modal
         setPaymentModalOpen(true);
       } else {
@@ -491,14 +573,28 @@ export default function CheckoutPage() {
     (success: boolean) => {
       setPaymentModalOpen(false);
       setCurrentOrderId(null);
+      setPaymentWindowRef(null);
 
       if (success) {
-        // Redirect to success page
+        // Redirect to orders page
         router.push(`/${locale}/orders`);
       }
     },
     [router, locale],
   );
+
+  // Handle payment cancel (window closed or user clicked cancel)
+  const handlePaymentCancel = useCallback(() => {
+    // Close the payment window if still open
+    if (paymentWindowRef && !paymentWindowRef.closed) {
+      paymentWindowRef.close();
+    }
+    setPaymentModalOpen(false);
+    setCurrentOrderId(null);
+    setPaymentWindowRef(null);
+    // Redirect to orders so user can retry from there
+    router.push(`/${locale}/orders`);
+  }, [paymentWindowRef, router, locale]);
 
   // Show payment modal when cart is empty but payment is in progress
   if (storeItems.length === 0 && paymentModalOpen) {
@@ -508,7 +604,9 @@ export default function CheckoutPage() {
         <PaymentAwaitingModal
           isOpen={paymentModalOpen}
           orderId={currentOrderId}
+          paymentWindow={paymentWindowRef}
           onPaymentComplete={handlePaymentComplete}
+          onCancel={handlePaymentCancel}
           t={t}
         />
       </div>
@@ -979,7 +1077,9 @@ export default function CheckoutPage() {
       <PaymentAwaitingModal
         isOpen={paymentModalOpen}
         orderId={currentOrderId}
+        paymentWindow={paymentWindowRef}
         onPaymentComplete={handlePaymentComplete}
+        onCancel={handlePaymentCancel}
         t={t}
       />
     </div>
