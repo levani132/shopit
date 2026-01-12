@@ -311,7 +311,7 @@ function AddressPickerMap({
         width: 32px;
         height: 42px;
         position: relative;
-        ${isDarkMode ? 'filter: invert(1) hue-rotate(180deg) sepia(0.15) hue-rotate(180deg) brightness(1.1) contrast(1.1);' : ''}
+        ${isDarkMode ? 'filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(1.05);' : ''}
       ">
         <svg viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
           <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="var(--accent-500, #6366f1)"/>
@@ -445,10 +445,10 @@ function AddressPickerMap({
         style={
           isDarkMode
             ? {
-                // Dark theme with subtle blue tint
-                // sepia gives warmth, then hue-rotate shifts to cool blue
+                // Clean dark theme - neutral invert with slight brightness/contrast adjustment
+                // Keeps natural colors (green forests, blue water) correct
                 filter:
-                  'invert(1) hue-rotate(180deg) sepia(0.15) hue-rotate(180deg) brightness(0.95) contrast(0.9)',
+                  'invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95)',
               }
             : undefined
         }
