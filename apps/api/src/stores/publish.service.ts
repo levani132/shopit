@@ -99,7 +99,7 @@ export class PublishService {
     // Check profile requirements
     if (!user.firstName?.trim()) missingProfile.push('firstName');
     if (!user.lastName?.trim()) missingProfile.push('lastName');
-    if (!isValidGeorgianPhone(user.phone)) missingProfile.push('phone');
+    if (!isValidGeorgianPhone(user.phoneNumber)) missingProfile.push('phone');
 
     // Check store requirements
     if (!store.name?.trim()) missingStore.push('name');
