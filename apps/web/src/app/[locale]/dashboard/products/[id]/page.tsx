@@ -34,6 +34,11 @@ interface ProductFormData {
   stock: string;
   categoryId: string;
   subcategoryId: string;
+  // Shipping dimensions
+  weight: string;
+  length: string;
+  width: string;
+  height: string;
 }
 
 export default function EditProductPage() {
@@ -57,6 +62,10 @@ export default function EditProductPage() {
     stock: '',
     categoryId: '',
     subcategoryId: '',
+    weight: '',
+    length: '',
+    width: '',
+    height: '',
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -133,6 +142,10 @@ export default function EditProductPage() {
           stock: String(product.stock || 0),
           categoryId: product.categoryId?._id || product.categoryId || '',
           subcategoryId: product.subcategoryId?._id || product.subcategoryId || '',
+          weight: product.weight ? String(product.weight) : '',
+          length: product.length ? String(product.length) : '',
+          width: product.width ? String(product.width) : '',
+          height: product.height ? String(product.height) : '',
         });
 
         // Set existing images
@@ -285,6 +298,20 @@ export default function EditProductPage() {
 
       if (formData.subcategoryId) {
         formDataToSend.append('subcategoryId', formData.subcategoryId);
+      }
+
+      // Add shipping dimensions
+      if (formData.weight) {
+        formDataToSend.append('weight', formData.weight);
+      }
+      if (formData.length) {
+        formDataToSend.append('length', formData.length);
+      }
+      if (formData.width) {
+        formDataToSend.append('width', formData.width);
+      }
+      if (formData.height) {
+        formDataToSend.append('height', formData.height);
       }
 
       // Add variant data
@@ -714,6 +741,76 @@ export default function EditProductPage() {
               </span>
             </label>
           </div>
+        </div>
+
+        {/* Shipping Dimensions Section */}
+        <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            {t('shippingDimensions')}
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            {t('shippingDimensionsDescription')}
+          </p>
+
+          <div className="grid md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('weight')} (kg)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.1"
+                value={formData.weight}
+                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                placeholder="0"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('lengthCm')} (cm)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.length}
+                onChange={(e) => setFormData({ ...formData, length: e.target.value })}
+                placeholder="0"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('widthCm')} (cm)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.width}
+                onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+                placeholder="0"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('heightCm')} (cm)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.height}
+                onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                placeholder="0"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+            {t('shippingDimensionsNote')}
+          </p>
         </div>
 
         {/* Category Section */}

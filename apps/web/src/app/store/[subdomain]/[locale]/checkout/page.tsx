@@ -309,7 +309,8 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Delivery method state
-  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('delivery');
+  const [deliveryMethod, setDeliveryMethod] =
+    useState<DeliveryMethod>('delivery');
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
 
   // Payment modal state
@@ -414,7 +415,8 @@ export default function CheckoutPage() {
   }, [subdomain]);
 
   // Check if self-pickup is available
-  const selfPickupAvailable = storeInfo?.selfPickupEnabled && storeInfo?.address;
+  const selfPickupAvailable =
+    storeInfo?.selfPickupEnabled && storeInfo?.address;
 
   // Auto-advance steps
   useEffect(() => {

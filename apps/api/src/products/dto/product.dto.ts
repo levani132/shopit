@@ -304,6 +304,32 @@ export class CreateProductDto {
   @IsMongoId()
   subcategoryId?: string;
 
+  // --- Shipping Dimensions & Weight ---
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  weight?: number; // Weight in kg
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  length?: number; // Length in cm
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  width?: number; // Width in cm
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  height?: number; // Height in cm
+
   // --- Variant Support ---
 
   @IsOptional()
@@ -393,6 +419,32 @@ export class UpdateProductDto {
   @IsOptional()
   @Transform(parseJsonTransform)
   existingImages?: string[];
+
+  // --- Shipping Dimensions & Weight ---
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  weight?: number; // Weight in kg
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  length?: number; // Length in cm
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  width?: number; // Width in cm
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  height?: number; // Height in cm
 
   // --- Variant Support ---
 

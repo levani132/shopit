@@ -111,6 +111,21 @@ export class Product {
   @Prop({ default: true })
   isActive!: boolean;
 
+  // --- Shipping Dimensions & Weight ---
+  // Used to calculate shipping costs based on vehicle type needed
+
+  @Prop({ min: 0 })
+  weight?: number; // Weight in kg
+
+  @Prop({ min: 0 })
+  length?: number; // Length in cm
+
+  @Prop({ min: 0 })
+  width?: number; // Width in cm
+
+  @Prop({ min: 0 })
+  height?: number; // Height in cm
+
   @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
   storeId!: Types.ObjectId;
 
