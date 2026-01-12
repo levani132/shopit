@@ -122,7 +122,9 @@ export function ShopItBar({
                   </span>
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-medium"
-                    style={{ backgroundColor: 'var(--store-accent-500, #6366f1)' }}
+                    style={{
+                      backgroundColor: 'var(--store-accent-500, #6366f1)',
+                    }}
                   >
                     {initials}
                   </div>
@@ -148,7 +150,9 @@ export function ShopItBar({
                     <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700 flex items-center gap-3">
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
-                        style={{ backgroundColor: 'var(--store-accent-500, #6366f1)' }}
+                        style={{
+                          backgroundColor: 'var(--store-accent-500, #6366f1)',
+                        }}
                       >
                         {initials}
                       </div>
@@ -162,7 +166,10 @@ export function ShopItBar({
                         {isSeller && (
                           <span
                             className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full text-white"
-                            style={{ backgroundColor: 'var(--store-accent-500, #6366f1)' }}
+                            style={{
+                              backgroundColor:
+                                'var(--store-accent-500, #6366f1)',
+                            }}
                           >
                             {t('seller')}
                           </span>
@@ -267,7 +274,9 @@ export function ShopItBar({
                                 d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
                               />
                             </svg>
-                            {isCourier ? t('courierDashboard') : t('sellerDashboard')}
+                            {isCourier
+                              ? t('courierDashboard')
+                              : t('sellerDashboard')}
                           </a>
                         </>
                       )}
@@ -318,7 +327,9 @@ export function ShopItBar({
                   <a
                     href={`${mainSiteUrl}/${locale}/register`}
                     className="text-xs px-3 py-1 rounded-full text-white transition-colors"
-                    style={{ backgroundColor: 'var(--store-accent-500, #6366f1)' }}
+                    style={{
+                      backgroundColor: 'var(--store-accent-500, #6366f1)',
+                    }}
                   >
                     {t('createShop')}
                   </a>
@@ -331,4 +342,3 @@ export function ShopItBar({
     </div>
   );
 }
-
