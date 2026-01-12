@@ -185,6 +185,12 @@ export class User {
 
   @Prop({ type: [String], default: [] })
   workingAreas?: string[]; // Regions/areas the courier operates in
+
+  @Prop({ trim: true })
+  courierMotivationLetter?: string; // Motivation letter for courier application
+
+  @Prop()
+  courierProfileImage?: string; // Profile image URL for courier
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

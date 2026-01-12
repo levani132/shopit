@@ -959,6 +959,55 @@ export class AuthController {
   }
 
   /**
+   * Apply to become a courier (new flow with IBAN and motivation letter)
+   */
+  @Post('apply-courier')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Apply to become a courier with motivation letter' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileFieldsInterceptor([{ name: 'profileImage', maxCount: 1 }]),
+  )
+  async applyCourier(
+    @CurrentUser() user: UserDocument,
+    @Body()
+    body: {
+      iban: string;
+      motivationLetter: string;
+    },
+    @UploadedFiles()
+    files?: {
+      profileImage?: Express.Multer.File[];
+    },
+  ) {
+    let profileImageUrl: string | undefined;
+
+    // Upload profile image if provided
+    if (files?.profileImage?.[0]) {
+      try {
+        const uploadResult = await this.uploadService.uploadFile(
+          files.profileImage[0],
+          {
+            folder: 'courier-profiles',
+            maxSizeBytes: 5 * 1024 * 1024,
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          },
+        );
+        profileImageUrl = uploadResult.url;
+      } catch (error) {
+        console.error('Failed to upload profile image:', error);
+      }
+    }
+
+    return this.authService.applyCourierWithMotivation(user._id.toString(), {
+      iban: body.iban,
+      motivationLetter: body.motivationLetter,
+      profileImage: profileImageUrl,
+    });
+  }
+
+  /**
    * Get courier application status
    */
   @Get('courier/status')

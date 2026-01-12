@@ -1144,4 +1144,59 @@ export class AuthService {
       approvedAt: user.courierApprovedAt,
     };
   }
+
+  /**
+   * Apply to become a courier with motivation letter and profile image
+   */
+  async applyCourierWithMotivation(
+    userId: string,
+    data: {
+      iban: string;
+      motivationLetter: string;
+      profileImage?: string;
+    },
+  ): Promise<{ message: string; status: string }> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if already a courier
+    if (user.role === Role.COURIER) {
+      if (user.isCourierApproved) {
+        return {
+          message: 'You are already an approved courier.',
+          status: 'approved',
+        };
+      }
+      return {
+        message: 'Your courier application is pending approval.',
+        status: 'pending',
+      };
+    }
+
+    // Validate IBAN (Georgian IBAN format: GE + 2 check digits + 2 letter bank code + 16 digit account)
+    const ibanRegex = /^GE\d{2}[A-Z]{2}\d{16}$/;
+    if (!ibanRegex.test(data.iban.replace(/\s/g, ''))) {
+      throw new BadRequestException('Invalid Georgian IBAN format');
+    }
+
+    // Update user with courier info
+    user.role = Role.COURIER;
+    user.accountNumber = data.iban.replace(/\s/g, '');
+    user.courierMotivationLetter = data.motivationLetter;
+    if (data.profileImage) {
+      user.courierProfileImage = data.profileImage;
+    }
+    user.courierAppliedAt = new Date();
+    user.isCourierApproved = false; // Requires admin approval
+
+    await user.save();
+
+    return {
+      message:
+        'Courier application submitted successfully. Please wait for admin approval.',
+      status: 'pending',
+    };
+  }
 }
