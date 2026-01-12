@@ -31,7 +31,10 @@ const FIELD_LABELS: Record<string, string> = {
   cover: 'fieldCover',
   nameKa: 'fieldNameKa',
   nameEn: 'fieldNameEn',
+  description: 'fieldDescription',
   address: 'fieldAddress',
+  location: 'fieldLocation',
+  courierType: 'fieldCourierType',
 };
 
 export default function SetupRequirements() {

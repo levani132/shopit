@@ -114,10 +114,14 @@ export class PublishService {
     if (!user.firstName?.trim()) missingProfile.push('firstName');
     if (!user.lastName?.trim()) missingProfile.push('lastName');
     if (!isValidGeorgianPhone(user.phoneNumber)) missingProfile.push('phone');
-    if (!user.identificationNumber?.trim() || user.identificationNumber.length !== 11) {
+    if (
+      !user.identificationNumber?.trim() ||
+      user.identificationNumber.length !== 11
+    ) {
       missingProfile.push('idNumber');
     }
-    if (!isValidGeorgianIban(user.accountNumber)) missingProfile.push('bankAccount');
+    if (!isValidGeorgianIban(user.accountNumber))
+      missingProfile.push('bankAccount');
 
     // Check store requirements
     // Logo: either uploaded OR useInitialAsLogo is checked
@@ -127,9 +131,21 @@ export class PublishService {
     // Store name required in BOTH languages
     if (!store.nameLocalized?.ka?.trim()) missingStore.push('nameKa');
     if (!store.nameLocalized?.en?.trim()) missingStore.push('nameEn');
+    // Description required in at least one language
+    if (
+      !store.description?.trim() &&
+      !store.descriptionLocalized?.en?.trim() &&
+      !store.descriptionLocalized?.ka?.trim()
+    ) {
+      missingStore.push('description');
+    }
     // Phone and address
     if (!isValidGeorgianPhone(store.phone)) missingStore.push('phone');
     if (!store.address?.trim()) missingStore.push('address');
+    // Location on map
+    if (!store.location?.lat || !store.location?.lng) missingStore.push('location');
+    // Courier/delivery type
+    if (!store.courierType) missingStore.push('courierType');
 
     const canPublish = missingProfile.length === 0 && missingStore.length === 0;
 
