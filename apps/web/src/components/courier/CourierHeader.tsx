@@ -2,74 +2,54 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useParams, useRouter, usePathname } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
+import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 
 export function CourierHeader() {
   const t = useTranslations('courier');
   const params = useParams();
-  const router = useRouter();
-  const pathname = usePathname();
   const locale = (params?.locale as string) || 'en';
   const { isAuthenticated, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [topBarVisible, setTopBarVisible] = useState(true);
 
   const isCourier = user?.role === 'courier';
 
-  // Handle scroll behavior
+  // Handle scroll behavior - hide top bar on scroll (like StoreHeader)
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
 
-      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      // Hide top bar after scrolling down 50px
+      if (currentScrollY > 50) {
         setTopBarVisible(false);
       } else {
         setTopBarVisible(true);
       }
-
-      setIsScrolled(currentScrollY > 50);
-      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-
-  // Switch language
-  const switchLanguage = () => {
-    const newLocale = locale === 'en' ? 'ka' : 'en';
-    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
-    router.push(newPath);
-  };
+  }, []);
 
   return (
     <>
-      {/* ShopIt Global Bar - hides on scroll down */}
+      {/* Small Top Bar - ShopIt global bar, hides on scroll (collapses height like StoreHeader) */}
       <div
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-          topBarVisible ? 'translate-y-0' : '-translate-y-full'
+        className={`transition-all duration-300 ${
+          topBarVisible ? 'h-10 opacity-100' : 'h-0 opacity-0 overflow-hidden'
         }`}
       >
         <ShopItBar variant="standalone" showCreateShop={false} />
       </div>
 
-      {/* Header - sticks to top, moves up when top bar hides */}
-      <header
-        className={`fixed left-0 right-0 z-40 transition-all duration-300 ${
-          topBarVisible ? 'top-10' : 'top-0'
-        } ${
-          isScrolled
-            ? 'bg-slate-900/95 backdrop-blur-lg shadow-lg'
-            : 'bg-slate-900/80 backdrop-blur-lg'
-        } border-b border-white/10`}
-      >
+      {/* Main Courier Header - Sticky, always on top */}
+      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-lg shadow-lg border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -97,42 +77,34 @@ export function CourierHeader() {
               </span>
             </Link>
 
-            {/* Right side - Nav + Language + Theme */}
-            <div className="flex items-center gap-4">
+            {/* Right side - Nav + Theme + Language */}
+            <div className="flex items-center gap-3">
               {/* Navigation buttons */}
               {isAuthenticated && isCourier ? (
                 <Link
                   href={`/${locale}/dashboard`}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm"
                 >
                   {t('goToDashboard')}
                 </Link>
               ) : isAuthenticated ? (
                 <Link
                   href={`/couriers/${locale}/apply`}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm"
                 >
                   {t('applyNow')}
                 </Link>
               ) : null}
 
-              {/* Language Switcher */}
-              <button
-                onClick={switchLanguage}
-                className="flex items-center gap-1.5 px-3 py-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                title={locale === 'en' ? 'ქართული' : 'English'}
-              >
-                <span className="text-lg">{locale === 'en' ? '🇬🇧' : '🇬🇪'}</span>
-                <span className="text-sm hidden sm:inline">
-                  {locale === 'en' ? 'EN' : 'KA'}
-                </span>
-              </button>
-
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
                 className="p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-white/10"
-                title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+                aria-label={
+                  theme === 'dark'
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode'
+                }
               >
                 {theme === 'dark' ? (
                   <svg
@@ -164,14 +136,13 @@ export function CourierHeader() {
                   </svg>
                 )}
               </button>
+
+              {/* Language Switcher - uses same component as store pages */}
+              <LanguageSwitcher variant="dark" />
             </div>
           </div>
         </div>
       </header>
-
-      {/* Spacer for fixed headers (top bar 40px + header 64px = 104px) */}
-      <div className="h-[104px]" />
     </>
   );
 }
-

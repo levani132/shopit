@@ -1,5 +1,3 @@
-'use client';
-
 import { ReactNode } from 'react';
 import { NextIntlClientProvider } from 'next-intl';
 import { AuthProvider } from '../../../contexts/AuthContext';
@@ -9,27 +7,24 @@ import { ThemeProvider } from '../../../components/theme/ThemeProvider';
 // Import global CSS
 import '../../global.css';
 
-// Import messages statically for client components
-import enMessages from '../../../messages/en.json';
-import kaMessages from '../../../messages/ka.json';
+interface CourierLayoutProps {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}
 
-const messages: Record<string, typeof enMessages> = {
-  en: enMessages,
-  ka: kaMessages,
-};
-
-export default function CourierLayout({
+export default async function CourierLayout({
   children,
   params,
-}: {
-  children: ReactNode;
-  params: { locale: string };
-}) {
-  const locale = params.locale || 'en';
-  const localeMessages = messages[locale] || messages.en;
+}: CourierLayoutProps) {
+  const { locale } = await params;
+  const validLocale = locale === 'ka' || locale === 'en' ? locale : 'en';
+
+  // Load messages dynamically
+  const messages = (await import(`../../../messages/${validLocale}.json`))
+    .default;
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={validLocale} suppressHydrationWarning>
       <head>
         {/* Prevent theme flash */}
         <script
@@ -50,7 +45,7 @@ export default function CourierLayout({
         />
       </head>
       <body className="antialiased">
-        <NextIntlClientProvider locale={locale} messages={localeMessages}>
+        <NextIntlClientProvider locale={validLocale} messages={messages}>
           <ThemeProvider>
             <AuthProvider>
               <CartProvider>{children}</CartProvider>
