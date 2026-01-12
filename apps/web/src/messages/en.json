@@ -377,10 +377,10 @@
     "deliveryMethod": "Delivery Method",
     "shopitDelivery": "ShopIt Delivery",
     "shopitDeliveryDescription": "Let ShopIt couriers handle delivery. We pick up from your location and deliver to customers.",
-    "shopitDeliveryIncluded": "Delivery fees handled by ShopIt",
+    "shopitDeliveryIncluded": "Delivery fee calculated by distance",
     "selfDelivery": "Self Delivery",
-    "selfDeliveryDescription": "Handle deliveries yourself or use your own courier service.",
-    "platformFee": "platform fee per order",
+    "selfDeliveryDescription": "Handle deliveries yourself or use your own courier service. You set the delivery fee and time.",
+    "selfDeliveryNoFee": "No extra platform fees",
     "preparationTime": "Preparation Time",
     "preparationTimeDescription": "How long you need to prepare items for shipping after an order is placed.",
     "minDays": "Min",
@@ -391,7 +391,7 @@
     "deliveryTimeDescription": "How long it takes to deliver after items are prepared.",
     "deliveryFee": "Delivery Fee",
     "freeDelivery": "Free Delivery",
-    "selfDeliveryPlatformFeeNote": "When using self-delivery, a 10 ₾ platform fee will be added to each order to cover ShopIt service costs. This fee is separate from your delivery fee."
+    "selfDeliveryNote": "With self-delivery, you handle shipping yourself. Customers will see your estimated delivery time and fee during checkout. ShopIt only takes the standard 10% commission on product sales."
   },
   "auth": {
     "login": "Login",
