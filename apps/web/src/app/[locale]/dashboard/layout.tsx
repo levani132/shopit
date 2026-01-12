@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { DashboardSidebar } from '../../../components/dashboard/DashboardSidebar';
 import { DashboardHeader } from '../../../components/dashboard/DashboardHeader';
-import { SellerProtectedRoute } from '../../../components/auth/ProtectedRoute';
+import { DashboardProtectedRoute } from '../../../components/auth/ProtectedRoute';
 import { useAuth } from '../../../contexts/AuthContext';
 import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
 
@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [brandColor]);
 
   return (
-    <SellerProtectedRoute>
+    <DashboardProtectedRoute>
       <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 flex flex-col">
         {/* Header - Full width at top */}
         <DashboardHeader />
@@ -54,6 +54,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <main className="flex-1 p-4 lg:p-8 min-w-0">{children}</main>
         </div>
       </div>
-    </SellerProtectedRoute>
+    </DashboardProtectedRoute>
   );
 }

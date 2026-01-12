@@ -7,13 +7,13 @@ import { useLocale } from 'next-intl';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'seller' | 'user')[];
+  allowedRoles?: ('admin' | 'seller' | 'user' | 'courier')[];
   redirectTo?: string;
 }
 
 export function ProtectedRoute({
   children,
-  allowedRoles = ['admin', 'seller', 'user'],
+  allowedRoles = ['admin', 'seller', 'user', 'courier'],
   redirectTo,
 }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -64,6 +64,19 @@ export function SellerProtectedRoute({
 }) {
   return (
     <ProtectedRoute allowedRoles={['admin', 'seller']}>
+      {children}
+    </ProtectedRoute>
+  );
+}
+
+// Wrapper for dashboard (sellers and couriers)
+export function DashboardProtectedRoute({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'seller', 'courier']}>
       {children}
     </ProtectedRoute>
   );
