@@ -10,8 +10,10 @@ const DEFAULT_ZOOM = 13;
 
 // Map tile URLs for light and dark modes
 const TILE_URLS = {
+  // CartoDB Voyager - colorful, Google Maps-like for light mode
   light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  // Esri World Gray Canvas - nicer dark theme with better visibility
+  dark: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
 };
 
 // Photon API for geocoding (free, OpenStreetMap-based)
@@ -370,10 +372,14 @@ function AddressPickerMap({
           style={{ height: '280px', width: '100%' }}
           className="z-0"
         >
-          {/* CartoDB tiles - Voyager for light, Dark Matter for dark mode */}
+          {/* Map tiles - CartoDB Voyager for light, Esri Dark Gray for dark mode */}
           <TileLayer
             key={isDarkMode ? 'dark' : 'light'}
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+            attribution={
+              isDarkMode
+                ? '&copy; <a href="https://www.esri.com/">Esri</a>'
+                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
+            }
             url={isDarkMode ? TILE_URLS.dark : TILE_URLS.light}
           />
           
