@@ -19,7 +19,10 @@ const MAIN_DOMAINS = [
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Cache store status for a short time to avoid repeated API calls
-const storeStatusCache = new Map<string, { publishStatus: string; expires: number }>();
+const storeStatusCache = new Map<
+  string,
+  { publishStatus: string; expires: number }
+>();
 const CACHE_TTL = 60 * 1000; // 1 minute cache
 
 // Create middleware with locale detection enabled
@@ -35,7 +38,9 @@ const intlMiddleware = createMiddleware(routing);
  * Check if a store is published
  * Returns the publish status or null if store doesn't exist
  */
-async function getStorePublishStatus(subdomain: string): Promise<string | null> {
+async function getStorePublishStatus(
+  subdomain: string,
+): Promise<string | null> {
   // Check cache first
   const cached = storeStatusCache.get(subdomain);
   if (cached && cached.expires > Date.now()) {
@@ -43,16 +48,22 @@ async function getStorePublishStatus(subdomain: string): Promise<string | null> 
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/stores/subdomain/${subdomain}/status`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      // Don't cache this request in fetch layer
-      cache: 'no-store',
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/stores/subdomain/${subdomain}/status`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        // Don't cache this request in fetch layer
+        cache: 'no-store',
+      },
+    );
 
     if (!response.ok) {
       // Store not found
-      storeStatusCache.set(subdomain, { publishStatus: 'not_found', expires: Date.now() + CACHE_TTL });
+      storeStatusCache.set(subdomain, {
+        publishStatus: 'not_found',
+        expires: Date.now() + CACHE_TTL,
+      });
       return null;
     }
 
@@ -60,7 +71,10 @@ async function getStorePublishStatus(subdomain: string): Promise<string | null> 
     const publishStatus = data.publishStatus || 'draft';
 
     // Cache the result
-    storeStatusCache.set(subdomain, { publishStatus, expires: Date.now() + CACHE_TTL });
+    storeStatusCache.set(subdomain, {
+      publishStatus,
+      expires: Date.now() + CACHE_TTL,
+    });
 
     return publishStatus;
   } catch (error) {
@@ -163,7 +177,9 @@ export default async function middleware(request: NextRequest) {
         (locale) =>
           pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
       );
-      const locale = pathnameHasLocale ? pathname.split('/')[1] : routing.defaultLocale;
+      const locale = pathnameHasLocale
+        ? pathname.split('/')[1]
+        : routing.defaultLocale;
 
       // Rewrite to coming-soon page for the store
       if (publishStatus === 'pending_review') {

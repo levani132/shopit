@@ -34,17 +34,26 @@ export default function SetupRequirements() {
   const t = useTranslations('dashboard');
   const [status, setStatus] = useState<PublishStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
+        setError(null);
         const response = await api.get('/stores/publish/status');
+        console.log('[SetupRequirements] API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log('[SetupRequirements] Publish status data:', data);
           setStatus(data);
+        } else {
+          const errorText = await response.text();
+          console.error('[SetupRequirements] API error:', response.status, errorText);
+          setError(`API error: ${response.status}`);
         }
       } catch (err) {
-        console.error('Failed to fetch publish status:', err);
+        console.error('[SetupRequirements] Failed to fetch publish status:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
       }
@@ -54,7 +63,30 @@ export default function SetupRequirements() {
   }, []);
 
   if (loading) {
-    return null;
+    return (
+      <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-2xl p-6 mb-8 animate-pulse">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 bg-gray-200 dark:bg-zinc-700 rounded-lg" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-200 dark:bg-zinc-700 rounded w-1/4" />
+            <div className="h-3 bg-gray-200 dark:bg-zinc-700 rounded w-1/2" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 mb-8">
+        <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-sm">Failed to load publish status. Please refresh the page.</span>
+        </div>
+      </div>
+    );
   }
 
   if (!status) {

@@ -26,7 +26,11 @@ export const api = {
   /**
    * POST request with credentials
    */
-  async post(path: string, body?: unknown, options?: RequestInit): Promise<Response> {
+  async post(
+    path: string,
+    body?: unknown,
+    options?: RequestInit,
+  ): Promise<Response> {
     return fetch(`${apiUrl}${path}`, {
       method: 'POST',
       credentials: 'include',
@@ -42,7 +46,11 @@ export const api = {
   /**
    * PUT request with credentials
    */
-  async put(path: string, body?: unknown, options?: RequestInit): Promise<Response> {
+  async put(
+    path: string,
+    body?: unknown,
+    options?: RequestInit,
+  ): Promise<Response> {
     return fetch(`${apiUrl}${path}`, {
       method: 'PUT',
       credentials: 'include',
