@@ -329,7 +329,7 @@ const NAV_SECTIONS: NavSection[] = [
 export function DashboardSidebar() {
   const pathname = usePathname();
   const t = useTranslations('dashboard');
-  const { user } = useAuth();
+  const { user, store } = useAuth();
 
   // Get user role, default to 'user' if not set
   const userRole = (user?.role as UserRole) || 'user';
@@ -398,16 +398,18 @@ export function DashboardSidebar() {
         ))}
       </nav>
 
-      {/* Store Preview Link - only for sellers */}
-      {(userRole === 'seller' || userRole === 'admin') && (
+      {/* Store Preview Link - only for sellers with a store */}
+      {(userRole === 'seller' || userRole === 'admin') && store?.subdomain && (
         <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
-          <Link
-            href="/dashboard/store"
+          <a
+            href={`https://${store.subdomain}.shopit.ge`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
           >
             {ExternalLinkIcon}
             <span className="font-medium text-sm">{t('viewStore')}</span>
-          </Link>
+          </a>
         </div>
       )}
     </aside>
