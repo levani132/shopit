@@ -45,7 +45,7 @@ export function CourierHeader() {
           topBarVisible ? 'h-10 opacity-100' : 'h-0 opacity-0 overflow-hidden'
         }`}
       >
-        <ShopItBar variant="standalone" showCreateShop={false} />
+        <ShopItBar variant="store" showCreateShop={false} />
       </div>
 
       {/* Main Courier Header - Sticky, always on top */}
