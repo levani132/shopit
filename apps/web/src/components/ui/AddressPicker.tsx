@@ -96,6 +96,8 @@ function AddressPickerMap({
   );
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Track if user manually edited the text (vs selecting from suggestions or map click)
+  const [isManuallyEdited, setIsManuallyEdited] = useState(false);
 
   // Sync searchQuery when value prop changes (e.g., on page load with saved data)
   useEffect(() => {
@@ -211,6 +213,7 @@ function AddressPickerMap({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value;
     setSearchQuery(query);
+    setIsManuallyEdited(true); // User is manually typing
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -219,6 +222,15 @@ function AddressPickerMap({
     searchTimeoutRef.current = setTimeout(() => {
       searchAddress(query);
     }, 300);
+  };
+
+  // When user finishes editing (blur), save the manually typed address with current location
+  const handleInputBlur = () => {
+    if (isManuallyEdited && searchQuery.trim() && markerPosition) {
+      // User manually edited the text - save with current map location
+      onChange({ address: searchQuery.trim(), location: markerPosition });
+    }
+    setIsManuallyEdited(false);
   };
 
   // Select address from search results
@@ -231,6 +243,7 @@ function AddressPickerMap({
     setMarkerPosition(location);
     setMapCenter(location);
     setShowResults(false);
+    setIsManuallyEdited(false); // Reset - this was a selection, not manual edit
     onChange({ address, location });
   };
 
@@ -245,17 +258,20 @@ function AddressPickerMap({
         if (data.features && data.features.length > 0) {
           const address = formatAddress(data.features[0].properties);
           setSearchQuery(address);
+          setIsManuallyEdited(false); // Reset - this was from map click
           onChange({ address, location });
         } else {
           // If no address found, use coordinates
           const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
           setSearchQuery(address);
+          setIsManuallyEdited(false);
           onChange({ address, location });
         }
       } catch (err) {
         console.error('Reverse geocode error:', err);
         const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
         setSearchQuery(address);
+        setIsManuallyEdited(false);
         onChange({ address, location });
       }
     },
@@ -344,6 +360,7 @@ function AddressPickerMap({
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
+            onBlur={handleInputBlur}
             onFocus={() => searchResults.length > 0 && setShowResults(true)}
             placeholder={placeholder || t('searchAddress')}
             disabled={disabled}
