@@ -242,7 +242,7 @@ export default function AddressesPage() {
         </div>
         <button
           onClick={() => openModal()}
-          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+          className="px-4 py-2 bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white font-medium rounded-lg transition-colors"
         >
           {t('addAddress')}
         </button>
@@ -285,7 +285,7 @@ export default function AddressesPage() {
           </p>
           <button
             onClick={() => openModal()}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+            className="px-4 py-2 bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white font-medium rounded-lg transition-colors"
           >
             {t('addAddress')}
           </button>
@@ -297,7 +297,7 @@ export default function AddressesPage() {
               key={address._id}
               className={`bg-white dark:bg-zinc-800 rounded-xl border p-6 ${
                 address.isDefault
-                  ? 'border-indigo-500 dark:border-indigo-400'
+                  ? 'border-[var(--accent-500)] dark:border-[var(--accent-400)]'
                   : 'border-gray-200 dark:border-zinc-700'
               }`}
             >
@@ -308,7 +308,7 @@ export default function AddressesPage() {
                       {address.label || tCheckout('shippingAddress')}
                     </h3>
                     {address.isDefault && (
-                      <span className="px-2 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded">
+                      <span className="px-2 py-0.5 text-xs bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-400)] rounded">
                         {t('default')}
                       </span>
                     )}
@@ -329,14 +329,14 @@ export default function AddressesPage() {
                   {!address.isDefault && (
                     <button
                       onClick={() => handleSetDefault(address._id)}
-                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                      className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-[var(--accent-600)] dark:hover:text-[var(--accent-400)] transition-colors"
                     >
                       {t('setAsDefault')}
                     </button>
                   )}
                   <button
                     onClick={() => openModal(address)}
-                    className="px-3 py-1 text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                    className="px-3 py-1 text-sm text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:text-[var(--accent-700)] dark:hover:text-[var(--accent-300)] transition-colors"
                   >
                     {t('edit')}
                   </button>
@@ -375,7 +375,7 @@ export default function AddressesPage() {
                     setFormData({ ...formData, label: e.target.value })
                   }
                   placeholder="Home, Work, etc."
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
                 />
               </div>
               <div>
@@ -414,7 +414,7 @@ export default function AddressesPage() {
                     }
                     required
                     placeholder={t('enterCityManually')}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
                   />
                 </div>
                 <div>
@@ -427,7 +427,7 @@ export default function AddressesPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, postalCode: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
                   />
                 </div>
               </div>
@@ -442,7 +442,7 @@ export default function AddressesPage() {
                     setFormData({ ...formData, phoneNumber: e.target.value })
                   }
                   required
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
                 />
               </div>
               <label className="flex items-center gap-2">
@@ -452,7 +452,7 @@ export default function AddressesPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, isDefault: e.target.checked })
                   }
-                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500"
+                  className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-600)] focus:ring-[var(--accent-500)]"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   {t('setAsDefault')}

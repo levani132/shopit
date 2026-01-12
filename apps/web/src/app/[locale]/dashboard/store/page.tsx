@@ -1106,8 +1106,8 @@ export default function StoreSettingsPage() {
                 onClick={() => updateField('courierType', 'shopit')}
                 className={`p-4 border-2 rounded-xl text-left transition-all ${
                   formData.courierType !== 'seller'
-                    ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20'
-                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                    ? 'border-[var(--accent-500)] bg-white dark:bg-zinc-800'
+                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 bg-gray-50 dark:bg-zinc-900'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -1155,8 +1155,8 @@ export default function StoreSettingsPage() {
                 onClick={() => updateField('courierType', 'seller')}
                 className={`p-4 border-2 rounded-xl text-left transition-all ${
                   formData.courierType === 'seller'
-                    ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20'
-                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                    ? 'border-[var(--accent-500)] bg-white dark:bg-zinc-800'
+                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600 bg-gray-50 dark:bg-zinc-900'
                 }`}
               >
                 <div className="flex items-start gap-3">
