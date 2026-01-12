@@ -175,6 +175,42 @@ interface OrderItem {
 | `cancelled`  | Order cancelled                 | Red    |
 | `refunded`   | Order refunded                  | Gray   |
 
+## Status Transition Rules (Seller Actions)
+
+Sellers can only change order statuses according to these rules:
+
+| Current Status | Allowed Transitions | Restrictions |
+| -------------- | ------------------- | ------------ |
+| `pending`      | None                | Must wait for payment system |
+| `paid`         | → processing, shipped, delivered | Cannot go back to pending |
+| `processing`   | → paid, shipped, delivered | Normal workflow |
+| `shipped`      | → processing, delivered | Can correct mistakes |
+| `delivered`    | → shipped | Only to fix errors |
+| `cancelled`    | None | Permanently locked |
+| `refunded`     | None | Permanently locked |
+
+### Validation Rules
+
+1. **Cancelled/Refunded orders**: No status changes allowed
+2. **Pending orders**: Cannot be manually updated (payment system only)
+3. **Cannot set to PENDING**: Once paid, never goes back to pending
+4. **Cannot manually set PAID**: Only payment callbacks can mark as paid
+5. **Cannot manually set CANCELLED/REFUNDED**: Must use dedicated endpoints
+
+### API Endpoint
+
+```
+PATCH /api/v1/orders/:id/status
+Body: { "status": "processing" | "shipped" | "delivered" }
+Auth: Seller or Admin role required
+```
+
+### Error Responses
+
+- `400 Bad Request`: "Cannot change status of a cancelled order."
+- `400 Bad Request`: "Cannot manually change status of a pending order."
+- `400 Bad Request`: "Cannot set order status back to pending."
+
 ## Translations
 
 Translation keys for orders feature:

@@ -433,6 +433,14 @@ export class OrdersService {
 
   /**
    * Update order status (seller action)
+   * 
+   * Status transition rules:
+   * - CANCELLED/REFUNDED: No changes allowed
+   * - PENDING: No manual status changes allowed (must wait for payment)
+   * - PAID: Can move to PROCESSING, SHIPPED, DELIVERED
+   * - PROCESSING: Can move to SHIPPED, DELIVERED, or back to PAID
+   * - SHIPPED: Can move to DELIVERED, or back to PROCESSING
+   * - DELIVERED: Can move back to SHIPPED (in case of error)
    */
   async updateStatus(
     orderId: string,
@@ -449,6 +457,64 @@ export class OrdersService {
     if (!hasStoreItems) {
       throw new BadRequestException(
         'You do not have permission to update this order.',
+      );
+    }
+
+    const currentStatus = order.status;
+
+    // Rule 1: Cancelled orders cannot have their status changed
+    if (currentStatus === OrderStatus.CANCELLED) {
+      throw new BadRequestException(
+        'Cannot change status of a cancelled order.',
+      );
+    }
+
+    // Rule 1b: Refunded orders cannot have their status changed
+    if (currentStatus === OrderStatus.REFUNDED) {
+      throw new BadRequestException(
+        'Cannot change status of a refunded order.',
+      );
+    }
+
+    // Rule 3: Pending orders cannot be manually updated
+    if (currentStatus === OrderStatus.PENDING) {
+      throw new BadRequestException(
+        'Cannot manually change status of a pending order. Wait for payment to be processed.',
+      );
+    }
+
+    // Rule 2: After paid, cannot go back to pending
+    if (newStatus === OrderStatus.PENDING) {
+      throw new BadRequestException(
+        'Cannot set order status back to pending.',
+      );
+    }
+
+    // Cannot manually set to CANCELLED or REFUNDED through this endpoint
+    if (newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.REFUNDED) {
+      throw new BadRequestException(
+        'Use the dedicated cancel or refund endpoints for these actions.',
+      );
+    }
+
+    // Cannot manually set to PAID (only payment system can do this)
+    if (newStatus === OrderStatus.PAID && currentStatus !== OrderStatus.PAID) {
+      throw new BadRequestException(
+        'Cannot manually set order as paid. Payment must be processed through the payment system.',
+      );
+    }
+
+    // Rule 4: After paid, can only change between PROCESSING, SHIPPED, DELIVERED
+    const allowedStatuses = [
+      OrderStatus.PAID,
+      OrderStatus.PROCESSING,
+      OrderStatus.SHIPPED,
+      OrderStatus.DELIVERED,
+    ];
+
+    if (!allowedStatuses.includes(newStatus)) {
+      throw new BadRequestException(
+        `Invalid status transition. Allowed statuses: ${allowedStatuses.join(', ')}`,
       );
     }
 
