@@ -276,7 +276,7 @@ export function ProfileCompletion() {
                 type="tel"
                 value={data.phoneNumber}
                 onChange={(e) => updateData({ phoneNumber: e.target.value })}
-                placeholder="596000054"
+                placeholder="5XX XXX XXX"
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
               {errors.phoneNumber && (
