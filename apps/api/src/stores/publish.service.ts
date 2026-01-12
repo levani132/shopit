@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Store, StoreDocument, User, UserDocument } from '@sellit/api-database';
 
 /**
@@ -54,7 +54,8 @@ export class PublishService {
     }
 
     // Find store by ownerId (stores have ownerId pointing to user)
-    const store = await this.storeModel.findOne({ ownerId: userId });
+    // ownerId is stored as ObjectId, so we need to convert the string
+    const store = await this.storeModel.findOne({ ownerId: new Types.ObjectId(userId) });
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -99,7 +100,8 @@ export class PublishService {
     }
 
     // Find store by ownerId (stores have ownerId pointing to user)
-    const store = await this.storeModel.findOne({ ownerId: userId });
+    // ownerId is stored as ObjectId, so we need to convert the string
+    const store = await this.storeModel.findOne({ ownerId: new Types.ObjectId(userId) });
     if (!store) {
       throw new NotFoundException('Store not found');
     }

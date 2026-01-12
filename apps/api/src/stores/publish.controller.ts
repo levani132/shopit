@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -69,7 +62,9 @@ export class PublishController {
     );
 
     // Get store by ownerId (stores have ownerId pointing to user)
-    const store = await this.publishService['storeModel'].findOne({ ownerId: user._id });
+    const store = await this.publishService['storeModel'].findOne({
+      ownerId: user._id,
+    });
 
     return {
       publishStatus: store?.publishStatus || 'draft',
@@ -133,4 +128,3 @@ export class PublishController {
     };
   }
 }
-
