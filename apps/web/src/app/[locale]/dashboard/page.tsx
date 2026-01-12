@@ -196,31 +196,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Getting Started Guide (for new users) */}
-      <div className="bg-gradient-to-r from-[var(--accent-500)] to-[var(--accent-600)] rounded-2xl p-6 text-white">
-        <h2 className="text-lg font-semibold mb-2">{t('gettingStarted')}</h2>
-        <p className="text-white/80 mb-4">{t('gettingStartedDescription')}</p>
-        <div className="space-y-3">
-          <GettingStartedStep
-            number={1}
-            title={t('step1Title')}
-            description={t('step1Description')}
-            completed={false}
-          />
-          <GettingStartedStep
-            number={2}
-            title={t('step2Title')}
-            description={t('step2Description')}
-            completed={false}
-          />
-          <GettingStartedStep
-            number={3}
-            title={t('step3Title')}
-            description={t('step3Description')}
-            completed={false}
-          />
-        </div>
-      </div>
     </div>
   );
 }
@@ -287,50 +262,4 @@ function QuickActionButton({
   );
 }
 
-// Getting Started Step Component
-function GettingStartedStep({
-  number,
-  title,
-  description,
-  completed,
-}: {
-  number: number;
-  title: string;
-  description: string;
-  completed: boolean;
-}) {
-  return (
-    <div className="flex items-start gap-4">
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 ${
-          completed
-            ? 'bg-white text-[var(--accent-600)]'
-            : 'bg-white/20 text-white'
-        }`}
-      >
-        {completed ? (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        ) : (
-          number
-        )}
-      </div>
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-sm text-white/70">{description}</p>
-      </div>
-    </div>
-  );
-}
 
