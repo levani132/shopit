@@ -161,7 +161,7 @@
     "lastNameRequired": "Last name is required",
     "phoneNumber": "Phone Number",
     "phoneRequired": "Phone number is required",
-    "phoneInvalid": "Please enter a valid Georgian phone number (+995XXXXXXXXX)",
+    "phoneInvalid": "Please enter a valid Georgian phone number (e.g., 555123456 or +995555123456)",
     "idNumber": "Personal ID Number",
     "idNumberRequired": "ID number is required",
     "idNumberInvalid": "ID number must be 11 digits",

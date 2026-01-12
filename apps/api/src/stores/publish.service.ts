@@ -8,6 +8,39 @@ import { Model, Types } from 'mongoose';
 import { Store, StoreDocument, User, UserDocument } from '@sellit/api-database';
 
 /**
+ * Validate Georgian phone number
+ * Accepts:
+ * - Full international: +995XXXXXXXXX (12 chars total, 9 digits after +995)
+ * - Local format: 5XXXXXXXX (9 digits starting with 5)
+ * - With spaces/dashes: +995 555 123 456, 555-123-456, etc.
+ */
+function isValidGeorgianPhone(phone: string | undefined): boolean {
+  if (!phone) return false;
+  
+  // Remove all spaces, dashes, and parentheses
+  const cleaned = phone.replace(/[\s\-\(\)]/g, '');
+  
+  // Check for international format: +995 followed by 9 digits starting with 5
+  if (cleaned.startsWith('+995')) {
+    const localPart = cleaned.slice(4);
+    return /^5\d{8}$/.test(localPart);
+  }
+  
+  // Check for local format: 9 digits starting with 5
+  if (/^5\d{8}$/.test(cleaned)) {
+    return true;
+  }
+  
+  // Also accept 995 without + prefix
+  if (cleaned.startsWith('995')) {
+    const localPart = cleaned.slice(3);
+    return /^5\d{8}$/.test(localPart);
+  }
+  
+  return false;
+}
+
+/**
  * Required fields for publishing a store
  */
 export interface PublishRequirements {
@@ -66,7 +99,7 @@ export class PublishService {
     // Check profile requirements
     if (!user.firstName?.trim()) missingProfile.push('firstName');
     if (!user.lastName?.trim()) missingProfile.push('lastName');
-    if (!user.phone?.trim()) missingProfile.push('phone');
+    if (!isValidGeorgianPhone(user.phone)) missingProfile.push('phone');
 
     // Check store requirements
     if (!store.name?.trim()) missingStore.push('name');
@@ -75,7 +108,7 @@ export class PublishService {
     }
     if (!store.address?.trim()) missingStore.push('address');
     if (!store.location?.lat || !store.location?.lng) missingStore.push('location');
-    if (!store.phone?.trim()) missingStore.push('phone');
+    if (!isValidGeorgianPhone(store.phone)) missingStore.push('phone');
     if (!store.courierType) missingStore.push('courierType');
 
     const canPublish = missingProfile.length === 0 && missingStore.length === 0;
