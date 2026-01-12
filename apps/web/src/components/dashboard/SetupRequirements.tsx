@@ -41,14 +41,14 @@ export default function SetupRequirements() {
       try {
         setError(null);
         const response = await api.get('/stores/publish/status');
-        console.log('[SetupRequirements] API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('[SetupRequirements] Publish status data:', data);
-          setStatus(data);
+          // Ensure publishStatus defaults to 'draft' if null/undefined
+          setStatus({
+            ...data,
+            publishStatus: data.publishStatus || 'draft',
+          });
         } else {
-          const errorText = await response.text();
-          console.error('[SetupRequirements] API error:', response.status, errorText);
           setError(`API error: ${response.status}`);
         }
       } catch (err) {

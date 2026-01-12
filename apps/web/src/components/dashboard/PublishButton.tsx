@@ -29,15 +29,16 @@ export default function PublishButton() {
     try {
       setError(false);
       const response = await api.get('/stores/publish/status');
-      console.log('[PublishButton] API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
-        console.log('[PublishButton] Publish status data:', data);
-        setStatus(data);
+        // Ensure publishStatus defaults to 'draft' if null/undefined
+        setStatus({
+          ...data,
+          publishStatus: data.publishStatus || 'draft',
+        });
       } else {
-        console.error('[PublishButton] API error:', response.status, response.statusText);
+        // API error - default to draft
         setError(true);
-        // Set default draft status so button still shows
         setStatus({
           publishStatus: 'draft',
           missingFields: { profile: [], store: [], canPublish: false },
@@ -46,7 +47,6 @@ export default function PublishButton() {
     } catch (err) {
       console.error('[PublishButton] Failed to fetch publish status:', err);
       setError(true);
-      // Set default draft status so button still shows
       setStatus({
         publishStatus: 'draft',
         missingFields: { profile: [], store: [], canPublish: false },
