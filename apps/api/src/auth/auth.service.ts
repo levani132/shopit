@@ -975,4 +975,80 @@ export class AuthService {
 
     return true;
   }
+
+  // ================== COURIER METHODS ==================
+
+  /**
+   * Apply to become a courier
+   */
+  async applyToBeCourier(
+    userId: string,
+    data: {
+      phoneNumber: string;
+      identificationNumber: string;
+      accountNumber: string;
+      beneficiaryBankCode?: string;
+      vehicleType?: string;
+      workingAreas?: string[];
+    },
+  ): Promise<{ message: string; status: string }> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if already a courier
+    if (user.role === Role.COURIER) {
+      if (user.isCourierApproved) {
+        return {
+          message: 'You are already an approved courier.',
+          status: 'approved',
+        };
+      }
+      return {
+        message: 'Your courier application is pending approval.',
+        status: 'pending',
+      };
+    }
+
+    // Update user with courier info
+    user.role = Role.COURIER;
+    user.phoneNumber = data.phoneNumber;
+    user.identificationNumber = data.identificationNumber;
+    user.accountNumber = data.accountNumber;
+    user.beneficiaryBankCode = data.beneficiaryBankCode || 'BAGAGE22';
+    user.vehicleType = data.vehicleType;
+    user.workingAreas = data.workingAreas || [];
+    user.courierAppliedAt = new Date();
+    user.isCourierApproved = false; // Requires admin approval
+
+    await user.save();
+
+    return {
+      message: 'Courier application submitted successfully. Please wait for admin approval.',
+      status: 'pending',
+    };
+  }
+
+  /**
+   * Get courier application status
+   */
+  async getCourierStatus(userId: string): Promise<{
+    isCourier: boolean;
+    isApproved: boolean;
+    appliedAt?: Date;
+    approvedAt?: Date;
+  }> {
+    const user = await this.userModel.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      isCourier: user.role === Role.COURIER,
+      isApproved: user.isCourierApproved || false,
+      appliedAt: user.courierAppliedAt,
+      approvedAt: user.courierApprovedAt,
+    };
+  }
 }

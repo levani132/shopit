@@ -896,4 +896,40 @@ export class AuthController {
       },
     };
   }
+
+  // ================== COURIER REGISTRATION ==================
+
+  /**
+   * Apply to become a courier (for authenticated users)
+   * Accessible via hidden link
+   */
+  @Post('courier/apply')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Apply to become a courier' })
+  async applyToBeCourier(
+    @CurrentUser() user: UserDocument,
+    @Body()
+    body: {
+      phoneNumber: string;
+      identificationNumber: string;
+      accountNumber: string;
+      beneficiaryBankCode?: string;
+      vehicleType?: string;
+      workingAreas?: string[];
+    },
+  ) {
+    return this.authService.applyToBeCourier(user._id.toString(), body);
+  }
+
+  /**
+   * Get courier application status
+   */
+  @Get('courier/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get courier application status' })
+  async getCourierStatus(@CurrentUser() user: UserDocument) {
+    return this.authService.getCourierStatus(user._id.toString());
+  }
 }

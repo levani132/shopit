@@ -165,15 +165,16 @@ interface OrderItem {
 
 ## Order Statuses
 
-| Status       | Description                     | Color  |
-| ------------ | ------------------------------- | ------ |
-| `pending`    | Order created, awaiting payment | Yellow |
-| `paid`       | Payment successful              | Blue   |
-| `processing` | Seller is preparing the order   | Purple |
-| `shipped`    | Order shipped by courier        | Indigo |
-| `delivered`  | Order delivered to customer     | Green  |
-| `cancelled`  | Order cancelled                 | Red    |
-| `refunded`   | Order refunded                  | Gray   |
+| Status               | Description                            | Color  |
+| -------------------- | -------------------------------------- | ------ |
+| `pending`            | Order created, awaiting payment        | Yellow |
+| `paid`               | Payment successful                     | Blue   |
+| `processing`         | Seller is preparing the order          | Purple |
+| `ready_for_delivery` | Ready for ShopIt courier (shows as Processing to customers) | Purple |
+| `shipped`            | Order shipped by courier               | Indigo |
+| `delivered`          | Order delivered to customer            | Green  |
+| `cancelled`          | Order cancelled                        | Red    |
+| `refunded`           | Order refunded                         | Gray   |
 
 ## Status Transition Rules (Seller Actions)
 

@@ -30,6 +30,14 @@ export interface UpdateStoreDto {
   address?: string;
   socialLinks?: string; // JSON string
   homepageProductOrder?: string; // 'popular', 'newest', 'price_asc', 'price_desc', 'random'
+  // Delivery settings
+  courierType?: string; // 'shopit' or 'seller'
+  prepTimeMinDays?: number;
+  prepTimeMaxDays?: number;
+  deliveryMinDays?: number;
+  deliveryMaxDays?: number;
+  deliveryFee?: number;
+  freeDelivery?: boolean;
 }
 
 @Injectable()
@@ -187,6 +195,32 @@ export class StoresService {
       if (validOrders.includes(dto.homepageProductOrder)) {
         store.homepageProductOrder = dto.homepageProductOrder;
       }
+    }
+
+    // Update delivery settings
+    if (dto.courierType !== undefined) {
+      const validCourierTypes = ['shopit', 'seller'];
+      if (validCourierTypes.includes(dto.courierType)) {
+        store.courierType = dto.courierType;
+      }
+    }
+    if (dto.prepTimeMinDays !== undefined) {
+      store.prepTimeMinDays = Math.max(0, Number(dto.prepTimeMinDays));
+    }
+    if (dto.prepTimeMaxDays !== undefined) {
+      store.prepTimeMaxDays = Math.max(0, Number(dto.prepTimeMaxDays));
+    }
+    if (dto.deliveryMinDays !== undefined) {
+      store.deliveryMinDays = Math.max(0, Number(dto.deliveryMinDays));
+    }
+    if (dto.deliveryMaxDays !== undefined) {
+      store.deliveryMaxDays = Math.max(0, Number(dto.deliveryMaxDays));
+    }
+    if (dto.deliveryFee !== undefined) {
+      store.deliveryFee = Math.max(0, Number(dto.deliveryFee));
+    }
+    if (dto.freeDelivery !== undefined) {
+      store.freeDelivery = dto.freeDelivery === true || dto.freeDelivery === 'true' as unknown as boolean;
     }
 
     await store.save();

@@ -8,6 +8,7 @@ export enum OrderStatus {
   PENDING = 'pending', // Order created, awaiting payment
   PAID = 'paid', // Payment successful
   PROCESSING = 'processing', // Seller is preparing the order
+  READY_FOR_DELIVERY = 'ready_for_delivery', // Ready for ShopIt courier pickup (shown as "Processing" to customers)
   SHIPPED = 'shipped', // Order shipped by courier
   DELIVERED = 'delivered', // Order delivered to customer
   CANCELLED = 'cancelled', // Order cancelled
@@ -197,7 +198,14 @@ export class Order {
   deliveredAt?: Date;
 
   @Prop()
+  shippedAt?: Date;
+
+  @Prop()
   cancelledAt?: Date;
+
+  // Courier assignment (for ShopIt delivery)
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  courierId?: Types.ObjectId;
 
   // BOG integration
   @Prop({ unique: true, sparse: true })
@@ -220,4 +228,5 @@ OrderSchema.index({ status: 1, createdAt: -1 });
 OrderSchema.index({ externalOrderId: 1 });
 OrderSchema.index({ isPaid: 1, stockReservationExpires: 1 }); // For stock release cron
 OrderSchema.index({ 'guestInfo.email': 1 }); // Find guest orders by email
+OrderSchema.index({ courierId: 1, status: 1 }); // For courier's assigned orders
 

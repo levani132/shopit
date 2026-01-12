@@ -156,6 +156,20 @@ export class Store {
   @Prop({ min: 0 })
   deliveryMaxDays?: number;
 
+  /**
+   * Delivery fee for seller-handled delivery (in GEL)
+   * Only applicable when courierType is 'seller'
+   */
+  @Prop({ default: 0, min: 0 })
+  deliveryFee?: number;
+
+  /**
+   * Free delivery option for seller-handled delivery
+   * When true, deliveryFee is ignored and delivery is free
+   */
+  @Prop({ default: false })
+  freeDelivery?: boolean;
+
   // ================== SELLER BANK DETAILS ==================
   
   @Prop()

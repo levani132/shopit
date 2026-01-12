@@ -145,5 +145,59 @@ export class OrdersController {
   ) {
     return this.ordersService.cancelOrder(id, body.reason);
   }
+
+  // ================== COURIER ENDPOINTS ==================
+
+  /**
+   * Get orders ready for delivery (courier action)
+   * Returns orders with status READY_FOR_DELIVERY that use ShopIt delivery
+   */
+  @Get('courier/available')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier', 'admin')
+  async getAvailableOrdersForCourier() {
+    return this.ordersService.getOrdersReadyForDelivery();
+  }
+
+  /**
+   * Get orders assigned to the current courier
+   */
+  @Get('courier/my-orders')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier', 'admin')
+  async getCourierOrders(@CurrentUser() user: { id: string; _id?: { toString(): string } }) {
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.getOrdersByCourier(userId);
+  }
+
+  /**
+   * Update order status (courier action)
+   * Only for ShopIt delivery orders
+   */
+  @Patch(':id/courier-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier', 'admin')
+  async updateOrderStatusByCourier(
+    @Param('id') id: string,
+    @Body() body: { status: OrderStatus },
+    @CurrentUser() user: { id: string; _id?: { toString(): string } },
+  ) {
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.updateStatusByCourier(id, userId, body.status);
+  }
+
+  /**
+   * Assign order to courier (courier picks up the order)
+   */
+  @Patch(':id/assign-courier')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier', 'admin')
+  async assignOrderToCourier(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; _id?: { toString(): string } },
+  ) {
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.assignCourier(id, userId);
+  }
 }
 

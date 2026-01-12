@@ -8,6 +8,7 @@ export enum Role {
   ADMIN = 'admin',
   SELLER = 'seller',
   USER = 'user',
+  COURIER = 'courier',
 }
 
 export enum AuthProvider {
@@ -157,6 +158,24 @@ export class User {
 
   @Prop({ default: 0, min: 0 })
   totalWithdrawn!: number; // Total amount successfully withdrawn
+
+  // ================== COURIER FIELDS ==================
+  // Only applicable for couriers
+
+  @Prop({ default: false })
+  isCourierApproved!: boolean; // Admin approval status for couriers
+
+  @Prop()
+  courierAppliedAt?: Date; // When user applied to become a courier
+
+  @Prop()
+  courierApprovedAt?: Date; // When admin approved the courier
+
+  @Prop({ trim: true })
+  vehicleType?: string; // e.g., 'car', 'motorcycle', 'bicycle', 'walking'
+
+  @Prop({ type: [String], default: [] })
+  workingAreas?: string[]; // Regions/areas the courier operates in
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -504,15 +504,41 @@ export class OrdersService {
       );
     }
 
-    // Rule 4: After paid, can only change between PROCESSING, SHIPPED, DELIVERED
-    const allowedStatuses = [
-      OrderStatus.PAID,
-      OrderStatus.PROCESSING,
-      OrderStatus.SHIPPED,
-      OrderStatus.DELIVERED,
-    ];
+    // Get the store to check courier type
+    const store = await this.storeModel.findById(storeId);
+    if (!store) {
+      throw new BadRequestException('Store not found.');
+    }
+
+    const usesShopItDelivery = store.courierType === 'shopit';
+
+    // Rule 4: Define allowed statuses based on courier type
+    let allowedStatuses: OrderStatus[];
+    
+    if (usesShopItDelivery) {
+      // ShopIt delivery: Sellers can only go up to READY_FOR_DELIVERY
+      // SHIPPED and DELIVERED can only be set by couriers
+      allowedStatuses = [
+        OrderStatus.PAID,
+        OrderStatus.PROCESSING,
+        OrderStatus.READY_FOR_DELIVERY,
+      ];
+    } else {
+      // Self delivery: Sellers can manage the entire flow
+      allowedStatuses = [
+        OrderStatus.PAID,
+        OrderStatus.PROCESSING,
+        OrderStatus.SHIPPED,
+        OrderStatus.DELIVERED,
+      ];
+    }
 
     if (!allowedStatuses.includes(newStatus)) {
+      if (usesShopItDelivery && (newStatus === OrderStatus.SHIPPED || newStatus === OrderStatus.DELIVERED)) {
+        throw new BadRequestException(
+          'With ShopIt delivery, only couriers can mark orders as shipped or delivered. Set status to "Ready for Delivery" when the order is prepared.',
+        );
+      }
       throw new BadRequestException(
         `Invalid status transition. Allowed statuses: ${allowedStatuses.join(', ')}`,
       );
@@ -530,6 +556,139 @@ export class OrdersService {
       return order;
     }
 
+    return order.save();
+  }
+
+  /**
+   * Update order status (courier action)
+   * Only for orders using ShopIt delivery
+   */
+  async updateStatusByCourier(
+    orderId: string,
+    courierId: string,
+    newStatus: OrderStatus,
+  ): Promise<OrderDocument> {
+    const order = await this.findById(orderId);
+
+    // Get the store to verify it uses ShopIt delivery
+    const storeId = order.orderItems[0]?.storeId;
+    if (!storeId) {
+      throw new BadRequestException('Order has no store items.');
+    }
+
+    const store = await this.storeModel.findById(storeId);
+    if (!store) {
+      throw new BadRequestException('Store not found.');
+    }
+
+    if (store.courierType !== 'shopit') {
+      throw new BadRequestException(
+        'This order uses seller delivery. Only the seller can update its status.',
+      );
+    }
+
+    const currentStatus = order.status;
+
+    // Couriers can only update orders that are READY_FOR_DELIVERY or already SHIPPED
+    if (
+      currentStatus !== OrderStatus.READY_FOR_DELIVERY &&
+      currentStatus !== OrderStatus.SHIPPED
+    ) {
+      throw new BadRequestException(
+        'Couriers can only update orders that are ready for delivery or already shipped.',
+      );
+    }
+
+    // Couriers can only set SHIPPED or DELIVERED
+    if (newStatus !== OrderStatus.SHIPPED && newStatus !== OrderStatus.DELIVERED) {
+      throw new BadRequestException(
+        'Couriers can only set status to shipped or delivered.',
+      );
+    }
+
+    // Assign courier to order if not already assigned
+    if (!order.courierId) {
+      order.courierId = new Types.ObjectId(courierId);
+    }
+
+    order.status = newStatus;
+
+    if (newStatus === OrderStatus.SHIPPED) {
+      order.shippedAt = new Date();
+    }
+
+    if (newStatus === OrderStatus.DELIVERED) {
+      order.isDelivered = true;
+      order.deliveredAt = new Date();
+
+      // Process seller earnings when order is delivered
+      await order.save();
+      await this.balanceService.processOrderEarnings(order);
+      return order;
+    }
+
+    return order.save();
+  }
+
+  /**
+   * Get orders ready for delivery (for couriers)
+   * Returns orders with status READY_FOR_DELIVERY from ShopIt delivery stores
+   */
+  async getOrdersReadyForDelivery(): Promise<OrderDocument[]> {
+    // Find orders that are ready for delivery and not yet assigned
+    const orders = await this.orderModel
+      .find({
+        status: OrderStatus.READY_FOR_DELIVERY,
+        courierId: { $exists: false },
+      })
+      .sort({ createdAt: 1 }) // Oldest first
+      .limit(50)
+      .exec();
+
+    return orders;
+  }
+
+  /**
+   * Get orders assigned to a specific courier
+   */
+  async getOrdersByCourier(courierId: string): Promise<OrderDocument[]> {
+    return this.orderModel
+      .find({
+        courierId: new Types.ObjectId(courierId),
+        status: { $in: [OrderStatus.READY_FOR_DELIVERY, OrderStatus.SHIPPED] },
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  /**
+   * Assign an order to a courier
+   */
+  async assignCourier(orderId: string, courierId: string): Promise<OrderDocument> {
+    const order = await this.findById(orderId);
+
+    if (order.status !== OrderStatus.READY_FOR_DELIVERY) {
+      throw new BadRequestException(
+        'Can only assign orders that are ready for delivery.',
+      );
+    }
+
+    if (order.courierId) {
+      throw new BadRequestException('Order is already assigned to a courier.');
+    }
+
+    // Verify the store uses ShopIt delivery
+    const storeId = order.orderItems[0]?.storeId;
+    if (storeId) {
+      const store = await this.storeModel.findById(storeId);
+      if (store && store.courierType !== 'shopit') {
+        throw new BadRequestException(
+          'This order uses seller delivery and cannot be assigned to a courier.',
+        );
+      }
+    }
+
+    order.courierId = new Types.ObjectId(courierId);
     return order.save();
   }
 

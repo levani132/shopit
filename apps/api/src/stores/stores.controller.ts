@@ -83,6 +83,14 @@ export class StoresController {
       address: store.address,
       isVerified: store.isVerified ?? false,
       homepageProductOrder: store.homepageProductOrder || 'popular',
+      // Delivery settings
+      courierType: store.courierType || 'shopit',
+      prepTimeMinDays: store.prepTimeMinDays ?? 1,
+      prepTimeMaxDays: store.prepTimeMaxDays ?? 3,
+      deliveryMinDays: store.deliveryMinDays,
+      deliveryMaxDays: store.deliveryMaxDays,
+      deliveryFee: store.deliveryFee ?? 0,
+      freeDelivery: store.freeDelivery ?? false,
     };
   }
 
@@ -245,6 +253,14 @@ export class StoresController {
       address: store.address,
       isVerified: store.isVerified ?? false,
       homepageProductOrder: store.homepageProductOrder || 'popular',
+      // Delivery settings
+      courierType: store.courierType || 'shopit',
+      prepTimeMinDays: store.prepTimeMinDays ?? 1,
+      prepTimeMaxDays: store.prepTimeMaxDays ?? 3,
+      deliveryMinDays: store.deliveryMinDays,
+      deliveryMaxDays: store.deliveryMaxDays,
+      deliveryFee: store.deliveryFee ?? 0,
+      freeDelivery: store.freeDelivery ?? false,
     };
   }
 
