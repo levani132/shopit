@@ -531,6 +531,7 @@
     "default": "ძირითადი",
     "addNewAddress": "ახალი მისამართის დამატება",
     "addressLine": "მისამართი",
+    "fullAddress": "სრული მისამართი",
     "city": "ქალაქი",
     "postalCode": "საფოსტო კოდი",
     "country": "ქვეყანა",

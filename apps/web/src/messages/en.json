@@ -531,6 +531,7 @@
     "default": "Default",
     "addNewAddress": "Add New Address",
     "addressLine": "Address",
+    "fullAddress": "Full Address",
     "city": "City",
     "postalCode": "Postal Code",
     "country": "Country",
