@@ -289,6 +289,7 @@ export class StoresService {
       'staging',
       'prod',
       'production',
+      'couriers',
     ];
     if (reserved.includes(normalized)) {
       return { valid: false, error: 'This subdomain is reserved' };

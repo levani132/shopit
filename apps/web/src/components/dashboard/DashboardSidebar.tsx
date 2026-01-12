@@ -3,16 +3,21 @@
 import { usePathname } from 'next/navigation';
 import { Link } from '../../i18n/routing';
 import { useTranslations } from 'next-intl';
+import { useAuth } from '../../contexts/AuthContext';
+
+type UserRole = 'user' | 'seller' | 'courier' | 'admin';
 
 interface NavItem {
   href: string;
   labelKey: string;
   icon: React.ReactNode;
+  roles?: UserRole[]; // If undefined, shown to all roles
 }
 
 interface NavSection {
   titleKey?: string;
   items: NavItem[];
+  roles?: UserRole[]; // If undefined, shown to all roles
 }
 
 // Icons
@@ -176,23 +181,92 @@ const ExternalLinkIcon = (
   </svg>
 );
 
-// Navigation sections
+const DeliveryIcon = (
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+    />
+  </svg>
+);
+
+const AddressIcon = (
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+    />
+  </svg>
+);
+
+const DevicesIcon = (
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+    />
+  </svg>
+);
+
+// Navigation sections - role-based
 const NAV_SECTIONS: NavSection[] = [
-  // Overview - standalone
+  // Overview - for sellers and couriers
   {
-    items: [{ href: '/dashboard', labelKey: 'overview', icon: OverviewIcon }],
+    items: [
+      {
+        href: '/dashboard',
+        labelKey: 'overview',
+        icon: OverviewIcon,
+        roles: ['seller', 'courier', 'admin'],
+      },
+    ],
   },
-  // Administrative section
+  // Administrative section - for all roles
   {
     titleKey: 'sectionAdmin',
     items: [
-      { href: '/dashboard/store', labelKey: 'storeSettings', icon: StoreIcon },
+      {
+        href: '/dashboard/store',
+        labelKey: 'storeSettings',
+        icon: StoreIcon,
+        roles: ['seller', 'admin'],
+      },
       { href: '/dashboard/profile', labelKey: 'profile', icon: ProfileIcon },
+      { href: '/dashboard/addresses', labelKey: 'addresses', icon: AddressIcon },
+      { href: '/dashboard/devices', labelKey: 'devices', icon: DevicesIcon },
     ],
   },
-  // Products section
+  // Products section - sellers only
   {
     titleKey: 'sectionProducts',
+    roles: ['seller', 'admin'],
     items: [
       {
         href: '/dashboard/attributes',
@@ -207,9 +281,22 @@ const NAV_SECTIONS: NavSection[] = [
       { href: '/dashboard/products', labelKey: 'products', icon: ProductsIcon },
     ],
   },
-  // Results section
+  // Deliveries section - couriers only
+  {
+    titleKey: 'sectionDeliveries',
+    roles: ['courier', 'admin'],
+    items: [
+      {
+        href: '/dashboard/deliveries',
+        labelKey: 'deliveryOrders',
+        icon: DeliveryIcon,
+      },
+    ],
+  },
+  // Results section - sellers
   {
     titleKey: 'sectionResults',
+    roles: ['seller', 'admin'],
     items: [
       { href: '/dashboard/orders', labelKey: 'orders', icon: OrdersIcon },
       { href: '/dashboard/balance', labelKey: 'balance', icon: BalanceIcon },
@@ -220,11 +307,32 @@ const NAV_SECTIONS: NavSection[] = [
       },
     ],
   },
+  // Courier Results section
+  {
+    titleKey: 'sectionResults',
+    roles: ['courier'],
+    items: [
+      {
+        href: '/dashboard/courier-balance',
+        labelKey: 'courierBalance',
+        icon: BalanceIcon,
+      },
+      {
+        href: '/dashboard/courier-analytics',
+        labelKey: 'courierAnalytics',
+        icon: AnalyticsIcon,
+      },
+    ],
+  },
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const t = useTranslations('dashboard');
+  const { user } = useAuth();
+
+  // Get user role, default to 'user' if not set
+  const userRole = (user?.role as UserRole) || 'user';
 
   // Check if current path matches the nav item
   const isActive = (href: string) => {
@@ -241,11 +349,25 @@ export function DashboardSidebar() {
     return normalizedPath.startsWith(normalizedHref);
   };
 
+  // Check if a section/item should be shown for the current user role
+  const shouldShowForRole = (roles?: UserRole[]) => {
+    if (!roles) return true; // No role restriction
+    return roles.includes(userRole) || userRole === 'admin';
+  };
+
+  // Filter sections and items based on role
+  const filteredSections = NAV_SECTIONS.filter((section) =>
+    shouldShowForRole(section.roles),
+  ).map((section) => ({
+    ...section,
+    items: section.items.filter((item) => shouldShowForRole(item.roles)),
+  })).filter((section) => section.items.length > 0);
+
   return (
     <aside className="hidden lg:flex lg:flex-col w-64 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
       {/* Navigation */}
       <nav className="flex-1 p-4 pt-6 space-y-6">
-        {NAV_SECTIONS.map((section, sectionIndex) => (
+        {filteredSections.map((section, sectionIndex) => (
           <div key={sectionIndex}>
             {/* Section title */}
             {section.titleKey && (
@@ -276,16 +398,18 @@ export function DashboardSidebar() {
         ))}
       </nav>
 
-      {/* Store Preview Link */}
-      <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
-        <Link
-          href="/dashboard/store"
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-        >
-          {ExternalLinkIcon}
-          <span className="font-medium text-sm">{t('viewStore')}</span>
-        </Link>
-      </div>
+      {/* Store Preview Link - only for sellers */}
+      {(userRole === 'seller' || userRole === 'admin') && (
+        <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
+          <Link
+            href="/dashboard/store"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+          >
+            {ExternalLinkIcon}
+            <span className="font-medium text-sm">{t('viewStore')}</span>
+          </Link>
+        </div>
+      )}
     </aside>
   );
 }

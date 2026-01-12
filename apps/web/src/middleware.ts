@@ -78,8 +78,33 @@ export default function middleware(request: NextRequest) {
   });
   // === END DEBUG ===
 
-  // Check for subdomain (seller store)
+  // Check for subdomain (seller store or special portals)
   const subdomain = getSubdomain(hostname);
+
+  // Special handling for courier portal
+  if (subdomain === 'couriers') {
+    const url = request.nextUrl.clone();
+
+    // Handle locale in the courier portal path
+    const pathnameHasLocale = routing.locales.some(
+      (locale) =>
+        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+    );
+
+    if (pathnameHasLocale) {
+      const locale = pathname.split('/')[1];
+      const restPath = pathname.replace(`/${locale}`, '') || '/';
+      url.pathname = `/couriers/${locale}${restPath}`;
+    } else {
+      const defaultLocale = routing.defaultLocale;
+      const normalizedPath = pathname === '/' ? '' : pathname;
+      url.pathname = `/couriers/${defaultLocale}${normalizedPath}`;
+    }
+
+    const response = NextResponse.rewrite(url);
+    response.headers.set('x-pathname', pathname);
+    return response;
+  }
 
   if (subdomain) {
     // This is a store subdomain - rewrite to the store page

@@ -16,13 +16,22 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'seller' | 'user';
+  role: 'admin' | 'seller' | 'user' | 'courier';
   phoneNumber?: string;
   identificationNumber?: string;
   accountNumber?: string;
   beneficiaryBankCode?: string;
   isProfileComplete?: boolean;
   authProvider?: 'EMAIL' | 'GOOGLE';
+  // Courier-specific fields
+  vehicleType?: string;
+  workingAreas?: string[];
+  isCourierApproved?: boolean;
+  // Balance fields (for sellers and couriers)
+  balance?: number;
+  pendingWithdrawals?: number;
+  totalEarnings?: number;
+  totalWithdrawn?: number;
 }
 
 export interface Store {
@@ -256,7 +265,9 @@ export function useAuth(): AuthContextType {
 }
 
 // Hook to check if user has required role
-export function useRequireRole(allowedRoles: ('admin' | 'seller' | 'user')[]) {
+export function useRequireRole(
+  allowedRoles: ('admin' | 'seller' | 'user' | 'courier')[],
+) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -282,4 +293,9 @@ export function useRequireRole(allowedRoles: ('admin' | 'seller' | 'user')[]) {
 // Hook specifically for seller dashboard
 export function useRequireSeller() {
   return useRequireRole(['admin', 'seller']);
+}
+
+// Hook specifically for courier dashboard
+export function useRequireCourier() {
+  return useRequireRole(['admin', 'courier']);
 }

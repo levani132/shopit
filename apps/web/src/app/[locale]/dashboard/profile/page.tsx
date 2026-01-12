@@ -40,6 +40,10 @@ export default function ProfilePage() {
   const [accountNumber, setAccountNumber] = useState('');
   const [beneficiaryBankCode, setBeneficiaryBankCode] = useState('');
 
+  // Courier info
+  const [vehicleType, setVehicleType] = useState('');
+  const [workingAreas, setWorkingAreas] = useState('');
+
   // Password change
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -50,6 +54,7 @@ export default function ProfilePage() {
   const [isSavingPersonal, setIsSavingPersonal] = useState(false);
   const [isSavingBank, setIsSavingBank] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Initialize form with user data
@@ -61,8 +66,12 @@ export default function ProfilePage() {
       setIdentificationNumber(user.identificationNumber || '');
       setAccountNumber(user.accountNumber || '');
       setBeneficiaryBankCode(user.beneficiaryBankCode || '');
+      setVehicleType(user.vehicleType || '');
+      setWorkingAreas((user.workingAreas || []).join(', '));
     }
   }, [user]);
+
+  const isCourier = user?.role === 'courier';
 
   const showSuccess = (message: string) => {
     setSuccessMessage(message);
@@ -193,6 +202,41 @@ export default function ProfilePage() {
       setErrors({ general: 'Failed to update banking info' });
     } finally {
       setIsSavingBank(false);
+    }
+  };
+
+  const handleSaveCourierInfo = async () => {
+    setIsSavingCourier(true);
+    setErrors({});
+
+    try {
+      const areasArray = workingAreas
+        .split(',')
+        .map((a) => a.trim())
+        .filter((a) => a);
+
+      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          vehicleType: vehicleType || undefined,
+          workingAreas: areasArray.length > 0 ? areasArray : undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setErrors({ general: data.message || 'Failed to save courier info' });
+        return;
+      }
+
+      await refreshAuth();
+      showSuccess('Courier information updated successfully!');
+    } catch {
+      setErrors({ general: 'Failed to save courier information' });
+    } finally {
+      setIsSavingCourier(false);
     }
   };
 
@@ -532,6 +576,58 @@ export default function ProfilePage() {
               className="px-6 py-2.5 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
               {isSavingPassword ? 'Changing...' : 'Change Password'}
+            </button>
+          </div>
+        )}
+
+        {/* Courier Settings - Only for couriers */}
+        {isCourier && (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Courier Settings
+            </h2>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Vehicle Type
+                </label>
+                <select
+                  value={vehicleType}
+                  onChange={(e) => setVehicleType(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
+                >
+                  <option value="">Select vehicle type</option>
+                  <option value="car">🚗 Car</option>
+                  <option value="motorcycle">🏍️ Motorcycle</option>
+                  <option value="bicycle">🚲 Bicycle</option>
+                  <option value="walking">🚶 Walking</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Working Areas
+                </label>
+                <input
+                  type="text"
+                  value={workingAreas}
+                  onChange={(e) => setWorkingAreas(e.target.value)}
+                  placeholder="Tbilisi, Batumi, Kutaisi (comma separated)"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
+                />
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Enter the cities or regions where you can make deliveries.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveCourierInfo}
+              disabled={isSavingCourier}
+              className="px-6 py-2.5 bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-600)] transition-colors disabled:opacity-50"
+            >
+              {isSavingCourier ? 'Saving...' : 'Save Courier Settings'}
             </button>
           </div>
         )}

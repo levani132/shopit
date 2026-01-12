@@ -37,6 +37,7 @@ const RESERVED_SUBDOMAINS = [
   'staging',
   'production',
   'help',
+  'couriers',
   'support',
   'docs',
   'status',
