@@ -523,6 +523,13 @@ export default function ProfilePage() {
             {tRegister('bankInformation')}
           </h2>
 
+          {/* Hidden decoy fields to prevent browser autofill on IBAN */}
+          <div style={{ position: 'absolute', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
+            <input type="text" name="fake_username_field" tabIndex={-1} autoComplete="username" />
+            <input type="email" name="fake_email_field" tabIndex={-1} autoComplete="email" />
+            <input type="password" name="fake_password_field" tabIndex={-1} autoComplete="current-password" />
+          </div>
+
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -534,10 +541,17 @@ export default function ProfilePage() {
                 onChange={(e) => handleIbanChange(e.target.value)}
                 placeholder="GE29TB7777777777777777"
                 maxLength={22}
-                autoComplete="off"
+                name="iban_account_ge"
+                id="iban_account_ge"
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="characters"
+                spellCheck="false"
                 data-form-type="other"
                 data-lpignore="true"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition font-mono"
+                data-1p-ignore="true"
+                aria-autocomplete="none"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition font-mono uppercase"
               />
               {errors.accountNumber && (
                 <p className="text-red-500 text-sm mt-1">{errors.accountNumber}</p>
