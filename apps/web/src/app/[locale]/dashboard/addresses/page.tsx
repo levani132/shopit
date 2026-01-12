@@ -174,7 +174,7 @@ export default function AddressesPage() {
   const handleSetDefault = async (id: string) => {
     try {
       const response = await fetch(`${API_URL}/api/v1/auth/addresses/${id}/default`, {
-        method: 'PATCH',
+        method: 'POST',
         credentials: 'include',
       });
 

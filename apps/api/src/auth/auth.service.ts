@@ -866,6 +866,67 @@ export class AuthService {
   }
 
   /**
+   * Update a shipping address
+   */
+  async updateUserAddress(
+    userId: string,
+    addressId: string,
+    updateData: {
+      label?: string;
+      address?: string;
+      city?: string;
+      postalCode?: string;
+      country?: string;
+      phoneNumber?: string;
+      isDefault?: boolean;
+    },
+  ): Promise<any> {
+    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    const existingAddress = user?.shippingAddresses?.find(
+      (a) => a._id === addressId,
+    );
+
+    if (!existingAddress) {
+      throw new NotFoundException('Address not found');
+    }
+
+    // If setting as default, unset other defaults first
+    if (updateData.isDefault) {
+      await this.userModel.findByIdAndUpdate(userId, {
+        $set: { 'shippingAddresses.$[].isDefault': false },
+      });
+    }
+
+    // Build update object
+    const updateFields: Record<string, any> = {};
+    if (updateData.label !== undefined)
+      updateFields['shippingAddresses.$.label'] = updateData.label;
+    if (updateData.address !== undefined)
+      updateFields['shippingAddresses.$.address'] = updateData.address;
+    if (updateData.city !== undefined)
+      updateFields['shippingAddresses.$.city'] = updateData.city;
+    if (updateData.postalCode !== undefined)
+      updateFields['shippingAddresses.$.postalCode'] = updateData.postalCode;
+    if (updateData.country !== undefined)
+      updateFields['shippingAddresses.$.country'] = updateData.country;
+    if (updateData.phoneNumber !== undefined)
+      updateFields['shippingAddresses.$.phoneNumber'] = updateData.phoneNumber;
+    if (updateData.isDefault !== undefined)
+      updateFields['shippingAddresses.$.isDefault'] = updateData.isDefault;
+
+    await this.userModel.findOneAndUpdate(
+      { _id: userId, 'shippingAddresses._id': addressId },
+      { $set: updateFields },
+    );
+
+    // Return updated address
+    const updatedUser = await this.userModel
+      .findById(userId)
+      .select('shippingAddresses');
+    return updatedUser?.shippingAddresses?.find((a) => a._id === addressId);
+  }
+
+  /**
    * Delete a shipping address
    */
   async deleteUserAddress(userId: string, addressId: string): Promise<void> {

@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Put,
   Patch,
   Body,
   Get,
@@ -655,6 +656,32 @@ export class AuthController {
   ) {
     const address = await this.authService.addUserAddress(
       user._id.toString(),
+      dto,
+    );
+    return address;
+  }
+
+  @Put('addresses/:addressId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a shipping address' })
+  async updateAddress(
+    @CurrentUser() user: UserDocument,
+    @Param('addressId') addressId: string,
+    @Body()
+    dto: {
+      label?: string;
+      address?: string;
+      city?: string;
+      postalCode?: string;
+      country?: string;
+      phoneNumber?: string;
+      isDefault?: boolean;
+    },
+  ) {
+    const address = await this.authService.updateUserAddress(
+      user._id.toString(),
+      addressId,
       dto,
     );
     return address;
