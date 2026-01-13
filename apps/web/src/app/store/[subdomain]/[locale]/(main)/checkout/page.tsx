@@ -1314,11 +1314,35 @@ export default function CheckoutPage() {
                   {t('paymentMethod')}
                 </p>
                 <div className="flex items-center gap-3 p-4 border border-gray-200 dark:border-zinc-600 rounded-lg">
-                  <div className="w-12 h-8 bg-white rounded flex items-center justify-center text-xs font-bold text-blue-600">
-                    BOG
+                  {/* Card logos */}
+                  <div className="flex items-center gap-1.5">
+                    {/* Visa logo */}
+                    <div className="w-10 h-6 bg-white rounded flex items-center justify-center border border-gray-200">
+                      <svg viewBox="0 0 48 32" className="w-8 h-5">
+                        <path
+                          fill="#1A1F71"
+                          d="M19.5 21.9h-3.3l2.1-12.8h3.3l-2.1 12.8zm14.7-12.5c-.7-.3-1.7-.5-3-.5-3.3 0-5.7 1.8-5.7 4.3 0 1.9 1.7 2.9 2.9 3.5 1.3.6 1.7 1.1 1.7 1.6 0 .9-1 1.3-1.9 1.3-1.3 0-2-.2-3.1-.7l-.4-.2-.5 2.9c.8.4 2.2.7 3.7.7 3.5 0 5.8-1.7 5.9-4.4 0-1.5-.9-2.6-2.8-3.5-1.2-.6-1.9-1-1.9-1.6 0-.5.6-1.1 1.9-1.1 1.1 0 1.9.2 2.5.5l.3.1.4-2.9zm8.5-.3h-2.6c-.8 0-1.4.2-1.8 1l-5 12.1h3.5l.7-1.9h4.3l.4 1.9h3.1l-2.6-13.1zm-4.1 8.4c.3-.8 1.4-3.7 1.4-3.7s.3-.8.5-1.3l.2 1.2.8 3.9h-2.9zM16 9.1l-3.3 8.7-.3-1.8c-.6-2-2.5-4.2-4.6-5.3l3 11.3h3.6l5.3-12.9H16z"
+                        />
+                        <path
+                          fill="#F9A533"
+                          d="M10.3 9.1H4.9l-.1.3c4.2 1.1 7 3.7 8.2 6.8l-1.2-6c-.2-.8-.8-1.1-1.5-1.1z"
+                        />
+                      </svg>
+                    </div>
+                    {/* Mastercard logo */}
+                    <div className="w-10 h-6 bg-white rounded flex items-center justify-center border border-gray-200">
+                      <svg viewBox="0 0 48 32" className="w-8 h-5">
+                        <circle cx="18" cy="16" r="10" fill="#EB001B" />
+                        <circle cx="30" cy="16" r="10" fill="#F79E1B" />
+                        <path
+                          fill="#FF5F00"
+                          d="M24 8.3c2.5 2 4 5 4 8.4s-1.5 6.4-4 8.4c-2.5-2-4-5-4-8.4s1.5-6.4 4-8.4z"
+                        />
+                      </svg>
+                    </div>
                   </div>
                   <span className="text-gray-700 dark:text-gray-300">
-                    {t('bankOfGeorgia')}
+                    {t('georgianBankCard')}
                   </span>
                 </div>
               </div>
