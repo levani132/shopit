@@ -539,33 +539,60 @@ export default function NewProductPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {t('shippingSizeInfo')}:
             </p>
-            {shippingSizes ? (
-              <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                <li>
-                  • <strong>{t('shippingSizeSmall')}</strong>:{' '}
-                  ≤{shippingSizes.small.maxWeight}kg, ≤{shippingSizes.small.maxDimension}cm ({shippingSizes.small.ratePerMinute}₾/min)
-                </li>
-                <li>
-                  • <strong>{t('shippingSizeMedium')}</strong>:{' '}
-                  ≤{shippingSizes.medium.maxWeight}kg, ≤{shippingSizes.medium.maxDimension}cm ({shippingSizes.medium.ratePerMinute}₾/min)
-                </li>
-                <li>
-                  • <strong>{t('shippingSizeLarge')}</strong>:{' '}
-                  ≤{shippingSizes.large.maxWeight}kg, ≤{shippingSizes.large.maxDimension}cm ({shippingSizes.large.ratePerMinute}₾/min)
-                </li>
-                <li>
-                  • <strong>{t('shippingSizeExtraLarge')}</strong>:{' '}
-                  &gt;{shippingSizes.large.maxWeight}kg or &gt;{shippingSizes.large.maxDimension}cm ({shippingSizes.extra_large.ratePerMinute}₾/min)
-                </li>
-              </ul>
-            ) : (
-              <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                <li>• <strong>{t('shippingSizeSmall')}</strong>: {t('shippingSizeSmallDesc')}</li>
-                <li>• <strong>{t('shippingSizeMedium')}</strong>: {t('shippingSizeMediumDesc')}</li>
-                <li>• <strong>{t('shippingSizeLarge')}</strong>: {t('shippingSizeLargeDesc')}</li>
-                <li>• <strong>{t('shippingSizeExtraLarge')}</strong>: {t('shippingSizeExtraLargeDesc')}</li>
-              </ul>
-            )}
+            <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-2">
+              <li className="flex items-start gap-2">
+                <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[100px]">
+                  🏍️ {t('shippingSizeSmall')}
+                </span>
+                <span>
+                  {shippingSizes && (
+                    <span className="text-[var(--store-accent-600)] font-medium">
+                      ≤{shippingSizes.small.maxWeight}kg, ≤{shippingSizes.small.maxDimension}cm
+                    </span>
+                  )}{' '}
+                  — {t('shippingSizeSmallDesc')}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[100px]">
+                  🚗 {t('shippingSizeMedium')}
+                </span>
+                <span>
+                  {shippingSizes && (
+                    <span className="text-[var(--store-accent-600)] font-medium">
+                      ≤{shippingSizes.medium.maxWeight}kg, ≤{shippingSizes.medium.maxDimension}cm
+                    </span>
+                  )}{' '}
+                  — {t('shippingSizeMediumDesc')}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[100px]">
+                  🚙 {t('shippingSizeLarge')}
+                </span>
+                <span>
+                  {shippingSizes && (
+                    <span className="text-[var(--store-accent-600)] font-medium">
+                      ≤{shippingSizes.large.maxWeight}kg, ≤{shippingSizes.large.maxDimension}cm
+                    </span>
+                  )}{' '}
+                  — {t('shippingSizeLargeDesc')}
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="font-medium text-gray-700 dark:text-gray-300 min-w-[100px]">
+                  🚚 {t('shippingSizeExtraLarge')}
+                </span>
+                <span>
+                  {shippingSizes && (
+                    <span className="text-[var(--store-accent-600)] font-medium">
+                      &gt;{shippingSizes.large.maxWeight}kg
+                    </span>
+                  )}{' '}
+                  — {t('shippingSizeExtraLargeDesc')}
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
 
