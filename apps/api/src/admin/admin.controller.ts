@@ -3,6 +3,7 @@ import {
   Get,
   Put,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -578,6 +579,56 @@ export class AdminController {
     }
 
     return { order };
+  }
+
+  @Patch('orders/:id/status')
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update order status (admin)' })
+  @ApiResponse({ status: 200, description: 'Order status updated' })
+  async updateOrderStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    const order = await this.orderModel.findById(id);
+    if (!order) {
+      throw new NotFoundException('Order not found');
+    }
+
+    const validStatuses = ['pending', 'paid', 'processing', 'ready_for_delivery', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    if (!validStatuses.includes(body.status)) {
+      throw new BadRequestException(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    // Set timestamps based on status
+    const now = new Date();
+    if (body.status === 'paid' && !order.paidAt) {
+      order.paidAt = now;
+    }
+    if (body.status === 'shipped' && !order.shippedAt) {
+      order.shippedAt = now;
+    }
+    if (body.status === 'delivered' && !order.deliveredAt) {
+      order.deliveredAt = now;
+    }
+    if (body.status === 'cancelled') {
+      order.cancelledAt = now;
+    }
+
+    order.status = body.status as any;
+    await order.save();
+
+    this.logger.log(`Admin updated order ${id} status to ${body.status}`);
+
+    return {
+      message: 'Order status updated',
+      order: {
+        _id: order._id,
+        status: order.status,
+        paidAt: order.paidAt,
+        shippedAt: order.shippedAt,
+        deliveredAt: order.deliveredAt,
+      },
+    };
   }
 
   // ===== Analytics =====

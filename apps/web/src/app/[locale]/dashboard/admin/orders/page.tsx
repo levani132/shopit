@@ -57,6 +57,7 @@ function OrdersManagementContent() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   const fetchOrders = async (page = 1) => {
     setLoading(true);
@@ -85,6 +86,28 @@ function OrdersManagementContent() {
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    setUpdatingStatus(orderId);
+    try {
+      const response = await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update order status');
+      }
+      // Update the local state
+      setOrders((prev) =>
+        prev.map((order) =>
+          order._id === orderId ? { ...order, status: newStatus } : order
+        )
+      );
+    } catch (err: any) {
+      console.error('Failed to update order status:', err);
+      setError(err.message || 'Failed to update order status');
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
@@ -261,6 +284,35 @@ function OrdersManagementContent() {
                               {t('deliveredAt')}: {new Date(order.deliveredAt).toLocaleString()}
                             </p>
                           )}
+                        </div>
+
+                        {/* Change Status */}
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-zinc-600">
+                          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {t('changeStatus')}
+                          </h4>
+                          <div className="flex gap-2">
+                            <select
+                              value={order.status || 'pending'}
+                              onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                              disabled={updatingStatus === order._id}
+                              className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent disabled:opacity-50"
+                            >
+                              <option value="pending">{t('orderPending')}</option>
+                              <option value="paid">{t('orderPaid')}</option>
+                              <option value="processing">{t('orderProcessing')}</option>
+                              <option value="ready_for_delivery">{t('orderReadyForDelivery')}</option>
+                              <option value="shipped">{t('orderShipped')}</option>
+                              <option value="delivered">{t('orderDelivered')}</option>
+                              <option value="cancelled">{t('orderCancelled')}</option>
+                              <option value="refunded">{t('orderRefunded')}</option>
+                            </select>
+                            {updatingStatus === order._id && (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-5 w-5 border-2 border-[var(--accent-500)] border-t-transparent" />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
