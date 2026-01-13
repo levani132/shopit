@@ -62,12 +62,14 @@ async function getStorePublishStatus(
     hasCookieHeader: !!cookieHeader,
   });
 
-  // Check cache first
+  // Check cache first (skip cache in development for easier debugging)
   const cached = storeStatusCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) {
-    console.log('[Middleware] Using cached result:', cached);
+    console.log('[Middleware] Using cached result:', { ...cached, cacheKey });
     return { publishStatus: cached.publishStatus, canBypass: cached.canBypass };
   }
+
+  console.log('[Middleware] Cache miss, fetching fresh data:', { cacheKey });
 
   try {
     const headers: Record<string, string> = {
