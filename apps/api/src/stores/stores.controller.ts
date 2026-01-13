@@ -23,9 +23,11 @@ import {
 import { StoresService } from './stores.service';
 import type { UpdateStoreDto } from './stores.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
 import type { UserDocument } from '@sellit/api-database';
+import { Role } from '@sellit/api-database';
 import 'multer';
 
 @ApiTags('stores')
@@ -284,19 +286,29 @@ export class StoresController {
   }
 
   @Get('subdomain/:subdomain/status')
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get store publish status by subdomain' })
   @ApiResponse({ status: 200, description: 'Store status returned' })
   @ApiResponse({ status: 404, description: 'Store not found' })
-  async getStoreStatus(@Param('subdomain') subdomain: string) {
+  async getStoreStatus(
+    @Param('subdomain') subdomain: string,
+    @CurrentUser() user?: UserDocument,
+  ) {
     const store = await this.storesService.findBySubdomain(subdomain);
 
     if (!store) {
       throw new NotFoundException('Store not found');
     }
 
+    // Check if user is admin or store owner
+    const isAdmin = user?.role === Role.ADMIN;
+    const isOwner = user && store.ownerId?.toString() === user._id?.toString();
+    const canBypassPublishStatus = isAdmin || isOwner;
+
     return {
       publishStatus: store.publishStatus || 'draft',
       isActive: store.isActive ?? true,
+      canBypassPublishStatus,
     };
   }
 

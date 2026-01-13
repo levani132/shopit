@@ -19,9 +19,10 @@ const MAIN_DOMAINS = [
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 // Cache store status for a short time to avoid repeated API calls
+// Note: We cache per subdomain+cookie hash to allow different results for logged-in users
 const storeStatusCache = new Map<
   string,
-  { publishStatus: string; expires: number }
+  { publishStatus: string; canBypass: boolean; expires: number }
 >();
 const CACHE_TTL = 60 * 1000; // 1 minute cache
 
@@ -35,24 +36,36 @@ const intlMiddleware = createMiddleware(routing);
  * e.g., "localhost" -> null (main site)
  */
 /**
- * Check if a store is published
- * Returns the publish status or null if store doesn't exist
+ * Check if a store is published and if user can bypass the publish check
+ * Returns the publish status and bypass permission
  */
 async function getStorePublishStatus(
   subdomain: string,
-): Promise<string | null> {
+  cookieHeader?: string,
+): Promise<{ publishStatus: string | null; canBypass: boolean }> {
+  // Create a cache key that includes cookie presence for auth-aware caching
+  const hasAuth = cookieHeader?.includes('access_token');
+  const cacheKey = `${subdomain}:${hasAuth ? 'auth' : 'anon'}`;
+
   // Check cache first
-  const cached = storeStatusCache.get(subdomain);
+  const cached = storeStatusCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) {
-    return cached.publishStatus;
+    return { publishStatus: cached.publishStatus, canBypass: cached.canBypass };
   }
 
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    
+    // Forward cookies to the API for authentication
+    if (cookieHeader) {
+      headers['Cookie'] = cookieHeader;
+    }
+
     const response = await fetch(
       `${API_BASE_URL}/stores/subdomain/${subdomain}/status`,
       {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         // Don't cache this request in fetch layer
         cache: 'no-store',
       },
@@ -60,27 +73,30 @@ async function getStorePublishStatus(
 
     if (!response.ok) {
       // Store not found
-      storeStatusCache.set(subdomain, {
+      storeStatusCache.set(cacheKey, {
         publishStatus: 'not_found',
+        canBypass: false,
         expires: Date.now() + CACHE_TTL,
       });
-      return null;
+      return { publishStatus: null, canBypass: false };
     }
 
     const data = await response.json();
     const publishStatus = data.publishStatus || 'draft';
+    const canBypass = data.canBypassPublishStatus || false;
 
     // Cache the result
-    storeStatusCache.set(subdomain, {
+    storeStatusCache.set(cacheKey, {
       publishStatus,
+      canBypass,
       expires: Date.now() + CACHE_TTL,
     });
 
-    return publishStatus;
+    return { publishStatus, canBypass };
   } catch (error) {
     console.error('[Middleware] Error checking store status:', error);
     // On error, allow access (fail open)
-    return 'published';
+    return { publishStatus: 'published', canBypass: false };
   }
 }
 
@@ -167,11 +183,14 @@ export default async function middleware(request: NextRequest) {
   }
 
   if (subdomain) {
+    // Get cookies from request to forward to API for auth check
+    const cookieHeader = request.headers.get('cookie') || undefined;
+    
     // Check if store is published before allowing access
-    const publishStatus = await getStorePublishStatus(subdomain);
+    const { publishStatus, canBypass } = await getStorePublishStatus(subdomain, cookieHeader);
 
-    // If store not found or not published, show appropriate page
-    if (!publishStatus || publishStatus !== 'published') {
+    // If store not found or not published (and user can't bypass), show appropriate page
+    if (!publishStatus || (publishStatus !== 'published' && !canBypass)) {
       const url = request.nextUrl.clone();
       const pathnameHasLocale = routing.locales.some(
         (locale) =>
