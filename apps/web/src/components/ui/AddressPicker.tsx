@@ -492,7 +492,7 @@ function AddressPickerMap({
       <div
         className={`relative rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 ${
           isDarkMode ? 'map-dark-mode' : ''
-        } ${isExpanded ? 'fixed inset-2 sm:inset-4 z-[9999] rounded-2xl' : ''}`}
+        } ${isExpanded ? 'fixed top-2 left-2 right-2 bottom-2 z-[9999] rounded-2xl' : ''}`}
         style={
           isDarkMode
             ? {
@@ -548,11 +548,12 @@ function AddressPickerMap({
         </button>
 
         <MapContainer
-          center={[mapCenter.lat, mapCenter.lng]}
-          zoom={DEFAULT_ZOOM}
+          key={isExpanded ? 'expanded' : 'collapsed'}
+          center={[markerPosition?.lat ?? mapCenter.lat, markerPosition?.lng ?? mapCenter.lng]}
+          zoom={isExpanded ? 14 : DEFAULT_ZOOM}
           style={{
-            height: isExpanded ? 'calc(100vh - 32px)' : '280px',
-            width: isExpanded ? 'calc(100vw - 32px)' : '100%',
+            height: isExpanded ? 'calc(100vh - 16px)' : '280px',
+            width: isExpanded ? 'calc(100vw - 16px)' : '100%',
           }}
           className="z-0"
         >
