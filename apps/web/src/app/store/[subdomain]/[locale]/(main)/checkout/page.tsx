@@ -335,6 +335,7 @@ export default function CheckoutPage() {
   });
   const [saveNewAddress, setSaveNewAddress] = useState(true);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
   // Calculate totals
   const storeItems = useMemo(
@@ -494,28 +495,71 @@ export default function CheckoutPage() {
   const selectAddress = (address: ShippingAddress) => {
     setShippingAddress(address);
     setShowNewAddressForm(false);
+    setEditingAddressId(null);
     setIsEditingAddress(false);
     setCurrentStep('review');
   };
 
-  // Handle new address submit
-  const handleNewAddressSubmit = async (e: React.FormEvent) => {
+  // Handle edit address - populate form with existing data
+  const handleEditAddress = (addr: ShippingAddress) => {
+    setAddressForm({
+      address: addr.address,
+      city: addr.city,
+      postalCode: addr.postalCode || '',
+      country: addr.country,
+      phoneNumber: addr.phoneNumber,
+      label: addr.label || '',
+      isDefault: addr.isDefault || false,
+    });
+    setEditingAddressId(addr._id || null);
+    setShowNewAddressForm(true);
+  };
+
+  // Handle address form submit (new or edit)
+  const handleAddressFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isAuthenticated && saveNewAddress) {
-      // Save to backend
+    if (isAuthenticated) {
       try {
-        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(addressForm),
-        });
+        if (editingAddressId) {
+          // Update existing address
+          const response = await fetch(
+            `${API_URL}/api/v1/auth/addresses/${editingAddressId}`,
+            {
+              method: 'PUT',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(addressForm),
+            },
+          );
 
-        if (response.ok) {
-          const newAddress = await response.json();
-          setSavedAddresses([...savedAddresses, newAddress]);
-          selectAddress(newAddress);
+          if (response.ok) {
+            const updatedAddress = await response.json();
+            setSavedAddresses(
+              savedAddresses.map((a) =>
+                a._id === editingAddressId ? updatedAddress : a,
+              ),
+            );
+            selectAddress(updatedAddress);
+            setEditingAddressId(null);
+          }
+        } else if (saveNewAddress) {
+          // Create new address
+          const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(addressForm),
+          });
+
+          if (response.ok) {
+            const newAddress = await response.json();
+            setSavedAddresses([...savedAddresses, newAddress]);
+            selectAddress(newAddress);
+          }
+        } else {
+          // Use address without saving
+          selectAddress({ ...addressForm, _id: 'temp' });
         }
       } catch (err) {
         console.error('Error saving address:', err);
@@ -524,6 +568,21 @@ export default function CheckoutPage() {
     } else {
       selectAddress({ ...addressForm, _id: 'temp' });
     }
+  };
+
+  // Cancel address form
+  const cancelAddressForm = () => {
+    setShowNewAddressForm(false);
+    setEditingAddressId(null);
+    setAddressForm({
+      address: '',
+      city: '',
+      postalCode: '',
+      country: 'Georgia',
+      phoneNumber: '',
+      label: '',
+      isDefault: false,
+    });
   };
 
   // Process checkout
@@ -968,17 +1027,21 @@ export default function CheckoutPage() {
               {savedAddresses.length > 0 && !showNewAddressForm && (
                 <div className="space-y-3 mb-4">
                   {savedAddresses.map((addr) => (
-                    <button
+                    <div
                       key={addr._id}
-                      onClick={() => selectAddress(addr)}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
+                      className={`w-full p-4 rounded-lg border-2 transition-colors ${
                         shippingAddress?._id === addr._id
                           ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]'
                           : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                       }`}
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
+                      <div className="flex justify-between items-start gap-3">
+                        {/* Clickable area for selection */}
+                        <button
+                          type="button"
+                          onClick={() => selectAddress(addr)}
+                          className="flex-1 text-left"
+                        >
                           <p className="font-medium text-gray-900 dark:text-white">
                             {addr.label || t('address')}
                             {addr.isDefault && (
@@ -996,9 +1059,34 @@ export default function CheckoutPage() {
                           <p className="text-sm text-gray-600 dark:text-gray-400">
                             {addr.phoneNumber}
                           </p>
-                        </div>
+                        </button>
+
+                        {/* Edit button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditAddress(addr);
+                          }}
+                          className="p-2 text-gray-500 hover:text-[var(--store-accent-600)] dark:text-gray-400 dark:hover:text-[var(--store-accent-400)] transition-colors"
+                          title={t('edit')}
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1013,9 +1101,13 @@ export default function CheckoutPage() {
                 </button>
               )}
 
-              {/* New address form */}
+              {/* Address form (new or edit) */}
               {showNewAddressForm && (
-                <form onSubmit={handleNewAddressSubmit} className="space-y-4">
+                <form onSubmit={handleAddressFormSubmit} className="space-y-4">
+                  {/* Form title */}
+                  <h3 className="text-md font-medium text-gray-900 dark:text-white">
+                    {editingAddressId ? t('editAddress') : t('addNewAddress')}
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1127,12 +1219,12 @@ export default function CheckoutPage() {
                       type="submit"
                       className="flex-1 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
                     >
-                      {t('useThisAddress')}
+                      {editingAddressId ? t('updateAddress') : t('useThisAddress')}
                     </button>
-                    {savedAddresses.length > 0 && (
+                    {(savedAddresses.length > 0 || editingAddressId) && (
                       <button
                         type="button"
-                        onClick={() => setShowNewAddressForm(false)}
+                        onClick={cancelAddressForm}
                         className="px-6 py-3 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
                       >
                         {tCommon('cancel')}
