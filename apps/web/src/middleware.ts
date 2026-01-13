@@ -54,8 +54,10 @@ async function getStorePublishStatus(
   }
 
   try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
     // Forward cookies to the API for authentication
     if (cookieHeader) {
       headers['Cookie'] = cookieHeader;
@@ -185,9 +187,12 @@ export default async function middleware(request: NextRequest) {
   if (subdomain) {
     // Get cookies from request to forward to API for auth check
     const cookieHeader = request.headers.get('cookie') || undefined;
-    
+
     // Check if store is published before allowing access
-    const { publishStatus, canBypass } = await getStorePublishStatus(subdomain, cookieHeader);
+    const { publishStatus, canBypass } = await getStorePublishStatus(
+      subdomain,
+      cookieHeader,
+    );
 
     // If store not found or not published (and user can't bypass), show appropriate page
     if (!publishStatus || (publishStatus !== 'published' && !canBypass)) {

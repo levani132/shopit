@@ -211,9 +211,9 @@ function StoresManagementContent() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(store.publishStatus)}`}
+                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(store.publishStatus || 'draft')}`}
                       >
-                        {t(`status${store.publishStatus.charAt(0).toUpperCase() + store.publishStatus.slice(1).replace('_', '')}`)}
+                        {t(`status${(store.publishStatus || 'draft').charAt(0).toUpperCase() + (store.publishStatus || 'draft').slice(1).replace('_', '')}`)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
