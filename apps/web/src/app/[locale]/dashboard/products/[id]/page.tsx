@@ -20,6 +20,22 @@ interface Category {
   }[];
 }
 
+interface ShippingSizeConfig {
+  name: string;
+  maxWeight: number;
+  maxDimension: number;
+  ratePerMinute: number;
+  minimumFee: number;
+  vehicleType: string;
+}
+
+interface ShippingSizes {
+  small: ShippingSizeConfig;
+  medium: ShippingSizeConfig;
+  large: ShippingSizeConfig;
+  extra_large: ShippingSizeConfig;
+}
+
 interface ProductFormData {
   name: string;
   nameKa: string;
@@ -63,6 +79,7 @@ export default function EditProductPage() {
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [shippingSizes, setShippingSizes] = useState<ShippingSizes | null>(null);
   // Existing images from the server (URLs)
   const [existingImages, setExistingImages] = useState<string[]>([]);
   // New images to upload (File objects)
@@ -105,15 +122,21 @@ export default function EditProductPage() {
       try {
         setIsLoading(true);
 
-        // Fetch product and categories in parallel
-        const [productRes, categoriesRes] = await Promise.all([
+        // Fetch product, categories, and shipping sizes in parallel
+        const [productRes, categoriesRes, shippingRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/products/${productId}`, {
             credentials: 'include',
           }),
           fetch(`${API_URL}/api/v1/categories/my-store`, {
             credentials: 'include',
           }),
+          fetch(`${API_URL}/api/v1/settings/shipping-sizes`),
         ]);
+        
+        if (shippingRes.ok) {
+          const shippingData = await shippingRes.json();
+          setShippingSizes(shippingData.sizes);
+        }
 
         if (!productRes.ok) {
           throw new Error('Product not found');
@@ -759,12 +782,33 @@ export default function EditProductPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {t('shippingSizeInfo')}:
             </p>
-            <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-              <li>• <strong>{t('shippingSizeSmall')}</strong>: {t('shippingSizeSmallDesc')}</li>
-              <li>• <strong>{t('shippingSizeMedium')}</strong>: {t('shippingSizeMediumDesc')}</li>
-              <li>• <strong>{t('shippingSizeLarge')}</strong>: {t('shippingSizeLargeDesc')}</li>
-              <li>• <strong>{t('shippingSizeExtraLarge')}</strong>: {t('shippingSizeExtraLargeDesc')}</li>
-            </ul>
+            {shippingSizes ? (
+              <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <li>
+                  • <strong>{t('shippingSizeSmall')}</strong>:{' '}
+                  ≤{shippingSizes.small.maxWeight}kg, ≤{shippingSizes.small.maxDimension}cm ({shippingSizes.small.ratePerMinute}₾/min)
+                </li>
+                <li>
+                  • <strong>{t('shippingSizeMedium')}</strong>:{' '}
+                  ≤{shippingSizes.medium.maxWeight}kg, ≤{shippingSizes.medium.maxDimension}cm ({shippingSizes.medium.ratePerMinute}₾/min)
+                </li>
+                <li>
+                  • <strong>{t('shippingSizeLarge')}</strong>:{' '}
+                  ≤{shippingSizes.large.maxWeight}kg, ≤{shippingSizes.large.maxDimension}cm ({shippingSizes.large.ratePerMinute}₾/min)
+                </li>
+                <li>
+                  • <strong>{t('shippingSizeExtraLarge')}</strong>:{' '}
+                  &gt;{shippingSizes.large.maxWeight}kg or &gt;{shippingSizes.large.maxDimension}cm ({shippingSizes.extra_large.ratePerMinute}₾/min)
+                </li>
+              </ul>
+            ) : (
+              <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <li>• <strong>{t('shippingSizeSmall')}</strong>: {t('shippingSizeSmallDesc')}</li>
+                <li>• <strong>{t('shippingSizeMedium')}</strong>: {t('shippingSizeMediumDesc')}</li>
+                <li>• <strong>{t('shippingSizeLarge')}</strong>: {t('shippingSizeLargeDesc')}</li>
+                <li>• <strong>{t('shippingSizeExtraLarge')}</strong>: {t('shippingSizeExtraLargeDesc')}</li>
+              </ul>
+            )}
           </div>
         </div>
 

@@ -14,6 +14,7 @@ import { OrdersModule } from '../orders/orders.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { WishlistModule } from '../wishlist/wishlist.module';
 import { AdminModule } from '../admin/admin.module';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AdminModule } from '../admin/admin.module';
     PaymentsModule,
     WishlistModule,
     AdminModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
