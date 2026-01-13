@@ -674,6 +674,7 @@
     "searchAddress": "მოძებნე მისამართი...",
     "calculatingShipping": "მიწოდების გაანგარიშება...",
     "estimatedDelivery": "სავარაუდო მიტანა",
+    "deliveryDays": "{days} დღე",
     "locationRequiredWarning": "მიწოდების ფასის გამოსათვლელად აირჩიეთ მდებარეობა რუკაზე",
     "locationRequiredError": "გაგრძელებამდე აირჩიეთ მიტანის მდებარეობა რუკაზე",
     "city": "ქალაქი",
