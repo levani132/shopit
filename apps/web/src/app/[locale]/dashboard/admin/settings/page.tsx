@@ -13,11 +13,9 @@ interface VehicleShippingConfig {
 }
 
 interface SiteSettings {
+  // Commission
   siteCommissionRate: number;
-  sellerCourierFee: number;
-  deliveryCommissionRate: number;
-  deliveryCommissionMin: number;
-  deliveryCommissionMax: number;
+  // Shipping
   bikeShipping: VehicleShippingConfig;
   carShipping: VehicleShippingConfig;
   suvShipping: VehicleShippingConfig;
@@ -25,14 +23,19 @@ interface SiteSettings {
   defaultDeliveryRatePerMinute: number;
   minimumDeliveryFee: number;
   deliveryFeePrecision: number;
+  // Subdomain
+  freeSubdomainChanges: number;
   subdomainChangePrice: number;
-  courierEarningsPerDelivery: number;
-  courierEarningsIsPercentage: boolean;
+  // Courier
+  courierEarningsPercentage: number;
+  // Withdrawal
   minimumWithdrawalAmount: number;
   withdrawalFee: number;
+  // Platform
   platformName: string;
   supportEmail: string;
   supportPhone: string;
+  // Features
   allowStoreRegistrations: boolean;
   allowCourierRegistrations: boolean;
   maintenanceMode: boolean;
@@ -76,7 +79,10 @@ function SiteSettingsContent() {
     setSuccess(false);
 
     try {
-      const response = await api.put('/admin/settings', settings);
+      // Strip MongoDB-specific fields that shouldn't be sent back
+      const { _id, createdAt, updatedAt, __v, ...cleanSettings } = settings as any;
+      
+      const response = await api.put('/admin/settings', cleanSettings);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to save settings');
@@ -323,7 +329,7 @@ function SiteSettingsContent() {
       {activeTab === 'commission' && (
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 space-y-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {t('commissionRates')}
+            {t('siteCommission')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputField
@@ -335,35 +341,20 @@ function SiteSettingsContent() {
               max={100}
               helperText={t('siteCommissionRateHelp')}
             />
+          </div>
+
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white pt-4">
+            {t('courierSettings')}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <InputField
-              label={t('sellerCourierFee')}
-              value={settings.sellerCourierFee}
-              onChange={(v) => updateSetting('sellerCourierFee', v as number)}
-              suffix="₾"
-              min={0}
-              helperText={t('sellerCourierFeeHelp')}
-            />
-            <InputField
-              label={t('deliveryCommissionRate')}
-              value={(settings.deliveryCommissionRate * 100).toFixed(0)}
-              onChange={(v) => updateSetting('deliveryCommissionRate', (v as number) / 100)}
+              label={t('courierEarningsPercentage')}
+              value={(settings.courierEarningsPercentage * 100).toFixed(0)}
+              onChange={(v) => updateSetting('courierEarningsPercentage', (v as number) / 100)}
               suffix="%"
               min={0}
               max={100}
-            />
-            <InputField
-              label={t('deliveryCommissionMin')}
-              value={settings.deliveryCommissionMin}
-              onChange={(v) => updateSetting('deliveryCommissionMin', v as number)}
-              suffix="₾"
-              min={0}
-            />
-            <InputField
-              label={t('deliveryCommissionMax')}
-              value={settings.deliveryCommissionMax}
-              onChange={(v) => updateSetting('deliveryCommissionMax', v as number)}
-              suffix="₾"
-              min={0}
+              helperText={t('courierEarningsPercentageHelp')}
             />
           </div>
 
@@ -388,9 +379,16 @@ function SiteSettingsContent() {
           </div>
 
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white pt-4">
-            {t('otherPricing')}
+            {t('subdomainSettings')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InputField
+              label={t('freeSubdomainChanges')}
+              value={settings.freeSubdomainChanges}
+              onChange={(v) => updateSetting('freeSubdomainChanges', v as number)}
+              min={0}
+              helperText={t('freeSubdomainChangesHelp')}
+            />
             <InputField
               label={t('subdomainChangePrice')}
               value={settings.subdomainChangePrice}
@@ -398,13 +396,6 @@ function SiteSettingsContent() {
               suffix="₾"
               min={0}
               helperText={t('subdomainChangePriceHelp')}
-            />
-            <InputField
-              label={t('courierEarningsPerDelivery')}
-              value={settings.courierEarningsPerDelivery}
-              onChange={(v) => updateSetting('courierEarningsPerDelivery', v as number)}
-              suffix={settings.courierEarningsIsPercentage ? '%' : '₾'}
-              min={0}
             />
           </div>
         </div>

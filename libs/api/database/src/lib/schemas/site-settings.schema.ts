@@ -25,31 +25,11 @@ export class SiteSettings {
 
   /**
    * Site commission rate (0.0 - 1.0)
+   * Applied to all sales regardless of delivery method
    * Default: 0.10 (10%)
    */
   @Prop({ default: 0.10 })
   siteCommissionRate: number;
-
-  /**
-   * Seller courier fee in GEL
-   * Charged when seller handles their own delivery
-   * Default: 10 GEL
-   */
-  @Prop({ default: 10 })
-  sellerCourierFee: number;
-
-  /**
-   * Delivery commission settings for ShopIt couriers
-   * Applied as a percentage of delivery fee
-   */
-  @Prop({ default: 0.05 })
-  deliveryCommissionRate: number; // 5%
-
-  @Prop({ default: 10 })
-  deliveryCommissionMin: number; // Min 10 GEL
-
-  @Prop({ default: 50 })
-  deliveryCommissionMax: number; // Max 50 GEL
 
   // ===== Shipping Rate Settings =====
 
@@ -137,7 +117,14 @@ export class SiteSettings {
   // ===== Subdomain Settings =====
 
   /**
-   * Price for subdomain change (after first free change)
+   * Number of free subdomain changes allowed
+   * Default: 1 (first change is free)
+   */
+  @Prop({ default: 1 })
+  freeSubdomainChanges: number;
+
+  /**
+   * Price for subdomain change (after free changes are used)
    * Default: 10 GEL
    */
   @Prop({ default: 10 })
@@ -146,17 +133,12 @@ export class SiteSettings {
   // ===== Courier Settings =====
 
   /**
-   * Courier earnings per delivery (fixed rate)
-   * Or percentage of delivery fee if courierEarningsIsPercentage is true
+   * Courier earnings as percentage of delivery fee (0.0 - 1.0)
+   * Couriers receive this percentage of the delivery fee paid by customer
+   * Default: 0.80 (80%)
    */
-  @Prop({ default: 5 })
-  courierEarningsPerDelivery: number;
-
-  /**
-   * Whether courier earnings is a percentage of delivery fee
-   */
-  @Prop({ default: false })
-  courierEarningsIsPercentage: boolean;
+  @Prop({ default: 0.80 })
+  courierEarningsPercentage: number;
 
   // ===== Withdrawal Settings =====
 

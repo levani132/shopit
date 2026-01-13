@@ -93,11 +93,11 @@ export class SiteSettingsService implements OnModuleInit {
   }
 
   /**
-   * Get seller courier fee
+   * Get courier earnings percentage (0.0 - 1.0)
    */
-  async getSellerCourierFee(): Promise<number> {
+  async getCourierEarningsPercentage(): Promise<number> {
     const settings = await this.getSettings();
-    return settings.sellerCourierFee;
+    return settings.courierEarningsPercentage;
   }
 
   /**
@@ -152,6 +152,20 @@ export class SiteSettingsService implements OnModuleInit {
       ratePerMinute: settings.defaultDeliveryRatePerMinute,
       minimumFee: settings.minimumDeliveryFee,
       precision: settings.deliveryFeePrecision,
+    };
+  }
+
+  /**
+   * Get subdomain change settings
+   */
+  async getSubdomainChangeSettings(): Promise<{
+    freeChanges: number;
+    price: number;
+  }> {
+    const settings = await this.getSettings();
+    return {
+      freeChanges: settings.freeSubdomainChanges,
+      price: settings.subdomainChangePrice,
     };
   }
 

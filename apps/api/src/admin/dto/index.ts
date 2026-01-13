@@ -48,31 +48,6 @@ export class UpdateSiteSettingsDto {
   @Max(1)
   siteCommissionRate?: number;
 
-  @ApiPropertyOptional({ description: 'Seller courier fee in GEL' })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  sellerCourierFee?: number;
-
-  @ApiPropertyOptional({ description: 'Delivery commission rate (0.0 - 1.0)' })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Max(1)
-  deliveryCommissionRate?: number;
-
-  @ApiPropertyOptional({ description: 'Minimum delivery commission in GEL' })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  deliveryCommissionMin?: number;
-
-  @ApiPropertyOptional({ description: 'Maximum delivery commission in GEL' })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  deliveryCommissionMax?: number;
-
   // Shipping Rates
   @ApiPropertyOptional({ description: 'Bike shipping config' })
   @IsOptional()
@@ -118,23 +93,25 @@ export class UpdateSiteSettingsDto {
   deliveryFeePrecision?: number;
 
   // Subdomain Settings
-  @ApiPropertyOptional({ description: 'Subdomain change price in GEL' })
+  @ApiPropertyOptional({ description: 'Number of free subdomain changes' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  freeSubdomainChanges?: number;
+
+  @ApiPropertyOptional({ description: 'Subdomain change price in GEL (after free changes)' })
   @IsOptional()
   @IsNumber()
   @Min(0)
   subdomainChangePrice?: number;
 
   // Courier Settings
-  @ApiPropertyOptional({ description: 'Courier earnings per delivery' })
+  @ApiPropertyOptional({ description: 'Courier earnings as percentage of delivery fee (0.0 - 1.0)' })
   @IsOptional()
   @IsNumber()
   @Min(0)
-  courierEarningsPerDelivery?: number;
-
-  @ApiPropertyOptional({ description: 'Whether courier earnings is a percentage' })
-  @IsOptional()
-  @IsBoolean()
-  courierEarningsIsPercentage?: boolean;
+  @Max(1)
+  courierEarningsPercentage?: number;
 
   // Withdrawal Settings
   @ApiPropertyOptional({ description: 'Minimum withdrawal amount in GEL' })
