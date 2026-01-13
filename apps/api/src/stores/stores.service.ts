@@ -63,6 +63,16 @@ export class StoresService {
     });
   }
 
+  /**
+   * Find store by subdomain without checking isActive status
+   * Used for status checks where we need to find inactive/unpublished stores
+   */
+  async findBySubdomainAny(subdomain: string): Promise<StoreDocument | null> {
+    return this.storeModel.findOne({
+      subdomain: subdomain.toLowerCase(),
+    });
+  }
+
   async findById(id: string): Promise<StoreDocument | null> {
     return this.storeModel.findById(id);
   }

@@ -301,7 +301,8 @@ export class StoresController {
       userEmail: user?.email,
     });
 
-    const store = await this.storesService.findBySubdomain(subdomain);
+    // Use findBySubdomainAny to find stores regardless of isActive status
+    const store = await this.storesService.findBySubdomainAny(subdomain);
 
     if (!store) {
       throw new NotFoundException('Store not found');
