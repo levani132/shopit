@@ -208,12 +208,12 @@ export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
               {t('wishlist')}
             </Link>
 
-            {/* Divider for sellers */}
-            {isSeller && (
+            {/* Divider for dashboard access (sellers, couriers, admins) */}
+            {(isSeller || isCourier) && (
               <>
                 <div className="border-t border-gray-100 dark:border-zinc-700 my-1" />
 
-                {/* Seller Dashboard */}
+                {/* Dashboard link - dynamic label based on role */}
                 <a
                   href={`${mainSiteUrl}/${locale}/dashboard`}
                   onClick={() => setIsOpen(false)}
@@ -232,7 +232,7 @@ export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
                       d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
                     />
                   </svg>
-                  {t('sellerDashboard')}
+                  {isCourier ? t('courierDashboard') : t('sellerDashboard')}
                 </a>
               </>
             )}

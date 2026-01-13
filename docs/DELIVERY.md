@@ -267,6 +267,65 @@ Body: { status: 'shipped' | 'delivered' }
 | `deliveryFeePrecision`      | number | 0.5     | Round up to this precision               |
 | `courierEarningsPercentage` | number | 0.80    | Courier's share of delivery fee (80%)    |
 
+## Product Shipping Size
+
+Products are categorized by shipping size instead of explicit dimensions:
+
+| Size Category  | Vehicle   | Description                                |
+| -------------- | --------- | ------------------------------------------ |
+| `small`        | Bike      | ≤5kg, ≤30cm - Small items, documents       |
+| `medium`       | Car       | ≤20kg, ≤60cm - Standard boxes, electronics |
+| `large`        | SUV       | ≤50kg, ≤100cm - Large boxes, furniture parts |
+| `extra_large`  | Van/Truck | >50kg or >100cm - Appliances, mattresses   |
+
+The largest product in the cart determines the vehicle type and delivery rate.
+
+### API Endpoint
+
+```
+GET /api/v1/settings/shipping-sizes
+Response: {
+  small: { ratePerMinute, minimumFee, maxWeight, maxDimension },
+  medium: { ... },
+  large: { ... },
+  extra_large: { ... }
+}
+```
+
+## Courier Dashboard
+
+Couriers have a dedicated dashboard with role-specific content:
+
+### Dashboard Stats
+- **Available Deliveries**: Orders ready for pickup
+- **My Deliveries**: Assigned orders in progress
+- **Total Earnings**: Cumulative earnings
+- **Completed Today**: Deliveries completed today
+
+### Quick Actions
+- View Deliveries
+- View Balance
+- View Analytics
+- Edit Profile
+
+### Sidebar Sections (Courier)
+- Overview
+- My Shopping (orders, wishlist)
+- Administration (profile, addresses, devices)
+- Deliveries
+- Results (balance, analytics)
+
+## Delivery Time Estimates
+
+Displayed to customers based on distance:
+
+| Distance from Store | Estimated Delivery |
+| ------------------- | ------------------ |
+| ≤35 km              | 1-3 days           |
+| >35 km              | 3-7 days           |
+
+Note: Actual delivery times may vary as couriers batch deliveries.
+
 ## File Locations
 
 - **Store Schema**: `libs/api/database/src/lib/schemas/store.schema.ts`

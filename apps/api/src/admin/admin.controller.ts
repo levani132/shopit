@@ -594,9 +594,20 @@ export class AdminController {
       throw new NotFoundException('Order not found');
     }
 
-    const validStatuses = ['pending', 'paid', 'processing', 'ready_for_delivery', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    const validStatuses = [
+      'pending',
+      'paid',
+      'processing',
+      'ready_for_delivery',
+      'shipped',
+      'delivered',
+      'cancelled',
+      'refunded',
+    ];
     if (!validStatuses.includes(body.status)) {
-      throw new BadRequestException(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      throw new BadRequestException(
+        `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      );
     }
 
     // Set timestamps based on status
