@@ -17,6 +17,10 @@ export interface ShippingAddress {
   country: string;
   phoneNumber: string;
   isDefault?: boolean;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface GuestInfo {

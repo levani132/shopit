@@ -174,6 +174,30 @@ export class PaymentCallbackDto {
   };
 }
 
+// ================== SHIPPING CALCULATION DTOs ==================
+
+export class LocationDto {
+  @IsNumber()
+  @IsNotEmpty()
+  lat!: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  lng!: number;
+}
+
+export class CalculateShippingDto {
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsNotEmpty()
+  storeLocation!: LocationDto;
+
+  @ValidateNested()
+  @Type(() => LocationDto)
+  @IsNotEmpty()
+  customerLocation!: LocationDto;
+}
+
 // ================== CART VALIDATION DTOs ==================
 
 export class ValidateCartItemDto {

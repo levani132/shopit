@@ -2,10 +2,54 @@
 
 ## Overview
 
-ShopIt supports two delivery methods for stores:
+ShopIt supports multiple delivery options for stores:
 
-1. **ShopIt Delivery** (`courierType: 'shopit'`): Platform couriers handle delivery (+10 GEL per order)
-2. **Self Delivery** (`courierType: 'seller'`): Sellers handle their own delivery with custom fees and timelines
+1. **ShopIt Delivery** (`courierType: 'shopit'`): Platform couriers handle delivery with distance-based pricing
+2. **Self Delivery** (`courierType: 'seller'`): Sellers handle their own delivery (free - only site commission applies)
+3. **Self Pickup** (`selfPickupEnabled: true`): Customers pick up from store location (free)
+
+## Delivery Fee Calculation
+
+### ShopIt Delivery Pricing
+
+Delivery fees are calculated based on driving time between the store and customer:
+
+```
+fee = durationMinutes × ratePerMinute
+fee = max(fee, minimumFee)
+fee = ceil(fee / precision) × precision  // Round up to precision
+```
+
+### Vehicle-Based Rates (Configurable via Admin)
+
+| Vehicle Type | Rate/Min | Min Fee | Max Weight | Max Dimension |
+| ------------ | -------- | ------- | ---------- | ------------- |
+| Bike         | 0.50 GEL | 3 GEL   | 5 kg       | 30 cm         |
+| Car          | 0.75 GEL | 5 GEL   | 20 kg      | 60 cm         |
+| SUV          | 1.00 GEL | 8 GEL   | 50 kg      | 100 cm        |
+| Van/Truck    | 2.00 GEL | 15 GEL  | unlimited  | unlimited     |
+
+### Distance Calculation
+
+- Uses **OpenRouteService API** for accurate driving time/distance
+- Fallback to minimum fee + 2 GEL if API unavailable
+- Requires `OPENROUTE_API_KEY` environment variable
+
+### API Endpoint
+
+```
+POST /api/v1/orders/calculate-shipping
+Body: {
+  storeLocation: { lat: number, lng: number },
+  customerLocation: { lat: number, lng: number }
+}
+Response: {
+  fee: number,
+  durationMinutes: number,
+  distanceKm: number,
+  currency: "GEL"
+}
+```
 
 ## Store Delivery Settings
 
@@ -14,11 +58,13 @@ ShopIt supports two delivery methods for stores:
 | Field              | Type    | Default   | Description                                      |
 | ------------------ | ------- | --------- | ------------------------------------------------ |
 | `courierType`      | string  | 'shopit'  | 'shopit' or 'seller'                             |
+| `selfPickupEnabled`| boolean | false     | Enable self-pickup option                        |
+| `location`         | object  | -         | Store coordinates { lat, lng } for distance calc |
 | `prepTimeMinDays`  | number  | 1         | Minimum days to prepare order                    |
 | `prepTimeMaxDays`  | number  | 3         | Maximum days to prepare order                    |
 | `deliveryMinDays`  | number  | -         | Minimum delivery days (seller delivery only)     |
 | `deliveryMaxDays`  | number  | -         | Maximum delivery days (seller delivery only)     |
-| `deliveryFee`      | number  | 0         | Delivery fee in GEL (seller delivery only)       |
+| `deliveryFee`      | number  | 0         | Custom delivery fee (seller delivery only)       |
 | `freeDelivery`     | boolean | false     | Enable free delivery (overrides deliveryFee)     |
 
 ### API Endpoints
@@ -27,6 +73,8 @@ ShopIt supports two delivery methods for stores:
 PATCH /api/v1/stores/me
 Body: {
   courierType: 'shopit' | 'seller',
+  selfPickupEnabled: boolean,
+  location: { lat: number, lng: number },
   prepTimeMinDays: number,
   prepTimeMaxDays: number,
   deliveryMinDays: number,    // Only for seller delivery
@@ -35,6 +83,29 @@ Body: {
   freeDelivery: boolean       // Only for seller delivery
 }
 ```
+
+## Shipping Address
+
+### Address Picker with Map
+
+Customers select their delivery address using an interactive map:
+
+- Map-based location selection (click or drag marker)
+- Address search with autocomplete (Photon API)
+- **Georgia-only validation**: Addresses outside Georgia are rejected
+- Coordinates are stored for distance calculation
+
+### Shipping Address Schema
+
+| Field        | Type   | Required | Description                       |
+| ------------ | ------ | -------- | --------------------------------- |
+| `address`    | string | Yes      | Full address text                 |
+| `city`       | string | Yes      | City name                         |
+| `postalCode` | string | No       | Postal code                       |
+| `country`    | string | Yes      | Country (default: Georgia)        |
+| `phoneNumber`| string | Yes      | Contact phone                     |
+| `location`   | object | No       | Coordinates { lat, lng }          |
+| `isDefault`  | boolean| No       | Mark as default address           |
 
 ## Order Status Flow
 
@@ -58,6 +129,14 @@ PENDING → PAID → PROCESSING → SHIPPED → DELIVERED
 ```
 
 - **Seller** manages the entire flow
+
+### Self Pickup Flow
+
+```
+PENDING → PAID → PROCESSING → READY_FOR_PICKUP → PICKED_UP
+                     ↑                ↑              ↑
+                  (Seller)        (Seller)       (Seller)
+```
 
 ## Order Statuses
 
@@ -104,6 +183,16 @@ Couriers require admin approval before they can accept deliveries:
 
 - `isCourierApproved: false` - Pending approval
 - `isCourierApproved: true` - Approved and active
+
+### Courier Earnings
+
+Couriers receive a percentage of the delivery fee (configurable via admin):
+
+```
+courierEarning = deliveryFee × courierEarningsPercentage
+```
+
+Default: 80% of delivery fee goes to courier.
 
 ### Courier API Endpoints
 
@@ -164,14 +253,38 @@ Body: { status: 'shipped' | 'delivered' }
 | `cancelled`          | None                                 | None                                 |
 | `refunded`           | None                                 | None                                 |
 
+## Admin Settings (Site Settings)
+
+| Setting                     | Type   | Default | Description                              |
+| --------------------------- | ------ | ------- | ---------------------------------------- |
+| `siteCommissionRate`        | number | 0.10    | Commission rate (10%)                    |
+| `bikeShipping`              | object | -       | Bike delivery rate config                |
+| `carShipping`               | object | -       | Car delivery rate config                 |
+| `suvShipping`               | object | -       | SUV delivery rate config                 |
+| `vanShipping`               | object | -       | Van/truck delivery rate config           |
+| `defaultDeliveryRatePerMinute` | number | 0.5  | Default rate when dimensions unknown     |
+| `minimumDeliveryFee`        | number | 3       | Minimum delivery fee in GEL              |
+| `deliveryFeePrecision`      | number | 0.5     | Round up to this precision               |
+| `courierEarningsPercentage` | number | 0.80    | Courier's share of delivery fee (80%)    |
+
 ## File Locations
 
 - **Store Schema**: `libs/api/database/src/lib/schemas/store.schema.ts`
 - **User Schema**: `libs/api/database/src/lib/schemas/user.schema.ts`
 - **Order Schema**: `libs/api/database/src/lib/schemas/order.schema.ts`
+- **Site Settings Schema**: `libs/api/database/src/lib/schemas/site-settings.schema.ts`
+- **Delivery Fee Service**: `apps/api/src/orders/delivery-fee.service.ts`
 - **Orders Service**: `apps/api/src/orders/orders.service.ts`
 - **Orders Controller**: `apps/api/src/orders/orders.controller.ts`
 - **Auth Service**: `apps/api/src/auth/auth.service.ts`
 - **Auth Controller**: `apps/api/src/auth/auth.controller.ts`
 - **Stores Service**: `apps/api/src/stores/stores.service.ts`
+- **Address Picker**: `apps/web/src/components/ui/AddressPicker.tsx`
+- **Checkout Page**: `apps/web/src/app/store/[subdomain]/[locale]/(main)/checkout/page.tsx`
+
+## Environment Variables
+
+| Variable           | Required | Description                           |
+| ------------------ | -------- | ------------------------------------- |
+| `OPENROUTE_API_KEY`| No       | OpenRouteService API key for distance |
 

@@ -13,6 +13,7 @@ import {
   GuestInfo,
 } from '../../../../../../contexts/CheckoutContext';
 import { getLocalizedText } from '../../../../../../lib/utils';
+import { AddressPicker, AddressResult } from '../../../../../../components/ui/AddressPicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -281,6 +282,14 @@ interface StoreInfo {
   courierType?: string;
 }
 
+interface ShippingEstimate {
+  fee: number;
+  durationMinutes: number;
+  distanceKm: number;
+  isLoading: boolean;
+  error?: string;
+}
+
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const tCommon = useTranslations('common');
@@ -337,6 +346,19 @@ export default function CheckoutPage() {
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
+  // Shipping estimate state
+  const [shippingEstimate, setShippingEstimate] = useState<ShippingEstimate>({
+    fee: 0,
+    durationMinutes: 0,
+    distanceKm: 0,
+    isLoading: false,
+  });
+
+  // Address picker value for the map
+  const [addressPickerValue, setAddressPickerValue] = useState<
+    AddressResult | undefined
+  >(undefined);
+
   // Calculate totals
   const storeItems = useMemo(
     () => cart.filter((item) => item.storeId === subdomain || true), // For now, show all
@@ -355,7 +377,13 @@ export default function CheckoutPage() {
     [storeItems],
   );
 
-  const shippingPrice = 0; // Will be calculated based on courier type
+  // Shipping price: 0 for self-pickup or self-delivery, calculated for ShopIt
+  const shippingPrice = useMemo(() => {
+    if (deliveryMethod === 'pickup') return 0;
+    if (storeInfo?.courierType === 'seller') return 0; // Self-delivery is free
+    return shippingEstimate.fee; // ShopIt calculated fee
+  }, [deliveryMethod, storeInfo?.courierType, shippingEstimate.fee]);
+
   const totalPrice = itemsPrice + shippingPrice;
 
   // Fetch saved addresses when authenticated
@@ -497,6 +525,11 @@ export default function CheckoutPage() {
     setShowNewAddressForm(false);
     setEditingAddressId(null);
     setIsEditingAddress(false);
+    setAddressPickerValue(undefined);
+    // Calculate shipping if address has location
+    if (address.location) {
+      calculateShipping(address.location);
+    }
     setCurrentStep('review');
   };
 
@@ -510,7 +543,19 @@ export default function CheckoutPage() {
       phoneNumber: addr.phoneNumber,
       label: addr.label || '',
       isDefault: addr.isDefault || false,
+      location: addr.location,
     });
+    // Set address picker value if we have location
+    if (addr.location) {
+      setAddressPickerValue({
+        address: addr.address,
+        location: addr.location,
+      });
+      // Calculate shipping for the existing address
+      calculateShipping(addr.location);
+    } else {
+      setAddressPickerValue(undefined);
+    }
     setEditingAddressId(addr._id || null);
     setShowNewAddressForm(true);
   };
@@ -545,17 +590,17 @@ export default function CheckoutPage() {
           }
         } else if (saveNewAddress) {
           // Create new address
-          const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(addressForm),
-          });
+        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(addressForm),
+        });
 
-          if (response.ok) {
-            const newAddress = await response.json();
-            setSavedAddresses([...savedAddresses, newAddress]);
-            selectAddress(newAddress);
+        if (response.ok) {
+          const newAddress = await response.json();
+          setSavedAddresses([...savedAddresses, newAddress]);
+          selectAddress(newAddress);
           }
         } else {
           // Use address without saving
@@ -583,6 +628,99 @@ export default function CheckoutPage() {
       label: '',
       isDefault: false,
     });
+    setAddressPickerValue(undefined);
+  };
+
+  // Calculate shipping fee based on distance
+  const calculateShipping = useCallback(
+    async (customerLocation: { lat: number; lng: number }) => {
+      // Only calculate if store uses ShopIt delivery and has location
+      if (!storeInfo?.location || storeInfo.courierType !== 'shopit') {
+        setShippingEstimate((prev) => ({ ...prev, fee: 0, isLoading: false }));
+        return;
+      }
+
+      setShippingEstimate((prev) => ({ ...prev, isLoading: true, error: undefined }));
+
+      try {
+        const response = await fetch(`${API_URL}/api/v1/orders/calculate-shipping`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            storeLocation: storeInfo.location,
+            customerLocation,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setShippingEstimate({
+            fee: data.fee,
+            durationMinutes: data.durationMinutes,
+            distanceKm: data.distanceKm,
+            isLoading: false,
+          });
+        } else {
+          setShippingEstimate((prev) => ({
+            ...prev,
+            isLoading: false,
+            error: 'Failed to calculate shipping',
+          }));
+        }
+      } catch (err) {
+        console.error('Error calculating shipping:', err);
+        setShippingEstimate((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: 'Failed to calculate shipping',
+        }));
+      }
+    },
+    [storeInfo],
+  );
+
+  // Handle address picker change
+  const handleAddressPickerChange = (result: AddressResult) => {
+    setAddressPickerValue(result);
+    // Extract city from address (simple heuristic - look for common Georgian cities)
+    const addressParts = result.address.split(',').map((p) => p.trim());
+    let city = 'Tbilisi'; // Default
+    const georgianCities = [
+      'Tbilisi',
+      'თბილისი',
+      'Batumi',
+      'ბათუმი',
+      'Kutaisi',
+      'ქუთაისი',
+      'Rustavi',
+      'რუსთავი',
+      'Gori',
+      'გორი',
+      'Zugdidi',
+      'ზუგდიდი',
+      'Poti',
+      'ფოთი',
+      'Telavi',
+      'თელავი',
+    ];
+    for (const part of addressParts) {
+      if (georgianCities.some((c) => part.toLowerCase().includes(c.toLowerCase()))) {
+        city = part;
+        break;
+      }
+    }
+
+    setAddressForm((prev) => ({
+      ...prev,
+      address: result.address,
+      city,
+      location: result.location,
+    }));
+
+    // Calculate shipping if we have the location
+    if (result.location) {
+      calculateShipping(result.location);
+    }
   };
 
   // Process checkout
@@ -1085,8 +1223,8 @@ export default function CheckoutPage() {
                             />
                           </svg>
                         </button>
+                        </div>
                       </div>
-                    </div>
                   ))}
                 </div>
               )}
@@ -1108,59 +1246,74 @@ export default function CheckoutPage() {
                   <h3 className="text-md font-medium text-gray-900 dark:text-white">
                     {editingAddressId ? t('editAddress') : t('addNewAddress')}
                   </h3>
+                  {/* Address Picker with Map */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {t('fullAddress')} *
+                      </label>
+                    <AddressPicker
+                      value={
+                        addressPickerValue ||
+                        (addressForm.address && addressForm.location
+                          ? {
+                              address: addressForm.address,
+                              location: addressForm.location,
+                            }
+                          : undefined)
+                      }
+                      onChange={handleAddressPickerChange}
+                      placeholder={t('searchAddress')}
+                    />
+                    {/* Show calculated shipping info for ShopIt delivery */}
+                    {storeInfo?.courierType === 'shopit' &&
+                      addressForm.location && (
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+                          {shippingEstimate.isLoading ? (
+                            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                              <svg
+                                className="w-4 h-4 animate-spin"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
+                              </svg>
+                              {t('calculatingShipping')}
+                            </div>
+                          ) : shippingEstimate.error ? (
+                            <p className="text-sm text-red-500">
+                              {shippingEstimate.error}
+                            </p>
+                          ) : (
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="text-gray-600 dark:text-gray-400">
+                                <span className="font-medium">
+                                  {t('estimatedDelivery')}:
+                                </span>{' '}
+                                {shippingEstimate.distanceKm} km (~
+                                {shippingEstimate.durationMinutes} min)
+                              </div>
+                              <div className="font-semibold text-[var(--store-accent-600)]">
+                                ₾{shippingEstimate.fee.toFixed(2)}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {t('addressLine')} *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={addressForm.address}
-                        onChange={(e) =>
-                          setAddressForm({
-                            ...addressForm,
-                            address: e.target.value,
-                          })
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {t('city')} *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={addressForm.city}
-                        onChange={(e) =>
-                          setAddressForm({
-                            ...addressForm,
-                            city: e.target.value,
-                          })
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {t('postalCode')}
-                      </label>
-                      <input
-                        type="text"
-                        value={addressForm.postalCode}
-                        onChange={(e) =>
-                          setAddressForm({
-                            ...addressForm,
-                            postalCode: e.target.value,
-                          })
-                        }
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-                      />
-                    </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

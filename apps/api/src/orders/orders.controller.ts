@@ -10,17 +10,49 @@ import {
   Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { DeliveryFeeService, Location } from './delivery-fee.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import { CreateOrderDto, ValidateCartDto } from './dto/order.dto';
+import { CreateOrderDto, ValidateCartDto, CalculateShippingDto } from './dto/order.dto';
 import { OrderStatus } from '@sellit/api-database';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly deliveryFeeService: DeliveryFeeService,
+  ) {}
+
+  /**
+   * Calculate shipping cost between store and customer address
+   * Public endpoint - works for guests and authenticated users
+   */
+  @Post('calculate-shipping')
+  async calculateShipping(@Body() dto: CalculateShippingDto) {
+    const origin: Location = {
+      lat: dto.storeLocation.lat,
+      lng: dto.storeLocation.lng,
+    };
+    const destination: Location = {
+      lat: dto.customerLocation.lat,
+      lng: dto.customerLocation.lng,
+    };
+
+    const result = await this.deliveryFeeService.calculateDeliveryFee(
+      origin,
+      destination,
+    );
+
+    return {
+      fee: result.fee,
+      durationMinutes: result.durationMinutes,
+      distanceKm: result.distanceKm,
+      currency: 'GEL',
+    };
+  }
 
   /**
    * Validate cart items (check stock availability)

@@ -8,6 +8,25 @@ import dynamic from 'next/dynamic';
 const TBILISI_CENTER = { lat: 41.7151, lng: 44.8271 };
 const DEFAULT_ZOOM = 13;
 
+// Georgia bounding box (approximate)
+// Covers the entire country with some margin
+const GEORGIA_BOUNDS = {
+  minLat: 41.0,
+  maxLat: 43.6,
+  minLng: 40.0,
+  maxLng: 46.8,
+};
+
+// Check if location is within Georgia
+function isInGeorgia(location: { lat: number; lng: number }): boolean {
+  return (
+    location.lat >= GEORGIA_BOUNDS.minLat &&
+    location.lat <= GEORGIA_BOUNDS.maxLat &&
+    location.lng >= GEORGIA_BOUNDS.minLng &&
+    location.lng <= GEORGIA_BOUNDS.maxLng
+  );
+}
+
 // CartoDB Voyager tiles - we'll use CSS filters for dark mode
 const TILE_URL =
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
@@ -98,6 +117,8 @@ function AddressPickerMap({
   const containerRef = useRef<HTMLDivElement>(null);
   // Track if user manually edited the text (vs selecting from suggestions or map click)
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
+  // Location validation error
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Sync searchQuery when value prop changes (e.g., on page load with saved data)
   useEffect(() => {
@@ -250,6 +271,13 @@ function AddressPickerMap({
   // Reverse geocode from coordinates
   const reverseGeocode = useCallback(
     async (location: Location) => {
+      // Validate that location is within Georgia
+      if (!isInGeorgia(location)) {
+        setLocationError(t('locationOutsideGeorgia'));
+        return;
+      }
+      setLocationError(null);
+
       try {
         const response = await fetch(
           `${PHOTON_API_REVERSE}?lat=${location.lat}&lon=${location.lng}&lang=en`,
@@ -275,7 +303,7 @@ function AddressPickerMap({
         onChange({ address, location });
       }
     },
-    [onChange],
+    [onChange, t],
   );
 
   // Map click handler component
@@ -509,7 +537,10 @@ function AddressPickerMap({
         {t('addressPickerHelp')}
       </p>
 
-      {/* Error message */}
+      {/* Error messages */}
+      {locationError && (
+        <p className="text-sm text-red-500 mt-2">{locationError}</p>
+      )}
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );
