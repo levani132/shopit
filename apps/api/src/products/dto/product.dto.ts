@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsBoolean,
   IsMongoId,
+  IsIn,
   Min,
   Max,
   IsEnum,
@@ -304,31 +305,12 @@ export class CreateProductDto {
   @IsMongoId()
   subcategoryId?: string;
 
-  // --- Shipping Dimensions & Weight ---
+  // --- Shipping Size Category ---
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  weight?: number; // Weight in kg
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  length?: number; // Length in cm
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  width?: number; // Width in cm
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  height?: number; // Height in cm
+  @IsString()
+  @IsIn(['small', 'medium', 'large', 'extra_large'])
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 
   // --- Variant Support ---
 
@@ -420,31 +402,12 @@ export class UpdateProductDto {
   @Transform(parseJsonTransform)
   existingImages?: string[];
 
-  // --- Shipping Dimensions & Weight ---
+  // --- Shipping Size Category ---
 
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  weight?: number; // Weight in kg
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  length?: number; // Length in cm
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  width?: number; // Width in cm
-
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  height?: number; // Height in cm
+  @IsString()
+  @IsIn(['small', 'medium', 'large', 'extra_large'])
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 
   // --- Variant Support ---
 
