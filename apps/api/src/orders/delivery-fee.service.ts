@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { SiteSettingsService } from '../admin/site-settings.service';
 
 /**
  * Location coordinates
@@ -22,10 +23,10 @@ export interface DeliveryFeeResult {
  * Service for calculating delivery fees based on distance/duration
  * Uses OpenRouteService API (free tier: 2000 requests/day)
  *
- * Pricing formula:
- * - 0.5 GEL per minute of driving time
- * - Minimum fee: 3 GEL
- * - Ceiling to 0.5 GEL precision (e.g., 4.3 → 4.5, 4.6 → 5.0)
+ * Pricing formula (configurable via admin):
+ * - Rate per minute of driving time (default: 0.5 GEL)
+ * - Minimum fee (default: 3 GEL)
+ * - Precision for rounding (default: 0.5 GEL)
  */
 @Injectable()
 export class DeliveryFeeService {
@@ -33,12 +34,10 @@ export class DeliveryFeeService {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.openrouteservice.org/v2';
 
-  // Pricing constants
-  private readonly RATE_PER_MINUTE = 0.5; // 0.5 GEL per minute
-  private readonly MIN_FEE = 3; // Minimum 3 GEL
-  private readonly PRECISION = 0.5; // Ceil to 0.5 GEL
-
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private siteSettingsService: SiteSettingsService,
+  ) {
     this.apiKey = this.configService.get<string>('OPENROUTE_API_KEY') || '';
     if (!this.apiKey) {
       this.logger.warn(
@@ -91,8 +90,8 @@ export class DeliveryFeeService {
       const durationMinutes = Math.ceil(summary.duration / 60);
       const distanceKm = Math.round((summary.distance / 1000) * 10) / 10;
 
-      // Calculate fee
-      const fee = this.calculateFee(durationMinutes);
+      // Calculate fee using configurable settings
+      const fee = await this.calculateFee(durationMinutes);
 
       this.logger.debug(
         `Delivery fee calculated: ${fee} GEL for ${durationMinutes} min (${distanceKm} km)`,
@@ -111,21 +110,25 @@ export class DeliveryFeeService {
 
   /**
    * Calculate fee from duration in minutes
-   * Formula: max(3, ceil(minutes * 0.5 / 0.5) * 0.5)
+   * Uses configurable rates from SiteSettings
    */
-  private calculateFee(durationMinutes: number): number {
-    const rawFee = durationMinutes * this.RATE_PER_MINUTE;
-    const fee = Math.max(this.MIN_FEE, rawFee);
-    // Ceil to 0.5 GEL precision: multiply by 2, ceil, divide by 2
-    return Math.ceil(fee / this.PRECISION) * this.PRECISION;
+  private async calculateFee(durationMinutes: number): Promise<number> {
+    const settings = await this.siteSettingsService.getDeliveryFeeSettings();
+    const { ratePerMinute, minimumFee, precision } = settings;
+    
+    const rawFee = durationMinutes * ratePerMinute;
+    const fee = Math.max(minimumFee, rawFee);
+    // Ceil to precision (e.g., 0.5 GEL)
+    return Math.ceil(fee / precision) * precision;
   }
 
   /**
    * Fallback fee when API is unavailable
    */
-  private getFallbackFee(): DeliveryFeeResult {
+  private async getFallbackFee(): Promise<DeliveryFeeResult> {
+    const settings = await this.siteSettingsService.getDeliveryFeeSettings();
     return {
-      fee: 5, // Default fallback fee
+      fee: settings.minimumFee + 2, // Minimum + small buffer
       durationMinutes: 15, // Estimated
       distanceKm: 5, // Estimated
     };

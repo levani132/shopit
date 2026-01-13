@@ -12,6 +12,8 @@ import {
   UserSchema,
   BalanceTransaction,
   BalanceTransactionSchema,
+  SiteSettings,
+  SiteSettingsSchema,
 } from '@sellit/api-database';
 import { OrdersController } from './orders.controller';
 import { BalanceController } from './balance.controller';
@@ -20,6 +22,7 @@ import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
 import { DeliveryFeeService } from './delivery-fee.service';
 import { PaymentsModule } from '../payments/payments.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Module({
   imports: [
@@ -29,9 +32,11 @@ import { PaymentsModule } from '../payments/payments.module';
       { name: Store.name, schema: StoreSchema },
       { name: User.name, schema: UserSchema },
       { name: BalanceTransaction.name, schema: BalanceTransactionSchema },
+      { name: SiteSettings.name, schema: SiteSettingsSchema },
     ]),
     ScheduleModule.forRoot(),
     forwardRef(() => PaymentsModule),
+    AdminModule,
   ],
   controllers: [OrdersController, BalanceController],
   providers: [OrdersService, StockReservationService, BalanceService, DeliveryFeeService],

@@ -14,10 +14,7 @@ import {
   BalanceTransactionDocument,
   TransactionType,
 } from '@sellit/api-database';
-
-// Commission rates
-const SITE_COMMISSION_RATE = 0.10; // 10% website fee
-const SELLER_COURIER_FEE = 10; // 10 GEL for seller-handled delivery
+import { SiteSettingsService } from '../admin/site-settings.service';
 
 @Injectable()
 export class BalanceService {
@@ -30,6 +27,7 @@ export class BalanceService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(BalanceTransaction.name)
     private transactionModel: Model<BalanceTransactionDocument>,
+    private readonly siteSettingsService: SiteSettingsService,
   ) {}
 
   /**
@@ -51,6 +49,13 @@ export class BalanceService {
       );
       return;
     }
+
+    // Get site settings for commission rates
+    const settings = await this.siteSettingsService.getSettings();
+    const SITE_COMMISSION_RATE = settings.siteCommissionRate;
+    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate;
+    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin;
+    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax;
 
     // Group order items by store
     const itemsByStore = new Map<string, typeof order.orderItems>();
@@ -88,11 +93,10 @@ export class BalanceService {
       // Delivery commission (only for ShopIt courier)
       let deliveryCommission = 0;
       if (store.courierType !== 'seller') {
-        // ShopIt courier - calculate based on distance/dimensions (simplified for now)
-        // Using a percentage-based approach: 5% with min 10 GEL, max 50 GEL
+        // ShopIt courier - calculate based on configurable rates
         deliveryCommission = Math.min(
-          Math.max(itemsTotalPrice * 0.05, 10),
-          50,
+          Math.max(itemsTotalPrice * DELIVERY_COMMISSION_RATE, DELIVERY_COMMISSION_MIN),
+          DELIVERY_COMMISSION_MAX,
         );
       }
 
@@ -100,7 +104,6 @@ export class BalanceService {
       // Ensure seller never gets negative earnings
       // If commissions exceed item price, seller gets 0 (commissions are capped at item price)
       const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
-      const actualCommissions = itemsTotalPrice - finalAmount;
 
       // Update seller's balance
       await this.userModel.findByIdAndUpdate(seller._id, {
@@ -208,9 +211,12 @@ export class BalanceService {
       `Processing withdrawal request: seller=${sellerId}, amount=${amount}`,
     );
 
+    // Get minimum withdrawal from settings
+    const minWithdrawal = await this.siteSettingsService.getMinimumWithdrawalAmount();
+    
     // Minimum withdrawal
-    if (amount < 1) {
-      return { success: false, message: 'Minimum withdrawal amount is 1 GEL' };
+    if (amount < minWithdrawal) {
+      return { success: false, message: `Minimum withdrawal amount is ${minWithdrawal} GEL` };
     }
 
     const user = await this.userModel.findById(sellerId);

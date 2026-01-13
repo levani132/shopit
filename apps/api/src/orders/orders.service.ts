@@ -23,6 +23,7 @@ import {
 import { CreateOrderDto, ValidateCartDto } from './dto/order.dto';
 import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
+import { SiteSettingsService } from '../admin/site-settings.service';
 
 @Injectable()
 export class OrdersService {
@@ -37,6 +38,7 @@ export class OrdersService {
     private stockReservationService: StockReservationService,
     @Inject(forwardRef(() => BalanceService))
     private balanceService: BalanceService,
+    private siteSettingsService: SiteSettingsService,
   ) {}
 
   /**
@@ -227,10 +229,13 @@ export class OrdersService {
         // Determine delivery method
         const deliveryMethod = dto.deliveryMethod || 'delivery';
 
+        // Get seller courier fee from settings
+        const sellerCourierFee = await this.siteSettingsService.getSellerCourierFee();
+
         // Calculate shipping price
         // - Self-pickup: always free
-        // - ShopIt courier: based on location (simplified to 0 for now)
-        // - Seller courier: +10 GEL per store
+        // - ShopIt courier: based on location (calculated separately)
+        // - Seller courier: configurable fee per store
         let shippingPrice = 0;
         if (deliveryMethod === 'pickup') {
           // Self-pickup is always free
@@ -242,7 +247,7 @@ export class OrdersService {
               (i) => i.storeId.toString() === storeId,
             );
             if (storeItem?.courierType === 'seller') {
-              shippingPrice += 10; // 10 GEL for seller courier
+              shippingPrice += sellerCourierFee;
             }
             // ShopIt courier shipping will be calculated separately
           }

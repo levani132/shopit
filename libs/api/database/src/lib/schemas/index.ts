@@ -31,3 +31,6 @@ export * from './post-comment.schema';
 
 // Info Page
 export * from './info-page.schema';
+
+// Site Settings (Admin configurable)
+export * from './site-settings.schema';
