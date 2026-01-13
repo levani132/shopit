@@ -71,7 +71,14 @@ const statusColors: Record<string, string> = {
   refunded: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
 };
 
-const statusOrder = ['pending', 'paid', 'processing', 'ready_for_delivery', 'shipped', 'delivered'];
+const statusOrder = [
+  'pending',
+  'paid',
+  'processing',
+  'ready_for_delivery',
+  'shipped',
+  'delivered',
+];
 
 export default function DashboardOrdersPage() {
   const t = useTranslations('dashboard');
