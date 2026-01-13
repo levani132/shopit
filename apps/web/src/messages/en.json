@@ -9,7 +9,11 @@
     "goBack": "Go Back",
     "loadingMap": "Loading map...",
     "searchAddress": "Search for an address...",
-    "addressPickerHelp": "Search for an address or click on the map to set location. You can drag the pin to adjust."
+    "addressPickerHelp": "Search for an address or click on the map to set location. You can drag the pin to adjust.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "confirm": "Confirm",
+    "close": "Close"
   },
   "nav": {
     "home": "Home",
