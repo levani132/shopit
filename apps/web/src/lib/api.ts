@@ -64,6 +64,26 @@ export const api = {
   },
 
   /**
+   * PATCH request with credentials
+   */
+  async patch(
+    path: string,
+    body?: unknown,
+    options?: RequestInit,
+  ): Promise<Response> {
+    return fetch(`${apiUrl}${path}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      ...options,
+    });
+  },
+
+  /**
    * DELETE request with credentials
    */
   async delete(path: string, options?: RequestInit): Promise<Response> {
