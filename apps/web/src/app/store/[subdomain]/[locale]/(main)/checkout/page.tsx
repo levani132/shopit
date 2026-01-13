@@ -694,8 +694,19 @@ export default function CheckoutPage() {
         }));
       }
     },
-    [storeInfo],
+    [storeInfo, getLargestShippingSize],
   );
+
+  // Calculate shipping when shippingAddress changes (e.g., on initial load with saved address)
+  useEffect(() => {
+    if (
+      shippingAddress?.location &&
+      storeInfo?.courierType === 'shopit' &&
+      storeInfo?.location
+    ) {
+      calculateShipping(shippingAddress.location);
+    }
+  }, [shippingAddress, storeInfo, calculateShipping]);
 
   // Handle address picker change
   const handleAddressPickerChange = (result: AddressResult) => {
