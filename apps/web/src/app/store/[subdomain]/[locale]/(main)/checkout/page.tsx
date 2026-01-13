@@ -1331,7 +1331,10 @@ export default function CheckoutPage() {
                                 <span className="font-medium">
                                   {t('estimatedDelivery')}:
                                 </span>{' '}
-                                {t('deliveryDays', { days: '1-3' })}
+                                {/* Show 3-7 days if more than 35km from store */}
+                                {shippingEstimate.distanceKm > 35
+                                  ? t('deliveryDays', { days: '3-7' })
+                                  : t('deliveryDays', { days: '1-3' })}
                               </div>
                               <div className="font-semibold text-[var(--store-accent-600)]">
                                 ₾{shippingEstimate.fee.toFixed(2)}
