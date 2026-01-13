@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
 import { api } from '../../../../../lib/api';
@@ -41,6 +41,187 @@ interface SiteSettings {
   maintenanceMode: boolean;
   maintenanceMessage: string;
 }
+
+// Input field component - defined outside to prevent re-creation on each render
+const InputField = memo(function InputField({
+  label,
+  value,
+  onChange,
+  type = 'number',
+  suffix,
+  min,
+  max,
+  step,
+  helperText,
+}: {
+  label: string;
+  value: number | string;
+  onChange: (value: number | string) => void;
+  type?: 'number' | 'text';
+  suffix?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  helperText?: string;
+}) {
+  // Use local state to handle intermediate values (like "0." or "1.")
+  const [localValue, setLocalValue] = useState(String(value));
+
+  // Sync with parent when value changes from outside
+  useEffect(() => {
+    setLocalValue(String(value));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+
+    if (type === 'number') {
+      // Allow intermediate states like "0.", "1.", etc.
+      if (newValue === '' || newValue === '-' || newValue.endsWith('.')) {
+        return; // Don't update parent yet
+      }
+      const parsed = parseFloat(newValue);
+      if (!isNaN(parsed)) {
+        onChange(parsed);
+      }
+    } else {
+      onChange(newValue);
+    }
+  };
+
+  const handleBlur = () => {
+    if (type === 'number') {
+      const parsed = parseFloat(localValue);
+      if (!isNaN(parsed)) {
+        onChange(parsed);
+        setLocalValue(String(parsed));
+      } else {
+        setLocalValue(String(value));
+      }
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {label}
+      </label>
+      <div className="flex items-center gap-2">
+        <input
+          type={type === 'number' ? 'text' : type}
+          inputMode={type === 'number' ? 'decimal' : undefined}
+          value={localValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+        />
+        {suffix && (
+          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            {suffix}
+          </span>
+        )}
+      </div>
+      {helperText && (
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+      )}
+    </div>
+  );
+});
+
+// Toggle field component - defined outside
+const ToggleField = memo(function ToggleField({
+  label,
+  checked,
+  onChange,
+  helperText,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  helperText?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+      <div>
+        <p className="font-medium text-gray-900 dark:text-white">{label}</p>
+        {helperText && (
+          <p className="text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          checked ? 'bg-[var(--accent-500)]' : 'bg-gray-200 dark:bg-zinc-600'
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  );
+});
+
+// Shipping card component - defined outside
+const ShippingCard = memo(function ShippingCard({
+  title,
+  type,
+  icon,
+  settings,
+  onUpdate,
+  t,
+}: {
+  title: string;
+  type: 'bikeShipping' | 'carShipping' | 'suvShipping' | 'vanShipping';
+  icon: string;
+  settings: VehicleShippingConfig;
+  onUpdate: (field: keyof VehicleShippingConfig, value: number) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="bg-gray-50 dark:bg-zinc-700/50 rounded-lg p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-2xl">{icon}</span>
+        <h4 className="font-medium text-gray-900 dark:text-white">{title}</h4>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <InputField
+          label={t('ratePerMinute')}
+          value={settings.ratePerMinute}
+          onChange={(v) => onUpdate('ratePerMinute', v as number)}
+          suffix="₾/min"
+          step={0.1}
+          min={0}
+        />
+        <InputField
+          label={t('minimumFee')}
+          value={settings.minimumFee}
+          onChange={(v) => onUpdate('minimumFee', v as number)}
+          suffix="₾"
+          min={0}
+        />
+        <InputField
+          label={t('maxWeight')}
+          value={settings.maxWeight}
+          onChange={(v) => onUpdate('maxWeight', v as number)}
+          suffix="kg"
+          min={0}
+        />
+        <InputField
+          label={t('maxDimension')}
+          value={settings.maxDimension}
+          onChange={(v) => onUpdate('maxDimension', v as number)}
+          suffix="cm"
+          min={0}
+        />
+      </div>
+    </div>
+  );
+});
 
 function SiteSettingsContent() {
   const t = useTranslations('admin');
@@ -138,137 +319,6 @@ function SiteSettingsContent() {
     { id: 'platform', label: t('platformSettings') },
     { id: 'features', label: t('featureFlags') },
   ];
-
-  const InputField = ({
-    label,
-    value,
-    onChange,
-    type = 'number',
-    suffix,
-    min,
-    max,
-    step,
-    helperText,
-  }: {
-    label: string;
-    value: number | string;
-    onChange: (value: number | string) => void;
-    type?: 'number' | 'text';
-    suffix?: string;
-    min?: number;
-    max?: number;
-    step?: number;
-    helperText?: string;
-  }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-        {label}
-      </label>
-      <div className="flex items-center gap-2">
-        <input
-          type={type}
-          value={value}
-          onChange={(e) =>
-            onChange(type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)
-          }
-          min={min}
-          max={max}
-          step={step}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
-        />
-        {suffix && (
-          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-            {suffix}
-          </span>
-        )}
-      </div>
-      {helperText && (
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
-      )}
-    </div>
-  );
-
-  const ToggleField = ({
-    label,
-    checked,
-    onChange,
-    helperText,
-  }: {
-    label: string;
-    checked: boolean;
-    onChange: (checked: boolean) => void;
-    helperText?: string;
-  }) => (
-    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
-      <div>
-        <p className="font-medium text-gray-900 dark:text-white">{label}</p>
-        {helperText && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          checked ? 'bg-[var(--accent-500)]' : 'bg-gray-200 dark:bg-zinc-600'
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
-    </div>
-  );
-
-  const ShippingCard = ({
-    title,
-    type,
-    icon,
-  }: {
-    title: string;
-    type: 'bikeShipping' | 'carShipping' | 'suvShipping' | 'vanShipping';
-    icon: string;
-  }) => (
-    <div className="bg-gray-50 dark:bg-zinc-700/50 rounded-lg p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-2xl">{icon}</span>
-        <h4 className="font-medium text-gray-900 dark:text-white">{title}</h4>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <InputField
-          label={t('ratePerMinute')}
-          value={settings[type].ratePerMinute}
-          onChange={(v) => updateShipping(type, 'ratePerMinute', v as number)}
-          suffix="₾/min"
-          step={0.1}
-          min={0}
-        />
-        <InputField
-          label={t('minimumFee')}
-          value={settings[type].minimumFee}
-          onChange={(v) => updateShipping(type, 'minimumFee', v as number)}
-          suffix="₾"
-          min={0}
-        />
-        <InputField
-          label={t('maxWeight')}
-          value={settings[type].maxWeight}
-          onChange={(v) => updateShipping(type, 'maxWeight', v as number)}
-          suffix="kg"
-          min={0}
-        />
-        <InputField
-          label={t('maxDimension')}
-          value={settings[type].maxDimension}
-          onChange={(v) => updateShipping(type, 'maxDimension', v as number)}
-          suffix="cm"
-          min={0}
-        />
-      </div>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -441,10 +491,38 @@ function SiteSettingsContent() {
             {t('vehicleShippingRatesHelp')}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <ShippingCard title={t('bikeMotorcycle')} type="bikeShipping" icon="🏍️" />
-            <ShippingCard title={t('car')} type="carShipping" icon="🚗" />
-            <ShippingCard title={t('suv')} type="suvShipping" icon="🚙" />
-            <ShippingCard title={t('vanTruck')} type="vanShipping" icon="🚛" />
+            <ShippingCard
+              title={t('bikeMotorcycle')}
+              type="bikeShipping"
+              icon="🏍️"
+              settings={settings.bikeShipping}
+              onUpdate={(field, value) => updateShipping('bikeShipping', field, value)}
+              t={t}
+            />
+            <ShippingCard
+              title={t('car')}
+              type="carShipping"
+              icon="🚗"
+              settings={settings.carShipping}
+              onUpdate={(field, value) => updateShipping('carShipping', field, value)}
+              t={t}
+            />
+            <ShippingCard
+              title={t('suv')}
+              type="suvShipping"
+              icon="🚙"
+              settings={settings.suvShipping}
+              onUpdate={(field, value) => updateShipping('suvShipping', field, value)}
+              t={t}
+            />
+            <ShippingCard
+              title={t('vanTruck')}
+              type="vanShipping"
+              icon="🚛"
+              settings={settings.vanShipping}
+              onUpdate={(field, value) => updateShipping('vanShipping', field, value)}
+              t={t}
+            />
           </div>
         </div>
       )}
