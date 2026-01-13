@@ -490,9 +490,9 @@ function AddressPickerMap({
 
       {/* Map */}
       <div
-        className={`relative rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 ${
+        className={`rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 ${
           isDarkMode ? 'map-dark-mode' : ''
-        } ${isExpanded ? 'fixed top-2 left-2 right-2 bottom-2 z-[9999] rounded-2xl' : ''}`}
+        } ${isExpanded ? 'fixed top-2 left-2 right-2 bottom-2 z-[9999] rounded-2xl' : 'relative'}`}
         style={
           isDarkMode
             ? {
@@ -595,7 +595,7 @@ function AddressPickerMap({
       {/* Backdrop when expanded - fully opaque */}
       {isExpanded && (
         <div
-          className="fixed inset-0 bg-black/80 z-[9998]"
+          className="fixed inset-0 bg-black/80 z-[9998] !m-0"
           onClick={() => setIsExpanded(false)}
         />
       )}
