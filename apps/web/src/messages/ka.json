@@ -624,6 +624,8 @@
     "subtotal": "პროდუქტების ფასი",
     "shipping": "მიტანა",
     "free": "უფასო",
+    "selectAddressToCalculate": "აირჩიეთ მისამართი ფასის გამოსათვლელად",
+    "calculating": "გამოთვლა",
     "payNow": "გადახდა",
     "processing": "მუშავდება...",
     "awaitingPayment": "გადახდის მოლოდინი",

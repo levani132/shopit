@@ -624,6 +624,8 @@
     "subtotal": "Subtotal",
     "shipping": "Shipping",
     "free": "Free",
+    "selectAddressToCalculate": "Select address to calculate",
+    "calculating": "Calculating",
     "payNow": "Pay Now",
     "processing": "Processing...",
     "awaitingPayment": "Waiting for Payment",

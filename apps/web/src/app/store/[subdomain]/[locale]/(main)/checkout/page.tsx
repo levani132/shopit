@@ -1617,9 +1617,29 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>{t('shipping')}</span>
                 <span>
-                  {shippingPrice > 0
-                    ? `₾${shippingPrice.toFixed(2)}`
-                    : t('free')}
+                  {deliveryMethod === 'pickup' ? (
+                    // Self-pickup is free
+                    t('free')
+                  ) : storeInfo?.courierType === 'seller' ? (
+                    // Seller delivery is free
+                    t('free')
+                  ) : !shippingAddress?.location ? (
+                    // No address selected yet - prompt user
+                    <span className="text-amber-600 dark:text-amber-400 text-xs">
+                      {t('selectAddressToCalculate')}
+                    </span>
+                  ) : shippingEstimate.isLoading ? (
+                    // Calculating...
+                    <span className="text-gray-400">{t('calculating')}...</span>
+                  ) : shippingPrice > 0 ? (
+                    // Show calculated price
+                    `₾${shippingPrice.toFixed(2)}`
+                  ) : (
+                    // Fallback
+                    <span className="text-amber-600 dark:text-amber-400 text-xs">
+                      {t('selectAddressToCalculate')}
+                    </span>
+                  )}
                 </span>
               </div>
               <div className="flex justify-between text-lg font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
