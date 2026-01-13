@@ -549,11 +549,14 @@ function AddressPickerMap({
 
         <MapContainer
           key={isExpanded ? 'expanded' : 'collapsed'}
-          center={[markerPosition?.lat ?? mapCenter.lat, markerPosition?.lng ?? mapCenter.lng]}
+          center={[
+            markerPosition?.lat ?? mapCenter.lat,
+            markerPosition?.lng ?? mapCenter.lng,
+          ]}
           zoom={isExpanded ? 14 : DEFAULT_ZOOM}
           style={{
-            height: isExpanded ? 'calc(100vh - 16px)' : '280px',
-            width: isExpanded ? 'calc(100vw - 16px)' : '100%',
+            height: isExpanded ? '100%' : '280px',
+            width: '100%',
           }}
           className="z-0"
         >
@@ -589,10 +592,10 @@ function AddressPickerMap({
         </MapContainer>
       </div>
 
-      {/* Backdrop when expanded */}
+      {/* Backdrop when expanded - fully opaque */}
       {isExpanded && (
         <div
-          className="fixed inset-0 bg-black/50 z-[9998]"
+          className="fixed inset-0 bg-black/80 z-[9998]"
           onClick={() => setIsExpanded(false)}
         />
       )}
