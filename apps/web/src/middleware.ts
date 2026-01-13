@@ -17,10 +17,10 @@ const MAIN_DOMAINS = [
 
 // Patterns that indicate this is NOT a store subdomain (e.g., Vercel preview URLs)
 const NON_STORE_PATTERNS = [
-  /\.vercel\.app$/,           // All Vercel preview URLs
-  /\.vercel\.sh$/,            // Vercel staging URLs
-  /\.netlify\.app$/,          // Netlify URLs
-  /\.render\.com$/,           // Render URLs
+  /\.vercel\.app$/, // All Vercel preview URLs
+  /\.vercel\.sh$/, // Vercel staging URLs
+  /\.netlify\.app$/, // Netlify URLs
+  /\.render\.com$/, // Render URLs
 ];
 
 // API base URL for checking store status
@@ -79,20 +79,20 @@ async function getStorePublishStatus(
       headers['Cookie'] = cookieHeader;
     }
 
+    const apiUrl = `${API_BASE_URL}/stores/subdomain/${subdomain}/status`;
     console.log('[Middleware] Fetching store status from API:', {
-      url: `${API_BASE_URL}/stores/subdomain/${subdomain}/status`,
+      url: apiUrl,
+      API_BASE_URL,
+      subdomain,
       hasCookies: !!headers['Cookie'],
     });
 
-    const response = await fetch(
-      `${API_BASE_URL}/stores/subdomain/${subdomain}/status`,
-      {
-        method: 'GET',
-        headers,
-        // Don't cache this request in fetch layer
-        cache: 'no-store',
-      },
-    );
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers,
+      // Don't cache this request in fetch layer
+      cache: 'no-store',
+    });
 
     if (!response.ok) {
       console.log('[Middleware] API returned error:', response.status);
