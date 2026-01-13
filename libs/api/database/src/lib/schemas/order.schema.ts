@@ -159,6 +159,19 @@ export class Order {
   @Prop({ type: OrderShippingDetailsSchema, required: true })
   shippingDetails!: OrderShippingDetails;
 
+  // Pickup/Store address (denormalized from store for courier use)
+  @Prop()
+  pickupStoreName?: string;
+
+  @Prop()
+  pickupAddress?: string;
+
+  @Prop()
+  pickupCity?: string;
+
+  @Prop()
+  pickupPhoneNumber?: string;
+
   @Prop({ required: true, default: 'BOG' })
   paymentMethod!: string;
 

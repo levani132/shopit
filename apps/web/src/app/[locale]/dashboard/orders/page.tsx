@@ -397,7 +397,8 @@ export default function DashboardOrdersPage() {
                         {t('courierAssigned')}
                       </p>
                       <p className="text-sm text-cyan-800 dark:text-cyan-200">
-                        {selectedOrder.courierId.firstName} {selectedOrder.courierId.lastName}
+                        {selectedOrder.courierId.firstName}{' '}
+                        {selectedOrder.courierId.lastName}
                       </p>
                       {selectedOrder.courierId.phoneNumber && (
                         <p className="text-sm text-cyan-600 dark:text-cyan-400">
@@ -406,7 +407,10 @@ export default function DashboardOrdersPage() {
                       )}
                       {selectedOrder.courierAssignedAt && (
                         <p className="text-xs text-cyan-500 dark:text-cyan-500 mt-1">
-                          {t('assignedAt')}: {new Date(selectedOrder.courierAssignedAt).toLocaleDateString(locale, {
+                          {t('assignedAt')}:{' '}
+                          {new Date(
+                            selectedOrder.courierAssignedAt,
+                          ).toLocaleDateString(locale, {
                             month: 'short',
                             day: 'numeric',
                             hour: '2-digit',

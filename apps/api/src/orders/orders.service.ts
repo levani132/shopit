@@ -326,6 +326,12 @@ export class OrdersService {
         const taxPrice = 0; // No tax for now
         const totalPrice = itemsPrice + shippingPrice + taxPrice;
 
+        // Get pickup address from the first store (for courier)
+        const firstStoreId = enhancedOrderItems[0]?.storeId;
+        const pickupStore = firstStoreId
+          ? await this.storeModel.findById(firstStoreId).session(session)
+          : null;
+
         // Create the order
         const orderData: any = {
           orderItems: enhancedOrderItems,
@@ -338,6 +344,11 @@ export class OrdersService {
           totalPrice,
           externalOrderId,
           stockReservationExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+          // Pickup address for courier
+          pickupStoreName: pickupStore?.name,
+          pickupAddress: pickupStore?.address,
+          pickupCity: pickupStore?.city,
+          pickupPhoneNumber: pickupStore?.contactPhone,
         };
 
         if (userId && !dto.isGuestOrder) {
