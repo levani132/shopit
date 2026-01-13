@@ -61,6 +61,8 @@ const statusColors: Record<string, string> = {
   paid: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   processing:
     'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+  ready_for_delivery:
+    'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   shipped:
     'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   delivered:
@@ -69,7 +71,7 @@ const statusColors: Record<string, string> = {
   refunded: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
 };
 
-const statusOrder = ['pending', 'paid', 'processing', 'shipped', 'delivered'];
+const statusOrder = ['pending', 'paid', 'processing', 'ready_for_delivery', 'shipped', 'delivered'];
 
 export default function DashboardOrdersPage() {
   const t = useTranslations('dashboard');

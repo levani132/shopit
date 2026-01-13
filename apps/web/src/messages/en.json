@@ -655,6 +655,7 @@
       "pending": "Pending",
       "paid": "Paid",
       "processing": "Processing",
+      "ready_for_delivery": "Ready for Delivery",
       "shipped": "Shipped",
       "delivered": "Delivered",
       "cancelled": "Cancelled",

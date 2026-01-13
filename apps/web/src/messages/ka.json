@@ -655,6 +655,7 @@
       "pending": "მოლოდინში",
       "paid": "გადახდილი",
       "processing": "მუშავდება",
+      "ready_for_delivery": "მზადაა მიტანისთვის",
       "shipped": "გაგზავნილი",
       "delivered": "მიტანილი",
       "cancelled": "გაუქმებული",
