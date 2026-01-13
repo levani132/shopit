@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsEmail,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -196,6 +197,12 @@ export class CalculateShippingDto {
   @Type(() => LocationDto)
   @IsNotEmpty()
   customerLocation!: LocationDto;
+
+  // Shipping size category (defaults to 'small' for products without size set)
+  @IsString()
+  @IsIn(['small', 'medium', 'large', 'extra_large'])
+  @IsOptional()
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 }
 
 // ================== CART VALIDATION DTOs ==================

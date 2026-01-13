@@ -632,6 +632,20 @@ export default function CheckoutPage() {
   };
 
   // Calculate shipping fee based on distance
+  // Get the largest shipping size from cart items
+  const getLargestShippingSize = useCallback((): 'small' | 'medium' | 'large' | 'extra_large' => {
+    const sizes = ['small', 'medium', 'large', 'extra_large'] as const;
+    let maxIndex = 0;
+    for (const item of storeItems) {
+      const size = item.shippingSize || 'small'; // Default to 'small' for products without size
+      const index = sizes.indexOf(size);
+      if (index > maxIndex) {
+        maxIndex = index;
+      }
+    }
+    return sizes[maxIndex];
+  }, [storeItems]);
+
   const calculateShipping = useCallback(
     async (customerLocation: { lat: number; lng: number }) => {
       // Only calculate if store uses ShopIt delivery and has location
@@ -642,6 +656,9 @@ export default function CheckoutPage() {
 
       setShippingEstimate((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
+      // Get the largest shipping size from cart items
+      const shippingSize = getLargestShippingSize();
+
       try {
         const response = await fetch(`${API_URL}/api/v1/orders/calculate-shipping`, {
           method: 'POST',
@@ -649,6 +666,7 @@ export default function CheckoutPage() {
           body: JSON.stringify({
             storeLocation: storeInfo.location,
             customerLocation,
+            shippingSize,
           }),
         });
 

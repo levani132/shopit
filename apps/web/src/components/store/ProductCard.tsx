@@ -23,6 +23,7 @@ export interface ProductCardData {
   totalStock?: number;
   hasVariants?: boolean;
   variantsCount?: number; // Number of variants
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large'; // Shipping size category
 }
 
 interface ProductCardProps {
@@ -153,6 +154,7 @@ export function ProductCard({
         isOnSale: product.isOnSale,
         image: product.images?.[0],
         stock: effectiveStock,
+        shippingSize: product.shippingSize || 'small',
       },
       1,
     );
@@ -185,6 +187,7 @@ export function ProductCard({
         isOnSale: product.isOnSale,
         image: product.images?.[0],
         stock: effectiveStock,
+        shippingSize: product.shippingSize || 'small',
       },
       1,
     );

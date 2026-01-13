@@ -33,11 +33,8 @@ interface ProductFormData {
   stock: string;
   categoryId: string;
   subcategoryId: string;
-  // Shipping dimensions
-  weight: string;
-  length: string;
-  width: string;
-  height: string;
+  // Shipping size category
+  shippingSize: 'small' | 'medium' | 'large' | 'extra_large';
 }
 
 export default function NewProductPage() {
@@ -58,10 +55,7 @@ export default function NewProductPage() {
     stock: '',
     categoryId: '',
     subcategoryId: '',
-    weight: '',
-    length: '',
-    width: '',
-    height: '',
+    shippingSize: 'small',
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -191,19 +185,8 @@ export default function NewProductPage() {
         formDataToSend.append('subcategoryId', formData.subcategoryId);
       }
 
-      // Add shipping dimensions
-      if (formData.weight) {
-        formDataToSend.append('weight', formData.weight);
-      }
-      if (formData.length) {
-        formDataToSend.append('length', formData.length);
-      }
-      if (formData.width) {
-        formDataToSend.append('width', formData.width);
-      }
-      if (formData.height) {
-        formDataToSend.append('height', formData.height);
-      }
+      // Add shipping size
+      formDataToSend.append('shippingSize', formData.shippingSize);
 
       // Add variant data
       formDataToSend.append('hasVariants', String(hasVariants));
@@ -503,65 +486,40 @@ export default function NewProductPage() {
             {t('shippingDimensionsDescription')}
           </p>
 
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('weight')} (kg)
+                {t('shippingSize')}
               </label>
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={formData.weight}
-                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                placeholder="0"
+              <select
+                value={formData.shippingSize}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    shippingSize: e.target.value as 'small' | 'medium' | 'large' | 'extra_large',
+                  })
+                }
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('lengthCm')} (cm)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.length}
-                onChange={(e) => setFormData({ ...formData, length: e.target.value })}
-                placeholder="0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('widthCm')} (cm)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.width}
-                onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                placeholder="0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('heightCm')} (cm)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={formData.height}
-                onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                placeholder="0"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
-              />
+              >
+                <option value="small">{t('shippingSizeSmall')}</option>
+                <option value="medium">{t('shippingSizeMedium')}</option>
+                <option value="large">{t('shippingSizeLarge')}</option>
+                <option value="extra_large">{t('shippingSizeExtraLarge')}</option>
+              </select>
             </div>
           </div>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
-            {t('shippingDimensionsNote')}
-          </p>
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {t('shippingSizeInfo')}:
+            </p>
+            <ul className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+              <li>• <strong>{t('shippingSizeSmall')}</strong>: {t('shippingSizeSmallDesc')}</li>
+              <li>• <strong>{t('shippingSizeMedium')}</strong>: {t('shippingSizeMediumDesc')}</li>
+              <li>• <strong>{t('shippingSizeLarge')}</strong>: {t('shippingSizeLargeDesc')}</li>
+              <li>• <strong>{t('shippingSizeExtraLarge')}</strong>: {t('shippingSizeExtraLargeDesc')}</li>
+            </ul>
+          </div>
         </div>
 
         {/* Category Section */}

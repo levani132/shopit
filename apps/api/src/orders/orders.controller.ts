@@ -41,15 +41,20 @@ export class OrdersController {
       lng: dto.customerLocation.lng,
     };
 
+    // Use shipping size from request, default to 'small' for backwards compatibility
+    const shippingSize = dto.shippingSize || 'small';
+
     const result = await this.deliveryFeeService.calculateDeliveryFee(
       origin,
       destination,
+      shippingSize,
     );
 
     return {
       fee: result.fee,
       durationMinutes: result.durationMinutes,
       distanceKm: result.distanceKm,
+      vehicleType: result.vehicleType,
       currency: 'GEL',
     };
   }

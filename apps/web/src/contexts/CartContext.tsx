@@ -9,6 +9,9 @@ import React, {
   useMemo,
 } from 'react';
 
+// Shipping size categories for delivery fee calculation
+export type ShippingSize = 'small' | 'medium' | 'large' | 'extra_large';
+
 // Cart item represents a product (optionally with a specific variant)
 export interface CartItem {
   productId: string;
@@ -33,6 +36,8 @@ export interface CartItem {
   storeId: string;
   storeName: string;
   storeSubdomain: string;
+  // Shipping size for delivery fee calculation
+  shippingSize?: ShippingSize;
 }
 
 interface CartContextType {

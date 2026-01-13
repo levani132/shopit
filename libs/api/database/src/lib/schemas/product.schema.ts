@@ -111,20 +111,21 @@ export class Product {
   @Prop({ default: true })
   isActive!: boolean;
 
-  // --- Shipping Dimensions & Weight ---
+  // --- Shipping Size Category ---
   // Used to calculate shipping costs based on vehicle type needed
+  // Categories:
+  // - 'small': Fits on bike/motorcycle (≤5kg, ≤30cm) - 0.5 GEL/min
+  // - 'medium': Fits in car (≤20kg, ≤60cm) - 0.75 GEL/min
+  // - 'large': Fits in SUV (≤50kg, ≤100cm) - 1.0 GEL/min
+  // - 'extra_large': Requires van/truck (>50kg or >100cm) - 2.0 GEL/min
+  // Default: 'small' for products without size set
 
-  @Prop({ min: 0 })
-  weight?: number; // Weight in kg
-
-  @Prop({ min: 0 })
-  length?: number; // Length in cm
-
-  @Prop({ min: 0 })
-  width?: number; // Width in cm
-
-  @Prop({ min: 0 })
-  height?: number; // Height in cm
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+    default: 'small',
+  })
+  shippingSize!: 'small' | 'medium' | 'large' | 'extra_large';
 
   @Prop({ type: Types.ObjectId, ref: 'Store', required: true })
   storeId!: Types.ObjectId;

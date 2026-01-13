@@ -356,6 +356,7 @@ export default function ProductDetailPage() {
       storeId: storeInfo.id,
       storeName: storeInfo.name,
       storeSubdomain: subdomain,
+      shippingSize: product.shippingSize || 'small',
     };
 
     addItem(cartItem, quantity);
