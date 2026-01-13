@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '../../../contexts/AuthContext';
 import { ShopItLogo } from '../../../components/ui/ShopItLogo';
@@ -32,10 +32,12 @@ function getSubdomainFromHostname(): string | null {
   return null;
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
   const { login, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -78,7 +80,33 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      if (isOnStore) {
+      
+      // Handle redirect after login
+      if (redirectUrl) {
+        // Handle cross-subdomain redirects (e.g., /couriers/ka/apply)
+        if (redirectUrl.startsWith('/couriers/')) {
+          const hostname = window.location.hostname;
+          const protocol = window.location.protocol;
+          const port = window.location.port;
+          
+          let couriersUrl = '';
+          if (hostname === 'localhost') {
+            const portSuffix = port ? `:${port}` : '';
+            couriersUrl = `${protocol}//couriers.localhost${portSuffix}`;
+          } else if (hostname.includes('.')) {
+            // Production: shopit.ge -> couriers.shopit.ge
+            couriersUrl = `${protocol}//couriers.${hostname}`;
+          }
+          
+          // Extract the path after /couriers (e.g., /ka/apply)
+          const pathAfterCouriers = redirectUrl.replace('/couriers', '');
+          window.location.href = `${couriersUrl}${pathAfterCouriers}`;
+          return;
+        }
+        
+        // Normal redirect within the same domain
+        router.push(redirectUrl);
+      } else if (isOnStore) {
         router.push('/');
       } else {
         router.push(`/${locale}/dashboard`);
@@ -279,5 +307,26 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function LoginLoading() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-zinc-900">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Wrap in Suspense for useSearchParams
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoading />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
