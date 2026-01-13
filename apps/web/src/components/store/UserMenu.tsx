@@ -49,8 +49,19 @@ export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
   }
 
   const isSeller = user.role === 'seller' || user.role === 'admin';
+  const isAdmin = user.role === 'admin';
+  const isCourier = user.role === 'courier';
   const initials = getUserInitials(user.firstName, user.lastName, user.email);
   const displayName = user.firstName || user.email.split('@')[0];
+
+  // Get the appropriate role label
+  const getRoleLabel = () => {
+    if (isAdmin) return t('admin');
+    if (isCourier) return t('courier');
+    if (user.role === 'seller') return t('seller');
+    return null;
+  };
+  const roleLabel = getRoleLabel();
 
   const handleLogout = async () => {
     setIsOpen(false);
@@ -118,12 +129,12 @@ export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user.email}
               </p>
-              {isSeller && (
+              {roleLabel && (
                 <span
                   className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full text-white"
                   style={{ backgroundColor: 'var(--store-accent-500)' }}
                 >
-                  {t('seller')}
+                  {roleLabel}
                 </span>
               )}
             </div>
