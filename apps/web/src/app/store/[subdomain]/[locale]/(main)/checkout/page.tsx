@@ -307,6 +307,7 @@ export default function CheckoutPage() {
   const [addressesLoaded, setAddressesLoaded] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditingAddress, setIsEditingAddress] = useState(false);
 
   // Delivery method state
   const [deliveryMethod, setDeliveryMethod] =
@@ -418,9 +419,10 @@ export default function CheckoutPage() {
   const selfPickupAvailable =
     storeInfo?.selfPickupEnabled && storeInfo?.address;
 
-  // Auto-advance steps
+  // Auto-advance steps (skip when user is explicitly editing address/delivery)
   useEffect(() => {
     if (authLoading) return;
+    if (isEditingAddress) return; // Don't auto-advance when user is editing
 
     if (isAuthenticated) {
       if (!addressesLoaded) return;
@@ -460,6 +462,7 @@ export default function CheckoutPage() {
     selfPickupAvailable,
     deliveryMethod,
     currentStep,
+    isEditingAddress,
   ]);
 
   // Handle guest info submit
@@ -479,8 +482,10 @@ export default function CheckoutPage() {
     setDeliveryMethod(method);
     if (method === 'pickup') {
       // For self-pickup, skip shipping and go to review
+      setIsEditingAddress(false);
       setCurrentStep('review');
     } else {
+      // Keep editing mode active if user chose delivery - they'll need to select address
       setCurrentStep('shipping');
     }
   };
@@ -489,6 +494,7 @@ export default function CheckoutPage() {
   const selectAddress = (address: ShippingAddress) => {
     setShippingAddress(address);
     setShowNewAddressForm(false);
+    setIsEditingAddress(false);
     setCurrentStep('review');
   };
 
@@ -1167,7 +1173,10 @@ export default function CheckoutPage() {
                     </div>
                     {selfPickupAvailable && (
                       <button
-                        onClick={() => setCurrentStep('delivery')}
+                        onClick={() => {
+                          setIsEditingAddress(true);
+                          setCurrentStep('delivery');
+                        }}
                         className="text-sm text-green-600 dark:text-green-400 hover:underline"
                       >
                         {t('change')}
@@ -1193,11 +1202,12 @@ export default function CheckoutPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        setIsEditingAddress(true);
                         setCurrentStep(
                           selfPickupAvailable ? 'delivery' : 'shipping',
-                        )
-                      }
+                        );
+                      }}
                       className="text-sm text-[var(--store-accent-600)] hover:underline"
                     >
                       {t('change')}

@@ -229,27 +229,28 @@ export class OrdersService {
         // Determine delivery method
         const deliveryMethod = dto.deliveryMethod || 'delivery';
 
-        // Get seller courier fee from settings
-        const sellerCourierFee = await this.siteSettingsService.getSellerCourierFee();
-
         // Calculate shipping price
         // - Self-pickup: always free
-        // - ShopIt courier: based on location (calculated separately)
-        // - Seller courier: configurable fee per store
+        // - Self-delivery (seller handles): free (no extra fee, only site commission applies)
+        // - ShopIt courier: based on location/distance (calculated separately)
         let shippingPrice = 0;
         if (deliveryMethod === 'pickup') {
           // Self-pickup is always free
           shippingPrice = 0;
         } else {
+          // For self-delivery (seller courier), shipping is free
+          // For ShopIt courier, shipping is calculated based on distance
+          // This will be enhanced when we implement distance-based pricing
+          // For now, use the store's configured delivery fee if set
           const storeIds = new Set(enhancedOrderItems.map((i) => i.storeId.toString()));
           for (const storeId of storeIds) {
-            const storeItem = enhancedOrderItems.find(
-              (i) => i.storeId.toString() === storeId,
-            );
-            if (storeItem?.courierType === 'seller') {
-              shippingPrice += sellerCourierFee;
+            const store = await this.storeModel.findById(storeId).session(session);
+            if (store && store.courierType === 'shopit' && store.deliveryFee) {
+              // If store uses ShopIt delivery and has a custom fee set, use it
+              // Otherwise, it will be calculated based on distance (future)
+              shippingPrice += store.deliveryFee;
             }
-            // ShopIt courier shipping will be calculated separately
+            // Self-delivery is free - only site commission applies
           }
         }
 
