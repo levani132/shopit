@@ -417,7 +417,10 @@ export class OrdersService {
     }
 
     this.logger.log(`Query: ${JSON.stringify(query)}`);
-    const orders = await this.orderModel.find(query).sort({ createdAt: -1 });
+    const orders = await this.orderModel
+      .find(query)
+      .populate('courierId', 'firstName lastName phoneNumber')
+      .sort({ createdAt: -1 });
     this.logger.log(`Found ${orders.length} orders`);
     
     // Log storeIds in found orders for debugging
@@ -435,6 +438,7 @@ export class OrdersService {
   async findStoreOrders(storeId: string): Promise<OrderDocument[]> {
     return this.orderModel
       .find({ 'orderItems.storeId': new Types.ObjectId(storeId) })
+      .populate('courierId', 'firstName lastName phoneNumber')
       .sort({ createdAt: -1 });
   }
 
@@ -480,7 +484,33 @@ export class OrdersService {
     order.status = OrderStatus.PAID;
     order.stockReservationExpires = undefined; // Remove expiration
 
+    // Calculate delivery deadline based on store's prep and delivery times
+    order.deliveryDeadline = this.calculateDeliveryDeadline(order);
+
     return order.save();
+  }
+
+  /**
+   * Calculate delivery deadline based on order items' prep and delivery times
+   */
+  private calculateDeliveryDeadline(order: OrderDocument): Date {
+    const now = new Date();
+    let maxDays = 3; // Default: 3 days
+
+    // Get the maximum prep + delivery days from all order items
+    for (const item of order.orderItems) {
+      const prepDays = item.prepTimeMaxDays || 3;
+      const deliveryDays = item.deliveryMaxDays || 3;
+      const totalDays = prepDays + deliveryDays;
+      if (totalDays > maxDays) {
+        maxDays = totalDays;
+      }
+    }
+
+    // Add maxDays to current date
+    const deadline = new Date(now);
+    deadline.setDate(deadline.getDate() + maxDays);
+    return deadline;
   }
 
   /**
@@ -512,6 +542,9 @@ export class OrdersService {
     order.paymentResult = paymentResult;
     order.status = OrderStatus.PAID;
     order.stockReservationExpires = undefined;
+
+    // Calculate delivery deadline based on store's prep and delivery times
+    order.deliveryDeadline = this.calculateDeliveryDeadline(order);
 
     return order.save();
   }
@@ -586,6 +619,13 @@ export class OrdersService {
     if (newStatus === OrderStatus.PAID && currentStatus !== OrderStatus.PAID) {
       throw new BadRequestException(
         'Cannot manually set order as paid. Payment must be processed through the payment system.',
+      );
+    }
+
+    // Rule: Once a courier is assigned, seller cannot change status anymore
+    if (order.courierId) {
+      throw new BadRequestException(
+        'A courier has been assigned to this order. You can no longer change the status. The courier will handle delivery.',
       );
     }
 
@@ -718,6 +758,7 @@ export class OrdersService {
   /**
    * Get orders ready for delivery (for couriers)
    * Returns orders with status READY_FOR_DELIVERY from ShopIt delivery stores
+   * Sorted by delivery deadline (most urgent first)
    */
   async getOrdersReadyForDelivery(): Promise<OrderDocument[]> {
     // Find orders that are ready for delivery and not yet assigned
@@ -726,7 +767,7 @@ export class OrdersService {
         status: OrderStatus.READY_FOR_DELIVERY,
         courierId: { $exists: false },
       })
-      .sort({ createdAt: 1 }) // Oldest first
+      .sort({ deliveryDeadline: 1, createdAt: 1 }) // Most urgent first
       .limit(50)
       .exec();
 
@@ -735,6 +776,7 @@ export class OrdersService {
 
   /**
    * Get orders assigned to a specific courier
+   * Sorted by delivery deadline (most urgent first)
    */
   async getOrdersByCourier(courierId: string): Promise<OrderDocument[]> {
     return this.orderModel
@@ -742,7 +784,7 @@ export class OrdersService {
         courierId: new Types.ObjectId(courierId),
         status: { $in: [OrderStatus.READY_FOR_DELIVERY, OrderStatus.SHIPPED] },
       })
-      .sort({ createdAt: -1 })
+      .sort({ deliveryDeadline: 1, createdAt: 1 }) // Sort by deadline (ascending = most urgent first)
       .exec();
   }
 
@@ -774,6 +816,7 @@ export class OrdersService {
     }
 
     order.courierId = new Types.ObjectId(courierId);
+    order.courierAssignedAt = new Date();
     return order.save();
   }
 

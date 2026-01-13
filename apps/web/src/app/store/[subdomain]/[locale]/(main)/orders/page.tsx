@@ -279,6 +279,13 @@ interface OrderItem {
   }>;
 }
 
+interface Courier {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+}
+
 interface Order {
   _id: string;
   orderItems: OrderItem[];
@@ -298,6 +305,8 @@ interface Order {
     postalCode?: string;
     phoneNumber?: string;
   };
+  courierId?: Courier;
+  courierAssignedAt?: string;
 }
 
 // Order status progression
@@ -540,7 +549,7 @@ function OrderFooter({
       {/* Expanded content - side by side */}
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-gray-200 dark:border-zinc-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
             {/* Shipping Details */}
             <div>
               <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
@@ -574,6 +583,30 @@ function OrderFooter({
                 )}
               </div>
             </div>
+
+            {/* Courier Info */}
+            {order.courierId && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  {t('courier')}
+                </h4>
+                <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <p className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                      <svg className="w-3 h-3 text-cyan-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </span>
+                    {order.courierId.firstName} {order.courierId.lastName}
+                  </p>
+                  {order.courierId.phoneNumber && (
+                    <p className="flex items-center gap-2 pl-8">
+                      📞 {order.courierId.phoneNumber}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Price Breakdown */}
             <div>

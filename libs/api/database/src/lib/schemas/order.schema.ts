@@ -211,6 +211,13 @@ export class Order {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   courierId?: Types.ObjectId;
 
+  @Prop()
+  courierAssignedAt?: Date;
+
+  // Delivery deadline (calculated from paidAt + prep time + delivery estimate)
+  @Prop()
+  deliveryDeadline?: Date;
+
   // BOG integration
   @Prop({ unique: true, sparse: true })
   externalOrderId?: string; // UUID sent to BOG

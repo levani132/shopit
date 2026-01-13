@@ -29,6 +29,13 @@ interface ShippingDetails {
   phoneNumber: string;
 }
 
+interface Courier {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+}
+
 interface Order {
   _id: string;
   orderItems: OrderItem[];
@@ -53,6 +60,9 @@ interface Order {
     phoneNumber: string;
   };
   isGuestOrder: boolean;
+  courierId?: Courier;
+  courierAssignedAt?: string;
+  deliveryDeadline?: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -379,6 +389,33 @@ export default function DashboardOrdersPage() {
                       {selectedOrder.shippingDetails.phoneNumber}
                     </p>
                   </div>
+
+                  {/* Courier Info */}
+                  {selectedOrder.courierId && (
+                    <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-3">
+                      <p className="text-xs text-cyan-700 dark:text-cyan-300 font-medium mb-1">
+                        {t('courierAssigned')}
+                      </p>
+                      <p className="text-sm text-cyan-800 dark:text-cyan-200">
+                        {selectedOrder.courierId.firstName} {selectedOrder.courierId.lastName}
+                      </p>
+                      {selectedOrder.courierId.phoneNumber && (
+                        <p className="text-sm text-cyan-600 dark:text-cyan-400">
+                          📞 {selectedOrder.courierId.phoneNumber}
+                        </p>
+                      )}
+                      {selectedOrder.courierAssignedAt && (
+                        <p className="text-xs text-cyan-500 dark:text-cyan-500 mt-1">
+                          {t('assignedAt')}: {new Date(selectedOrder.courierAssignedAt).toLocaleDateString(locale, {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Items */}
@@ -457,29 +494,35 @@ export default function DashboardOrdersPage() {
                 {/* Status update */}
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Update Status
+                    {t('updateStatus')}
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {statusOrder.map((status) => (
-                      <button
-                        key={status}
-                        onClick={() =>
-                          updateOrderStatus(selectedOrder._id, status)
-                        }
-                        disabled={
-                          updating === selectedOrder._id ||
-                          selectedOrder.status === status
-                        }
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                          selectedOrder.status === status
-                            ? statusColors[status]
-                            : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
-                        }`}
-                      >
-                        {tOrders(`status.${status}`)}
-                      </button>
-                    ))}
-                  </div>
+                  {selectedOrder.courierId ? (
+                    <p className="text-sm text-cyan-600 dark:text-cyan-400">
+                      {t('courierHandlingDelivery')}
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {statusOrder.map((status) => (
+                        <button
+                          key={status}
+                          onClick={() =>
+                            updateOrderStatus(selectedOrder._id, status)
+                          }
+                          disabled={
+                            updating === selectedOrder._id ||
+                            selectedOrder.status === status
+                          }
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            selectedOrder.status === status
+                              ? statusColors[status]
+                              : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
+                          }`}
+                        >
+                          {tOrders(`status.${status}`)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

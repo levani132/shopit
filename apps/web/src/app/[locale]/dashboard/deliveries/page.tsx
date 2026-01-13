@@ -33,6 +33,35 @@ interface Order {
   status: string;
   createdAt: string;
   courierId?: string;
+  deliveryDeadline?: string;
+  courierAssignedAt?: string;
+}
+
+// Calculate remaining time until deadline
+function getRemainingTime(deadline: string): { text: string; isOverdue: boolean; urgency: 'normal' | 'warning' | 'danger' } {
+  const now = new Date();
+  const deadlineDate = new Date(deadline);
+  const diff = deadlineDate.getTime() - now.getTime();
+
+  if (diff <= 0) {
+    return { text: 'Overdue', isOverdue: true, urgency: 'danger' };
+  }
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+
+  let urgency: 'normal' | 'warning' | 'danger' = 'normal';
+  if (days === 0) {
+    urgency = 'danger';
+  } else if (days <= 1) {
+    urgency = 'warning';
+  }
+
+  if (days > 0) {
+    return { text: `${days}d ${remainingHours}h`, isOverdue: false, urgency };
+  }
+  return { text: `${hours}h`, isOverdue: false, urgency };
 }
 
 export default function DeliveriesPage() {
@@ -226,22 +255,56 @@ export default function DeliveriesPage() {
               className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
             >
               {/* Order Header */}
-              <div className="p-4 bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-700 flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Order #{order._id.slice(-8).toUpperCase()}
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    ₾{order.totalPrice.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('deliveryFee')}
-                  </p>
-                  <p className="font-semibold text-green-600 dark:text-green-400">
-                    ₾{order.shippingPrice.toFixed(2)}
-                  </p>
+              <div className="p-4 bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-700">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      Order #{order._id.slice(-8).toUpperCase()}
+                    </p>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      ₾{order.totalPrice.toFixed(2)}
+                    </p>
+                  </div>
+
+                  {/* Delivery Deadline */}
+                  {order.deliveryDeadline && (
+                    <div className="text-center">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {t('deliveryDeadline')}
+                      </p>
+                      {(() => {
+                        const remaining = getRemainingTime(order.deliveryDeadline);
+                        return (
+                          <p className={`font-semibold ${
+                            remaining.urgency === 'danger' 
+                              ? 'text-red-600 dark:text-red-400' 
+                              : remaining.urgency === 'warning'
+                              ? 'text-orange-600 dark:text-orange-400'
+                              : 'text-gray-900 dark:text-white'
+                          }`}>
+                            {remaining.isOverdue ? '⚠️ ' : '⏰ '}{remaining.text}
+                          </p>
+                        );
+                      })()}
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(order.deliveryDeadline).toLocaleDateString('ka-GE', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {t('yourEarning')}
+                    </p>
+                    <p className="font-semibold text-green-600 dark:text-green-400">
+                      ₾{order.shippingPrice.toFixed(2)}
+                    </p>
+                  </div>
                 </div>
               </div>
 
