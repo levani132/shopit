@@ -27,12 +27,19 @@ export class WishlistService {
 
   /**
    * Get all wishlist items for a user
+   * Optionally filter by store subdomain
    */
-  async getUserWishlist(userId: string): Promise<WishlistItemDocument[]> {
-    return this.wishlistModel
-      .find({ userId: new Types.ObjectId(userId) })
-      .sort({ createdAt: -1 })
-      .exec();
+  async getUserWishlist(
+    userId: string,
+    storeSubdomain?: string,
+  ): Promise<WishlistItemDocument[]> {
+    const query: any = { userId: new Types.ObjectId(userId) };
+
+    if (storeSubdomain) {
+      query.storeSubdomain = storeSubdomain;
+    }
+
+    return this.wishlistModel.find(query).sort({ createdAt: -1 }).exec();
   }
 
   /**

@@ -4,6 +4,7 @@ import {
   Post,
   Delete,
   Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -27,9 +28,13 @@ export class WishlistController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user wishlist' })
   @ApiResponse({ status: 200, description: 'Returns user wishlist items' })
-  async getWishlist(@CurrentUser() user: UserDocument) {
+  async getWishlist(
+    @CurrentUser() user: UserDocument,
+    @Query('storeSubdomain') storeSubdomain?: string,
+  ) {
     const items = await this.wishlistService.getUserWishlist(
       user._id.toString(),
+      storeSubdomain,
     );
 
     // Transform for frontend
