@@ -294,6 +294,13 @@ export class StoresController {
     @Param('subdomain') subdomain: string,
     @CurrentUser() user?: UserDocument,
   ) {
+    console.log('[StoreStatus] Request:', {
+      subdomain,
+      userId: user?._id?.toString(),
+      userRole: user?.role,
+      userEmail: user?.email,
+    });
+
     const store = await this.storesService.findBySubdomain(subdomain);
 
     if (!store) {
@@ -304,6 +311,14 @@ export class StoresController {
     const isAdmin = user?.role === Role.ADMIN;
     const isOwner = user && store.ownerId?.toString() === user._id?.toString();
     const canBypassPublishStatus = isAdmin || isOwner;
+
+    console.log('[StoreStatus] Response:', {
+      storeOwnerId: store.ownerId?.toString(),
+      publishStatus: store.publishStatus,
+      isAdmin,
+      isOwner,
+      canBypassPublishStatus,
+    });
 
     return {
       publishStatus: store.publishStatus || 'draft',

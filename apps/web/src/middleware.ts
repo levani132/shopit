@@ -47,9 +47,17 @@ async function getStorePublishStatus(
   const hasAuth = cookieHeader?.includes('access_token');
   const cacheKey = `${subdomain}:${hasAuth ? 'auth' : 'anon'}`;
 
+  console.log('[Middleware] getStorePublishStatus:', {
+    subdomain,
+    hasAuth,
+    cacheKey,
+    hasCookieHeader: !!cookieHeader,
+  });
+
   // Check cache first
   const cached = storeStatusCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) {
+    console.log('[Middleware] Using cached result:', cached);
     return { publishStatus: cached.publishStatus, canBypass: cached.canBypass };
   }
 
@@ -63,6 +71,11 @@ async function getStorePublishStatus(
       headers['Cookie'] = cookieHeader;
     }
 
+    console.log('[Middleware] Fetching store status from API:', {
+      url: `${API_BASE_URL}/stores/subdomain/${subdomain}/status`,
+      hasCookies: !!headers['Cookie'],
+    });
+
     const response = await fetch(
       `${API_BASE_URL}/stores/subdomain/${subdomain}/status`,
       {
@@ -74,6 +87,7 @@ async function getStorePublishStatus(
     );
 
     if (!response.ok) {
+      console.log('[Middleware] API returned error:', response.status);
       // Store not found
       storeStatusCache.set(cacheKey, {
         publishStatus: 'not_found',
@@ -86,6 +100,12 @@ async function getStorePublishStatus(
     const data = await response.json();
     const publishStatus = data.publishStatus || 'draft';
     const canBypass = data.canBypassPublishStatus || false;
+
+    console.log('[Middleware] API response:', {
+      publishStatus,
+      canBypass,
+      rawCanBypass: data.canBypassPublishStatus,
+    });
 
     // Cache the result
     storeStatusCache.set(cacheKey, {
