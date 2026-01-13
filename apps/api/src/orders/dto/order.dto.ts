@@ -74,6 +74,14 @@ export class CreateOrderItemDto {
 
 // ================== SHIPPING DTOs ==================
 
+export class ShippingLocationDto {
+  @IsNumber()
+  lat!: number;
+
+  @IsNumber()
+  lng!: number;
+}
+
 export class ShippingDetailsDto {
   @IsString()
   @IsNotEmpty()
@@ -94,6 +102,12 @@ export class ShippingDetailsDto {
   @IsString()
   @IsOptional()
   phoneNumber?: string;
+
+  // Location coordinates for delivery fee calculation
+  @ValidateNested()
+  @Type(() => ShippingLocationDto)
+  @IsOptional()
+  location?: ShippingLocationDto;
 }
 
 // ================== GUEST INFO DTOs ==================

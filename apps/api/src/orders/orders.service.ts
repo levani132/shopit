@@ -24,6 +24,7 @@ import { CreateOrderDto, ValidateCartDto } from './dto/order.dto';
 import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
 import { SiteSettingsService } from '../admin/site-settings.service';
+import { DeliveryFeeService, ShippingSize } from './delivery-fee.service';
 
 @Injectable()
 export class OrdersService {
@@ -39,6 +40,7 @@ export class OrdersService {
     @Inject(forwardRef(() => BalanceService))
     private balanceService: BalanceService,
     private siteSettingsService: SiteSettingsService,
+    private deliveryFeeService: DeliveryFeeService,
   ) {}
 
   /**
@@ -198,25 +200,55 @@ export class OrdersService {
 
           await product.save({ session });
 
+          // Get the ACTUAL price from database (never trust frontend prices!)
+          let actualPrice: number;
+          let actualImage: string;
+
+          if (item.variantId && product.hasVariants && product.variants?.length) {
+            const variant = product.variants.find(
+              (v) => v._id.toString() === item.variantId,
+            );
+            if (variant) {
+              // Use variant price if set, otherwise use product price
+              actualPrice = product.isOnSale && (variant.salePrice || product.salePrice)
+                ? (variant.salePrice || product.salePrice || product.price)
+                : (variant.price || product.price);
+              // Use variant image if available
+              actualImage = variant.images?.[0] || product.images?.[0] || item.image;
+            } else {
+              actualPrice = product.isOnSale && product.salePrice
+                ? product.salePrice
+                : product.price;
+              actualImage = product.images?.[0] || item.image;
+            }
+          } else {
+            // Non-variant product
+            actualPrice = product.isOnSale && product.salePrice
+              ? product.salePrice
+              : product.price;
+            actualImage = product.images?.[0] || item.image;
+          }
+
           // Build enhanced order item with delivery info
           enhancedOrderItems.push({
             productId: new Types.ObjectId(item.productId),
-            name: item.name,
-            nameEn: item.nameEn,
-            image: item.image,
-            price: item.price,
+            name: product.name, // Use DB name
+            nameEn: product.nameLocalized?.en || product.name,
+            image: actualImage,
+            price: actualPrice, // USE DB PRICE, NOT FRONTEND PRICE!
             qty: item.qty,
             variantId: item.variantId
               ? new Types.ObjectId(item.variantId)
               : undefined,
             variantAttributes: item.variantAttributes || [],
             storeId: new Types.ObjectId(item.storeId),
-            storeName: item.storeName,
+            storeName: store.name, // Use DB store name
             courierType: store.courierType,
             prepTimeMinDays: store.prepTimeMinDays,
             prepTimeMaxDays: store.prepTimeMaxDays,
             deliveryMinDays: store.deliveryMinDays,
             deliveryMaxDays: store.deliveryMaxDays,
+            shippingSize: product.shippingSize || 'small',
           });
         }
 
@@ -232,23 +264,60 @@ export class OrdersService {
         // Calculate shipping price
         // - Self-pickup: always free
         // - Self-delivery (seller handles): free (no extra fee, only site commission applies)
-        // - ShopIt courier: based on location/distance (calculated separately)
+        // - ShopIt courier: based on location/distance
         let shippingPrice = 0;
         if (deliveryMethod === 'pickup') {
           // Self-pickup is always free
           shippingPrice = 0;
         } else {
-          // For self-delivery (seller courier), shipping is free
-          // For ShopIt courier, shipping is calculated based on distance
-          // This will be enhanced when we implement distance-based pricing
-          // For now, use the store's configured delivery fee if set
+          // Group items by store for shipping calculation
           const storeIds = new Set(enhancedOrderItems.map((i) => i.storeId.toString()));
+          
           for (const storeId of storeIds) {
             const store = await this.storeModel.findById(storeId).session(session);
-            if (store && store.courierType === 'shopit' && store.deliveryFee) {
-              // If store uses ShopIt delivery and has a custom fee set, use it
-              // Otherwise, it will be calculated based on distance (future)
-              shippingPrice += store.deliveryFee;
+            if (!store) continue;
+
+            if (store.courierType === 'shopit') {
+              // ShopIt delivery - calculate based on distance and product size
+              
+              // Validate locations
+              if (!store.location?.lat || !store.location?.lng) {
+                this.logger.warn(`Store ${store.name} has no location set for ShopIt delivery`);
+                throw new BadRequestException(
+                  `Store "${store.name}" has not configured its location for delivery`,
+                );
+              }
+
+              if (!dto.shippingDetails?.location?.lat || !dto.shippingDetails?.location?.lng) {
+                throw new BadRequestException(
+                  'Delivery address location is required for ShopIt delivery. Please select a location on the map.',
+                );
+              }
+
+              // Get the largest shipping size from this store's items
+              const storeItems = enhancedOrderItems.filter(
+                (i) => i.storeId.toString() === storeId,
+              );
+              const sizes: ShippingSize[] = ['small', 'medium', 'large', 'extra_large'];
+              let maxSizeIndex = 0;
+              for (const item of storeItems) {
+                const size = (item as any).shippingSize || 'small';
+                const index = sizes.indexOf(size);
+                if (index > maxSizeIndex) maxSizeIndex = index;
+              }
+              const largestSize = sizes[maxSizeIndex];
+
+              // Calculate delivery fee
+              const deliveryResult = await this.deliveryFeeService.calculateDeliveryFee(
+                { lat: store.location.lat, lng: store.location.lng },
+                { lat: dto.shippingDetails.location.lat, lng: dto.shippingDetails.location.lng },
+                largestSize,
+              );
+
+              shippingPrice += deliveryResult.fee;
+              this.logger.log(
+                `ShopIt delivery fee for store ${store.name}: ${deliveryResult.fee} GEL (${deliveryResult.durationMinutes} min, ${largestSize})`,
+              );
             }
             // Self-delivery is free - only site commission applies
           }

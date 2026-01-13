@@ -67,6 +67,7 @@ interface Product {
     name: string;
     nameLocalized?: { ka?: string; en?: string };
   };
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 }
 
 export default function ProductDetailPage() {

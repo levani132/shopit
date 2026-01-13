@@ -807,6 +807,8 @@ export default function CheckoutPage() {
                 postalCode: shippingAddress!.postalCode,
                 country: shippingAddress!.country,
                 phoneNumber: shippingAddress!.phoneNumber,
+                // Include location for ShopIt delivery fee calculation
+                location: shippingAddress!.location,
               },
         deliveryMethod, // 'delivery' or 'pickup'
         paymentMethod: 'BOG',
