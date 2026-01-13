@@ -5,7 +5,7 @@ import {
   SiteSettings,
   SiteSettingsDocument,
   VehicleShippingConfig,
-} from '@sellit/api/database';
+} from '@sellit/api-database';
 
 /**
  * Service for managing site-wide settings
@@ -209,4 +209,3 @@ export class SiteSettingsService implements OnModuleInit {
     this.cacheExpiry = 0;
   }
 }
-

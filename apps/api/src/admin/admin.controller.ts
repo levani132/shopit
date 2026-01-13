@@ -38,7 +38,7 @@ import {
   StoreDocument,
   Order,
   OrderDocument,
-} from '@sellit/api/database';
+} from '@sellit/api-database';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -316,7 +316,9 @@ export class AdminController {
     user.courierProfileImage = undefined;
     await user.save();
 
-    this.logger.log(`Courier application rejected for ${user.email}: ${body.reason}`);
+    this.logger.log(
+      `Courier application rejected for ${user.email}: ${body.reason}`,
+    );
 
     return {
       message: 'Courier application rejected',
@@ -396,7 +398,9 @@ export class AdminController {
     }
 
     // Get user's order count
-    const orderCount = await this.orderModel.countDocuments({ userId: user._id });
+    const orderCount = await this.orderModel.countDocuments({
+      userId: user._id,
+    });
 
     return {
       user,
@@ -422,7 +426,9 @@ export class AdminController {
     user.role = body.role;
     await user.save();
 
-    this.logger.log(`User ${user.email} role changed from ${oldRole} to ${body.role}`);
+    this.logger.log(
+      `User ${user.email} role changed from ${oldRole} to ${body.role}`,
+    );
 
     return {
       message: 'Role updated successfully',
@@ -622,7 +628,10 @@ export class AdminController {
 
     // Total for period
     const periodTotal = dailyRevenue.reduce((sum, day) => sum + day.revenue, 0);
-    const periodOrders = dailyRevenue.reduce((sum, day) => sum + day.orderCount, 0);
+    const periodOrders = dailyRevenue.reduce(
+      (sum, day) => sum + day.orderCount,
+      0,
+    );
 
     return {
       period,
@@ -691,4 +700,3 @@ export class AdminController {
     };
   }
 }
-

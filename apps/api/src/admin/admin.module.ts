@@ -11,7 +11,7 @@ import {
   OrderSchema,
   SiteSettings,
   SiteSettingsSchema,
-} from '@sellit/api/database';
+} from '@sellit/api-database';
 
 @Module({
   imports: [
@@ -27,4 +27,3 @@ import {
   exports: [SiteSettingsService],
 })
 export class AdminModule {}
-
