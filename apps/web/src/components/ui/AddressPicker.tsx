@@ -119,6 +119,8 @@ function AddressPickerMap({
   const [isManuallyEdited, setIsManuallyEdited] = useState(false);
   // Location validation error
   const [locationError, setLocationError] = useState<string | null>(null);
+  // Fullscreen map state
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Sync searchQuery when value prop changes (e.g., on page load with saved data)
   useEffect(() => {
@@ -316,6 +318,10 @@ function AddressPickerMap({
         const location = { lat: e.latlng.lat, lng: e.latlng.lng };
         setMarkerPosition(location);
         reverseGeocode(location);
+        // Collapse map when user selects a point
+        if (isExpanded) {
+          setIsExpanded(false);
+        }
       },
     });
     return null;
@@ -484,9 +490,9 @@ function AddressPickerMap({
 
       {/* Map */}
       <div
-        className={`rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 ${
+        className={`relative rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 ${
           isDarkMode ? 'map-dark-mode' : ''
-        }`}
+        } ${isExpanded ? 'fixed inset-4 z-[9999] rounded-2xl' : ''}`}
         style={
           isDarkMode
             ? {
@@ -498,10 +504,31 @@ function AddressPickerMap({
             : undefined
         }
       >
+        {/* Expand/Collapse Button */}
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="absolute top-3 right-3 z-[1000] p-2 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-600 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+          style={isDarkMode ? { filter: 'invert(1) hue-rotate(180deg)' } : undefined}
+          title={isExpanded ? t('collapseMap') : t('expandMap')}
+        >
+          {isExpanded ? (
+            // Collapse icon
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            // Expand icon
+            <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+          )}
+        </button>
+
         <MapContainer
           center={[mapCenter.lat, mapCenter.lng]}
           zoom={DEFAULT_ZOOM}
-          style={{ height: '280px', width: '100%' }}
+          style={{ height: isExpanded ? '100%' : '280px', width: '100%' }}
           className="z-0"
         >
           {/* CartoDB Voyager tiles - CSS filter applied for dark mode */}
@@ -525,12 +552,24 @@ function AddressPickerMap({
                   const location = { lat: position.lat, lng: position.lng };
                   setMarkerPosition(location);
                   reverseGeocode(location);
+                  // Collapse map when user drags marker
+                  if (isExpanded) {
+                    setIsExpanded(false);
+                  }
                 },
               }}
             />
           )}
         </MapContainer>
       </div>
+
+      {/* Backdrop when expanded */}
+      {isExpanded && (
+        <div
+          className="fixed inset-0 bg-black/50 z-[9998]"
+          onClick={() => setIsExpanded(false)}
+        />
+      )}
 
       {/* Helper text */}
       <p className="text-xs text-gray-500 dark:text-gray-400">

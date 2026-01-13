@@ -14,7 +14,9 @@
     "cancel": "Cancel",
     "save": "Save",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "expandMap": "Expand map",
+    "collapseMap": "Collapse map"
   },
   "nav": {
     "home": "Home",
