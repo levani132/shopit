@@ -15,6 +15,14 @@ const MAIN_DOMAINS = [
   'shopit-dev.vercel.app',
 ];
 
+// Patterns that indicate this is NOT a store subdomain (e.g., Vercel preview URLs)
+const NON_STORE_PATTERNS = [
+  /\.vercel\.app$/,           // All Vercel preview URLs
+  /\.vercel\.sh$/,            // Vercel staging URLs
+  /\.netlify\.app$/,          // Netlify URLs
+  /\.render\.com$/,           // Render URLs
+];
+
 // API base URL for checking store status
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -128,6 +136,12 @@ function getSubdomain(hostname: string): string | null {
 
   // Check if it's a main domain (no subdomain)
   if (MAIN_DOMAINS.includes(host)) {
+    return null;
+  }
+
+  // Check if this is a non-store domain (Vercel preview, etc.)
+  if (NON_STORE_PATTERNS.some((pattern) => pattern.test(host))) {
+    console.log('[Middleware] Skipping non-store domain:', host);
     return null;
   }
 
