@@ -35,7 +35,8 @@ export default function CourierRegisterPage() {
     const locale = pathParts.find(p => p === 'en' || p === 'ka') || 'ka';
 
     // Build redirect URL preserving the redirect param
-    let registerUrl = `${mainSiteUrl}/${locale}/register`;
+    // Use /register/buyer for normal user registration (not seller registration)
+    let registerUrl = `${mainSiteUrl}/${locale}/register/buyer`;
     if (redirect) {
       // Keep the redirect pointing to the courier subdomain
       registerUrl += `?redirect=${encodeURIComponent(redirect)}`;
