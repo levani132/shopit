@@ -16,7 +16,7 @@ const MAIN_DOMAINS = [
 ];
 
 // API base URL for checking store status
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 // Cache store status for a short time to avoid repeated API calls
 // Note: We cache per subdomain+cookie hash to allow different results for logged-in users
