@@ -7,7 +7,6 @@ import {
   Param,
   Body,
   Query,
-  Req,
   NotFoundException,
   UseGuards,
   UseInterceptors,
@@ -294,19 +293,7 @@ export class StoresController {
   async getStoreStatus(
     @Param('subdomain') subdomain: string,
     @CurrentUser() user?: UserDocument,
-    @Req() req?: any,
   ) {
-    console.log('[StoreStatus] Request:', {
-      subdomain,
-      userId: user?._id?.toString(),
-      userRole: user?.role,
-      userEmail: user?.email,
-      hasCookies: !!req?.cookies,
-      cookieKeys: req?.cookies ? Object.keys(req.cookies) : [],
-      hasAccessToken: !!req?.cookies?.access_token,
-      authHeader: req?.headers?.authorization ? 'present' : 'missing',
-    });
-
     // Use findBySubdomainAny to find stores regardless of isActive status
     const store = await this.storesService.findBySubdomainAny(subdomain);
 
@@ -318,14 +305,6 @@ export class StoresController {
     const isAdmin = user?.role === Role.ADMIN;
     const isOwner = user && store.ownerId?.toString() === user._id?.toString();
     const canBypassPublishStatus = isAdmin || isOwner;
-
-    console.log('[StoreStatus] Response:', {
-      storeOwnerId: store.ownerId?.toString(),
-      publishStatus: store.publishStatus,
-      isAdmin,
-      isOwner,
-      canBypassPublishStatus,
-    });
 
     return {
       publishStatus: store.publishStatus || 'draft',

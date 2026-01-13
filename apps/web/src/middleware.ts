@@ -57,21 +57,11 @@ async function getStorePublishStatus(
   const hasAuth = cookieHeader?.includes('access_token');
   const cacheKey = `${subdomain}:${hasAuth ? 'auth' : 'anon'}`;
 
-  console.log('[Middleware] getStorePublishStatus:', {
-    subdomain,
-    hasAuth,
-    cacheKey,
-    hasCookieHeader: !!cookieHeader,
-  });
-
-  // Check cache first (skip cache in development for easier debugging)
+  // Check cache first
   const cached = storeStatusCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) {
-    console.log('[Middleware] Using cached result:', { ...cached, cacheKey });
     return { publishStatus: cached.publishStatus, canBypass: cached.canBypass };
   }
-
-  console.log('[Middleware] Cache miss, fetching fresh data:', { cacheKey });
 
   try {
     const headers: Record<string, string> = {
@@ -84,22 +74,13 @@ async function getStorePublishStatus(
     }
 
     const apiUrl = `${API_BASE_URL}/stores/subdomain/${subdomain}/status`;
-    console.log('[Middleware] Fetching store status from API:', {
-      url: apiUrl,
-      API_BASE_URL,
-      subdomain,
-      hasCookies: !!headers['Cookie'],
-    });
-
     const response = await fetch(apiUrl, {
       method: 'GET',
       headers,
-      // Don't cache this request in fetch layer
       cache: 'no-store',
     });
 
     if (!response.ok) {
-      console.log('[Middleware] API returned error:', response.status);
       // Store not found
       storeStatusCache.set(cacheKey, {
         publishStatus: 'not_found',
@@ -112,12 +93,6 @@ async function getStorePublishStatus(
     const data = await response.json();
     const publishStatus = data.publishStatus || 'draft';
     const canBypass = data.canBypassPublishStatus || false;
-
-    console.log('[Middleware] API response:', {
-      publishStatus,
-      canBypass,
-      rawCanBypass: data.canBypassPublishStatus,
-    });
 
     // Cache the result
     storeStatusCache.set(cacheKey, {
