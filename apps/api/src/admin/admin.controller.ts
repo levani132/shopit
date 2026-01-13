@@ -544,7 +544,7 @@ export class AdminController {
     const [orders, total] = await Promise.all([
       this.orderModel
         .find(filter)
-        .populate('userId', 'firstName lastName email')
+        .populate('user', 'firstName lastName email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -570,7 +570,7 @@ export class AdminController {
   async getOrder(@Param('id') id: string) {
     const order = await this.orderModel
       .findById(id)
-      .populate('userId', 'firstName lastName email')
+      .populate('user', 'firstName lastName email')
       .lean();
 
     if (!order) {

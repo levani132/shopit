@@ -15,7 +15,7 @@ interface OrderItem {
 
 interface Order {
   _id: string;
-  userId?: {
+  user?: {
     _id: string;
     firstName: string;
     lastName: string;
@@ -162,17 +162,17 @@ function OrdersManagementContent() {
                         {t('orderId')}: #{order._id.slice(-8).toUpperCase()}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {order.userId
-                          ? `${order.userId.firstName} ${order.userId.lastName} (${order.userId.email})`
+                        {order.user
+                          ? `${order.user.firstName} ${order.user.lastName} (${order.user.email})`
                           : t('guestOrder')}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span
-                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(order.status)}`}
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(order.status || 'pending')}`}
                     >
-                      {t(`order${order.status.charAt(0).toUpperCase() + order.status.slice(1)}`)}
+                      {t(`order${(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}`)}
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       ₾{order.totalPrice.toFixed(2)}
