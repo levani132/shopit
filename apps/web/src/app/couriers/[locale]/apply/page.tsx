@@ -41,7 +41,7 @@ export default function CourierApplyPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAuthenticated) {
-      router.push(`/couriers/${locale}/login`);
+      router.push(`/${locale}/login`);
       return;
     }
 
@@ -127,7 +127,7 @@ export default function CourierApplyPage() {
             <h1 className="text-2xl font-bold text-white mb-4">{t('applicationSubmitted')}</h1>
             <p className="text-gray-400 mb-8">{t('applicationSubmittedDescription')}</p>
             <Link
-              href={`/couriers/${locale}`}
+              href={`/${locale}`}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
             >
               {t('backToHome')}
@@ -280,7 +280,7 @@ export default function CourierApplyPage() {
           {/* Submit */}
           <div className="flex gap-4">
             <Link
-              href={`/couriers/${locale}`}
+              href={`/${locale}`}
               className="flex-1 py-4 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl transition-colors text-center"
             >
               {tCommon('cancel')}

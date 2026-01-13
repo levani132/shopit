@@ -51,7 +51,7 @@ export default function CourierLandingPage() {
               <Link
                 href={
                   isAuthenticated
-                    ? `/couriers/${locale}/apply`
+                    ? `/${locale}/apply`
                     : `/${locale}/register?redirect=/couriers/${locale}/apply`
                 }
                 className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl text-lg transition-all shadow-lg shadow-indigo-500/25"

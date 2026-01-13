@@ -52,9 +52,9 @@ export function CourierHeader() {
       <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-lg shadow-lg border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
+            {/* Logo - links to courier home (no /couriers prefix, middleware handles it) */}
             <Link
-              href={`/couriers/${locale}`}
+              href={`/${locale}`}
               className="flex items-center gap-2"
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
@@ -89,7 +89,7 @@ export function CourierHeader() {
                 </Link>
               ) : isAuthenticated ? (
                 <Link
-                  href={`/couriers/${locale}/apply`}
+                  href={`/${locale}/apply`}
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors text-sm"
                 >
                   {t('applyNow')}
