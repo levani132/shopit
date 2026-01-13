@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Query,
+  Req,
   NotFoundException,
   UseGuards,
   UseInterceptors,
@@ -293,12 +294,17 @@ export class StoresController {
   async getStoreStatus(
     @Param('subdomain') subdomain: string,
     @CurrentUser() user?: UserDocument,
+    @Req() req?: any,
   ) {
     console.log('[StoreStatus] Request:', {
       subdomain,
       userId: user?._id?.toString(),
       userRole: user?.role,
       userEmail: user?.email,
+      hasCookies: !!req?.cookies,
+      cookieKeys: req?.cookies ? Object.keys(req.cookies) : [],
+      hasAccessToken: !!req?.cookies?.access_token,
+      authHeader: req?.headers?.authorization ? 'present' : 'missing',
     });
 
     // Use findBySubdomainAny to find stores regardless of isActive status
