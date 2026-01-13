@@ -201,6 +201,16 @@ export class LocationDto {
   lng!: number;
 }
 
+export class ShippingProductDto {
+  @IsString()
+  @IsNotEmpty()
+  productId!: string;
+
+  @IsNumber()
+  @Min(1)
+  quantity!: number;
+}
+
 export class CalculateShippingDto {
   @ValidateNested()
   @Type(() => LocationDto)
@@ -212,7 +222,15 @@ export class CalculateShippingDto {
   @IsNotEmpty()
   customerLocation!: LocationDto;
 
-  // Shipping size category (defaults to 'small' for products without size set)
+  // Product IDs to fetch current shippingSize from database
+  // This ensures we always use the latest product sizes
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ShippingProductDto)
+  @IsOptional()
+  products?: ShippingProductDto[];
+
+  // Fallback: direct shipping size (deprecated, use products instead)
   @IsString()
   @IsIn(['small', 'medium', 'large', 'extra_large'])
   @IsOptional()

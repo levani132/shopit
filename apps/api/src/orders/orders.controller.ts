@@ -9,25 +9,29 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { OrdersService } from './orders.service';
-import { DeliveryFeeService, Location } from './delivery-fee.service';
+import { DeliveryFeeService, Location, ShippingSize } from './delivery-fee.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { CreateOrderDto, ValidateCartDto, CalculateShippingDto } from './dto/order.dto';
-import { OrderStatus } from '@sellit/api-database';
+import { OrderStatus, Product, ProductDocument } from '@sellit/api-database';
 
 @Controller('orders')
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly deliveryFeeService: DeliveryFeeService,
+    @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
   ) {}
 
   /**
    * Calculate shipping cost between store and customer address
+   * Fetches current product sizes from database for accurate calculation
    * Public endpoint - works for guests and authenticated users
    */
   @Post('calculate-shipping')
@@ -41,8 +45,34 @@ export class OrdersController {
       lng: dto.customerLocation.lng,
     };
 
-    // Use shipping size from request, default to 'small' for backwards compatibility
-    const shippingSize = dto.shippingSize || 'small';
+    // Determine shipping size from products in database (preferred) or fallback to request
+    let shippingSize: ShippingSize = 'small';
+
+    if (dto.products && dto.products.length > 0) {
+      // Fetch current product sizes from database
+      const productIds = dto.products.map((p) => p.productId);
+      const products = await this.productModel
+        .find({ _id: { $in: productIds } })
+        .select('shippingSize')
+        .lean();
+
+      // Find the largest shipping size among all products
+      const sizes: ShippingSize[] = ['small', 'medium', 'large', 'extra_large'];
+      let maxIndex = 0;
+
+      for (const product of products) {
+        const size = (product.shippingSize as ShippingSize) || 'small';
+        const index = sizes.indexOf(size);
+        if (index > maxIndex) {
+          maxIndex = index;
+        }
+      }
+
+      shippingSize = sizes[maxIndex];
+    } else if (dto.shippingSize) {
+      // Fallback to provided size (deprecated, but kept for backwards compatibility)
+      shippingSize = dto.shippingSize;
+    }
 
     const result = await this.deliveryFeeService.calculateDeliveryFee(
       origin,
@@ -55,6 +85,7 @@ export class OrdersController {
       durationMinutes: result.durationMinutes,
       distanceKm: result.distanceKm,
       vehicleType: result.vehicleType,
+      shippingSize, // Return the actual size used
       currency: 'GEL',
     };
   }
