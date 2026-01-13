@@ -663,6 +663,8 @@
     "searchAddress": "Search for your address...",
     "calculatingShipping": "Calculating shipping...",
     "estimatedDelivery": "Estimated delivery",
+    "locationRequiredWarning": "Please select a location on the map to calculate shipping",
+    "locationRequiredError": "Please select your delivery location on the map before proceeding",
     "city": "City",
     "postalCode": "Postal Code",
     "country": "Country",

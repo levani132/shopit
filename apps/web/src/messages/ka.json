@@ -663,6 +663,8 @@
     "searchAddress": "მოძებნე მისამართი...",
     "calculatingShipping": "მიწოდების გაანგარიშება...",
     "estimatedDelivery": "სავარაუდო მიტანა",
+    "locationRequiredWarning": "მიწოდების ფასის გამოსათვლელად აირჩიეთ მდებარეობა რუკაზე",
+    "locationRequiredError": "გაგრძელებამდე აირჩიეთ მიტანის მდებარეობა რუკაზე",
     "city": "ქალაქი",
     "postalCode": "საფოსტო კოდი",
     "country": "ქვეყანა",

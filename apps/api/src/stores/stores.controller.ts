@@ -359,6 +359,11 @@ export class StoresController {
       location: store.location,
       hideAddress: store.hideAddress ?? false,
       isVerified: store.isVerified ?? false,
+      // Delivery settings for checkout
+      courierType: store.courierType || 'shopit',
+      selfPickupEnabled: store.selfPickupEnabled ?? false,
+      prepTimeMinDays: store.prepTimeMinDays,
+      prepTimeMaxDays: store.prepTimeMaxDays,
     };
   }
 
