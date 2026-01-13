@@ -24,7 +24,9 @@ const NON_STORE_PATTERNS = [
 ];
 
 // API base URL for checking store status
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Strip any trailing slash and add /api/v1 prefix
+const API_BASE_RAW = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = `${API_BASE_RAW.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1`;
 
 // Cache store status for a short time to avoid repeated API calls
 // Note: We cache per subdomain+cookie hash to allow different results for logged-in users
