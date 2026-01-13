@@ -28,8 +28,13 @@ async function bootstrap() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      // Allow requests with no origin (like mobile apps or Postman)
+      // Allow requests with no origin (like mobile apps, Postman, or server-to-server)
       if (!origin) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel preview/deployment URLs
+      if (origin.endsWith('.vercel.app') || origin.endsWith('.vercel.sh')) {
         return callback(null, true);
       }
 
