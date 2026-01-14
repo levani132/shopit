@@ -489,14 +489,14 @@ function CompactTimeline({
               <div
                 className={
                   (isLast ? 'left-[calc(50%-25px)]' : 'left-1/2') +
-                  'absolute top-full -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10'
+                  ' absolute top-full -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10'
                 }
               >
                 {t(`status.${status}`)}
                 <div
                   className={
                     (isLast ? 'left-[calc(50%+25px)]' : 'left-1/2') +
-                    'absolute bottom-full -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-zinc-700'
+                    ' absolute bottom-full -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-zinc-700'
                   }
                 />
               </div>
