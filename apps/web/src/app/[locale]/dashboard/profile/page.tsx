@@ -525,7 +525,8 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Banking Information */}
+        {/* Banking Information - Only for sellers and couriers */}
+        {(isSeller || isCourier || user?.role === 'admin') && (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             {tRegister('bankInformation')}
@@ -605,6 +606,7 @@ export default function ProfilePage() {
             {isSavingBank ? 'Saving...' : 'Save Banking Info'}
           </button>
         </div>
+        )}
 
         {/* Security - Only for email users */}
         {!isGoogleUser && (

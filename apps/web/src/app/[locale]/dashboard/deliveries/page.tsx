@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import Image from 'next/image';
@@ -42,6 +43,51 @@ interface Order {
   pickupPhoneNumber?: string;
 }
 
+// Georgian month names for proper localized date formatting
+const georgianMonths = [
+  'იანვარი',
+  'თებერვალი',
+  'მარტი',
+  'აპრილი',
+  'მაისი',
+  'ივნისი',
+  'ივლისი',
+  'აგვისტო',
+  'სექტემბერი',
+  'ოქტომბერი',
+  'ნოემბერი',
+  'დეკემბერი',
+];
+
+function formatDateLocalized(
+  dateString: string,
+  locale: string,
+  includeTime = false,
+): string {
+  const date = new Date(dateString);
+
+  if (locale === 'ka') {
+    const day = date.getDate();
+    const month = georgianMonths[date.getMonth()];
+    if (includeTime) {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${day} ${month}, ${hours}:${minutes}`;
+    }
+    return `${day} ${month}`;
+  }
+
+  const options: Intl.DateTimeFormatOptions = {
+    month: 'short',
+    day: 'numeric',
+  };
+  if (includeTime) {
+    options.hour = '2-digit';
+    options.minute = '2-digit';
+  }
+  return date.toLocaleDateString('en-US', options);
+}
+
 // Calculate remaining time until deadline
 function getRemainingTime(deadline: string): { text: string; isOverdue: boolean; urgency: 'normal' | 'warning' | 'danger' } {
   const now = new Date();
@@ -73,6 +119,8 @@ export default function DeliveriesPage() {
   const t = useTranslations('courier');
   const tDash = useTranslations('dashboard');
   const { user, isLoading: authLoading } = useAuth();
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ka';
 
   const [activeTab, setActiveTab] = useState<'available' | 'my'>('available');
   const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
@@ -292,12 +340,7 @@ export default function DeliveriesPage() {
                         );
                       })()}
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(order.deliveryDeadline).toLocaleDateString('ka-GE', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {formatDateLocalized(order.deliveryDeadline, locale, true)}
                       </p>
                     </div>
                   )}

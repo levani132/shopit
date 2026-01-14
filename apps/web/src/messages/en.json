@@ -28,6 +28,9 @@
     "dashboard": "Dashboard",
     "logout": "Sign Out",
     "seller": "Seller",
+    "courier": "Courier",
+    "admin": "Admin",
+    "user": "User",
     "goToDashboard": "Go to Dashboard",
     "profile": "Profile",
     "myOrders": "My Orders"

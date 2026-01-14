@@ -153,8 +153,10 @@ export function DashboardHeader() {
 
           {/* Right: Publish button + Language switcher + Theme toggle + User menu */}
           <div className="flex items-center gap-2">
-            {/* Publish Button */}
-            <PublishButton />
+            {/* Publish Button - Only for sellers */}
+            {(user?.role === 'seller' || user?.role === 'admin') && store && (
+              <PublishButton />
+            )}
 
             {/* Language Switcher */}
             <LanguageSwitcher />
@@ -212,7 +214,13 @@ export function DashboardHeader() {
                           {user?.email}
                         </p>
                         <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
-                          {tNav('seller')}
+                          {user?.role === 'admin'
+                            ? tNav('admin')
+                            : user?.role === 'courier'
+                            ? tNav('courier')
+                            : user?.role === 'seller'
+                            ? tNav('seller')
+                            : tNav('user')}
                         </span>
                       </div>
                     </div>
@@ -220,8 +228,8 @@ export function DashboardHeader() {
 
                   {/* Menu Items */}
                   <div className="py-1">
-                    {/* View My Store */}
-                    {store && (
+                    {/* View My Store - Only for sellers */}
+                    {store && (user?.role === 'seller' || user?.role === 'admin') && (
                       <a
                         href={`https://${store.subdomain}.shopit.ge`}
                         target="_blank"
@@ -310,9 +318,9 @@ export function DashboardHeader() {
               ))}
             </nav>
 
-            {/* View Store Link */}
-            <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
-              {store && (
+            {/* View Store Link - Only for sellers */}
+            {store && (user?.role === 'seller' || user?.role === 'admin') && (
+              <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
                 <a
                   href={`https://${store.subdomain}.shopit.ge`}
                   target="_blank"
@@ -325,8 +333,8 @@ export function DashboardHeader() {
                   </svg>
                   <span className="font-medium">{t('viewStore')}</span>
                 </a>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* User info and logout */}
             <div className="p-4 border-t border-gray-200 dark:border-zinc-800">

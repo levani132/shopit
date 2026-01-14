@@ -90,6 +90,53 @@ const statusOrder = [
   'delivered',
 ];
 
+// Georgian month names for proper localized date formatting
+const georgianMonths = [
+  'იანვარი',
+  'თებერვალი',
+  'მარტი',
+  'აპრილი',
+  'მაისი',
+  'ივნისი',
+  'ივლისი',
+  'აგვისტო',
+  'სექტემბერი',
+  'ოქტომბერი',
+  'ნოემბერი',
+  'დეკემბერი',
+];
+
+function formatDateLocalized(
+  dateString: string,
+  locale: string,
+  includeTime = false,
+): string {
+  const date = new Date(dateString);
+
+  if (locale === 'ka') {
+    const day = date.getDate();
+    const month = georgianMonths[date.getMonth()];
+    const year = date.getFullYear();
+    if (includeTime) {
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      return `${day} ${month}, ${year} ${hours}:${minutes}`;
+    }
+    return `${day} ${month}, ${year}`;
+  }
+
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  };
+  if (includeTime) {
+    options.hour = '2-digit';
+    options.minute = '2-digit';
+  }
+  return date.toLocaleDateString('en-US', options);
+}
+
 export default function DashboardOrdersPage() {
   const t = useTranslations('dashboard');
   const tOrders = useTranslations('orders');
@@ -289,13 +336,7 @@ export default function DashboardOrdersPage() {
                       #{order._id.slice(-8)}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      {new Date(order.createdAt).toLocaleDateString(locale, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      {formatDateLocalized(order.createdAt, locale, true)}
                     </p>
                   </div>
                   <span
@@ -408,14 +449,11 @@ export default function DashboardOrdersPage() {
                       {selectedOrder.courierAssignedAt && (
                         <p className="text-xs text-cyan-500 dark:text-cyan-500 mt-1">
                           {t('assignedAt')}:{' '}
-                          {new Date(
+                          {formatDateLocalized(
                             selectedOrder.courierAssignedAt,
-                          ).toLocaleDateString(locale, {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                            locale,
+                            true,
+                          )}
                         </p>
                       )}
                     </div>
