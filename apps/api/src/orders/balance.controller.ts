@@ -25,7 +25,15 @@ export class BalanceController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
   async getBalance(@CurrentUser() user: { id: string }) {
-    return this.balanceService.getSellerBalance(user.id);
+    const result = await this.balanceService.getSellerBalance(user.id);
+    // Map to frontend-expected field names
+    return {
+      availableBalance: result.balance,
+      pendingBalance: result.pendingWithdrawals,
+      totalEarnings: result.totalEarnings,
+      totalWithdrawn: result.totalWithdrawn,
+      waitingEarnings: result.waitingEarnings,
+    };
   }
 
   /**

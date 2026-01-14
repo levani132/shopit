@@ -181,21 +181,26 @@ export class BalanceService {
     // Get seller's store(s)
     const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) });
     if (stores.length === 0) {
+      this.logger.debug(`No stores found for seller ${sellerId}`);
       return 0;
     }
 
     const storeIds = stores.map(s => s._id);
+    this.logger.debug(`Found ${stores.length} stores for seller: ${storeIds.map(id => id.toString()).join(', ')}`);
 
     // Find all orders that are paid but not delivered
     // Status can be: paid, processing, ready_for_delivery, shipped
     const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
     
+    // Query orders that contain items from any of the seller's stores
     const orders = await this.orderModel.find({
       'orderItems.storeId': { $in: storeIds },
       isPaid: true,
       isDelivered: false,
       status: { $in: pendingDeliveryStatuses },
     });
+
+    this.logger.debug(`Found ${orders.length} pending delivery orders for seller's stores`);
 
     if (orders.length === 0) {
       return 0;
@@ -214,8 +219,9 @@ export class BalanceService {
     for (const order of orders) {
       // Group items by store (for this seller's stores only)
       for (const store of stores) {
+        const storeIdStr = store._id.toString();
         const storeItems = order.orderItems.filter(
-          item => item.storeId?.toString() === store._id.toString()
+          item => item.storeId?.toString() === storeIdStr
         );
 
         if (storeItems.length === 0) continue;
@@ -241,10 +247,12 @@ export class BalanceService {
         const totalCommissions = siteCommission + deliveryCommission;
         const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
 
+        this.logger.debug(`Order ${order._id}: items price=${itemsTotalPrice}, final amount=${finalAmount}`);
         totalWaitingEarnings += finalAmount;
       }
     }
 
+    this.logger.debug(`Total waiting earnings: ${totalWaitingEarnings}`);
     return Math.round(totalWaitingEarnings * 100) / 100; // Round to 2 decimal places
   }
 

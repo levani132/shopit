@@ -196,13 +196,37 @@ enum TransactionType {
 ### Seller Balance Fields (in User model)
 
 ```typescript
-interface SellerBalance {
-  availableBalance: number;      // Can withdraw
-  pendingBalance: number;        // Withdrawal in progress
-  totalEarnings: number;         // All-time earnings
-  totalWithdrawn: number;        // All-time withdrawals
+// User model fields
+interface UserBalanceFields {
+  balance: number;              // Current available balance
+  totalEarnings: number;        // All-time earnings (from delivered orders)
+  pendingWithdrawals: number;   // Amount being withdrawn
+  totalWithdrawn: number;       // All-time withdrawals
+}
+
+// API response (GET /api/v1/balance)
+interface SellerBalanceResponse {
+  availableBalance: number;     // Can withdraw now
+  waitingEarnings: number;      // From paid but not delivered orders
+  pendingBalance: number;       // Withdrawal in progress
+  totalEarnings: number;        // All-time earnings
+  totalWithdrawn: number;       // All-time withdrawals
 }
 ```
+
+### Waiting Earnings
+
+Waiting earnings represent money from orders that are:
+- `isPaid: true` (payment received)
+- `isDelivered: false` (not yet delivered)
+- Status in: `paid`, `processing`, `ready_for_delivery`, `shipped`
+
+This amount will be added to `availableBalance` once orders are delivered.
+
+Calculated by `BalanceService.calculateWaitingEarnings()`:
+1. Find all paid, undelivered orders for seller's store(s)
+2. Calculate expected earnings after commissions
+3. Return total waiting amount
 
 ### Commission Structure
 
