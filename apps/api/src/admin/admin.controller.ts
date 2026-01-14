@@ -619,7 +619,7 @@ export class AdminController {
 
     // Set timestamps and sync boolean flags based on status
     const now = new Date();
-    
+
     // Sync isPaid flag - any status after 'pending' means the order was paid
     if (body.status !== 'pending' && body.status !== 'cancelled') {
       order.isPaid = true;
@@ -627,11 +627,11 @@ export class AdminController {
         order.paidAt = now;
       }
     }
-    
+
     if (body.status === 'shipped' && !order.shippedAt) {
       order.shippedAt = now;
     }
-    
+
     // Sync isDelivered flag with status
     if (body.status === 'delivered') {
       order.isDelivered = true;
@@ -642,7 +642,7 @@ export class AdminController {
       // If moving away from delivered status, reset the flag
       order.isDelivered = false;
     }
-    
+
     if (body.status === 'cancelled') {
       order.cancelledAt = now;
     }
@@ -654,7 +654,9 @@ export class AdminController {
     if (body.status === 'delivered' && previousStatus !== 'delivered') {
       try {
         await this.balanceService.processOrderEarnings(order);
-        this.logger.log(`Processed earnings for order ${id} via admin status update`);
+        this.logger.log(
+          `Processed earnings for order ${id} via admin status update`,
+        );
       } catch (err) {
         this.logger.error(`Failed to process earnings for order ${id}: ${err}`);
         // Don't fail the status update, earnings processing failure shouldn't block it

@@ -22,12 +22,14 @@ interface Transaction {
   type: string;
   description: string;
   createdAt: string;
-  order?: {
+  orderId?: {
     _id: string;
   };
   commissionPercentage?: number;
   commissionAmount?: number;
-  deliveryCost?: number;
+  deliveryCommissionAmount?: number;
+  productPrice?: number;
+  finalAmount?: number;
 }
 
 const transactionTypeColors: Record<string, string> = {
@@ -328,56 +330,76 @@ export default function BalancePage() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-zinc-700">
-                {transactions.map((tx) => (
-                  <div
-                    key={tx._id}
-                    className="p-4 flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${transactionTypeColors[tx.type] || transactionTypeColors.earning}`}
-                        >
-                          {tBalance(`types.${tx.type}`)}
-                        </span>
-                        {tx.order && (
-                          <span className="text-xs text-gray-400 font-mono">
-                            #{tx.order._id.slice(-8)}
+                {transactions.map((tx) => {
+                  // For earnings, use absolute value (they should always be positive)
+                  const isEarning = tx.type === 'earning';
+                  const isWithdrawal = tx.type.startsWith('withdrawal');
+                  const displayAmount = isEarning ? Math.abs(tx.finalAmount ?? tx.amount) : tx.amount;
+                  const isPositive = isEarning || displayAmount >= 0;
+                  
+                  // Calculate total deductions for display
+                  const totalDeductions = (tx.commissionAmount ?? 0) + (tx.deliveryCommissionAmount ?? 0);
+                  
+                  return (
+                    <div
+                      key={tx._id}
+                      className="p-4 flex items-center justify-between"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${transactionTypeColors[tx.type] || transactionTypeColors.earning}`}
+                          >
+                            {tBalance(`types.${tx.type}`)}
                           </span>
+                          {tx.orderId && (
+                            <span className="text-xs text-gray-400 font-mono">
+                              #{tx.orderId._id.slice(-8)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                          {tx.description}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {new Date(tx.createdAt).toLocaleDateString(locale, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p
+                          className={`font-semibold ${
+                            isPositive
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}
+                        >
+                          {isPositive ? '+' : ''}₾{displayAmount.toFixed(2)}
+                        </p>
+                        {isEarning && tx.productPrice && tx.productPrice > 0 && (
+                          <div className="text-xs text-gray-400 space-y-0.5">
+                            <p>{tBalance('productPrice')}: ₾{tx.productPrice.toFixed(2)}</p>
+                            {totalDeductions > 0 && (
+                              <p className="text-red-400">
+                                {tBalance('deductions')}: -₾{totalDeductions.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {isWithdrawal && (
+                          <p className="text-xs text-gray-400">
+                            {tBalance(`types.${tx.type}`)}
+                          </p>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {tx.description}
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(tx.createdAt).toLocaleDateString(locale, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
                     </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-semibold ${
-                          tx.amount >= 0
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                        }`}
-                      >
-                        {tx.amount >= 0 ? '+' : ''}₾{tx.amount.toFixed(2)}
-                      </p>
-                      {tx.commissionAmount && tx.commissionAmount > 0 && (
-                        <p className="text-xs text-gray-400">
-                          -{tx.commissionPercentage}% fee: ₾
-                          {tx.commissionAmount.toFixed(2)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
