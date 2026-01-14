@@ -13,6 +13,7 @@ interface SellerBalance {
   pendingBalance: number;
   totalEarnings: number;
   totalWithdrawn: number;
+  waitingEarnings: number;
 }
 
 interface Transaction {
@@ -183,13 +184,43 @@ export default function BalancePage() {
       </div>
 
       {/* Balance cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
             {tBalance('availableBalance')}
           </p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
             ₾{(balance?.availableBalance ?? 0).toFixed(2)}
+          </p>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-zinc-700">
+          <div className="flex items-center gap-1 mb-1">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {tBalance('waitingEarnings')}
+            </p>
+            <div className="relative group">
+              <svg
+                className="w-4 h-4 text-gray-400 cursor-help"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                {tBalance('waitingEarningsTooltip')}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900 dark:border-t-zinc-700" />
+              </div>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            ₾{(balance?.waitingEarnings ?? 0).toFixed(2)}
           </p>
         </div>
 

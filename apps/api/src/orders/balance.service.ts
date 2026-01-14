@@ -137,13 +137,15 @@ export class BalanceService {
   }
 
   /**
-   * Get seller's balance summary
+   * Get seller's balance summary including waiting earnings
+   * Waiting earnings = money from orders that are paid but not yet delivered
    */
   async getSellerBalance(sellerId: string): Promise<{
     balance: number;
     totalEarnings: number;
     pendingWithdrawals: number;
     totalWithdrawn: number;
+    waitingEarnings: number;
   }> {
     const user = await this.userModel
       .findById(sellerId)
@@ -155,15 +157,95 @@ export class BalanceService {
         totalEarnings: 0,
         pendingWithdrawals: 0,
         totalWithdrawn: 0,
+        waitingEarnings: 0,
       };
     }
+
+    // Calculate waiting earnings from paid but not delivered orders
+    const waitingEarnings = await this.calculateWaitingEarnings(sellerId);
 
     return {
       balance: user.balance || 0,
       totalEarnings: user.totalEarnings || 0,
       pendingWithdrawals: user.pendingWithdrawals || 0,
       totalWithdrawn: user.totalWithdrawn || 0,
+      waitingEarnings,
     };
+  }
+
+  /**
+   * Calculate earnings from orders that are paid but not yet delivered
+   * These are orders where the seller will receive money once they're delivered
+   */
+  private async calculateWaitingEarnings(sellerId: string): Promise<number> {
+    // Get seller's store(s)
+    const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) });
+    if (stores.length === 0) {
+      return 0;
+    }
+
+    const storeIds = stores.map(s => s._id);
+
+    // Find all orders that are paid but not delivered
+    // Status can be: paid, processing, ready_for_delivery, shipped
+    const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
+    
+    const orders = await this.orderModel.find({
+      'orderItems.storeId': { $in: storeIds },
+      isPaid: true,
+      isDelivered: false,
+      status: { $in: pendingDeliveryStatuses },
+    });
+
+    if (orders.length === 0) {
+      return 0;
+    }
+
+    // Get site settings for commission rates
+    const settings = await this.siteSettingsService.getSettings();
+    const SITE_COMMISSION_RATE = settings.siteCommissionRate;
+    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate;
+    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin;
+    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax;
+
+    let totalWaitingEarnings = 0;
+
+    // Calculate expected earnings for each order
+    for (const order of orders) {
+      // Group items by store (for this seller's stores only)
+      for (const store of stores) {
+        const storeItems = order.orderItems.filter(
+          item => item.storeId?.toString() === store._id.toString()
+        );
+
+        if (storeItems.length === 0) continue;
+
+        // Calculate totals for this store's items
+        const itemsTotalPrice = storeItems.reduce(
+          (sum, item) => sum + item.price * item.qty,
+          0,
+        );
+
+        // Calculate commissions
+        const siteCommission = itemsTotalPrice * SITE_COMMISSION_RATE;
+
+        // Delivery commission (only for ShopIt courier)
+        let deliveryCommission = 0;
+        if (store.courierType !== 'seller') {
+          deliveryCommission = Math.min(
+            Math.max(itemsTotalPrice * DELIVERY_COMMISSION_RATE, DELIVERY_COMMISSION_MIN),
+            DELIVERY_COMMISSION_MAX,
+          );
+        }
+
+        const totalCommissions = siteCommission + deliveryCommission;
+        const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
+
+        totalWaitingEarnings += finalAmount;
+      }
+    }
+
+    return Math.round(totalWaitingEarnings * 100) / 100; // Round to 2 decimal places
   }
 
   /**

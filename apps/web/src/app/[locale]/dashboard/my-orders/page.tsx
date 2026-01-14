@@ -1,57 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { OrderCard, Order } from '../../../../components/orders';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
-interface OrderItem {
-  _id: string;
-  productId: string;
-  name: string;
-  qty: number;
-  price: number;
-  image?: string;
-  selectedAttributes?: Record<string, string>;
-}
-
-interface Order {
-  _id: string;
-  orderItems: OrderItem[];
-  totalPrice: number;
-  status: string;
-  isPaid: boolean;
-  paidAt?: string;
-  isDelivered: boolean;
-  deliveredAt?: string;
-  createdAt: string;
-  store?: {
-    _id: string;
-    name: string;
-    subdomain: string;
-  };
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  pending:
-    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  paid: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  processing:
-    'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  ready_for_delivery:
-    'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  shipped: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
-  delivered:
-    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  refunded: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-};
-
 export default function MyOrdersPage() {
   const t = useTranslations('dashboard');
   const tOrders = useTranslations('orders');
+  const params = useParams();
+  const locale = (params?.locale as string) || 'ka';
   const { user, isLoading: authLoading } = useAuth();
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -88,13 +50,14 @@ export default function MyOrdersPage() {
     }
   }, [authLoading, user, fetchOrders]);
 
-  const filteredOrders = showCancelled
-    ? orders
-    : orders.filter((order) => order.status !== 'cancelled');
+  const filteredOrders = useMemo(() => {
+    if (showCancelled) return orders;
+    return orders.filter((order) => order.status !== 'cancelled');
+  }, [orders, showCancelled]);
 
-  const hasCancelledOrders = orders.some(
-    (order) => order.status === 'cancelled',
-  );
+  const hasCancelledOrders = useMemo(() => {
+    return orders.some((order) => order.status === 'cancelled');
+  }, [orders]);
 
   if (authLoading || loading) {
     return (
@@ -173,115 +136,15 @@ export default function MyOrdersPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {filteredOrders.map((order) => (
-            <div
+            <OrderCard
               key={order._id}
-              className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
-            >
-              {/* Order Header */}
-              <div className="px-4 py-3 bg-gray-50 dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-700 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    #{order._id.slice(-8).toUpperCase()}
-                  </span>
-                  <span
-                    className={`px-2 py-0.5 text-xs font-medium rounded-full ${STATUS_COLORS[order.status] || STATUS_COLORS.pending}`}
-                  >
-                    {tOrders(order.status)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-                  {order.store && (
-                    <a
-                      href={`https://${order.store.subdomain}.shopit.ge`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-[var(--accent-500)] transition-colors flex items-center gap-1"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                      {order.store.name}
-                    </a>
-                  )}
-                  <span>{new Date(order.createdAt).toLocaleDateString()}</span>
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div className="p-4">
-                <div className="flex flex-wrap gap-4">
-                  {order.orderItems.slice(0, 3).map((item) => (
-                    <div key={item._id} className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gray-100 dark:bg-zinc-700 rounded overflow-hidden flex-shrink-0">
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400">
-                            <svg
-                              className="w-6 h-6"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {item.qty} × ₾{item.price.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {order.orderItems.length > 3 && (
-                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                      +{order.orderItems.length - 3} {t('moreItems')}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Order Footer */}
-              <div className="px-4 py-3 bg-gray-50 dark:bg-zinc-900 border-t border-gray-200 dark:border-zinc-700 flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                  ₾{order.totalPrice.toFixed(2)}
-                </span>
-                {order.store && (
-                  <a
-                    href={`https://${order.store.subdomain}.shopit.ge/orders`}
-                    className="text-sm text-[var(--accent-500)] hover:text-[var(--accent-600)] font-medium"
-                  >
-                    {t('viewDetails')} →
-                  </a>
-                )}
-              </div>
-            </div>
+              order={order}
+              locale={locale}
+              t={tOrders}
+              showStoreName={true}
+            />
           ))}
         </div>
       )}
