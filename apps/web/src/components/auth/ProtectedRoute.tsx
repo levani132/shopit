@@ -69,14 +69,17 @@ export function SellerProtectedRoute({
   );
 }
 
-// Wrapper for dashboard (sellers and couriers)
+// Wrapper for dashboard (all authenticated users)
+// Regular users can access profile, my-orders, wishlist, addresses
+// Sellers get additional store management features
+// Couriers get delivery management features
 export function DashboardProtectedRoute({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'seller', 'courier']}>
+    <ProtectedRoute allowedRoles={['admin', 'seller', 'courier', 'user']}>
       {children}
     </ProtectedRoute>
   );
