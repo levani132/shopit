@@ -36,7 +36,7 @@ import { AdminModule } from '../admin/admin.module';
     ]),
     ScheduleModule.forRoot(),
     forwardRef(() => PaymentsModule),
-    AdminModule,
+    forwardRef(() => AdminModule),
   ],
   controllers: [OrdersController, BalanceController],
   providers: [OrdersService, StockReservationService, BalanceService, DeliveryFeeService],

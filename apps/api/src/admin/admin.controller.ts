@@ -11,6 +11,8 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -40,6 +42,7 @@ import {
   Order,
   OrderDocument,
 } from '@sellit/api-database';
+import { BalanceService } from '../orders/balance.service';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -53,6 +56,8 @@ export class AdminController {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Store.name) private readonly storeModel: Model<StoreDocument>,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
+    @Inject(forwardRef(() => BalanceService))
+    private readonly balanceService: BalanceService,
   ) {}
 
   // ===== Site Settings =====
@@ -594,6 +599,8 @@ export class AdminController {
       throw new NotFoundException('Order not found');
     }
 
+    const previousStatus = order.status;
+
     const validStatuses = [
       'pending',
       'paid',
@@ -610,23 +617,49 @@ export class AdminController {
       );
     }
 
-    // Set timestamps based on status
+    // Set timestamps and sync boolean flags based on status
     const now = new Date();
-    if (body.status === 'paid' && !order.paidAt) {
-      order.paidAt = now;
+    
+    // Sync isPaid flag - any status after 'pending' means the order was paid
+    if (body.status !== 'pending' && body.status !== 'cancelled') {
+      order.isPaid = true;
+      if (!order.paidAt) {
+        order.paidAt = now;
+      }
     }
+    
     if (body.status === 'shipped' && !order.shippedAt) {
       order.shippedAt = now;
     }
-    if (body.status === 'delivered' && !order.deliveredAt) {
-      order.deliveredAt = now;
+    
+    // Sync isDelivered flag with status
+    if (body.status === 'delivered') {
+      order.isDelivered = true;
+      if (!order.deliveredAt) {
+        order.deliveredAt = now;
+      }
+    } else {
+      // If moving away from delivered status, reset the flag
+      order.isDelivered = false;
     }
+    
     if (body.status === 'cancelled') {
       order.cancelledAt = now;
     }
 
     order.status = body.status as any;
     await order.save();
+
+    // Process seller earnings when order becomes delivered (and wasn't already)
+    if (body.status === 'delivered' && previousStatus !== 'delivered') {
+      try {
+        await this.balanceService.processOrderEarnings(order);
+        this.logger.log(`Processed earnings for order ${id} via admin status update`);
+      } catch (err) {
+        this.logger.error(`Failed to process earnings for order ${id}: ${err}`);
+        // Don't fail the status update, earnings processing failure shouldn't block it
+      }
+    }
 
     this.logger.log(`Admin updated order ${id} status to ${body.status}`);
 
@@ -635,6 +668,8 @@ export class AdminController {
       order: {
         _id: order._id,
         status: order.status,
+        isPaid: order.isPaid,
+        isDelivered: order.isDelivered,
         paidAt: order.paidAt,
         shippedAt: order.shippedAt,
         deliveredAt: order.deliveredAt,

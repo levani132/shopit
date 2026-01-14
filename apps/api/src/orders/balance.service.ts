@@ -134,6 +134,78 @@ export class BalanceService {
         `Processed earnings for store ${storeId}: ${finalAmount} GEL (from ${itemsTotalPrice} GEL)`,
       );
     }
+
+    // Process courier earnings if order was delivered by a ShopIt courier
+    if (order.courierId) {
+      await this.processCourierEarnings(order);
+    }
+  }
+
+  /**
+   * Process courier earnings for an order after it's delivered
+   * Only for orders using ShopIt delivery (not seller self-delivery)
+   * 
+   * Courier earnings = the shipping price paid by customer
+   * The delivery commission deducted from seller goes to ShopIt platform,
+   * but the actual shipping fee (paid by buyer) goes to the courier.
+   */
+  private async processCourierEarnings(order: OrderDocument): Promise<void> {
+    if (!order.courierId) {
+      this.logger.warn(`No courier assigned to order ${order._id}`);
+      return;
+    }
+
+    // Check if courier earnings have already been processed
+    const existingCourierTransaction = await this.transactionModel.findOne({
+      sellerId: order.courierId, // We use sellerId field for courier too (they're both users)
+      orderId: order._id,
+      type: TransactionType.EARNING,
+    });
+
+    if (existingCourierTransaction) {
+      this.logger.warn(
+        `Courier earnings already processed for order ${order._id}. Skipping.`,
+      );
+      return;
+    }
+
+    const courier = await this.userModel.findById(order.courierId);
+    if (!courier) {
+      this.logger.warn(`Courier ${order.courierId} not found`);
+      return;
+    }
+
+    // Courier receives the shipping price that was paid by the customer
+    const courierEarnings = order.shippingPrice;
+
+    if (courierEarnings <= 0) {
+      this.logger.log(`No shipping fee for order ${order._id}, skipping courier earnings`);
+      return;
+    }
+
+    // Update courier's balance
+    await this.userModel.findByIdAndUpdate(courier._id, {
+      $inc: {
+        balance: courierEarnings,
+        totalEarnings: courierEarnings,
+      },
+    });
+
+    // Create transaction record for courier
+    const transaction = new this.transactionModel({
+      sellerId: courier._id, // Using sellerId field for courier (User model is shared)
+      orderId: order._id,
+      amount: courierEarnings,
+      type: TransactionType.EARNING,
+      description: `Delivery earnings from order #${order._id}`,
+      finalAmount: courierEarnings,
+    });
+
+    await transaction.save();
+
+    this.logger.log(
+      `Processed courier earnings for order ${order._id}: ${courierEarnings} GEL`,
+    );
   }
 
   /**
@@ -176,6 +248,11 @@ export class BalanceService {
   /**
    * Calculate earnings from orders that are paid but not yet delivered
    * These are orders where the seller will receive money once they're delivered
+   * 
+   * NOTE: We use status-based filtering instead of isDelivered flag because:
+   * 1. The status field is the source of truth for order state
+   * 2. isDelivered is a redundant field that can get out of sync
+   * 3. Status already tells us if order is delivered or not
    */
   private async calculateWaitingEarnings(sellerId: string): Promise<number> {
     // Get seller's store(s)
@@ -188,15 +265,16 @@ export class BalanceService {
     const storeIds = stores.map(s => s._id);
     this.logger.debug(`Found ${stores.length} stores for seller: ${storeIds.map(id => id.toString()).join(', ')}`);
 
-    // Find all orders that are paid but not delivered
-    // Status can be: paid, processing, ready_for_delivery, shipped
+    // Find all orders that are paid but not yet delivered
+    // Use status to determine delivery state (not isDelivered flag which can be out of sync)
+    // Statuses that mean "paid but not delivered": paid, processing, ready_for_delivery, shipped
     const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
     
     // Query orders that contain items from any of the seller's stores
+    // Note: We check isPaid=true for payment confirmation, but use status for delivery state
     const orders = await this.orderModel.find({
       'orderItems.storeId': { $in: storeIds },
       isPaid: true,
-      isDelivered: false,
       status: { $in: pendingDeliveryStatuses },
     });
 
@@ -388,97 +466,6 @@ export class BalanceService {
     await transaction.save();
 
     this.logger.log(`Withdrawal completed: ${transactionId}`);
-  }
-
-  /**
-   * Debug method to troubleshoot waiting earnings calculation
-   * TODO: Remove after debugging
-   */
-  async debugWaitingEarnings(sellerId: string): Promise<object> {
-    // First, let's see what user we're dealing with
-    const user = await this.userModel.findById(sellerId).select('_id email firstName lastName');
-    
-    // Get seller's store(s)
-    const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) });
-    
-    // Also check if there's a store where we can find any match
-    const anyStore = await this.storeModel.findOne({}).select('_id ownerId name');
-    
-    // Check for stores with string comparison (in case of type mismatch)
-    const allStores = await this.storeModel.find({}).select('_id ownerId name').limit(5);
-    
-    if (stores.length === 0) {
-      return {
-        sellerId,
-        sellerIdType: typeof sellerId,
-        user: user ? { id: user._id.toString(), email: user.email, name: `${user.firstName} ${user.lastName}` } : null,
-        error: 'No stores found for this seller',
-        storesCount: 0,
-        debugInfo: {
-          sampleStore: anyStore ? { 
-            id: anyStore._id.toString(), 
-            ownerId: anyStore.ownerId?.toString(),
-            ownerIdType: typeof anyStore.ownerId,
-            name: anyStore.name 
-          } : null,
-          recentStores: allStores.map(s => ({
-            id: s._id.toString(),
-            ownerId: s.ownerId?.toString(),
-            name: s.name,
-            ownerIdMatches: s.ownerId?.toString() === sellerId,
-          })),
-        },
-      };
-    }
-
-    const storeIds = stores.map(s => s._id);
-    const storeInfo = stores.map(s => ({ id: s._id.toString(), name: s.name, courierType: s.courierType }));
-
-    // Check for orders with any paid status
-    const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
-    
-    // First, let's find ALL orders that have items from this store
-    const allStoreOrders = await this.orderModel.find({
-      'orderItems.storeId': { $in: storeIds },
-    }).select('_id status isPaid isDelivered orderItems.storeId orderItems.price orderItems.qty');
-
-    // Now find orders matching our criteria
-    const matchingOrders = await this.orderModel.find({
-      'orderItems.storeId': { $in: storeIds },
-      isPaid: true,
-      isDelivered: false,
-      status: { $in: pendingDeliveryStatuses },
-    }).select('_id status isPaid isDelivered orderItems');
-
-    // Calculate waiting earnings
-    const waitingEarnings = await this.calculateWaitingEarnings(sellerId);
-
-    return {
-      sellerId,
-      storesCount: stores.length,
-      stores: storeInfo,
-      allStoreOrdersCount: allStoreOrders.length,
-      allStoreOrders: allStoreOrders.map(o => ({
-        id: o._id.toString(),
-        status: o.status,
-        isPaid: o.isPaid,
-        isDelivered: o.isDelivered,
-        storeIds: o.orderItems.map(item => item.storeId?.toString()),
-      })),
-      matchingOrdersCount: matchingOrders.length,
-      matchingOrders: matchingOrders.map(o => ({
-        id: o._id.toString(),
-        status: o.status,
-        isPaid: o.isPaid,
-        isDelivered: o.isDelivered,
-        items: o.orderItems.map(item => ({
-          storeId: item.storeId?.toString(),
-          price: item.price,
-          qty: item.qty,
-        })),
-      })),
-      calculatedWaitingEarnings: waitingEarnings,
-    };
   }
 
   /**

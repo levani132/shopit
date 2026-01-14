@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AdminController } from './admin.controller';
 import { SiteSettingsService } from './site-settings.service';
@@ -12,6 +12,7 @@ import {
   SiteSettings,
   SiteSettingsSchema,
 } from '@sellit/api-database';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import {
       { name: Order.name, schema: OrderSchema },
       { name: SiteSettings.name, schema: SiteSettingsSchema },
     ]),
+    forwardRef(() => OrdersModule),
   ],
   controllers: [AdminController],
   providers: [SiteSettingsService],

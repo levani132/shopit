@@ -66,15 +66,42 @@ interface Order {
 }
 
 enum OrderStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  PROCESSING = 'processing',
-  SHIPPED = 'shipped',
-  DELIVERED = 'delivered',
-  CANCELLED = 'cancelled',
-  REFUNDED = 'refunded',
+  PENDING = 'pending',           // Awaiting payment
+  PAID = 'paid',                 // Payment successful
+  PROCESSING = 'processing',     // Seller preparing order
+  READY_FOR_DELIVERY = 'ready_for_delivery', // Ready for courier pickup
+  SHIPPED = 'shipped',           // Courier has the order
+  DELIVERED = 'delivered',       // Customer received order
+  CANCELLED = 'cancelled',       // Order cancelled
+  REFUNDED = 'refunded',         // Order refunded
 }
 ```
+
+### Order Status Flow
+
+```
+PENDING → PAID → PROCESSING → READY_FOR_DELIVERY → SHIPPED → DELIVERED
+                                                           ↘ CANCELLED
+                                                           ↘ REFUNDED
+```
+
+### Who Can Change Status
+
+| Actor | Endpoint | Allowed Statuses |
+|-------|----------|------------------|
+| **Payment System** | `markAsPaid()` | `PENDING → PAID` |
+| **Seller (self-delivery)** | `PATCH /orders/:id/status` | `PAID → PROCESSING → SHIPPED → DELIVERED` |
+| **Seller (ShopIt delivery)** | `PATCH /orders/:id/status` | `PAID → PROCESSING → READY_FOR_DELIVERY` |
+| **Courier** | `PATCH /orders/:id/courier-status` | `READY_FOR_DELIVERY → SHIPPED → DELIVERED` |
+| **Admin** | `PATCH /admin/orders/:id/status` | Any status |
+
+### Important Notes on Status Fields
+
+- `status` is the **source of truth** for order state
+- `isPaid` boolean syncs with status (true when status != pending)
+- `isDelivered` boolean syncs with status (true only when status == delivered)
+- Always use `status` field for logic, not the boolean flags
+- Admin controller automatically syncs boolean flags and processes earnings
 
 ### Stock Reservation System
 
@@ -170,16 +197,18 @@ DELETE /api/v1/auth/addresses/:id    - Delete address
 
 ```typescript
 interface BalanceTransaction {
-  seller: ObjectId;
-  order?: ObjectId;
+  sellerId: ObjectId;                // Also used for couriers (both are users)
+  orderId?: ObjectId;
+  storeId?: ObjectId;
   amount: number;                    // Positive for earnings, negative for withdrawals
   type: TransactionType;
   description: string;
   commissionPercentage?: number;     // Site fee (10%)
   commissionAmount?: number;
-  deliveryCost?: number;
+  deliveryCommissionAmount?: number;
   productPrice?: number;
   finalAmount?: number;
+  bankAccountNumber?: string;        // For withdrawals
 }
 
 enum TransactionType {
@@ -196,7 +225,7 @@ enum TransactionType {
 ### Seller Balance Fields (in User model)
 
 ```typescript
-// User model fields
+// User model fields (same for sellers and couriers)
 interface UserBalanceFields {
   balance: number;              // Current available balance
   totalEarnings: number;        // All-time earnings (from delivered orders)
@@ -218,38 +247,67 @@ interface SellerBalanceResponse {
 
 Waiting earnings represent money from orders that are:
 - `isPaid: true` (payment received)
-- `isDelivered: false` (not yet delivered)
 - Status in: `paid`, `processing`, `ready_for_delivery`, `shipped`
+
+**IMPORTANT**: We use status-based filtering, NOT the `isDelivered` flag.
+The `isDelivered` boolean is a legacy/redundant field that can get out of sync.
+The `status` field is the source of truth for order state.
 
 This amount will be added to `availableBalance` once orders are delivered.
 
 Calculated by `BalanceService.calculateWaitingEarnings()`:
-1. Find all paid, undelivered orders for seller's store(s)
+1. Find all orders for seller's store(s) with `isPaid=true` and status NOT `delivered/cancelled/refunded`
 2. Calculate expected earnings after commissions
 3. Return total waiting amount
 
 ### Commission Structure
 
-- **Site Fee**: 10% of order total
-- **Delivery Fee**: Deducted if using ShopIt courier
-- **Seller Receives**: `orderTotal - siteFee - deliveryFee`
+- **Site Fee**: 10% of order total (configurable in site settings)
+- **Delivery Commission**: Deducted from seller if using ShopIt courier (min/max configurable)
+- **Seller Receives**: `orderTotal - siteFee - deliveryCommission`
+- **Courier Receives**: The `shippingPrice` paid by customer
 
 ### Earnings Flow
 
-1. Order is delivered
+1. Order is delivered (status = 'delivered')
 2. `BalanceService.processOrderEarnings()` is called
-3. Calculates seller's share after deductions
-4. Creates `EARNING` transaction
-5. Updates seller's `availableBalance`
+3. For each store in the order:
+   - Calculates seller's share after commissions
+   - Creates `EARNING` transaction for seller
+   - Updates seller's `balance` and `totalEarnings`
+4. If order has a courier assigned (`courierId`):
+   - `processCourierEarnings()` is called
+   - Courier receives the `shippingPrice`
+   - Creates `EARNING` transaction for courier
+   - Updates courier's `balance` and `totalEarnings`
 
 ### Withdrawal Flow
 
 1. Seller requests withdrawal
 2. Creates `WITHDRAWAL_PENDING` transaction
-3. Deducts from `availableBalance`
-4. Adds to `pendingBalance`
+3. Deducts from `balance`
+4. Adds to `pendingWithdrawals`
 5. Admin approves → `WITHDRAWAL_COMPLETED`
-6. Money transferred via BOG
+6. `pendingWithdrawals` → `totalWithdrawn`
+7. Money transferred via bank
+
+## Courier Balance System
+
+Couriers use the same balance fields as sellers in the User model.
+
+### When Courier Balance Changes
+
+| Event | Effect |
+|-------|--------|
+| Order delivered | `balance += shippingPrice`, `totalEarnings += shippingPrice` |
+| Withdrawal requested | `balance -= amount`, `pendingWithdrawals += amount` |
+| Withdrawal completed | `pendingWithdrawals -= amount`, `totalWithdrawn += amount` |
+
+### Important Notes
+
+- Couriers only earn from orders where they are the assigned courier (`order.courierId`)
+- Courier earnings = `order.shippingPrice` (what customer paid for delivery)
+- Self-delivery orders (where store uses `courierType: 'seller'`) have no courier
 
 ## Frontend Components
 

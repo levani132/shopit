@@ -20,17 +20,6 @@ export class BalanceController {
   constructor(private readonly balanceService: BalanceService) {}
 
   /**
-   * Debug endpoint to troubleshoot waiting earnings calculation
-   * TODO: Remove after debugging
-   */
-  @Get('debug-waiting')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
-  async debugWaitingEarnings(@CurrentUser() user: UserDocument & { storeId?: string }) {
-    return this.balanceService.debugWaitingEarnings(user._id.toString());
-  }
-
-  /**
    * Get current seller's balance summary
    */
   @Get()
