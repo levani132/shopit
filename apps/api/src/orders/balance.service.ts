@@ -391,6 +391,72 @@ export class BalanceService {
   }
 
   /**
+   * Debug method to troubleshoot waiting earnings calculation
+   * TODO: Remove after debugging
+   */
+  async debugWaitingEarnings(sellerId: string): Promise<object> {
+    // Get seller's store(s)
+    const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) });
+    
+    if (stores.length === 0) {
+      return {
+        sellerId,
+        error: 'No stores found for this seller',
+        storesCount: 0,
+      };
+    }
+
+    const storeIds = stores.map(s => s._id);
+    const storeInfo = stores.map(s => ({ id: s._id.toString(), name: s.name, courierType: s.courierType }));
+
+    // Check for orders with any paid status
+    const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
+    
+    // First, let's find ALL orders that have items from this store
+    const allStoreOrders = await this.orderModel.find({
+      'orderItems.storeId': { $in: storeIds },
+    }).select('_id status isPaid isDelivered orderItems.storeId orderItems.price orderItems.qty');
+
+    // Now find orders matching our criteria
+    const matchingOrders = await this.orderModel.find({
+      'orderItems.storeId': { $in: storeIds },
+      isPaid: true,
+      isDelivered: false,
+      status: { $in: pendingDeliveryStatuses },
+    }).select('_id status isPaid isDelivered orderItems');
+
+    // Calculate waiting earnings
+    const waitingEarnings = await this.calculateWaitingEarnings(sellerId);
+
+    return {
+      sellerId,
+      storesCount: stores.length,
+      stores: storeInfo,
+      allStoreOrdersCount: allStoreOrders.length,
+      allStoreOrders: allStoreOrders.map(o => ({
+        id: o._id.toString(),
+        status: o.status,
+        isPaid: o.isPaid,
+        isDelivered: o.isDelivered,
+        storeIds: o.orderItems.map(item => item.storeId?.toString()),
+      })),
+      matchingOrdersCount: matchingOrders.length,
+      matchingOrders: matchingOrders.map(o => ({
+        id: o._id.toString(),
+        status: o.status,
+        isPaid: o.isPaid,
+        isDelivered: o.isDelivered,
+        items: o.orderItems.map(item => ({
+          storeId: item.storeId?.toString(),
+          price: item.price,
+          qty: item.qty,
+        })),
+      })),
+      calculatedWaitingEarnings: waitingEarnings,
+    };
+  }
+
+  /**
    * Reject/cancel a withdrawal (returns funds to balance)
    */
   async rejectWithdrawal(
