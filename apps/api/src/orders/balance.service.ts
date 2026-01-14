@@ -395,14 +395,39 @@ export class BalanceService {
    * TODO: Remove after debugging
    */
   async debugWaitingEarnings(sellerId: string): Promise<object> {
+    // First, let's see what user we're dealing with
+    const user = await this.userModel.findById(sellerId).select('_id email firstName lastName');
+    
     // Get seller's store(s)
     const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) });
+    
+    // Also check if there's a store where we can find any match
+    const anyStore = await this.storeModel.findOne({}).select('_id ownerId name');
+    
+    // Check for stores with string comparison (in case of type mismatch)
+    const allStores = await this.storeModel.find({}).select('_id ownerId name').limit(5);
     
     if (stores.length === 0) {
       return {
         sellerId,
+        sellerIdType: typeof sellerId,
+        user: user ? { id: user._id.toString(), email: user.email, name: `${user.firstName} ${user.lastName}` } : null,
         error: 'No stores found for this seller',
         storesCount: 0,
+        debugInfo: {
+          sampleStore: anyStore ? { 
+            id: anyStore._id.toString(), 
+            ownerId: anyStore.ownerId?.toString(),
+            ownerIdType: typeof anyStore.ownerId,
+            name: anyStore.name 
+          } : null,
+          recentStores: allStores.map(s => ({
+            id: s._id.toString(),
+            ownerId: s.ownerId?.toString(),
+            name: s.name,
+            ownerIdMatches: s.ownerId?.toString() === sellerId,
+          })),
+        },
       };
     }
 

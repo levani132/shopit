@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
+import { UserDocument } from '@sellit/api-database';
 
 @Controller('balance')
 export class BalanceController {
@@ -25,8 +26,8 @@ export class BalanceController {
   @Get('debug-waiting')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
-  async debugWaitingEarnings(@CurrentUser() user: { id: string }) {
-    return this.balanceService.debugWaitingEarnings(user.id);
+  async debugWaitingEarnings(@CurrentUser() user: UserDocument & { storeId?: string }) {
+    return this.balanceService.debugWaitingEarnings(user._id.toString());
   }
 
   /**
@@ -35,8 +36,8 @@ export class BalanceController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
-  async getBalance(@CurrentUser() user: { id: string }) {
-    const result = await this.balanceService.getSellerBalance(user.id);
+  async getBalance(@CurrentUser() user: UserDocument & { storeId?: string }) {
+    const result = await this.balanceService.getSellerBalance(user._id.toString());
     // Map to frontend-expected field names
     return {
       availableBalance: result.balance,
@@ -54,11 +55,11 @@ export class BalanceController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
   async getTransactions(
-    @CurrentUser() user: { id: string },
+    @CurrentUser() user: UserDocument & { storeId?: string },
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
   ) {
-    return this.balanceService.getSellerTransactions(user.id, page, limit);
+    return this.balanceService.getSellerTransactions(user._id.toString(), page, limit);
   }
 
   /**
@@ -68,12 +69,12 @@ export class BalanceController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('seller', 'admin')
   async requestWithdrawal(
-    @CurrentUser() user: { id: string; storeId: string },
+    @CurrentUser() user: UserDocument & { storeId?: string },
     @Body() body: { amount: number },
   ) {
     return this.balanceService.requestWithdrawal(
-      user.id,
-      user.storeId,
+      user._id.toString(),
+      user.storeId || '',
       body.amount,
     );
   }
