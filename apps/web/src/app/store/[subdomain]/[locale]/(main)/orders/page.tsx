@@ -448,9 +448,10 @@ function CompactTimeline({
 }) {
   const isCancelled =
     currentStatus === 'cancelled' || currentStatus === 'refunded';
-  
+
   // Map ready_for_delivery to processing for buyers (they shouldn't see internal status)
-  const displayStatus = currentStatus === 'ready_for_delivery' ? 'processing' : currentStatus;
+  const displayStatus =
+    currentStatus === 'ready_for_delivery' ? 'processing' : currentStatus;
   const currentIndex = statusOrder.indexOf(displayStatus);
 
   if (isCancelled) {
@@ -485,9 +486,19 @@ function CompactTimeline({
               </div>
 
               {/* Tooltip on hover - positioned below, centered on just the circle */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10">
+              <div
+                className={
+                  (isLast ? 'left-[calc(50%-25px)]' : 'left-1/2') +
+                  'absolute top-full -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10'
+                }
+              >
                 {t(`status.${status}`)}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-zinc-700" />
+                <div
+                  className={
+                    (isLast ? 'left-[calc(50%+25px)]' : 'left-1/2') +
+                    'absolute bottom-full -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-zinc-700'
+                  }
+                />
               </div>
             </div>
 
@@ -598,8 +609,18 @@ function OrderFooter({
                 <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                   <p className="flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-cyan-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <svg
+                        className="w-3 h-3 text-cyan-600 dark:text-cyan-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
                       </svg>
                     </span>
                     {order.courierId.firstName} {order.courierId.lastName}
