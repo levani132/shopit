@@ -448,7 +448,10 @@ function CompactTimeline({
 }) {
   const isCancelled =
     currentStatus === 'cancelled' || currentStatus === 'refunded';
-  const currentIndex = statusOrder.indexOf(currentStatus);
+  
+  // Map ready_for_delivery to processing for buyers (they shouldn't see internal status)
+  const displayStatus = currentStatus === 'ready_for_delivery' ? 'processing' : currentStatus;
+  const currentIndex = statusOrder.indexOf(displayStatus);
 
   if (isCancelled) {
     return (
@@ -468,25 +471,27 @@ function CompactTimeline({
         const isLast = index === statusOrder.length - 1;
 
         return (
-          <div key={status} className="flex items-center group/step relative">
-            {/* Status dot with icon */}
-            <div
-              className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                isCompleted
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500'
-              }`}
-            >
-              {statusIcons[status]}
+          <div key={status} className="flex items-center">
+            {/* Status dot with icon - in its own relative container for proper tooltip positioning */}
+            <div className="relative group/step">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+                  isCompleted
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-200 dark:bg-zinc-700 text-gray-400 dark:text-gray-500'
+                }`}
+              >
+                {statusIcons[status]}
+              </div>
+
+              {/* Tooltip on hover - positioned below, centered on just the circle */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10">
+                {t(`status.${status}`)}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-zinc-700" />
+              </div>
             </div>
 
-            {/* Tooltip on hover - positioned below */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 dark:bg-zinc-700 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover/step:opacity-100 transition-opacity pointer-events-none z-10">
-              {t(`status.${status}`)}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-900 dark:border-b-zinc-700" />
-            </div>
-
-            {/* Connector line */}
+            {/* Connector line - outside the tooltip container */}
             {!isLast && (
               <div
                 className={`w-4 h-0.5 ${
