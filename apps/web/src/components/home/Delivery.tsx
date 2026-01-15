@@ -15,33 +15,37 @@ function getCouriersUrl(): string {
     // SSR fallback
     return 'https://couriers.shopit.ge';
   }
-  
+
   const { protocol, host } = window.location;
   const [hostname, port] = host.split(':');
-  
+
   // For localhost, add subdomain before it
   if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
     const baseHost = hostname.replace(/^[^.]+\./, ''); // Remove any existing subdomain
-    const newHost = port ? `couriers.${baseHost}:${port}` : `couriers.${baseHost}`;
+    const newHost = port
+      ? `couriers.${baseHost}:${port}`
+      : `couriers.${baseHost}`;
     return `${protocol}//${newHost}`;
   }
-  
+
   // For production domains like shopit.ge
   const parts = hostname.split('.');
   if (parts.length >= 2) {
     // Get the base domain (e.g., shopit.ge from www.shopit.ge or just shopit.ge)
     const baseDomain = parts.slice(-2).join('.');
-    const newHost = port ? `couriers.${baseDomain}:${port}` : `couriers.${baseDomain}`;
+    const newHost = port
+      ? `couriers.${baseDomain}:${port}`
+      : `couriers.${baseDomain}`;
     return `${protocol}//${newHost}`;
   }
-  
+
   // Fallback
   return 'https://couriers.shopit.ge';
 }
 
 export function Delivery() {
   const t = useTranslations('delivery');
-  
+
   const couriersUrl = useMemo(() => getCouriersUrl(), []);
 
   return (
