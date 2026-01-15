@@ -185,9 +185,12 @@ export class BalanceService {
     });
 
     // Create transaction record for courier
+    // Use the first store from order items (couriers deliver for stores)
+    const storeId = order.orderItems[0]?.storeId;
     const transaction = new this.transactionModel({
       sellerId: courier._id, // Using sellerId field for courier (User model is shared)
       orderId: order._id,
+      storeId: storeId, // Required field - use store from order
       amount: courierEarnings,
       type: TransactionType.EARNING,
       description: `Delivery earnings from order #${order._id}`,

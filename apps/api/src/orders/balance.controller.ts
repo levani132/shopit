@@ -79,6 +79,21 @@ export class BalanceController {
   }
 
   /**
+   * Get courier's transaction history
+   */
+  @Get('courier/transactions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier')
+  async getCourierTransactions(
+    @CurrentUser() user: UserDocument,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+  ) {
+    // Uses same method since sellerId field stores courier ID for courier transactions
+    return this.balanceService.getSellerTransactions(user._id.toString(), page, limit);
+  }
+
+  /**
    * Request withdrawal
    */
   @Post('withdraw')

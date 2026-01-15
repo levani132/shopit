@@ -64,8 +64,8 @@ export default function CourierBalancePage() {
           });
         }
 
-        // Fetch transactions
-        const response = await fetch(`${API_URL}/api/v1/balance/transactions`, {
+        // Fetch courier transactions
+        const response = await fetch(`${API_URL}/api/v1/balance/courier/transactions`, {
           credentials: 'include',
         });
         if (response.ok) {
