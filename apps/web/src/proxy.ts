@@ -145,7 +145,7 @@ function getSubdomain(hostname: string): string | null {
   return null;
 }
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 

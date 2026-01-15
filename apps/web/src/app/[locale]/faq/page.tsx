@@ -17,7 +17,6 @@ interface FaqItem {
 
 export default function FaqPage() {
   const t = useTranslations('faq');
-  const tCommon = useTranslations('common');
   const [faqs, setFaqs] = useState<FaqItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -36,14 +35,24 @@ export default function FaqPage() {
       .catch(() => setFaqs([]));
   }, []);
 
-  const categories = ['all', 'general', 'sellers', 'buyers', 'couriers', 'payments'];
-  
-  const filteredFaqs = activeCategory === 'all' 
-    ? faqs 
-    : faqs.filter(f => f.category === activeCategory);
+  const categories = [
+    'all',
+    'general',
+    'sellers',
+    'buyers',
+    'couriers',
+    'payments',
+  ];
 
-  const getQuestion = (faq: FaqItem) => locale === 'ka' ? faq.questionKa : faq.questionEn;
-  const getAnswer = (faq: FaqItem) => locale === 'ka' ? faq.answerKa : faq.answerEn;
+  const filteredFaqs =
+    activeCategory === 'all'
+      ? faqs
+      : faqs.filter((f) => f.category === activeCategory);
+
+  const getQuestion = (faq: FaqItem) =>
+    locale === 'ka' ? faq.questionKa : faq.questionEn;
+  const getAnswer = (faq: FaqItem) =>
+    locale === 'ka' ? faq.answerKa : faq.answerEn;
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900">
@@ -81,8 +90,18 @@ export default function FaqPage() {
           {/* FAQ List */}
           {filteredFaqs.length === 0 ? (
             <div className="text-center py-16">
-              <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg
+                className="w-16 h-16 mx-auto text-gray-400 mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <p className="text-gray-500 dark:text-gray-400">{t('noFaqs')}</p>
             </div>
@@ -94,7 +113,9 @@ export default function FaqPage() {
                   className="bg-gray-50 dark:bg-zinc-800 rounded-2xl overflow-hidden"
                 >
                   <button
-                    onClick={() => setExpandedId(expandedId === faq._id ? null : faq._id)}
+                    onClick={() =>
+                      setExpandedId(expandedId === faq._id ? null : faq._id)
+                    }
                     className="w-full px-6 py-5 flex items-center justify-between text-left"
                   >
                     <span className="font-medium text-gray-900 dark:text-white pr-4">
@@ -108,7 +129,12 @@ export default function FaqPage() {
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </button>
                   {expandedId === faq._id && (
@@ -125,15 +151,27 @@ export default function FaqPage() {
 
           {/* Contact CTA */}
           <div className="mt-16 text-center bg-gradient-to-r from-[var(--accent-500)] to-purple-600 rounded-2xl p-8">
-            <h2 className="text-2xl font-bold text-white mb-4">{t('stillHaveQuestions')}</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">
+              {t('stillHaveQuestions')}
+            </h2>
             <p className="text-white/90 mb-6">{t('contactUs')}</p>
             <Link
               href="/contact"
               className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[var(--accent-600)] rounded-xl hover:bg-gray-100 transition-all font-semibold"
             >
               {t('contactButton')}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
               </svg>
             </Link>
           </div>
@@ -142,4 +180,3 @@ export default function FaqPage() {
     </div>
   );
 }
-
