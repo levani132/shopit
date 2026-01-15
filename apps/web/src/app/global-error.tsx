@@ -11,22 +11,31 @@ export default function GlobalError({
 }) {
   return (
     <html lang="en">
-      <body style={{ 
-        margin: 0, 
-        minHeight: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: '#f9fafb',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
-      }}>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Error - ShopIt</title>
+      </head>
+      <body
+        style={{
+          margin: 0,
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#f9fafb',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+        }}
+      >
         <div style={{ textAlign: 'center' }}>
-          <h2 style={{ 
-            fontSize: '1.5rem', 
-            fontWeight: 'bold', 
-            color: '#111827', 
-            marginBottom: '1rem' 
-          }}>
+          <h2
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 'bold',
+              color: '#111827',
+              marginBottom: '1rem',
+            }}
+          >
             Something went wrong!
           </h2>
           <button
@@ -38,7 +47,7 @@ export default function GlobalError({
               border: 'none',
               borderRadius: '0.5rem',
               cursor: 'pointer',
-              fontSize: '1rem'
+              fontSize: '1rem',
             }}
           >
             Try again
@@ -48,5 +57,3 @@ export default function GlobalError({
     </html>
   );
 }
-
-
