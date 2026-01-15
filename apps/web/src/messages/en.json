@@ -70,7 +70,18 @@
   },
   "paymentMethods": {
     "title": "Receive Payments Securely",
-    "subtitle": "Accept payments from any Georgian bank or PayPal"
+    "subtitle": "Accept payments from any Georgian bank or PayPal",
+    "secureTransactions": "Secure transactions",
+    "instantPayouts": "Instant payouts",
+    "noHiddenFees": "No hidden fees"
+  },
+  "delivery": {
+    "title": "Let Us Handle Delivery",
+    "subtitle": "Focus on your products while ShopIt couriers deliver to your customers anywhere in Georgia",
+    "fastDelivery": "Fast delivery",
+    "trackingIncluded": "Real-time tracking",
+    "allGeorgia": "Coverage across Georgia",
+    "becomeACourier": "Become a Courier"
   },
   "analytics": {
     "title": "Analyze Your Earnings",

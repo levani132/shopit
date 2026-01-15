@@ -33,7 +33,7 @@ export function PaymentMethods() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Secure transactions</span>
+                <span>{t('secureTransactions')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <svg
@@ -47,7 +47,7 @@ export function PaymentMethods() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>Instant payouts</span>
+                <span>{t('instantPayouts')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                 <svg
@@ -61,7 +61,7 @@ export function PaymentMethods() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span>No hidden fees</span>
+                <span>{t('noHiddenFees')}</span>
               </div>
             </div>
 

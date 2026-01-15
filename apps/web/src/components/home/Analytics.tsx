@@ -31,40 +31,8 @@ export function Analytics() {
     <section className="py-20 bg-white dark:bg-zinc-900 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left side - Content */}
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              {t('title')}
-            </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">{t('subtitle')}</p>
-
-            {/* Features list */}
-            <div className="mt-8 space-y-4">
-              {features.map((feature) => (
-                <div
-                  key={feature.key}
-                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  <div
-                    className={`w-12 h-12 ${feature.bgColor} rounded-xl flex items-center justify-center`}
-                  >
-                    <feature.icon className={`w-6 h-6 ${feature.color}`} />
-                  </div>
-                  <span className="text-lg font-medium text-gray-900 dark:text-white">
-                    {t(`features.${feature.key}`)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* CTA */}
-            <div className="mt-10">
-              <CtaButton />
-            </div>
-          </div>
-
-          {/* Right side - Analytics dashboard mockup */}
-          <div className="relative">
+          {/* Left side - Analytics dashboard mockup */}
+          <div className="relative order-1 lg:order-1">
             <div className="bg-gray-900 rounded-2xl p-6 shadow-2xl">
               {/* Dashboard header */}
               <div className="flex items-center justify-between mb-6">
@@ -125,6 +93,38 @@ export function Analytics() {
             {/* Floating decoration */}
             <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-50 dark:opacity-20 blur-xl" style={{ backgroundColor: 'var(--accent-100)' }} />
             <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-purple-100 dark:bg-purple-900 rounded-full opacity-50 dark:opacity-20 blur-xl" />
+          </div>
+
+          {/* Right side - Content */}
+          <div className="order-2 lg:order-2">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+              {t('title')}
+            </h2>
+            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">{t('subtitle')}</p>
+
+            {/* Features list */}
+            <div className="mt-8 space-y-4">
+              {features.map((feature) => (
+                <div
+                  key={feature.key}
+                  className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <div
+                    className={`w-12 h-12 ${feature.bgColor} rounded-xl flex items-center justify-center`}
+                  >
+                    <feature.icon className={`w-6 h-6 ${feature.color}`} />
+                  </div>
+                  <span className="text-lg font-medium text-gray-900 dark:text-white">
+                    {t(`features.${feature.key}`)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-10">
+              <CtaButton />
+            </div>
           </div>
         </div>
       </div>
