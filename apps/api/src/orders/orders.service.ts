@@ -244,8 +244,9 @@ export class OrdersService {
             storeId: new Types.ObjectId(item.storeId),
             storeName: store.name, // Use DB store name
             courierType: store.courierType,
-            prepTimeMinDays: store.prepTimeMinDays,
-            prepTimeMaxDays: store.prepTimeMaxDays,
+            // If noPrepRequired is true, prep time is 0 (items ship same day)
+            prepTimeMinDays: store.noPrepRequired ? 0 : (store.prepTimeMinDays || 0),
+            prepTimeMaxDays: store.noPrepRequired ? 0 : (store.prepTimeMaxDays || 0),
             deliveryMinDays: store.deliveryMinDays,
             deliveryMaxDays: store.deliveryMaxDays,
             shippingSize: product.shippingSize || 'small',
