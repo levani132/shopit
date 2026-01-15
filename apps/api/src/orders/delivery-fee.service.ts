@@ -71,22 +71,26 @@ export class DeliveryFeeService {
 
       // Call OpenRouteService Directions API
       // Using GET endpoint with GeoJSON response format
-      const url = `${this.baseUrl}/directions/driving-car?` +
+      const url =
+        `${this.baseUrl}/directions/driving-car?` +
         `start=${origin.lng},${origin.lat}&end=${destination.lng},${destination.lat}`;
-      
+
       this.logger.debug(`Calling OpenRouteService: ${url}`);
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': this.apiKey,
-          'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+          Authorization: this.apiKey,
+          Accept:
+            'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
-        const errorBody = await response.text().catch(() => 'Unable to read error body');
+        const errorBody = await response
+          .text()
+          .catch(() => 'Unable to read error body');
         this.logger.error(
           `OpenRouteService API error: ${response.status} ${response.statusText}. Body: ${errorBody}`,
         );
@@ -107,7 +111,10 @@ export class DeliveryFeeService {
       const distanceKm = Math.round((summary.distance / 1000) * 10) / 10;
 
       // Calculate fee using configurable settings based on shipping size
-      const { fee, vehicleType } = await this.calculateFee(durationMinutes, shippingSize);
+      const { fee, vehicleType } = await this.calculateFee(
+        durationMinutes,
+        shippingSize,
+      );
 
       this.logger.debug(
         `Delivery fee calculated: ${fee} GEL for ${durationMinutes} min (${distanceKm} km) - ${vehicleType}`,
@@ -213,4 +220,3 @@ export class DeliveryFeeService {
     };
   }
 }
-
