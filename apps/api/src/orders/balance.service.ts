@@ -164,8 +164,10 @@ export class BalanceService {
 
     // Courier receives a percentage of the shipping price
     const shippingPrice = order.shippingPrice;
-    const courierEarnings = Math.round(shippingPrice * courierEarningsPercentage * 100) / 100;
-    const platformFee = Math.round((shippingPrice - courierEarnings) * 100) / 100;
+    const courierEarnings =
+      Math.round(shippingPrice * courierEarningsPercentage * 100) / 100;
+    const platformFee =
+      Math.round((shippingPrice - courierEarnings) * 100) / 100;
 
     if (courierEarnings <= 0) {
       this.logger.log(
@@ -265,7 +267,8 @@ export class BalanceService {
     }
 
     // Calculate waiting earnings from assigned but not delivered orders
-    const waitingEarnings = await this.calculateCourierWaitingEarnings(courierId);
+    const waitingEarnings =
+      await this.calculateCourierWaitingEarnings(courierId);
 
     return {
       balance: user.balance || 0,
@@ -279,7 +282,9 @@ export class BalanceService {
   /**
    * Calculate waiting earnings for courier from assigned but not delivered orders
    */
-  private async calculateCourierWaitingEarnings(courierId: string): Promise<number> {
+  private async calculateCourierWaitingEarnings(
+    courierId: string,
+  ): Promise<number> {
     // Get courier earnings percentage from settings (default 80%)
     const settings = await this.siteSettingsService.getSettings();
     const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;

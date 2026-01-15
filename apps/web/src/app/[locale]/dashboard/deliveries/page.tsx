@@ -43,6 +43,8 @@ interface Order {
   pickupPhoneNumber?: string;
   // Recipient info
   recipientName?: string;
+  // Courier earnings (calculated by API based on earnings percentage)
+  courierEarning?: number;
 }
 
 // Georgian month names for proper localized date formatting
@@ -352,7 +354,7 @@ export default function DeliveriesPage() {
                       {t('yourEarning')}
                     </p>
                     <p className="font-semibold text-green-600 dark:text-green-400">
-                      ₾{order.shippingPrice.toFixed(2)}
+                      ₾{(order.courierEarning ?? order.shippingPrice).toFixed(2)}
                     </p>
                   </div>
                 </div>

@@ -13,21 +13,39 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { OrdersService } from './orders.service';
 import { DeliveryFeeService, Location, ShippingSize } from './delivery-fee.service';
+import { SiteSettingsService } from '../admin/site-settings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { CreateOrderDto, ValidateCartDto, CalculateShippingDto } from './dto/order.dto';
-import { OrderStatus, Product, ProductDocument } from '@sellit/api-database';
+import { OrderStatus, Product, ProductDocument, OrderDocument } from '@sellit/api-database';
 
 @Controller('orders')
 export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly deliveryFeeService: DeliveryFeeService,
+    private readonly siteSettingsService: SiteSettingsService,
     @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
   ) {}
+
+  /**
+   * Transform orders to include calculated courier earnings
+   */
+  private async addCourierEarningsToOrders(orders: OrderDocument[]) {
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
+    return orders.map(order => {
+      const orderObj = order.toObject ? order.toObject() : order;
+      return {
+        ...orderObj,
+        courierEarning: Math.round(orderObj.shippingPrice * courierEarningsPercentage * 100) / 100,
+      };
+    });
+  }
 
   /**
    * Calculate shipping cost between store and customer address
@@ -219,23 +237,27 @@ export class OrdersController {
   /**
    * Get orders ready for delivery (courier action)
    * Returns orders with status READY_FOR_DELIVERY that use ShopIt delivery
+   * Includes calculated courierEarning based on earnings percentage
    */
   @Get('courier/available')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('courier', 'admin')
   async getAvailableOrdersForCourier() {
-    return this.ordersService.getOrdersReadyForDelivery();
+    const orders = await this.ordersService.getOrdersReadyForDelivery();
+    return this.addCourierEarningsToOrders(orders);
   }
 
   /**
    * Get orders assigned to the current courier
+   * Includes calculated courierEarning based on earnings percentage
    */
   @Get('courier/my-orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('courier', 'admin')
   async getCourierOrders(@CurrentUser() user: { id: string; _id?: { toString(): string } }) {
     const userId = user.id || user._id?.toString();
-    return this.ordersService.getOrdersByCourier(userId);
+    const orders = await this.ordersService.getOrdersByCourier(userId);
+    return this.addCourierEarningsToOrders(orders);
   }
 
   /**
