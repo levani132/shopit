@@ -294,18 +294,50 @@ Calculated by `BalanceService.calculateWaitingEarnings()`:
 
 Couriers use the same balance fields as sellers in the User model.
 
+### Courier Earnings Calculation
+
+```
+courierEarnings = shippingPrice × courierEarningsPercentage (default 80%)
+platformFee = shippingPrice × (1 - courierEarningsPercentage) (default 20%)
+```
+
+Example: For ₾9.50 shipping price with 80% rate:
+- Courier receives: ₾7.60
+- Platform keeps: ₾1.90
+
+### Courier Balance Fields
+
+```typescript
+// API response (GET /api/v1/balance/courier)
+interface CourierBalanceResponse {
+  balance: number;           // Available to withdraw
+  waitingEarnings: number;   // From assigned but not delivered orders
+  pendingWithdrawals: number; // Withdrawal in progress
+  totalEarnings: number;     // All-time earnings
+  totalWithdrawn: number;    // All-time withdrawals
+}
+```
+
 ### When Courier Balance Changes
 
 | Event | Effect |
 |-------|--------|
-| Order delivered | `balance += shippingPrice`, `totalEarnings += shippingPrice` |
+| Order delivered | `balance += shippingPrice * 80%`, `totalEarnings += same` |
 | Withdrawal requested | `balance -= amount`, `pendingWithdrawals += amount` |
 | Withdrawal completed | `pendingWithdrawals -= amount`, `totalWithdrawn += amount` |
+
+### Waiting Earnings for Couriers
+
+Waiting earnings = sum of expected earnings from orders that are:
+- Assigned to the courier (`order.courierId` matches)
+- Status in: `ready_for_delivery`, `shipped`
+
+This shows couriers how much they'll earn once they complete their current deliveries.
 
 ### Important Notes
 
 - Couriers only earn from orders where they are the assigned courier (`order.courierId`)
-- Courier earnings = `order.shippingPrice` (what customer paid for delivery)
+- Courier earnings = `shippingPrice × courierEarningsPercentage` (configurable in site settings)
 - Self-delivery orders (where store uses `courierType: 'seller'`) have no courier
 
 ## Frontend Components

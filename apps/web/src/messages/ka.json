@@ -815,6 +815,7 @@
     "deliveryDeadline": "ვადა",
     "estimatedTime": "სავარაუდო დრო",
     "courierBalance": "კურიერის ბალანსი",
+    "pendingDeliveries": "მიმდინარე შეკვეთებიდან",
     "courierAnalytics": "ანალიტიკა",
     "totalDeliveries": "სულ მიტანები",
     "thisWeek": "ეს კვირა",

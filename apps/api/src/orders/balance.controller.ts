@@ -48,6 +48,23 @@ export class BalanceController {
   }
 
   /**
+   * Get current courier's balance summary
+   */
+  @Get('courier')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier')
+  async getCourierBalance(@CurrentUser() user: UserDocument) {
+    const result = await this.balanceService.getCourierBalance(user._id.toString());
+    return {
+      balance: result.balance,
+      pendingWithdrawals: result.pendingWithdrawals,
+      totalEarnings: result.totalEarnings,
+      totalWithdrawn: result.totalWithdrawn,
+      waitingEarnings: result.waitingEarnings,
+    };
+  }
+
+  /**
    * Get seller's transaction history
    */
   @Get('transactions')

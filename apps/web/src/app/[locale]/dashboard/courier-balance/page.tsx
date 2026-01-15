@@ -12,6 +12,7 @@ interface BalanceData {
   pendingWithdrawals: number;
   totalEarnings: number;
   totalWithdrawn: number;
+  waitingEarnings: number;
 }
 
 interface Transaction {
@@ -45,13 +46,23 @@ export default function CourierBalancePage() {
 
     const fetchData = async () => {
       try {
-        // Fetch balance info from user data
-        setBalance({
-          balance: user.balance || 0,
-          pendingWithdrawals: user.pendingWithdrawals || 0,
-          totalEarnings: user.totalEarnings || 0,
-          totalWithdrawn: user.totalWithdrawn || 0,
+        // Fetch balance info from courier endpoint
+        const balanceResponse = await fetch(`${API_URL}/api/v1/balance/courier`, {
+          credentials: 'include',
         });
+        if (balanceResponse.ok) {
+          const balanceData = await balanceResponse.json();
+          setBalance(balanceData);
+        } else {
+          // Fallback to user data if endpoint fails
+          setBalance({
+            balance: user.balance || 0,
+            pendingWithdrawals: user.pendingWithdrawals || 0,
+            totalEarnings: user.totalEarnings || 0,
+            totalWithdrawn: user.totalWithdrawn || 0,
+            waitingEarnings: 0,
+          });
+        }
 
         // Fetch transactions
         const response = await fetch(`${API_URL}/api/v1/balance/transactions`, {
@@ -59,7 +70,7 @@ export default function CourierBalancePage() {
         });
         if (response.ok) {
           const data = await response.json();
-          setTransactions(data);
+          setTransactions(data.transactions || data);
         }
       } catch (err) {
         console.error('Error fetching balance:', err);
@@ -134,13 +145,24 @@ export default function CourierBalancePage() {
       </p>
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-gray-200 dark:border-zinc-700">
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
             {t('availableBalance')}
           </p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">
             ₾{balance?.balance.toFixed(2) || '0.00'}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/20">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
+            {t('waitingEarnings')}
+          </p>
+          <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            ₾{balance?.waitingEarnings?.toFixed(2) || '0.00'}
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            {tCourier('pendingDeliveries')}
           </p>
         </div>
         <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-gray-200 dark:border-zinc-700">

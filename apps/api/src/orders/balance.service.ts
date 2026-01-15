@@ -158,8 +158,14 @@ export class BalanceService {
       return;
     }
 
-    // Courier receives the shipping price that was paid by the customer
-    const courierEarnings = order.shippingPrice;
+    // Get courier earnings percentage from settings (default 80%)
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
+    // Courier receives a percentage of the shipping price
+    const shippingPrice = order.shippingPrice;
+    const courierEarnings = Math.round(shippingPrice * courierEarningsPercentage * 100) / 100;
+    const platformFee = Math.round((shippingPrice - courierEarnings) * 100) / 100;
 
     if (courierEarnings <= 0) {
       this.logger.log(
@@ -183,13 +189,16 @@ export class BalanceService {
       amount: courierEarnings,
       type: TransactionType.EARNING,
       description: `Delivery earnings from order #${order._id}`,
+      productPrice: shippingPrice, // Store original shipping price
+      commissionPercentage: (1 - courierEarningsPercentage) * 100, // Platform fee %
+      commissionAmount: platformFee,
       finalAmount: courierEarnings,
     });
 
     await transaction.save();
 
     this.logger.log(
-      `Processed courier earnings for order ${order._id}: ${courierEarnings} GEL`,
+      `Processed courier earnings for order ${order._id}: ${courierEarnings} GEL (${courierEarningsPercentage * 100}% of ${shippingPrice} GEL)`,
     );
   }
 
@@ -228,6 +237,74 @@ export class BalanceService {
       totalWithdrawn: user.totalWithdrawn || 0,
       waitingEarnings,
     };
+  }
+
+  /**
+   * Get courier's balance summary including waiting earnings
+   * Waiting earnings = money from orders assigned to courier but not yet delivered
+   */
+  async getCourierBalance(courierId: string): Promise<{
+    balance: number;
+    totalEarnings: number;
+    pendingWithdrawals: number;
+    totalWithdrawn: number;
+    waitingEarnings: number;
+  }> {
+    const user = await this.userModel
+      .findById(courierId)
+      .select('balance totalEarnings pendingWithdrawals totalWithdrawn');
+
+    if (!user) {
+      return {
+        balance: 0,
+        totalEarnings: 0,
+        pendingWithdrawals: 0,
+        totalWithdrawn: 0,
+        waitingEarnings: 0,
+      };
+    }
+
+    // Calculate waiting earnings from assigned but not delivered orders
+    const waitingEarnings = await this.calculateCourierWaitingEarnings(courierId);
+
+    return {
+      balance: user.balance || 0,
+      totalEarnings: user.totalEarnings || 0,
+      pendingWithdrawals: user.pendingWithdrawals || 0,
+      totalWithdrawn: user.totalWithdrawn || 0,
+      waitingEarnings,
+    };
+  }
+
+  /**
+   * Calculate waiting earnings for courier from assigned but not delivered orders
+   */
+  private async calculateCourierWaitingEarnings(courierId: string): Promise<number> {
+    // Get courier earnings percentage from settings (default 80%)
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
+    // Find orders assigned to this courier that are not yet delivered
+    // Statuses: ready_for_delivery (just assigned), shipped (in transit)
+    const pendingStatuses = ['ready_for_delivery', 'shipped'];
+
+    const orders = await this.orderModel.find({
+      courierId: new Types.ObjectId(courierId),
+      status: { $in: pendingStatuses },
+    });
+
+    if (orders.length === 0) {
+      return 0;
+    }
+
+    // Sum up expected earnings (shipping price * earnings percentage)
+    let totalWaitingEarnings = 0;
+    for (const order of orders) {
+      const courierEarnings = order.shippingPrice * courierEarningsPercentage;
+      totalWaitingEarnings += courierEarnings;
+    }
+
+    return Math.round(totalWaitingEarnings * 100) / 100;
   }
 
   /**

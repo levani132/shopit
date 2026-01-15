@@ -815,6 +815,7 @@
     "deliveryDeadline": "Deadline",
     "estimatedTime": "Est. Time",
     "courierBalance": "Courier Balance",
+    "pendingDeliveries": "From pending deliveries",
     "courierAnalytics": "Analytics",
     "totalDeliveries": "Total Deliveries",
     "thisWeek": "This Week",
