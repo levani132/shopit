@@ -246,6 +246,59 @@ export class BalanceService {
   }
 
   /**
+   * Debug method to see what's happening with balance calculation
+   */
+  async debugBalance(sellerId: string): Promise<object> {
+    const user = await this.userModel.findById(sellerId).select('email firstName lastName balance totalEarnings');
+    const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) }).select('_id name courierType');
+    
+    if (stores.length === 0) {
+      return { error: 'No stores found', sellerId, user };
+    }
+
+    const storeIds = stores.map(s => s._id);
+    const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
+    
+    // Get ALL orders for these stores
+    const allOrders = await this.orderModel.find({
+      'orderItems.storeId': { $in: storeIds },
+    }).select('_id status isPaid paidAt isDelivered itemsPrice shippingPrice totalPrice orderItems.storeId orderItems.price orderItems.qty');
+
+    // Get matching orders (paid, not delivered)
+    const matchingOrders = await this.orderModel.find({
+      'orderItems.storeId': { $in: storeIds },
+      isPaid: true,
+      status: { $in: pendingDeliveryStatuses },
+    }).select('_id status isPaid paidAt isDelivered itemsPrice shippingPrice totalPrice');
+
+    const waitingEarnings = await this.calculateWaitingEarnings(sellerId);
+
+    return {
+      sellerId,
+      user: user ? { id: user._id.toString(), email: user.email, balance: user.balance, totalEarnings: user.totalEarnings } : null,
+      stores: stores.map(s => ({ id: s._id.toString(), name: s.name, courierType: s.courierType })),
+      allOrdersCount: allOrders.length,
+      allOrders: allOrders.map(o => ({
+        id: o._id.toString(),
+        status: o.status,
+        isPaid: o.isPaid,
+        paidAt: o.paidAt,
+        isDelivered: o.isDelivered,
+        itemsPrice: o.itemsPrice,
+        shippingPrice: o.shippingPrice,
+        totalPrice: o.totalPrice,
+      })),
+      matchingOrdersCount: matchingOrders.length,
+      matchingOrders: matchingOrders.map(o => ({
+        id: o._id.toString(),
+        status: o.status,
+        isPaid: o.isPaid,
+      })),
+      calculatedWaitingEarnings: waitingEarnings,
+    };
+  }
+
+  /**
    * Calculate earnings from orders that are paid but not yet delivered
    * These are orders where the seller will receive money once they're delivered
    * 

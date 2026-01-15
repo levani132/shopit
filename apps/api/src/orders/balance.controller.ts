@@ -20,6 +20,16 @@ export class BalanceController {
   constructor(private readonly balanceService: BalanceService) {}
 
   /**
+   * Debug endpoint - check order data for balance calculation
+   */
+  @Get('debug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('seller', 'admin')
+  async debugBalance(@CurrentUser() user: UserDocument & { storeId?: string }) {
+    return this.balanceService.debugBalance(user._id.toString());
+  }
+
+  /**
    * Get current seller's balance summary
    */
   @Get()

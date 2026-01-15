@@ -334,12 +334,16 @@ export default function BalancePage() {
                   // For earnings, use absolute value (they should always be positive)
                   const isEarning = tx.type === 'earning';
                   const isWithdrawal = tx.type.startsWith('withdrawal');
-                  const displayAmount = isEarning ? Math.abs(tx.finalAmount ?? tx.amount) : tx.amount;
+                  const displayAmount = isEarning
+                    ? Math.abs(tx.finalAmount ?? tx.amount)
+                    : tx.amount;
                   const isPositive = isEarning || displayAmount >= 0;
-                  
+
                   // Calculate total deductions for display
-                  const totalDeductions = (tx.commissionAmount ?? 0) + (tx.deliveryCommissionAmount ?? 0);
-                  
+                  const totalDeductions =
+                    (tx.commissionAmount ?? 0) +
+                    (tx.deliveryCommissionAmount ?? 0);
+
                   return (
                     <div
                       key={tx._id}
@@ -381,16 +385,22 @@ export default function BalancePage() {
                         >
                           {isPositive ? '+' : ''}₾{displayAmount.toFixed(2)}
                         </p>
-                        {isEarning && tx.productPrice && tx.productPrice > 0 && (
-                          <div className="text-xs text-gray-400 space-y-0.5">
-                            <p>{tBalance('productPrice')}: ₾{tx.productPrice.toFixed(2)}</p>
-                            {totalDeductions > 0 && (
-                              <p className="text-red-400">
-                                {tBalance('deductions')}: -₾{totalDeductions.toFixed(2)}
+                        {isEarning &&
+                          tx.productPrice &&
+                          tx.productPrice > 0 && (
+                            <div className="text-xs text-gray-400 space-y-0.5">
+                              <p>
+                                {tBalance('productPrice')}: ₾
+                                {tx.productPrice.toFixed(2)}
                               </p>
-                            )}
-                          </div>
-                        )}
+                              {totalDeductions > 0 && (
+                                <p className="text-red-400">
+                                  {tBalance('deductions')}: -₾
+                                  {totalDeductions.toFixed(2)}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         {isWithdrawal && (
                           <p className="text-xs text-gray-400">
                             {tBalance(`types.${tx.type}`)}
