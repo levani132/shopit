@@ -70,20 +70,25 @@ export class DeliveryFeeService {
       }
 
       // Call OpenRouteService Directions API
-      const response = await fetch(
-        `${this.baseUrl}/directions/driving-car?` +
-          `start=${origin.lng},${origin.lat}&end=${destination.lng},${destination.lat}`,
-        {
-          headers: {
-            Authorization: this.apiKey,
-            Accept: 'application/json',
-          },
+      // Using GET endpoint with GeoJSON response format
+      const url = `${this.baseUrl}/directions/driving-car?` +
+        `start=${origin.lng},${origin.lat}&end=${destination.lng},${destination.lat}`;
+      
+      this.logger.debug(`Calling OpenRouteService: ${url}`);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': this.apiKey,
+          'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+          'Content-Type': 'application/json',
         },
-      );
+      });
 
       if (!response.ok) {
+        const errorBody = await response.text().catch(() => 'Unable to read error body');
         this.logger.error(
-          `OpenRouteService API error: ${response.status} ${response.statusText}`,
+          `OpenRouteService API error: ${response.status} ${response.statusText}. Body: ${errorBody}`,
         );
         return this.getFallbackFee(shippingSize);
       }
