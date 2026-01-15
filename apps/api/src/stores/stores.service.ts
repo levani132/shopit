@@ -324,6 +324,7 @@ export class StoresService {
       'staging',
       'prod',
       'production',
+      'courier',
       'couriers',
     ];
     if (reserved.includes(normalized)) {

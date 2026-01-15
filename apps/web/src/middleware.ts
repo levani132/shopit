@@ -172,8 +172,8 @@ export default async function middleware(request: NextRequest) {
   // Check for subdomain (seller store or special portals)
   const subdomain = getSubdomain(hostname);
 
-  // Special handling for courier portal
-  if (subdomain === 'couriers') {
+  // Special handling for courier portal (supports both 'courier' and 'couriers')
+  if (subdomain === 'couriers' || subdomain === 'courier') {
     const url = request.nextUrl.clone();
 
     // Handle locale in the courier portal path

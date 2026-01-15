@@ -1,11 +1,48 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import Image from 'next/image';
 import { CtaButton } from '../ui/CtaButton';
 
+/**
+ * Generate the couriers subdomain URL based on current hostname
+ * e.g., shopit.ge -> couriers.shopit.ge
+ * e.g., localhost:3000 -> couriers.localhost:3000
+ */
+function getCouriersUrl(): string {
+  if (typeof window === 'undefined') {
+    // SSR fallback
+    return 'https://couriers.shopit.ge';
+  }
+  
+  const { protocol, host } = window.location;
+  const [hostname, port] = host.split(':');
+  
+  // For localhost, add subdomain before it
+  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
+    const baseHost = hostname.replace(/^[^.]+\./, ''); // Remove any existing subdomain
+    const newHost = port ? `couriers.${baseHost}:${port}` : `couriers.${baseHost}`;
+    return `${protocol}//${newHost}`;
+  }
+  
+  // For production domains like shopit.ge
+  const parts = hostname.split('.');
+  if (parts.length >= 2) {
+    // Get the base domain (e.g., shopit.ge from www.shopit.ge or just shopit.ge)
+    const baseDomain = parts.slice(-2).join('.');
+    const newHost = port ? `couriers.${baseDomain}:${port}` : `couriers.${baseDomain}`;
+    return `${protocol}//${newHost}`;
+  }
+  
+  // Fallback
+  return 'https://couriers.shopit.ge';
+}
+
 export function Delivery() {
   const t = useTranslations('delivery');
+  
+  const couriersUrl = useMemo(() => getCouriersUrl(), []);
 
   return (
     <section className="py-16 md:py-24 bg-white dark:bg-zinc-900 overflow-hidden">
@@ -23,7 +60,7 @@ export function Delivery() {
               />
               {/* Fallback gradient overlay for when image doesn't load */}
               <div className="absolute inset-0 bg-gradient-to-br from-orange-400/20 to-red-500/20" />
-              
+
               {/* Decorative courier icon */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="bg-white/10 backdrop-blur-sm rounded-full p-6">
@@ -177,7 +214,7 @@ export function Delivery() {
             <div className="flex flex-col sm:flex-row gap-4">
               <CtaButton />
               <a
-                href="https://couriers.shopit.ge"
+                href={couriersUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
@@ -204,4 +241,3 @@ export function Delivery() {
     </section>
   );
 }
-

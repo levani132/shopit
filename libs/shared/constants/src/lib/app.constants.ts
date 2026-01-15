@@ -44,6 +44,8 @@ export const RESERVED_SUBDOMAINS = [
   'billing',
   'payment',
   'checkout',
+  'courier',
+  'couriers',
 ] as const;
 
 // Pagination defaults
