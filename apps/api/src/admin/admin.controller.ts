@@ -26,11 +26,9 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
-import { CurrentUser } from '../decorators/current-user.decorator';
 import { SiteSettingsService } from './site-settings.service';
 import {
   UpdateSiteSettingsDto,
-  CourierApplicationActionDto,
   ListUsersQueryDto,
   ListStoresQueryDto,
   ListOrdersQueryDto,
@@ -105,8 +103,8 @@ export class AdminController {
       pendingCourierApplications,
     ] = await Promise.all([
       this.userModel.countDocuments(),
-      this.userModel.countDocuments({ role: 'seller' }),
-      this.userModel.countDocuments({ role: 'courier' }),
+      this.userModel.countDocuments({ role: { $bitsAllSet: Role.SELLER } }),
+      this.userModel.countDocuments({ role: { $bitsAllSet: Role.COURIER } }),
       this.storeModel.countDocuments(),
       this.storeModel.countDocuments({ publishStatus: 'published' }),
       this.storeModel.countDocuments({ publishStatus: 'pending_review' }),
@@ -116,7 +114,7 @@ export class AdminController {
       this.orderModel.countDocuments({ status: 'delivered' }),
       this.userModel.countDocuments({
         courierMotivationLetter: { $exists: true, $ne: '' },
-        role: { $ne: 'courier' },
+        role: { $bitsAllClear: Role.COURIER },
       }),
     ]);
 
@@ -259,7 +257,7 @@ export class AdminController {
     const couriers = await this.userModel
       .find({
         courierMotivationLetter: { $exists: true, $ne: '' },
-        role: { $ne: 'courier' },
+        role: { $bitsAllClear: Role.COURIER },
       })
       .select(
         'firstName lastName email courierMotivationLetter courierProfileImage accountNumber createdAt',
@@ -699,7 +697,7 @@ export class AdminController {
   @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get revenue analytics' })
   @ApiResponse({ status: 200, description: 'Revenue analytics retrieved' })
-  async getRevenueAnalytics(@Query('period') period: string = 'month') {
+  async getRevenueAnalytics(@Query('period') period = 'month') {
     const now = new Date();
     let startDate: Date;
 

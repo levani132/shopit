@@ -267,9 +267,29 @@ function SiteSettingsContent() {
     setSuccess(false);
 
     try {
-      // Strip MongoDB-specific fields that shouldn't be sent back
-      const { _id, createdAt, updatedAt, __v, ...cleanSettings } =
-        settings as any;
+      // Only send the fields that are valid in the DTO (exclude any legacy/unknown fields)
+      const cleanSettings = {
+        siteCommissionRate: settings.siteCommissionRate,
+        bikeShipping: settings.bikeShipping,
+        carShipping: settings.carShipping,
+        suvShipping: settings.suvShipping,
+        vanShipping: settings.vanShipping,
+        defaultDeliveryRatePerMinute: settings.defaultDeliveryRatePerMinute,
+        minimumDeliveryFee: settings.minimumDeliveryFee,
+        deliveryFeePrecision: settings.deliveryFeePrecision,
+        freeSubdomainChanges: settings.freeSubdomainChanges,
+        subdomainChangePrice: settings.subdomainChangePrice,
+        courierEarningsPercentage: settings.courierEarningsPercentage,
+        minimumWithdrawalAmount: settings.minimumWithdrawalAmount,
+        withdrawalFee: settings.withdrawalFee,
+        platformName: settings.platformName,
+        supportEmail: settings.supportEmail,
+        supportPhone: settings.supportPhone,
+        allowStoreRegistrations: settings.allowStoreRegistrations,
+        allowCourierRegistrations: settings.allowCourierRegistrations,
+        maintenanceMode: settings.maintenanceMode,
+        maintenanceMessage: settings.maintenanceMessage,
+      };
 
       const response = await api.put('/admin/settings', cleanSettings);
       if (!response.ok) {

@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Injectable,
   NotFoundException,
@@ -6,12 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import {
-  Store,
-  StoreDocument,
-  User,
-  UserDocument,
-} from '@sellit/api-database';
+import { Store, StoreDocument, User, UserDocument } from '@sellit/api-database';
 
 export interface UpdateStoreDto {
   name?: string;
@@ -81,12 +77,23 @@ export class StoresService {
     // Try with ObjectId first, then fall back to string
     try {
       const objectId = new Types.ObjectId(ownerId);
-      console.log('[StoresService.findByOwnerId] Searching for ownerId:', ownerId, 'as ObjectId:', objectId);
+      console.log(
+        '[StoresService.findByOwnerId] Searching for ownerId:',
+        ownerId,
+        'as ObjectId:',
+        objectId,
+      );
       const store = await this.storeModel.findOne({ ownerId: objectId });
-      console.log('[StoresService.findByOwnerId] Result:', store ? `Found store ${store._id}` : 'Not found');
+      console.log(
+        '[StoresService.findByOwnerId] Result:',
+        store ? `Found store ${store._id}` : 'Not found',
+      );
       return store;
     } catch (error) {
-      console.error('[StoresService.findByOwnerId] Error converting to ObjectId:', error);
+      console.error(
+        '[StoresService.findByOwnerId] Error converting to ObjectId:',
+        error,
+      );
       // Try with string as fallback
       return this.storeModel.findOne({ ownerId });
     }
@@ -130,7 +137,7 @@ export class StoresService {
     coverUrl?: string,
   ): Promise<StoreDocument> {
     const store = await this.findByOwnerId(ownerId);
-    
+
     if (!store) {
       throw new NotFoundException('Store not found');
     }
@@ -167,7 +174,8 @@ export class StoresService {
         en: dto.descriptionEn ?? store.descriptionLocalized?.en,
       };
       // Also update legacy description field
-      store.description = dto.descriptionEn || dto.descriptionKa || store.description;
+      store.description =
+        dto.descriptionEn || dto.descriptionKa || store.description;
     }
 
     if (dto.authorNameKa !== undefined || dto.authorNameEn !== undefined) {
@@ -176,7 +184,8 @@ export class StoresService {
         en: dto.authorNameEn ?? store.authorNameLocalized?.en,
       };
       // Also update legacy authorName field
-      store.authorName = dto.authorNameEn || dto.authorNameKa || store.authorName;
+      store.authorName =
+        dto.authorNameEn || dto.authorNameKa || store.authorName;
     }
 
     if (dto.aboutUsKa !== undefined || dto.aboutUsEn !== undefined) {
@@ -190,13 +199,19 @@ export class StoresService {
 
     // Update boolean fields
     if (dto.useInitialAsLogo !== undefined) {
-      store.useInitialAsLogo = dto.useInitialAsLogo === true || dto.useInitialAsLogo === 'true' as unknown as boolean;
+      store.useInitialAsLogo =
+        dto.useInitialAsLogo === true ||
+        dto.useInitialAsLogo === ('true' as unknown as boolean);
     }
     if (dto.useDefaultCover !== undefined) {
-      store.useDefaultCover = dto.useDefaultCover === true || dto.useDefaultCover === 'true' as unknown as boolean;
+      store.useDefaultCover =
+        dto.useDefaultCover === true ||
+        dto.useDefaultCover === ('true' as unknown as boolean);
     }
     if (dto.showAuthorName !== undefined) {
-      store.showAuthorName = dto.showAuthorName === true || dto.showAuthorName === 'true' as unknown as boolean;
+      store.showAuthorName =
+        dto.showAuthorName === true ||
+        dto.showAuthorName === ('true' as unknown as boolean);
     }
 
     // Update social links
@@ -220,7 +235,13 @@ export class StoresService {
 
     // Update homepage product order
     if (dto.homepageProductOrder) {
-      const validOrders = ['popular', 'newest', 'price_asc', 'price_desc', 'random'];
+      const validOrders = [
+        'popular',
+        'newest',
+        'price_asc',
+        'price_desc',
+        'random',
+      ];
       if (validOrders.includes(dto.homepageProductOrder)) {
         store.homepageProductOrder = dto.homepageProductOrder;
       }
@@ -252,7 +273,9 @@ export class StoresService {
       store.deliveryFee = Math.max(0, Number(dto.deliveryFee));
     }
     if (dto.freeDelivery !== undefined) {
-      store.freeDelivery = dto.freeDelivery === true || dto.freeDelivery === 'true' as unknown as boolean;
+      store.freeDelivery =
+        dto.freeDelivery === true ||
+        dto.freeDelivery === ('true' as unknown as boolean);
     }
     if (dto.selfPickupEnabled !== undefined) {
       store.selfPickupEnabled = dto.selfPickupEnabled === 'true';
@@ -295,7 +318,10 @@ export class StoresService {
     }
 
     // Must only contain letters, numbers, and hyphens
-    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(normalized) && normalized.length > 1) {
+    if (
+      !/^[a-z][a-z0-9-]*[a-z0-9]$/.test(normalized) &&
+      normalized.length > 1
+    ) {
       return {
         valid: false,
         error: 'Subdomain can only contain letters, numbers, and hyphens',
@@ -434,12 +460,10 @@ export class StoresService {
     // Delete the store
     await this.storeModel.findByIdAndDelete(storeId);
 
-    // Update user: remove storeId and change role to 'user'
+    // Update user: remove storeId and change role to USER only (remove SELLER)
     await this.userModel.findByIdAndUpdate(user._id, {
       $unset: { storeId: 1 },
-      $set: { role: 'user' },
+      $set: { role: Role.USER },
     });
   }
 }
-
-
