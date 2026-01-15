@@ -177,7 +177,7 @@ export function Delivery() {
             <div className="flex flex-col sm:flex-row gap-4">
               <CtaButton />
               <a
-                href="/courier"
+                href="https://couriers.shopit.ge"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-semibold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5"
