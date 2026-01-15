@@ -19,7 +19,7 @@ import {
   ContactContent,
   TermsContent,
   PrivacyContent,
-} from '@sellit/api/database';
+} from '@sellit/api-database';
 
 @Controller('content')
 export class ContentController {
@@ -45,7 +45,13 @@ export class ContentController {
 
   @Post('contact/submit')
   async submitContactForm(
-    @Body() data: { name: string; email: string; subject: string; message: string },
+    @Body()
+    data: {
+      name: string;
+      email: string;
+      subject: string;
+      message: string;
+    },
   ) {
     await this.contentService.createSubmission(data);
     return { success: true };
@@ -131,7 +137,11 @@ export class ContentController {
     @Param('id') id: string,
     @Body() data: { status: string; adminNotes?: string },
   ) {
-    return this.contentService.updateSubmissionStatus(id, data.status, data.adminNotes);
+    return this.contentService.updateSubmissionStatus(
+      id,
+      data.status,
+      data.adminNotes,
+    );
   }
 
   // ===== Admin Terms Endpoints =====
@@ -150,4 +160,3 @@ export class ContentController {
     return this.contentService.updatePrivacyContent(data);
   }
 }
-

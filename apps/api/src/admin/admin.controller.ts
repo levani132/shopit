@@ -83,24 +83,6 @@ export class AdminController {
     };
   }
 
-  /**
-   * Public endpoint to get non-sensitive site settings
-   * Used for pricing page, terms, etc.
-   */
-  @Get('settings/public')
-  @ApiOperation({ summary: 'Get public site settings (no auth required)' })
-  @ApiResponse({ status: 200, description: 'Public settings retrieved' })
-  async getPublicSettings() {
-    const settings = await this.siteSettingsService.getSettings();
-    return {
-      siteCommissionRate: settings.siteCommissionRate,
-      courierEarningsPercentage: settings.courierEarningsPercentage,
-      minimumWithdrawalAmount: settings.minimumWithdrawalAmount,
-      platformName: settings.platformName,
-      supportEmail: settings.supportEmail,
-    };
-  }
-
   // ===== Dashboard Stats =====
 
   @Get('dashboard')
