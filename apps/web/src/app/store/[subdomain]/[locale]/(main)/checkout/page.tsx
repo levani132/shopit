@@ -1331,10 +1331,11 @@ export default function CheckoutPage() {
                                 <span className="font-medium">
                                   {t('estimatedDelivery')}:
                                 </span>{' '}
-                                {/* Show 3-7 days if more than 35km from store */}
-                                {shippingEstimate.distanceKm > 35
-                                  ? t('deliveryDays', { days: '3-7' })
-                                  : t('deliveryDays', { days: '1-3' })}
+                                {/* 1-3 days for Tbilisi, 3-5 days outside */}
+                                {addressForm.city.toLowerCase().includes('tbilisi') ||
+                                addressForm.city.toLowerCase().includes('თბილისი')
+                                  ? t('deliveryDays', { days: '1-3' })
+                                  : t('deliveryDays', { days: '3-5' })}
                               </div>
                               <div className="font-semibold text-[var(--store-accent-600)]">
                                 ₾{shippingEstimate.fee.toFixed(2)}

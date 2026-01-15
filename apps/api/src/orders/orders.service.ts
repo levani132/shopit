@@ -516,15 +516,35 @@ export class OrdersService {
 
   /**
    * Calculate delivery deadline based on order items' prep and delivery times
+   * 
+   * For ShopIt courier (courierType !== 'seller'):
+   * - Tbilisi: 1-3 days (use max 3)
+   * - Outside Tbilisi: 3-5 days (use max 5)
+   * 
+   * For seller-handled delivery:
+   * - Uses store's deliveryMaxDays setting
    */
   private calculateDeliveryDeadline(order: OrderDocument): Date {
     const now = new Date();
     let maxDays = 3; // Default: 3 days
 
+    // Check if delivery is within Tbilisi (case-insensitive check)
+    const deliveryCity = order.shippingDetails?.city?.toLowerCase() || '';
+    const isTbilisi = deliveryCity.includes('tbilisi') || deliveryCity.includes('თბილისი');
+
     // Get the maximum prep + delivery days from all order items
     for (const item of order.orderItems) {
-      const prepDays = item.prepTimeMaxDays || 3;
-      const deliveryDays = item.deliveryMaxDays || 3;
+      const prepDays = item.prepTimeMaxDays || 0;
+      
+      let deliveryDays: number;
+      if (item.courierType === 'seller') {
+        // Seller handles delivery - use store's setting
+        deliveryDays = item.deliveryMaxDays || 3;
+      } else {
+        // ShopIt courier - use location-based estimate
+        deliveryDays = isTbilisi ? 3 : 5; // 1-3 days Tbilisi, 3-5 days outside
+      }
+      
       const totalDays = prepDays + deliveryDays;
       if (totalDays > maxDays) {
         maxDays = totalDays;
