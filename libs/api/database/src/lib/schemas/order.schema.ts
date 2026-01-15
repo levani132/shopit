@@ -172,6 +172,10 @@ export class Order {
   @Prop()
   pickupPhoneNumber?: string;
 
+  // Recipient name (denormalized for courier use)
+  @Prop()
+  recipientName?: string;
+
   @Prop({ required: true, default: 'BOG' })
   paymentMethod!: string;
 

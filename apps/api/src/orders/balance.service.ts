@@ -71,7 +71,9 @@ export class BalanceService {
     for (const [storeId, items] of itemsByStore) {
       const store = await this.storeModel.findById(storeId);
       if (!store) {
-        this.logger.warn(`Store ${storeId} not found during earnings processing`);
+        this.logger.warn(
+          `Store ${storeId} not found during earnings processing`,
+        );
         continue;
       }
 
@@ -95,7 +97,10 @@ export class BalanceService {
       if (store.courierType !== 'seller') {
         // ShopIt courier - calculate based on configurable rates
         deliveryCommission = Math.min(
-          Math.max(itemsTotalPrice * DELIVERY_COMMISSION_RATE, DELIVERY_COMMISSION_MIN),
+          Math.max(
+            itemsTotalPrice * DELIVERY_COMMISSION_RATE,
+            DELIVERY_COMMISSION_MIN,
+          ),
           DELIVERY_COMMISSION_MAX,
         );
       }
@@ -144,7 +149,7 @@ export class BalanceService {
   /**
    * Process courier earnings for an order after it's delivered
    * Only for orders using ShopIt delivery (not seller self-delivery)
-   * 
+   *
    * Courier earnings = the shipping price paid by customer
    * The delivery commission deducted from seller goes to ShopIt platform,
    * but the actual shipping fee (paid by buyer) goes to the courier.
@@ -179,7 +184,9 @@ export class BalanceService {
     const courierEarnings = order.shippingPrice;
 
     if (courierEarnings <= 0) {
-      this.logger.log(`No shipping fee for order ${order._id}, skipping courier earnings`);
+      this.logger.log(
+        `No shipping fee for order ${order._id}, skipping courier earnings`,
+      );
       return;
     }
 
@@ -249,36 +256,64 @@ export class BalanceService {
    * Debug method to see what's happening with balance calculation
    */
   async debugBalance(sellerId: string): Promise<object> {
-    const user = await this.userModel.findById(sellerId).select('email firstName lastName balance totalEarnings');
-    const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) }).select('_id name courierType');
-    
+    const user = await this.userModel
+      .findById(sellerId)
+      .select('email firstName lastName balance totalEarnings');
+    const stores = await this.storeModel
+      .find({ ownerId: new Types.ObjectId(sellerId) })
+      .select('_id name courierType');
+
     if (stores.length === 0) {
       return { error: 'No stores found', sellerId, user };
     }
 
-    const storeIds = stores.map(s => s._id);
-    const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
-    
+    const storeIds = stores.map((s) => s._id);
+    const pendingDeliveryStatuses = [
+      'paid',
+      'processing',
+      'ready_for_delivery',
+      'shipped',
+    ];
+
     // Get ALL orders for these stores
-    const allOrders = await this.orderModel.find({
-      'orderItems.storeId': { $in: storeIds },
-    }).select('_id status isPaid paidAt isDelivered itemsPrice shippingPrice totalPrice orderItems.storeId orderItems.price orderItems.qty');
+    const allOrders = await this.orderModel
+      .find({
+        'orderItems.storeId': { $in: storeIds },
+      })
+      .select(
+        '_id status isPaid paidAt isDelivered itemsPrice shippingPrice totalPrice orderItems.storeId orderItems.price orderItems.qty',
+      );
 
     // Get matching orders (paid, not delivered)
-    const matchingOrders = await this.orderModel.find({
-      'orderItems.storeId': { $in: storeIds },
-      isPaid: true,
-      status: { $in: pendingDeliveryStatuses },
-    }).select('_id status isPaid paidAt isDelivered itemsPrice shippingPrice totalPrice');
+    const matchingOrders = await this.orderModel
+      .find({
+        'orderItems.storeId': { $in: storeIds },
+        isPaid: true,
+        status: { $in: pendingDeliveryStatuses },
+      })
+      .select(
+        '_id status isPaid paidAt isDelivered itemsPrice shippingPrice totalPrice',
+      );
 
     const waitingEarnings = await this.calculateWaitingEarnings(sellerId);
 
     return {
       sellerId,
-      user: user ? { id: user._id.toString(), email: user.email, balance: user.balance, totalEarnings: user.totalEarnings } : null,
-      stores: stores.map(s => ({ id: s._id.toString(), name: s.name, courierType: s.courierType })),
+      user: user
+        ? {
+            id: user._id.toString(),
+            email: user.email,
+            balance: user.balance,
+            totalEarnings: user.totalEarnings,
+          }
+        : null,
+      stores: stores.map((s) => ({
+        id: s._id.toString(),
+        name: s.name,
+        courierType: s.courierType,
+      })),
       allOrdersCount: allOrders.length,
-      allOrders: allOrders.map(o => ({
+      allOrders: allOrders.map((o) => ({
         id: o._id.toString(),
         status: o.status,
         isPaid: o.isPaid,
@@ -289,7 +324,7 @@ export class BalanceService {
         totalPrice: o.totalPrice,
       })),
       matchingOrdersCount: matchingOrders.length,
-      matchingOrders: matchingOrders.map(o => ({
+      matchingOrders: matchingOrders.map((o) => ({
         id: o._id.toString(),
         status: o.status,
         isPaid: o.isPaid,
@@ -301,7 +336,7 @@ export class BalanceService {
   /**
    * Calculate earnings from orders that are paid but not yet delivered
    * These are orders where the seller will receive money once they're delivered
-   * 
+   *
    * NOTE: We use status-based filtering instead of isDelivered flag because:
    * 1. The status field is the source of truth for order state
    * 2. isDelivered is a redundant field that can get out of sync
@@ -309,20 +344,29 @@ export class BalanceService {
    */
   private async calculateWaitingEarnings(sellerId: string): Promise<number> {
     // Get seller's store(s)
-    const stores = await this.storeModel.find({ ownerId: new Types.ObjectId(sellerId) });
+    const stores = await this.storeModel.find({
+      ownerId: new Types.ObjectId(sellerId),
+    });
     if (stores.length === 0) {
       this.logger.debug(`No stores found for seller ${sellerId}`);
       return 0;
     }
 
-    const storeIds = stores.map(s => s._id);
-    this.logger.debug(`Found ${stores.length} stores for seller: ${storeIds.map(id => id.toString()).join(', ')}`);
+    const storeIds = stores.map((s) => s._id);
+    this.logger.debug(
+      `Found ${stores.length} stores for seller: ${storeIds.map((id) => id.toString()).join(', ')}`,
+    );
 
     // Find all orders that are paid but not yet delivered
     // Use status to determine delivery state (not isDelivered flag which can be out of sync)
     // Statuses that mean "paid but not delivered": paid, processing, ready_for_delivery, shipped
-    const pendingDeliveryStatuses = ['paid', 'processing', 'ready_for_delivery', 'shipped'];
-    
+    const pendingDeliveryStatuses = [
+      'paid',
+      'processing',
+      'ready_for_delivery',
+      'shipped',
+    ];
+
     // Query orders that contain items from any of the seller's stores
     // Note: We check isPaid=true for payment confirmation, but use status for delivery state
     const orders = await this.orderModel.find({
@@ -331,7 +375,9 @@ export class BalanceService {
       status: { $in: pendingDeliveryStatuses },
     });
 
-    this.logger.debug(`Found ${orders.length} pending delivery orders for seller's stores`);
+    this.logger.debug(
+      `Found ${orders.length} pending delivery orders for seller's stores`,
+    );
 
     if (orders.length === 0) {
       return 0;
@@ -352,7 +398,7 @@ export class BalanceService {
       for (const store of stores) {
         const storeIdStr = store._id.toString();
         const storeItems = order.orderItems.filter(
-          item => item.storeId?.toString() === storeIdStr
+          (item) => item.storeId?.toString() === storeIdStr,
         );
 
         if (storeItems.length === 0) continue;
@@ -370,7 +416,10 @@ export class BalanceService {
         let deliveryCommission = 0;
         if (store.courierType !== 'seller') {
           deliveryCommission = Math.min(
-            Math.max(itemsTotalPrice * DELIVERY_COMMISSION_RATE, DELIVERY_COMMISSION_MIN),
+            Math.max(
+              itemsTotalPrice * DELIVERY_COMMISSION_RATE,
+              DELIVERY_COMMISSION_MIN,
+            ),
             DELIVERY_COMMISSION_MAX,
           );
         }
@@ -378,7 +427,9 @@ export class BalanceService {
         const totalCommissions = siteCommission + deliveryCommission;
         const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
 
-        this.logger.debug(`Order ${order._id}: items price=${itemsTotalPrice}, final amount=${finalAmount}`);
+        this.logger.debug(
+          `Order ${order._id}: items price=${itemsTotalPrice}, final amount=${finalAmount}`,
+        );
         totalWaitingEarnings += finalAmount;
       }
     }
@@ -433,11 +484,15 @@ export class BalanceService {
     );
 
     // Get minimum withdrawal from settings
-    const minWithdrawal = await this.siteSettingsService.getMinimumWithdrawalAmount();
-    
+    const minWithdrawal =
+      await this.siteSettingsService.getMinimumWithdrawalAmount();
+
     // Minimum withdrawal
     if (amount < minWithdrawal) {
-      return { success: false, message: `Minimum withdrawal amount is ${minWithdrawal} GEL` };
+      return {
+        success: false,
+        message: `Minimum withdrawal amount is ${minWithdrawal} GEL`,
+      };
     }
 
     const user = await this.userModel.findById(sellerId);
@@ -555,4 +610,3 @@ export class BalanceService {
     this.logger.log(`Withdrawal rejected: ${transactionId}`);
   }
 }
-

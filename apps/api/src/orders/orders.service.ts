@@ -332,6 +332,17 @@ export class OrdersService {
           ? await this.storeModel.findById(firstStoreId).session(session)
           : null;
 
+        // Get recipient name for courier display
+        let recipientName: string | undefined;
+        if (userId && !dto.isGuestOrder) {
+          const user = await this.userModel.findById(userId).session(session);
+          if (user) {
+            recipientName = `${user.firstName} ${user.lastName}`.trim();
+          }
+        } else if (dto.guestInfo?.fullName) {
+          recipientName = dto.guestInfo.fullName;
+        }
+
         // Create the order
         const orderData: any = {
           orderItems: enhancedOrderItems,
@@ -348,7 +359,9 @@ export class OrdersService {
           pickupStoreName: pickupStore?.name,
           pickupAddress: pickupStore?.address,
           pickupCity: pickupStore?.city,
-          pickupPhoneNumber: pickupStore?.contactPhone,
+          pickupPhoneNumber: pickupStore?.phone,
+          // Recipient name for courier display
+          recipientName,
         };
 
         if (userId && !dto.isGuestOrder) {

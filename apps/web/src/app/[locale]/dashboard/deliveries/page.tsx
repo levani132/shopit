@@ -41,6 +41,8 @@ interface Order {
   pickupAddress?: string;
   pickupCity?: string;
   pickupPhoneNumber?: string;
+  // Recipient info
+  recipientName?: string;
 }
 
 // Georgian month names for proper localized date formatting
@@ -468,6 +470,11 @@ export default function DeliveriesPage() {
                         {t('deliveryAddress')}
                       </p>
                     </div>
+                    {order.recipientName && (
+                      <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                        {order.recipientName}
+                      </p>
+                    )}
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                       {order.shippingDetails.address}, {order.shippingDetails.city}
                       {order.shippingDetails.postalCode && `, ${order.shippingDetails.postalCode}`}
