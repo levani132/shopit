@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../../contexts/AuthContext';
 import Image from 'next/image';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -93,7 +93,11 @@ function formatDateLocalized(
 }
 
 // Calculate remaining time until deadline
-function getRemainingTime(deadline: string): { text: string; isOverdue: boolean; urgency: 'normal' | 'warning' | 'danger' } {
+function getRemainingTime(deadline: string): {
+  text: string;
+  isOverdue: boolean;
+  urgency: 'normal' | 'warning' | 'danger';
+} {
   const now = new Date();
   const deadlineDate = new Date(deadline);
   const diff = deadlineDate.getTime() - now.getTime();
@@ -126,7 +130,9 @@ export default function DeliveriesPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'ka';
 
-  const [activeTab, setActiveTab] = useState<'available' | 'my' | 'completed'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'my' | 'completed'>(
+    'available',
+  );
   const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
@@ -136,9 +142,12 @@ export default function DeliveriesPage() {
 
   const fetchAvailableOrders = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/courier/available`, {
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/courier/available`,
+        {
+          credentials: 'include',
+        },
+      );
       if (response.ok) {
         const data = await response.json();
         setAvailableOrders(data);
@@ -150,9 +159,12 @@ export default function DeliveriesPage() {
 
   const fetchMyOrders = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/courier/my-orders`, {
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/courier/my-orders`,
+        {
+          credentials: 'include',
+        },
+      );
       if (response.ok) {
         const data = await response.json();
         setMyOrders(data);
@@ -164,9 +176,12 @@ export default function DeliveriesPage() {
 
   const fetchCompletedOrders = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/courier/completed?limit=50`, {
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/courier/completed?limit=50`,
+        {
+          credentials: 'include',
+        },
+      );
       if (response.ok) {
         const data = await response.json();
         setCompletedOrders(data);
@@ -178,7 +193,7 @@ export default function DeliveriesPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || user.role !== 'courier') {
+    if (!user || !hasRole(user.role ?? 0, Role.COURIER)) {
       setError('You must be a courier to access this page');
       setLoading(false);
       return;
@@ -186,20 +201,33 @@ export default function DeliveriesPage() {
 
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([fetchAvailableOrders(), fetchMyOrders(), fetchCompletedOrders()]);
+      await Promise.all([
+        fetchAvailableOrders(),
+        fetchMyOrders(),
+        fetchCompletedOrders(),
+      ]);
       setLoading(false);
     };
 
     fetchData();
-  }, [authLoading, user, fetchAvailableOrders, fetchMyOrders, fetchCompletedOrders]);
+  }, [
+    authLoading,
+    user,
+    fetchAvailableOrders,
+    fetchMyOrders,
+    fetchCompletedOrders,
+  ]);
 
   const handleAssignOrder = async (orderId: string) => {
     setProcessingOrder(orderId);
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/${orderId}/assign-courier`, {
-        method: 'PATCH',
-        credentials: 'include',
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/${orderId}/assign-courier`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+        },
+      );
       if (response.ok) {
         await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
         setActiveTab('my');
@@ -215,15 +243,21 @@ export default function DeliveriesPage() {
     }
   };
 
-  const handleUpdateStatus = async (orderId: string, status: 'shipped' | 'delivered') => {
+  const handleUpdateStatus = async (
+    orderId: string,
+    status: 'shipped' | 'delivered',
+  ) => {
     setProcessingOrder(orderId);
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/${orderId}/courier-status`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/${orderId}/courier-status`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        },
+      );
       if (response.ok) {
         await fetchMyOrders();
       } else {
@@ -244,7 +278,10 @@ export default function DeliveriesPage() {
         <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-48" />
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-40 bg-gray-200 dark:bg-zinc-700 rounded-xl" />
+            <div
+              key={i}
+              className="h-40 bg-gray-200 dark:bg-zinc-700 rounded-xl"
+            />
           ))}
         </div>
       </div>
@@ -259,11 +296,12 @@ export default function DeliveriesPage() {
     );
   }
 
-  const displayOrders = activeTab === 'available' 
-    ? availableOrders 
-    : activeTab === 'my' 
-    ? myOrders 
-    : completedOrders;
+  const displayOrders =
+    activeTab === 'available'
+      ? availableOrders
+      : activeTab === 'my'
+        ? myOrders
+        : completedOrders;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -359,21 +397,30 @@ export default function DeliveriesPage() {
                         {t('deliveryDeadline')}
                       </p>
                       {(() => {
-                        const remaining = getRemainingTime(order.deliveryDeadline);
+                        const remaining = getRemainingTime(
+                          order.deliveryDeadline,
+                        );
                         return (
-                          <p className={`font-semibold ${
-                            remaining.urgency === 'danger' 
-                              ? 'text-red-600 dark:text-red-400' 
-                              : remaining.urgency === 'warning'
-                              ? 'text-orange-600 dark:text-orange-400'
-                              : 'text-gray-900 dark:text-white'
-                          }`}>
-                            {remaining.isOverdue ? '⚠️ ' : '⏰ '}{remaining.text}
+                          <p
+                            className={`font-semibold ${
+                              remaining.urgency === 'danger'
+                                ? 'text-red-600 dark:text-red-400'
+                                : remaining.urgency === 'warning'
+                                  ? 'text-orange-600 dark:text-orange-400'
+                                  : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {remaining.isOverdue ? '⚠️ ' : '⏰ '}
+                            {remaining.text}
                           </p>
                         );
                       })()}
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {formatDateLocalized(order.deliveryDeadline, locale, true)}
+                        {formatDateLocalized(
+                          order.deliveryDeadline,
+                          locale,
+                          true,
+                        )}
                       </p>
                     </div>
                   )}
@@ -383,7 +430,8 @@ export default function DeliveriesPage() {
                       {t('yourEarning')}
                     </p>
                     <p className="font-semibold text-green-600 dark:text-green-400">
-                      ₾{(order.courierEarning ?? order.shippingPrice).toFixed(2)}
+                      ₾
+                      {(order.courierEarning ?? order.shippingPrice).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -393,7 +441,10 @@ export default function DeliveriesPage() {
               <div className="p-4">
                 <div className="flex flex-wrap gap-2 mb-4">
                   {order.orderItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-gray-100 dark:bg-zinc-700 rounded-lg px-3 py-2">
+                    <div
+                      key={idx}
+                      className="flex items-center gap-2 bg-gray-100 dark:bg-zinc-700 rounded-lg px-3 py-2"
+                    >
                       <div className="relative w-10 h-10 rounded overflow-hidden">
                         <Image
                           src={item.image || '/placeholder.png'}
@@ -445,19 +496,29 @@ export default function DeliveriesPage() {
                       {order.pickupAddress || order.orderItems[0]?.storeName}
                       {order.pickupCity && `, ${order.pickupCity}`}
                     </p>
-                    
+
                     {/* Action Buttons for Pickup */}
                     <div className="flex gap-2">
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${order.pickupAddress || ''} ${order.pickupCity || ''}`
+                          `${order.pickupAddress || ''} ${order.pickupCity || ''}`,
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                          />
                         </svg>
                         {t('openInMaps')}
                       </a>
@@ -466,8 +527,18 @@ export default function DeliveriesPage() {
                           href={`tel:${order.pickupPhoneNumber}`}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
                           </svg>
                           {t('callShop')}
                         </a>
@@ -507,22 +578,34 @@ export default function DeliveriesPage() {
                       </p>
                     )}
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      {order.shippingDetails.address}, {order.shippingDetails.city}
-                      {order.shippingDetails.postalCode && `, ${order.shippingDetails.postalCode}`}
+                      {order.shippingDetails.address},{' '}
+                      {order.shippingDetails.city}
+                      {order.shippingDetails.postalCode &&
+                        `, ${order.shippingDetails.postalCode}`}
                     </p>
-                    
+
                     {/* Action Buttons for Delivery */}
                     <div className="flex gap-2">
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${order.shippingDetails.address} ${order.shippingDetails.city}`
+                          `${order.shippingDetails.address} ${order.shippingDetails.city}`,
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                       >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                          />
                         </svg>
                         {t('openInMaps')}
                       </a>
@@ -531,8 +614,18 @@ export default function DeliveriesPage() {
                           href={`tel:${order.shippingDetails.phoneNumber}`}
                           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
                           </svg>
                           {t('callCustomer')}
                         </a>
@@ -550,26 +643,36 @@ export default function DeliveriesPage() {
                         disabled={!!processingOrder}
                         className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
                       >
-                        {processingOrder === order._id ? '...' : t('assignToMe')}
+                        {processingOrder === order._id
+                          ? '...'
+                          : t('assignToMe')}
                       </button>
                     ) : (
                       <>
                         {order.status === 'ready_for_delivery' && (
                           <button
-                            onClick={() => handleUpdateStatus(order._id, 'shipped')}
+                            onClick={() =>
+                              handleUpdateStatus(order._id, 'shipped')
+                            }
                             disabled={!!processingOrder}
                             className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
                           >
-                            {processingOrder === order._id ? '...' : t('markAsShipped')}
+                            {processingOrder === order._id
+                              ? '...'
+                              : t('markAsShipped')}
                           </button>
                         )}
                         {order.status === 'shipped' && (
                           <button
-                            onClick={() => handleUpdateStatus(order._id, 'delivered')}
+                            onClick={() =>
+                              handleUpdateStatus(order._id, 'delivered')
+                            }
                             disabled={!!processingOrder}
                             className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
                           >
-                            {processingOrder === order._id ? '...' : t('markAsDelivered')}
+                            {processingOrder === order._id
+                              ? '...'
+                              : t('markAsDelivered')}
                           </button>
                         )}
                       </>
@@ -584,4 +687,3 @@ export default function DeliveriesPage() {
     </div>
   );
 }
-

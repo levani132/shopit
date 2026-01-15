@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
 
 interface PendingCourier {
@@ -22,7 +23,10 @@ function PendingCouriersContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [rejectModal, setRejectModal] = useState<{ courierId: string; name: string } | null>(null);
+  const [rejectModal, setRejectModal] = useState<{
+    courierId: string;
+    name: string;
+  } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -31,7 +35,9 @@ function PendingCouriersContent() {
       const response = await api.get('/admin/couriers/pending');
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch pending couriers');
+        throw new Error(
+          errorData.message || 'Failed to fetch pending couriers',
+        );
       }
       const data = await response.json();
       setCouriers(data.couriers);
@@ -69,9 +75,12 @@ function PendingCouriersContent() {
 
     setProcessingId(rejectModal.courierId);
     try {
-      const response = await api.post(`/admin/couriers/${rejectModal.courierId}/reject`, {
-        reason: rejectReason,
-      });
+      const response = await api.post(
+        `/admin/couriers/${rejectModal.courierId}/reject`,
+        {
+          reason: rejectReason,
+        },
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to reject courier');
@@ -178,7 +187,8 @@ function PendingCouriersContent() {
                       </span>
                     )}
                     <span>
-                      {t('appliedAt')}: {new Date(courier.createdAt).toLocaleDateString()}
+                      {t('appliedAt')}:{' '}
+                      {new Date(courier.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -186,10 +196,16 @@ function PendingCouriersContent() {
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
-                    onClick={() => setExpandedId(expandedId === courier._id ? null : courier._id)}
+                    onClick={() =>
+                      setExpandedId(
+                        expandedId === courier._id ? null : courier._id,
+                      )
+                    }
                     className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-zinc-600 rounded-lg transition-colors"
                   >
-                    {expandedId === courier._id ? t('hideLetter') : t('viewLetter')}
+                    {expandedId === courier._id
+                      ? t('hideLetter')
+                      : t('viewLetter')}
                   </button>
                   <button
                     onClick={() =>
@@ -286,9 +302,8 @@ function PendingCouriersContent() {
 
 export default function PendingCouriersPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <PendingCouriersContent />
     </ProtectedRoute>
   );
 }
-

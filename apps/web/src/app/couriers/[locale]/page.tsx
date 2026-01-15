@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../contexts/AuthContext';
 import { CourierHeader } from '../../../components/courier/CourierHeader';
 
 export default function CourierLandingPage() {
@@ -12,7 +12,7 @@ export default function CourierLandingPage() {
   const locale = (params?.locale as string) || 'en';
   const { isAuthenticated, user } = useAuth();
 
-  const isCourier = user?.role === 'courier';
+  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
@@ -206,9 +206,17 @@ export default function CourierLandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { icon: '⏰', title: 'flexibleHours', desc: 'flexibleHoursDesc' },
-              { icon: '💰', title: 'competitivePay', desc: 'competitivePayDesc' },
+              {
+                icon: '💰',
+                title: 'competitivePay',
+                desc: 'competitivePayDesc',
+              },
               { icon: '📱', title: 'easyApp', desc: 'easyAppDesc' },
-              { icon: '🚗', title: 'useYourVehicle', desc: 'useYourVehicleDesc' },
+              {
+                icon: '🚗',
+                title: 'useYourVehicle',
+                desc: 'useYourVehicleDesc',
+              },
               { icon: '📊', title: 'trackEarnings', desc: 'trackEarningsDesc' },
               { icon: '🤝', title: 'weeklyPayouts', desc: 'weeklyPayoutsDesc' },
             ].map((benefit) => (

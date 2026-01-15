@@ -9,6 +9,17 @@ import React, {
   useMemo,
 } from 'react';
 import { useRouter } from 'next/navigation';
+import {
+  Role,
+  RoleValue,
+  hasRole,
+  hasAnyRole,
+  getPrimaryRoleName,
+  getRoleNamesString,
+} from '@sellit/constants';
+
+// Re-export for convenience
+export { Role, hasRole, hasAnyRole, getPrimaryRoleName, getRoleNamesString };
 
 // Types
 export interface User {
@@ -16,7 +27,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'admin' | 'seller' | 'user' | 'courier';
+  role: number; // Bitmask-based role
   phoneNumber?: string;
   identificationNumber?: string;
   accountNumber?: string;
@@ -264,10 +275,11 @@ export function useAuth(): AuthContextType {
   return context;
 }
 
-// Hook to check if user has required role
-export function useRequireRole(
-  allowedRoles: ('admin' | 'seller' | 'user' | 'courier')[],
-) {
+/**
+ * Hook to check if user has any of the required roles (bitmask-based)
+ * @param allowedRoles - Array of role values to check
+ */
+export function useRequireRole(allowedRoles: RoleValue[]) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -279,23 +291,37 @@ export function useRequireRole(
       return;
     }
 
-    if (user && !allowedRoles.includes(user.role)) {
+    if (user && !hasAnyRole(user.role, allowedRoles)) {
       router.push('/');
     }
   }, [user, isLoading, isAuthenticated, allowedRoles, router]);
 
   return {
-    isAllowed: user ? allowedRoles.includes(user.role) : false,
+    isAllowed: user ? hasAnyRole(user.role, allowedRoles) : false,
     isLoading,
   };
 }
 
-// Hook specifically for seller dashboard
+/**
+ * Hook specifically for seller dashboard
+ * Requires SELLER role
+ */
 export function useRequireSeller() {
-  return useRequireRole(['admin', 'seller']);
+  return useRequireRole([Role.SELLER]);
 }
 
-// Hook specifically for courier dashboard
+/**
+ * Hook specifically for courier dashboard
+ * Requires COURIER role
+ */
 export function useRequireCourier() {
-  return useRequireRole(['admin', 'courier']);
+  return useRequireRole([Role.COURIER]);
+}
+
+/**
+ * Hook specifically for admin dashboard
+ * Requires ADMIN role
+ */
+export function useRequireAdmin() {
+  return useRequireRole([Role.ADMIN]);
 }

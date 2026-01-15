@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -63,7 +64,7 @@ export class AdminController {
   // ===== Site Settings =====
 
   @Get('settings')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get all site settings' })
   @ApiResponse({ status: 200, description: 'Settings retrieved' })
   async getSettings() {
@@ -72,7 +73,7 @@ export class AdminController {
   }
 
   @Put('settings')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update site settings' })
   @ApiResponse({ status: 200, description: 'Settings updated' })
   async updateSettings(@Body() dto: UpdateSiteSettingsDto) {
@@ -86,7 +87,7 @@ export class AdminController {
   // ===== Dashboard Stats =====
 
   @Get('dashboard')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get admin dashboard statistics' })
   @ApiResponse({ status: 200, description: 'Dashboard stats retrieved' })
   async getDashboardStats() {
@@ -169,7 +170,7 @@ export class AdminController {
   // ===== Pending Store Approvals =====
 
   @Get('stores/pending')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get pending store publish requests' })
   @ApiResponse({ status: 200, description: 'Pending stores retrieved' })
   async getPendingStores() {
@@ -183,7 +184,7 @@ export class AdminController {
   }
 
   @Post('stores/:id/approve')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Approve store publish request' })
   @ApiResponse({ status: 200, description: 'Store approved' })
   async approveStore(@Param('id') id: string) {
@@ -214,7 +215,7 @@ export class AdminController {
   }
 
   @Post('stores/:id/reject')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Reject store publish request' })
   @ApiResponse({ status: 200, description: 'Store rejected' })
   async rejectStore(
@@ -251,7 +252,7 @@ export class AdminController {
   // ===== Pending Courier Approvals =====
 
   @Get('couriers/pending')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get pending courier applications' })
   @ApiResponse({ status: 200, description: 'Pending couriers retrieved' })
   async getPendingCouriers() {
@@ -270,7 +271,7 @@ export class AdminController {
   }
 
   @Post('couriers/:id/approve')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Approve courier application' })
   @ApiResponse({ status: 200, description: 'Courier approved' })
   async approveCourier(@Param('id') id: string) {
@@ -283,11 +284,13 @@ export class AdminController {
       throw new BadRequestException('User has not applied to be a courier');
     }
 
-    if (user.role === 'courier') {
+    // Check if user already has courier role using bitmask
+    if ((user.role & Role.COURIER) !== 0) {
       throw new BadRequestException('User is already a courier');
     }
 
-    user.role = 'courier';
+    // Add courier role to existing roles
+    user.role = user.role | Role.COURIER;
     await user.save();
 
     this.logger.log(`User ${user.email} approved as courier`);
@@ -305,7 +308,7 @@ export class AdminController {
   }
 
   @Post('couriers/:id/reject')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Reject courier application' })
   @ApiResponse({ status: 200, description: 'Courier rejected' })
   async rejectCourier(
@@ -340,7 +343,7 @@ export class AdminController {
   // ===== Users Management =====
 
   @Get('users')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'List all users' })
   @ApiResponse({ status: 200, description: 'Users retrieved' })
   async listUsers(@Query() query: ListUsersQueryDto) {
@@ -384,7 +387,7 @@ export class AdminController {
   }
 
   @Get('users/:id')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get user details' })
   @ApiResponse({ status: 200, description: 'User retrieved' })
   async getUser(@Param('id') id: string) {
@@ -397,9 +400,9 @@ export class AdminController {
       throw new NotFoundException('User not found');
     }
 
-    // Get user's store if they're a seller
+    // Get user's store if they're a seller (using bitmask check)
     let store = null;
-    if (user.role === 'seller') {
+    if ((user.role & Role.SELLER) !== 0) {
       store = await this.storeModel.findOne({ ownerId: user._id }).lean();
     }
 
@@ -416,24 +419,35 @@ export class AdminController {
   }
 
   @Put('users/:id/role')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update user role' })
   @ApiResponse({ status: 200, description: 'Role updated' })
   async updateUserRole(
     @Param('id') id: string,
-    @Body() body: { role: 'user' | 'seller' | 'courier' | 'admin' },
+    @Body() body: { role: number },
   ) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
+    // Validate role is a valid bitmask (between 1 and 15)
+    const newRole = body.role;
+    if (typeof newRole !== 'number' || newRole < 1 || newRole > 15) {
+      throw new BadRequestException(
+        'Invalid role value. Must be between 1 and 15.',
+      );
+    }
+
+    // USER bit (1) must always be set
+    const roleWithUser = newRole | Role.USER;
+
     const oldRole = user.role;
-    user.role = body.role;
+    user.role = roleWithUser;
     await user.save();
 
     this.logger.log(
-      `User ${user.email} role changed from ${oldRole} to ${body.role}`,
+      `User ${user.email} role changed from ${oldRole} to ${roleWithUser}`,
     );
 
     return {
@@ -449,7 +463,7 @@ export class AdminController {
   // ===== Stores Management =====
 
   @Get('stores')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'List all stores' })
   @ApiResponse({ status: 200, description: 'Stores retrieved' })
   async listStores(@Query() query: ListStoresQueryDto) {
@@ -492,7 +506,7 @@ export class AdminController {
   }
 
   @Get('stores/:id')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get store details' })
   @ApiResponse({ status: 200, description: 'Store retrieved' })
   async getStore(@Param('id') id: string) {
@@ -530,7 +544,7 @@ export class AdminController {
   // ===== Orders Overview =====
 
   @Get('orders')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'List all orders' })
   @ApiResponse({ status: 200, description: 'Orders retrieved' })
   async listOrders(@Query() query: ListOrdersQueryDto) {
@@ -570,7 +584,7 @@ export class AdminController {
   }
 
   @Get('orders/:id')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get order details' })
   @ApiResponse({ status: 200, description: 'Order retrieved' })
   async getOrder(@Param('id') id: string) {
@@ -587,7 +601,7 @@ export class AdminController {
   }
 
   @Patch('orders/:id/status')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Update order status (admin)' })
   @ApiResponse({ status: 200, description: 'Order status updated' })
   async updateOrderStatus(
@@ -682,7 +696,7 @@ export class AdminController {
   // ===== Analytics =====
 
   @Get('analytics/revenue')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get revenue analytics' })
   @ApiResponse({ status: 200, description: 'Revenue analytics retrieved' })
   async getRevenueAnalytics(@Query('period') period: string = 'month') {
@@ -750,7 +764,7 @@ export class AdminController {
   }
 
   @Get('analytics/stores')
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiOperation({ summary: 'Get store analytics' })
   @ApiResponse({ status: 200, description: 'Store analytics retrieved' })
   async getStoreAnalytics() {

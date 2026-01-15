@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../../contexts/AuthContext';
 import {
   GEORGIAN_BANKS,
   detectBankFromIban,
@@ -71,8 +71,9 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const isCourier = user?.role === 'courier';
-  const isSeller = user?.role === 'seller';
+  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
+  const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
+  const isAdmin = hasRole(user?.role ?? 0, Role.ADMIN);
   const [isDeletingStore, setIsDeletingStore] = useState(false);
   const [isDeletingCourierRole, setIsDeletingCourierRole] = useState(false);
 
@@ -168,10 +169,10 @@ export default function ProfilePage() {
     // Validate Georgian phone: +995XXXXXXXXX, 995XXXXXXXXX, or 5XXXXXXXX
     if (phoneNumber) {
       const cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
-      const isValid = 
+      const isValid =
         /^\+995[5]\d{8}$/.test(cleaned) || // +995 5XX XXX XXX
-        /^995[5]\d{8}$/.test(cleaned) ||   // 995 5XX XXX XXX  
-        /^5\d{8}$/.test(cleaned);          // 5XX XXX XXX (local)
+        /^995[5]\d{8}$/.test(cleaned) || // 995 5XX XXX XXX
+        /^5\d{8}$/.test(cleaned); // 5XX XXX XXX (local)
       if (!isValid) {
         newErrors.phoneNumber = tRegister('phoneInvalid');
       }
@@ -387,7 +388,9 @@ export default function ProfilePage() {
           </h2>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-bold text-2xl">
-              {firstName?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || '?'}
+              {firstName?.charAt(0)?.toUpperCase() ||
+                user?.email?.charAt(0)?.toUpperCase() ||
+                '?'}
             </div>
             <div>
               <p className="font-medium text-gray-900 dark:text-white">
@@ -422,7 +425,11 @@ export default function ProfilePage() {
               </p>
               {user?.isProfileComplete && (
                 <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mt-1">
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-3 h-3"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -489,7 +496,9 @@ export default function ProfilePage() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
               />
               {errors.phoneNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.phoneNumber}
+                </p>
               )}
             </div>
 
@@ -501,14 +510,18 @@ export default function ProfilePage() {
                 type="text"
                 value={identificationNumber}
                 onChange={(e) =>
-                  setIdentificationNumber(e.target.value.replace(/\D/g, '').slice(0, 11))
+                  setIdentificationNumber(
+                    e.target.value.replace(/\D/g, '').slice(0, 11),
+                  )
                 }
                 placeholder="01234567890"
                 maxLength={11}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
               />
               {errors.identificationNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.identificationNumber}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.identificationNumber}
+                </p>
               )}
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
                 {tRegister('idNumberHint')}
@@ -526,86 +539,113 @@ export default function ProfilePage() {
         </div>
 
         {/* Banking Information - Only for sellers and couriers */}
-        {(isSeller || isCourier || user?.role === 'admin') && (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {tRegister('bankInformation')}
-          </h2>
+        {(isSeller || isCourier || isAdmin) && (
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {tRegister('bankInformation')}
+            </h2>
 
-          {/* Hidden decoy fields to prevent browser autofill on IBAN */}
-          <div style={{ position: 'absolute', opacity: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-            <input type="text" name="fake_username_field" tabIndex={-1} autoComplete="username" />
-            <input type="email" name="fake_email_field" tabIndex={-1} autoComplete="email" />
-            <input type="password" name="fake_password_field" tabIndex={-1} autoComplete="current-password" />
-          </div>
-
-          <div className="space-y-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {tRegister('iban')}
-              </label>
+            {/* Hidden decoy fields to prevent browser autofill on IBAN */}
+            <div
+              style={{
+                position: 'absolute',
+                opacity: 0,
+                height: 0,
+                overflow: 'hidden',
+              }}
+              aria-hidden="true"
+            >
               <input
                 type="text"
-                value={accountNumber}
-                onChange={(e) => handleIbanChange(e.target.value)}
-                placeholder="GE29TB7777777777777777"
-                maxLength={22}
-                name="iban_account_ge"
-                id="iban_account_ge"
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="characters"
-                spellCheck="false"
-                data-form-type="other"
-                data-lpignore="true"
-                data-1p-ignore="true"
-                aria-autocomplete="none"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition font-mono uppercase"
+                name="fake_username_field"
+                tabIndex={-1}
+                autoComplete="username"
               />
-              {errors.accountNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.accountNumber}</p>
-              )}
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {tRegister('ibanHint')}
-              </p>
+              <input
+                type="email"
+                name="fake_email_field"
+                tabIndex={-1}
+                autoComplete="email"
+              />
+              <input
+                type="password"
+                name="fake_password_field"
+                tabIndex={-1}
+                autoComplete="current-password"
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {tRegister('bank')}
-              </label>
-              <select
-                value={beneficiaryBankCode}
-                onChange={(e) => setBeneficiaryBankCode(e.target.value)}
-                disabled={!!detectBankFromIban(accountNumber)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition disabled:opacity-60"
-              >
-                <option value="">{tRegister('selectBank')}</option>
-                {GEORGIAN_BANKS.map((bank) => (
-                  <option key={bank.code} value={bank.code}>
-                    {bank.name} ({bank.nameEn})
-                  </option>
-                ))}
-              </select>
-              {errors.beneficiaryBankCode && (
-                <p className="text-red-500 text-sm mt-1">{errors.beneficiaryBankCode}</p>
-              )}
-              {detectBankFromIban(accountNumber) && (
-                <p className="text-green-600 dark:text-green-400 text-xs mt-1">
-                  ✓ {tRegister('bankDetectedAutomatically')}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {tRegister('iban')}
+                </label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => handleIbanChange(e.target.value)}
+                  placeholder="GE29TB7777777777777777"
+                  maxLength={22}
+                  name="iban_account_ge"
+                  id="iban_account_ge"
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="characters"
+                  spellCheck="false"
+                  data-form-type="other"
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  aria-autocomplete="none"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition font-mono uppercase"
+                />
+                {errors.accountNumber && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.accountNumber}
+                  </p>
+                )}
+                <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                  {tRegister('ibanHint')}
                 </p>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <button
-            onClick={handleSaveBankInfo}
-            disabled={isSavingBank}
-            className="px-6 py-2.5 bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-600)] transition-colors disabled:opacity-50"
-          >
-            {isSavingBank ? 'Saving...' : 'Save Banking Info'}
-          </button>
-        </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {tRegister('bank')}
+                </label>
+                <select
+                  value={beneficiaryBankCode}
+                  onChange={(e) => setBeneficiaryBankCode(e.target.value)}
+                  disabled={!!detectBankFromIban(accountNumber)}
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition disabled:opacity-60"
+                >
+                  <option value="">{tRegister('selectBank')}</option>
+                  {GEORGIAN_BANKS.map((bank) => (
+                    <option key={bank.code} value={bank.code}>
+                      {bank.name} ({bank.nameEn})
+                    </option>
+                  ))}
+                </select>
+                {errors.beneficiaryBankCode && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.beneficiaryBankCode}
+                  </p>
+                )}
+                {detectBankFromIban(accountNumber) && (
+                  <p className="text-green-600 dark:text-green-400 text-xs mt-1">
+                    ✓ {tRegister('bankDetectedAutomatically')}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveBankInfo}
+              disabled={isSavingBank}
+              className="px-6 py-2.5 bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-600)] transition-colors disabled:opacity-50"
+            >
+              {isSavingBank ? 'Saving...' : 'Save Banking Info'}
+            </button>
+          </div>
         )}
 
         {/* Security - Only for email users */}
@@ -628,7 +668,9 @@ export default function ProfilePage() {
                   className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                 />
                 {errors.currentPassword && (
-                  <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.currentPassword}
+                  </p>
                 )}
               </div>
 
@@ -645,7 +687,9 @@ export default function ProfilePage() {
                     className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                   />
                   {errors.newPassword && (
-                    <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.newPassword}
+                    </p>
                   )}
                 </div>
 
@@ -661,7 +705,9 @@ export default function ProfilePage() {
                     className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                   />
                   {errors.confirmPassword && (
-                    <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.confirmPassword}
+                    </p>
                   )}
                 </div>
               </div>
@@ -753,7 +799,9 @@ export default function ProfilePage() {
                 disabled={isDeletingCourierRole}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               >
-                {isDeletingCourierRole ? 'Removing...' : 'Remove Courier Account'}
+                {isDeletingCourierRole
+                  ? 'Removing...'
+                  : 'Remove Courier Account'}
               </button>
             )}
             <button

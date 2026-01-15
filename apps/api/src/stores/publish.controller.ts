@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,7 +20,7 @@ export class PublishController {
 
   @Get('requirements')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Check missing fields required for publishing' })
   @ApiResponse({ status: 200, description: 'Missing fields returned' })
@@ -29,7 +30,7 @@ export class PublishController {
 
   @Post('request')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Request to publish the store' })
   @ApiResponse({ status: 200, description: 'Publish request submitted' })
@@ -52,7 +53,7 @@ export class PublishController {
 
   @Get('status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current publish status' })
   @ApiResponse({ status: 200, description: 'Publish status returned' })
@@ -79,7 +80,7 @@ export class PublishController {
 
   @Get('admin/pending')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all stores pending review (admin)' })
   @ApiResponse({ status: 200, description: 'Pending stores returned' })
@@ -97,7 +98,7 @@ export class PublishController {
 
   @Post('admin/:storeId/approve')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve a store publish request (admin)' })
   @ApiResponse({ status: 200, description: 'Store approved' })
@@ -112,7 +113,7 @@ export class PublishController {
 
   @Post('admin/:storeId/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject a store publish request (admin)' })
   @ApiResponse({ status: 200, description: 'Store rejected' })

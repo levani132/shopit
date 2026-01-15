@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ShopItLogo } from './ShopItLogo';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
 import { getUserInitials } from '../../lib/utils';
 
 interface ShopItBarProps {
@@ -74,8 +74,8 @@ export function ShopItBar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isSeller = user?.role === 'seller' || user?.role === 'admin';
-  const isCourier = user?.role === 'courier';
+  const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
+  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
   const initials = user
     ? getUserInitials(user.firstName, user.lastName, user.email)
     : '';

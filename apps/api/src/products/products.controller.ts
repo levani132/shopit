@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -67,7 +68,7 @@ export class ProductsController {
    */
   @Get('my-store')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async getMyProducts(@Request() req: { user: { storeId: string } }) {
     return this.productsService.findByStore(req.user.storeId);
   }
@@ -93,7 +94,7 @@ export class ProductsController {
    */
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'images', maxCount: 10 },
@@ -165,7 +166,7 @@ export class ProductsController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'images', maxCount: 10 },
@@ -237,7 +238,7 @@ export class ProductsController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async delete(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -260,7 +261,7 @@ export class ProductsController {
    */
   @Post(':id/variants/generate')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async generateVariants(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -273,7 +274,7 @@ export class ProductsController {
    */
   @Post(':id/variants')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async bulkUpdateVariants(
     @Param('id') id: string,
     @Body() dto: BulkVariantsDto,
@@ -287,7 +288,7 @@ export class ProductsController {
    */
   @Patch(':id/variants/:variantId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async updateVariant(
     @Param('id') id: string,
     @Param('variantId') variantId: string,
@@ -302,7 +303,7 @@ export class ProductsController {
    */
   @Delete(':id/variants/:variantId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async deleteVariant(
     @Param('id') id: string,
     @Param('variantId') variantId: string,

@@ -7,7 +7,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { CartButton } from './CartButton';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
 import { getLatinInitial } from '../../lib/utils';
 import Link from 'next/link';
 
@@ -436,7 +436,7 @@ interface MobileNavProps {
     firstName: string;
     lastName: string;
     email: string;
-    role: string;
+    role: number;
   } | null;
   mainSiteUrl: string;
   locale: string;
@@ -455,7 +455,7 @@ function MobileNav({
   const t = useTranslations('store');
   const { logout } = useAuth();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const isSeller = user?.role === 'seller' || user?.role === 'admin';
+  const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
   const hasCategories = categories.length > 0;
 
   // Get localized category name

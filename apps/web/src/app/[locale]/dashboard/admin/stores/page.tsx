@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
 
 interface Store {
@@ -147,7 +148,9 @@ function StoresManagementContent() {
           </div>
         ) : stores.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">{t('noStoresFound')}</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              {t('noStoresFound')}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -173,7 +176,10 @@ function StoresManagementContent() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-zinc-700">
                 {stores.map((store) => (
-                  <tr key={store._id} className="hover:bg-gray-50 dark:hover:bg-zinc-700/50">
+                  <tr
+                    key={store._id}
+                    className="hover:bg-gray-50 dark:hover:bg-zinc-700/50"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-zinc-700 flex items-center justify-center overflow-hidden">
@@ -185,7 +191,9 @@ function StoresManagementContent() {
                             />
                           ) : (
                             <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                              {store.nameEn?.charAt(0) || store.name?.charAt(0) || 'S'}
+                              {store.nameEn?.charAt(0) ||
+                                store.name?.charAt(0) ||
+                                'S'}
                             </span>
                           )}
                         </div>
@@ -213,7 +221,9 @@ function StoresManagementContent() {
                       <span
                         className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(store.publishStatus || 'draft')}`}
                       >
-                        {t(`status${(store.publishStatus || 'draft').charAt(0).toUpperCase() + (store.publishStatus || 'draft').slice(1).replace('_', '')}`)}
+                        {t(
+                          `status${(store.publishStatus || 'draft').charAt(0).toUpperCase() + (store.publishStatus || 'draft').slice(1).replace('_', '')}`,
+                        )}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -243,7 +253,10 @@ function StoresManagementContent() {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {t('showingStores', {
               from: (pagination.page - 1) * pagination.limit + 1,
-              to: Math.min(pagination.page * pagination.limit, pagination.total),
+              to: Math.min(
+                pagination.page * pagination.limit,
+                pagination.total,
+              ),
               total: pagination.total,
             })}
           </p>
@@ -271,9 +284,8 @@ function StoresManagementContent() {
 
 export default function StoresManagementPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <StoresManagementContent />
     </ProtectedRoute>
   );
 }
-

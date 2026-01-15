@@ -3,6 +3,7 @@
 import { useState, useEffect, memo } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
 
 interface VehicleShippingConfig {
@@ -123,7 +124,9 @@ const InputField = memo(function InputField({
         )}
       </div>
       {helperText && (
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {helperText}
+        </p>
       )}
     </div>
   );
@@ -146,7 +149,9 @@ const ToggleField = memo(function ToggleField({
       <div>
         <p className="font-medium text-gray-900 dark:text-white">{label}</p>
         {helperText && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {helperText}
+          </p>
         )}
       </div>
       <button
@@ -230,7 +235,9 @@ function SiteSettingsContent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'commission' | 'shipping' | 'platform' | 'features'>('commission');
+  const [activeTab, setActiveTab] = useState<
+    'commission' | 'shipping' | 'platform' | 'features'
+  >('commission');
 
   useEffect(() => {
     async function fetchSettings() {
@@ -261,8 +268,9 @@ function SiteSettingsContent() {
 
     try {
       // Strip MongoDB-specific fields that shouldn't be sent back
-      const { _id, createdAt, updatedAt, __v, ...cleanSettings } = settings as any;
-      
+      const { _id, createdAt, updatedAt, __v, ...cleanSettings } =
+        settings as any;
+
       const response = await api.put('/admin/settings', cleanSettings);
       if (!response.ok) {
         const errorData = await response.json();
@@ -278,7 +286,10 @@ function SiteSettingsContent() {
     }
   };
 
-  const updateSetting = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+  const updateSetting = <K extends keyof SiteSettings>(
+    key: K,
+    value: SiteSettings[K],
+  ) => {
     if (settings) {
       setSettings({ ...settings, [key]: value });
     }
@@ -287,7 +298,7 @@ function SiteSettingsContent() {
   const updateShipping = (
     type: 'bikeShipping' | 'carShipping' | 'suvShipping' | 'vanShipping',
     field: keyof VehicleShippingConfig,
-    value: number
+    value: number,
   ) => {
     if (settings) {
       setSettings({
@@ -308,7 +319,9 @@ function SiteSettingsContent() {
   if (!settings) {
     return (
       <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-        <p className="text-red-600 dark:text-red-400">{error || 'Settings not found'}</p>
+        <p className="text-red-600 dark:text-red-400">
+          {error || 'Settings not found'}
+        </p>
       </div>
     );
   }
@@ -347,7 +360,9 @@ function SiteSettingsContent() {
       {/* Success/Error Messages */}
       {success && (
         <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-          <p className="text-green-600 dark:text-green-400">{t('settingsSaved')}</p>
+          <p className="text-green-600 dark:text-green-400">
+            {t('settingsSaved')}
+          </p>
         </div>
       )}
       {error && (
@@ -385,7 +400,9 @@ function SiteSettingsContent() {
             <InputField
               label={t('siteCommissionRate')}
               value={(settings.siteCommissionRate * 100).toFixed(0)}
-              onChange={(v) => updateSetting('siteCommissionRate', (v as number) / 100)}
+              onChange={(v) =>
+                updateSetting('siteCommissionRate', (v as number) / 100)
+              }
               suffix="%"
               min={0}
               max={100}
@@ -400,7 +417,9 @@ function SiteSettingsContent() {
             <InputField
               label={t('courierEarningsPercentage')}
               value={(settings.courierEarningsPercentage * 100).toFixed(0)}
-              onChange={(v) => updateSetting('courierEarningsPercentage', (v as number) / 100)}
+              onChange={(v) =>
+                updateSetting('courierEarningsPercentage', (v as number) / 100)
+              }
               suffix="%"
               min={0}
               max={100}
@@ -415,7 +434,9 @@ function SiteSettingsContent() {
             <InputField
               label={t('minimumWithdrawalAmount')}
               value={settings.minimumWithdrawalAmount}
-              onChange={(v) => updateSetting('minimumWithdrawalAmount', v as number)}
+              onChange={(v) =>
+                updateSetting('minimumWithdrawalAmount', v as number)
+              }
               suffix="₾"
               min={0}
             />
@@ -435,14 +456,18 @@ function SiteSettingsContent() {
             <InputField
               label={t('freeSubdomainChanges')}
               value={settings.freeSubdomainChanges}
-              onChange={(v) => updateSetting('freeSubdomainChanges', v as number)}
+              onChange={(v) =>
+                updateSetting('freeSubdomainChanges', v as number)
+              }
               min={0}
               helperText={t('freeSubdomainChangesHelp')}
             />
             <InputField
               label={t('subdomainChangePrice')}
               value={settings.subdomainChangePrice}
-              onChange={(v) => updateSetting('subdomainChangePrice', v as number)}
+              onChange={(v) =>
+                updateSetting('subdomainChangePrice', v as number)
+              }
               suffix="₾"
               min={0}
               helperText={t('subdomainChangePriceHelp')}
@@ -461,7 +486,9 @@ function SiteSettingsContent() {
             <InputField
               label={t('defaultRatePerMinute')}
               value={settings.defaultDeliveryRatePerMinute}
-              onChange={(v) => updateSetting('defaultDeliveryRatePerMinute', v as number)}
+              onChange={(v) =>
+                updateSetting('defaultDeliveryRatePerMinute', v as number)
+              }
               suffix="₾/min"
               step={0.1}
               min={0}
@@ -476,7 +503,9 @@ function SiteSettingsContent() {
             <InputField
               label={t('deliveryFeePrecision')}
               value={settings.deliveryFeePrecision}
-              onChange={(v) => updateSetting('deliveryFeePrecision', v as number)}
+              onChange={(v) =>
+                updateSetting('deliveryFeePrecision', v as number)
+              }
               suffix="₾"
               step={0.1}
               min={0.1}
@@ -496,7 +525,9 @@ function SiteSettingsContent() {
               type="bikeShipping"
               icon="🏍️"
               settings={settings.bikeShipping}
-              onUpdate={(field, value) => updateShipping('bikeShipping', field, value)}
+              onUpdate={(field, value) =>
+                updateShipping('bikeShipping', field, value)
+              }
               t={t}
             />
             <ShippingCard
@@ -504,7 +535,9 @@ function SiteSettingsContent() {
               type="carShipping"
               icon="🚗"
               settings={settings.carShipping}
-              onUpdate={(field, value) => updateShipping('carShipping', field, value)}
+              onUpdate={(field, value) =>
+                updateShipping('carShipping', field, value)
+              }
               t={t}
             />
             <ShippingCard
@@ -512,7 +545,9 @@ function SiteSettingsContent() {
               type="suvShipping"
               icon="🚙"
               settings={settings.suvShipping}
-              onUpdate={(field, value) => updateShipping('suvShipping', field, value)}
+              onUpdate={(field, value) =>
+                updateShipping('suvShipping', field, value)
+              }
               t={t}
             />
             <ShippingCard
@@ -520,7 +555,9 @@ function SiteSettingsContent() {
               type="vanShipping"
               icon="🚛"
               settings={settings.vanShipping}
-              onUpdate={(field, value) => updateShipping('vanShipping', field, value)}
+              onUpdate={(field, value) =>
+                updateShipping('vanShipping', field, value)
+              }
               t={t}
             />
           </div>
@@ -587,7 +624,9 @@ function SiteSettingsContent() {
               </label>
               <textarea
                 value={settings.maintenanceMessage}
-                onChange={(e) => updateSetting('maintenanceMessage', e.target.value)}
+                onChange={(e) =>
+                  updateSetting('maintenanceMessage', e.target.value)
+                }
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
               />
@@ -601,9 +640,8 @@ function SiteSettingsContent() {
 
 export default function SiteSettingsPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <SiteSettingsContent />
     </ProtectedRoute>
   );
 }
-

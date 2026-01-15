@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -40,7 +41,7 @@ export class AttributesController {
    */
   @Get('my-store')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async getMyAttributes(
     @Request() req: { user: { storeId: string } },
     @Query('includeInactive') includeInactive?: string,
@@ -64,7 +65,7 @@ export class AttributesController {
    */
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async create(
     @Request() req: { user: { storeId: string } },
     @Body() dto: CreateAttributeDto,
@@ -77,7 +78,7 @@ export class AttributesController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async update(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -91,7 +92,7 @@ export class AttributesController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async delete(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -104,7 +105,7 @@ export class AttributesController {
    */
   @Post('reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async reorder(
     @Request() req: { user: { storeId: string } },
     @Body() dto: ReorderAttributesDto,
@@ -119,7 +120,7 @@ export class AttributesController {
    */
   @Post(':id/values')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async addValue(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -133,7 +134,7 @@ export class AttributesController {
    */
   @Patch(':id/values/:valueId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async updateValue(
     @Param('id') id: string,
     @Param('valueId') valueId: string,
@@ -148,7 +149,7 @@ export class AttributesController {
    */
   @Delete(':id/values/:valueId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async deleteValue(
     @Param('id') id: string,
     @Param('valueId') valueId: string,
@@ -162,7 +163,7 @@ export class AttributesController {
    */
   @Post(':id/values/reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async reorderValues(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },

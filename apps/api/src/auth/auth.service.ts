@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -815,12 +816,16 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    if (user.role !== 'courier') {
+    // Check if user has courier role using bitmask
+    if ((user.role & Role.COURIER) === 0) {
       throw new BadRequestException('User is not a courier');
     }
 
+    // Remove courier bit from role, keeping other roles
+    const newRole = user.role & ~Role.COURIER;
+
     await this.userModel.findByIdAndUpdate(userId, {
-      $set: { role: 'user' },
+      $set: { role: newRole || Role.USER }, // Ensure at least USER role
       $unset: {
         isCourierApproved: 1,
         courierAppliedAt: 1,
@@ -837,7 +842,9 @@ export class AuthService {
    * Get user's shipping addresses
    */
   async getUserAddresses(userId: string): Promise<any[]> {
-    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    const user = await this.userModel
+      .findById(userId)
+      .select('shippingAddresses');
     return user?.shippingAddresses || [];
   }
 
@@ -881,7 +888,9 @@ export class AuthService {
     });
 
     // If no other addresses exist, make this the default
-    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    const user = await this.userModel
+      .findById(userId)
+      .select('shippingAddresses');
     if (user?.shippingAddresses?.length === 1) {
       await this.userModel.findOneAndUpdate(
         { _id: userId, 'shippingAddresses._id': newAddress._id },
@@ -910,7 +919,9 @@ export class AuthService {
       isDefault?: boolean;
     },
   ): Promise<any> {
-    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    const user = await this.userModel
+      .findById(userId)
+      .select('shippingAddresses');
     const existingAddress = user?.shippingAddresses?.find(
       (a) => a._id === addressId,
     );
@@ -961,7 +972,9 @@ export class AuthService {
    * Delete a shipping address
    */
   async deleteUserAddress(userId: string, addressId: string): Promise<void> {
-    const user = await this.userModel.findById(userId).select('shippingAddresses');
+    const user = await this.userModel
+      .findById(userId)
+      .select('shippingAddresses');
     const addressToDelete = user?.shippingAddresses?.find(
       (a) => a._id === addressId,
     );
@@ -972,10 +985,15 @@ export class AuthService {
 
     // If the deleted address was default, set the first remaining as default
     if (addressToDelete?.isDefault) {
-      const updatedUser = await this.userModel.findById(userId).select('shippingAddresses');
+      const updatedUser = await this.userModel
+        .findById(userId)
+        .select('shippingAddresses');
       if (updatedUser?.shippingAddresses?.length) {
         await this.userModel.findOneAndUpdate(
-          { _id: userId, 'shippingAddresses._id': updatedUser.shippingAddresses[0]._id },
+          {
+            _id: userId,
+            'shippingAddresses._id': updatedUser.shippingAddresses[0]._id,
+          },
           { $set: { 'shippingAddresses.$.isDefault': true } },
         );
       }
@@ -1021,9 +1039,12 @@ export class AuthService {
     if (data.firstName !== undefined) user.firstName = data.firstName;
     if (data.lastName !== undefined) user.lastName = data.lastName;
     if (data.phoneNumber !== undefined) user.phoneNumber = data.phoneNumber;
-    if (data.identificationNumber !== undefined) user.identificationNumber = data.identificationNumber;
-    if (data.accountNumber !== undefined) user.accountNumber = data.accountNumber;
-    if (data.beneficiaryBankCode !== undefined) user.beneficiaryBankCode = data.beneficiaryBankCode;
+    if (data.identificationNumber !== undefined)
+      user.identificationNumber = data.identificationNumber;
+    if (data.accountNumber !== undefined)
+      user.accountNumber = data.accountNumber;
+    if (data.beneficiaryBankCode !== undefined)
+      user.beneficiaryBankCode = data.beneficiaryBankCode;
 
     // Check if profile is now complete
     const hasRequiredFields = !!(
@@ -1057,7 +1078,10 @@ export class AuthService {
     }
 
     // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
     if (!isPasswordValid) {
       return false;
     }
@@ -1118,7 +1142,8 @@ export class AuthService {
     await user.save();
 
     return {
-      message: 'Courier application submitted successfully. Please wait for admin approval.',
+      message:
+        'Courier application submitted successfully. Please wait for admin approval.',
       status: 'pending',
     };
   }

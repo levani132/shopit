@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../../../contexts/AuthContext';
 
 interface FaqItem {
   _id: string;
@@ -93,14 +93,22 @@ export default function ContentManagementPage() {
 
   // Auth check
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || user?.role !== 'admin')) {
+    if (
+      !authLoading &&
+      (!isAuthenticated || !hasRole(user?.role ?? 0, Role.ADMIN))
+    ) {
       router.replace('/dashboard');
     }
   }, [authLoading, isAuthenticated, user, router]);
 
   // Fetch content on tab change
   useEffect(() => {
-    if (authLoading || !isAuthenticated || user?.role !== 'admin') return;
+    if (
+      authLoading ||
+      !isAuthenticated ||
+      !hasRole(user?.role ?? 0, Role.ADMIN)
+    )
+      return;
 
     setIsLoading(true);
     const fetchContent = async () => {
@@ -243,7 +251,11 @@ export default function ContentManagementPage() {
     }
   };
 
-  if (authLoading || !isAuthenticated || user?.role !== 'admin') {
+  if (
+    authLoading ||
+    !isAuthenticated ||
+    !hasRole(user?.role ?? 0, Role.ADMIN)
+  ) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="w-8 h-8 border-4 border-[var(--accent-500)] border-t-transparent rounded-full animate-spin" />

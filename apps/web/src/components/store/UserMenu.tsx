@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../contexts/AuthContext';
+import {
+  useAuth,
+  hasRole,
+  Role,
+  getPrimaryRoleName,
+} from '../../contexts/AuthContext';
 import { getUserInitials } from '../../lib/utils';
 import Link from 'next/link';
 
@@ -48,17 +53,16 @@ export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
     return null;
   }
 
-  const isSeller = user.role === 'seller' || user.role === 'admin';
-  const isAdmin = user.role === 'admin';
-  const isCourier = user.role === 'courier';
+  const userRole = user.role ?? Role.USER;
+  const isSeller = hasRole(userRole, Role.SELLER);
+  const isCourier = hasRole(userRole, Role.COURIER);
   const initials = getUserInitials(user.firstName, user.lastName, user.email);
   const displayName = user.firstName || user.email.split('@')[0];
 
   // Get the appropriate role label
   const getRoleLabel = () => {
-    if (isAdmin) return t('admin');
-    if (isCourier) return t('courier');
-    if (user.role === 'seller') return t('seller');
+    const primaryRole = getPrimaryRoleName(userRole);
+    if (primaryRole && primaryRole !== 'user') return t(primaryRole);
     return null;
   };
   const roleLabel = getRoleLabel();

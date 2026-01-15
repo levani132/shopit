@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -44,7 +45,7 @@ export class CategoriesController {
    */
   @Get('my-store')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async getMyCategories(@Request() req: { user: { storeId: string } }) {
     return this.categoriesService.findAllByStore(req.user.storeId);
   }
@@ -64,7 +65,7 @@ export class CategoriesController {
    */
   @Post('rebuild-stats')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async rebuildStats(@Request() req: { user: { storeId: string } }) {
     await this.categoryStatsService.rebuildStatsForStore(req.user.storeId);
     return { success: true, message: 'Stats rebuilt successfully' };
@@ -97,7 +98,7 @@ export class CategoriesController {
    */
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async create(
     @Request() req: { user: { storeId: string } },
     @Body() dto: CreateCategoryDto,
@@ -110,7 +111,7 @@ export class CategoriesController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async update(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -124,7 +125,7 @@ export class CategoriesController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async delete(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -137,7 +138,7 @@ export class CategoriesController {
    */
   @Post('reorder')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async reorder(
     @Request() req: { user: { storeId: string } },
     @Body() dto: ReorderCategoriesDto,
@@ -152,7 +153,7 @@ export class CategoriesController {
    */
   @Post('subcategory')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async createSubcategory(
     @Request() req: { user: { storeId: string } },
     @Body() dto: CreateSubcategoryDto,
@@ -165,7 +166,7 @@ export class CategoriesController {
    */
   @Patch('subcategory/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async updateSubcategory(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },
@@ -179,7 +180,7 @@ export class CategoriesController {
    */
   @Delete('subcategory/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async deleteSubcategory(
     @Param('id') id: string,
     @Request() req: { user: { storeId: string } },

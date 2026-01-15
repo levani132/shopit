@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../../contexts/AuthContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -33,11 +33,13 @@ export default function CourierAnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'week' | 'month' | 'year' | 'all'>('week');
+  const [period, setPeriod] = useState<'week' | 'month' | 'year' | 'all'>(
+    'week',
+  );
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || user.role !== 'courier') {
+    if (!user || !hasRole(user.role ?? 0, Role.COURIER)) {
       setError('You must be a courier to access this page');
       setLoading(false);
       return;
@@ -86,7 +88,10 @@ export default function CourierAnalyticsPage() {
         <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-48" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl" />
+            <div
+              key={i}
+              className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl"
+            />
           ))}
         </div>
       </div>
@@ -266,4 +271,3 @@ export default function CourierAnalyticsPage() {
     </div>
   );
 }
-

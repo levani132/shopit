@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
@@ -18,7 +18,7 @@ export function CourierHeader() {
 
   const [topBarVisible, setTopBarVisible] = useState(true);
 
-  const isCourier = user?.role === 'courier';
+  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
 
   // Handle scroll behavior - hide top bar on scroll (like StoreHeader)
   useEffect(() => {
@@ -53,10 +53,7 @@ export function CourierHeader() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo - links to courier home (no /couriers prefix, middleware handles it) */}
-            <Link
-              href={`/${locale}`}
-              className="flex items-center gap-2"
-            >
+            <Link href={`/${locale}`} className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-white"

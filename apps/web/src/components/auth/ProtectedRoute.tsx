@@ -2,23 +2,27 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, hasAnyRole, Role } from '../../contexts/AuthContext';
 import { useLocale } from 'next-intl';
+import { RoleValue } from '@sellit/constants';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'seller' | 'user' | 'courier')[];
+  allowedRoles?: RoleValue[];
   redirectTo?: string;
 }
 
 export function ProtectedRoute({
   children,
-  allowedRoles = ['admin', 'seller', 'user', 'courier'],
+  allowedRoles = [Role.ADMIN, Role.SELLER, Role.USER, Role.COURIER],
   redirectTo,
 }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
   const locale = useLocale();
+
+  const userRole = user?.role ?? 0;
+  const hasAllowedRole = hasAnyRole(userRole, allowedRoles);
 
   useEffect(() => {
     if (isLoading) return;
@@ -31,10 +35,18 @@ export function ProtectedRoute({
     }
 
     // Check role
-    if (user && !allowedRoles.includes(user.role)) {
+    if (user && !hasAllowedRole) {
       router.push(`/${locale}`);
     }
-  }, [user, isLoading, isAuthenticated, allowedRoles, router, locale, redirectTo]);
+  }, [
+    user,
+    isLoading,
+    isAuthenticated,
+    hasAllowedRole,
+    router,
+    locale,
+    redirectTo,
+  ]);
 
   // Show loading state
   if (isLoading) {
@@ -49,7 +61,7 @@ export function ProtectedRoute({
   }
 
   // Not authenticated or not allowed
-  if (!isAuthenticated || (user && !allowedRoles.includes(user.role))) {
+  if (!isAuthenticated || (user && !hasAllowedRole)) {
     return null;
   }
 
@@ -63,7 +75,7 @@ export function SellerProtectedRoute({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'seller']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN, Role.SELLER]}>
       {children}
     </ProtectedRoute>
   );
@@ -79,10 +91,10 @@ export function DashboardProtectedRoute({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'seller', 'courier', 'user']}>
+    <ProtectedRoute
+      allowedRoles={[Role.ADMIN, Role.SELLER, Role.COURIER, Role.USER]}
+    >
       {children}
     </ProtectedRoute>
   );
 }
-
-

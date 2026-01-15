@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../../contexts/AuthContext';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -38,7 +38,7 @@ export default function CourierBalancePage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user || user.role !== 'courier') {
+    if (!user || !hasRole(user.role ?? 0, Role.COURIER)) {
       setError('You must be a courier to access this page');
       setLoading(false);
       return;
@@ -47,9 +47,12 @@ export default function CourierBalancePage() {
     const fetchData = async () => {
       try {
         // Fetch balance info from courier endpoint
-        const balanceResponse = await fetch(`${API_URL}/api/v1/balance/courier`, {
-          credentials: 'include',
-        });
+        const balanceResponse = await fetch(
+          `${API_URL}/api/v1/balance/courier`,
+          {
+            credentials: 'include',
+          },
+        );
         if (balanceResponse.ok) {
           const balanceData = await balanceResponse.json();
           setBalance(balanceData);
@@ -65,9 +68,12 @@ export default function CourierBalancePage() {
         }
 
         // Fetch courier transactions
-        const response = await fetch(`${API_URL}/api/v1/balance/courier/transactions`, {
-          credentials: 'include',
-        });
+        const response = await fetch(
+          `${API_URL}/api/v1/balance/courier/transactions`,
+          {
+            credentials: 'include',
+          },
+        );
         if (response.ok) {
           const data = await response.json();
           setTransactions(data.transactions || data);
@@ -120,7 +126,10 @@ export default function CourierBalancePage() {
         <div className="h-8 bg-gray-200 dark:bg-zinc-700 rounded w-48" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl" />
+            <div
+              key={i}
+              className="h-24 bg-gray-200 dark:bg-zinc-700 rounded-xl"
+            />
           ))}
         </div>
       </div>
@@ -209,7 +218,11 @@ export default function CourierBalancePage() {
           />
           <button
             onClick={handleWithdraw}
-            disabled={isWithdrawing || !withdrawAmount || parseFloat(withdrawAmount) <= 0}
+            disabled={
+              isWithdrawing ||
+              !withdrawAmount ||
+              parseFloat(withdrawAmount) <= 0
+            }
             className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isWithdrawing ? '...' : t('withdraw')}
@@ -231,7 +244,10 @@ export default function CourierBalancePage() {
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-zinc-700">
             {transactions.map((tx) => (
-              <div key={tx._id} className="p-4 flex justify-between items-center">
+              <div
+                key={tx._id}
+                className="p-4 flex justify-between items-center"
+              >
                 <div>
                   <p className="font-medium text-gray-900 dark:text-white">
                     {tx.description}
@@ -257,4 +273,3 @@ export default function CourierBalancePage() {
     </div>
   );
 }
-

@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -72,28 +73,28 @@ export class ContentController {
   // ===== Admin FAQ Endpoints =====
   @Get('admin/faq')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async getAllFaqs() {
     return this.contentService.getAllFaqs();
   }
 
   @Post('admin/faq')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async createFaq(@Body() data: Partial<Faq>) {
     return this.contentService.createFaq(data);
   }
 
   @Put('admin/faq/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async updateFaq(@Param('id') id: string, @Body() data: Partial<Faq>) {
     return this.contentService.updateFaq(id, data);
   }
 
   @Delete('admin/faq/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async deleteFaq(@Param('id') id: string) {
     await this.contentService.deleteFaq(id);
     return { success: true };
@@ -101,7 +102,7 @@ export class ContentController {
 
   @Post('admin/faq/seed')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async seedFaqs() {
     await this.contentService.seedInitialFaqs();
     return { success: true };
@@ -110,7 +111,7 @@ export class ContentController {
   // ===== Admin About Endpoints =====
   @Put('admin/about')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async updateAbout(@Body() data: Partial<AboutContent>) {
     return this.contentService.updateAboutContent(data);
   }
@@ -118,21 +119,21 @@ export class ContentController {
   // ===== Admin Contact Endpoints =====
   @Put('admin/contact')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async updateContact(@Body() data: Partial<ContactContent>) {
     return this.contentService.updateContactContent(data);
   }
 
   @Get('admin/contact/submissions')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async getSubmissions(@Query('status') status?: string) {
     return this.contentService.getSubmissions(status);
   }
 
   @Put('admin/contact/submissions/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async updateSubmission(
     @Param('id') id: string,
     @Body() data: { status: string; adminNotes?: string },
@@ -147,7 +148,7 @@ export class ContentController {
   // ===== Admin Terms Endpoints =====
   @Put('admin/terms')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async updateTerms(@Body() data: Partial<TermsContent>) {
     return this.contentService.updateTermsContent(data);
   }
@@ -155,7 +156,7 @@ export class ContentController {
   // ===== Admin Privacy Endpoints =====
   @Put('admin/privacy')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async updatePrivacy(@Body() data: Partial<PrivacyContent>) {
     return this.contentService.updatePrivacyContent(data);
   }

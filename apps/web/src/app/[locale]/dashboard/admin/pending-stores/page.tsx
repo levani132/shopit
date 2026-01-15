@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
 
 interface PendingStore {
@@ -28,7 +29,10 @@ function PendingStoresContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [rejectModal, setRejectModal] = useState<{ storeId: string; storeName: string } | null>(null);
+  const [rejectModal, setRejectModal] = useState<{
+    storeId: string;
+    storeName: string;
+  } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
   const fetchStores = async () => {
@@ -74,9 +78,12 @@ function PendingStoresContent() {
 
     setProcessingId(rejectModal.storeId);
     try {
-      const response = await api.post(`/admin/stores/${rejectModal.storeId}/reject`, {
-        reason: rejectReason,
-      });
+      const response = await api.post(
+        `/admin/stores/${rejectModal.storeId}/reject`,
+        {
+          reason: rejectReason,
+        },
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to reject store');
@@ -182,16 +189,19 @@ function PendingStoresContent() {
                 </p>
                 <div className="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                   <span>
-                    {t('owner')}: {store.ownerId.firstName} {store.ownerId.lastName} ({store.ownerId.email})
+                    {t('owner')}: {store.ownerId.firstName}{' '}
+                    {store.ownerId.lastName} ({store.ownerId.email})
                   </span>
                   <span>
-                    {t('requestedAt')}: {new Date(store.publishRequestedAt).toLocaleDateString()}
+                    {t('requestedAt')}:{' '}
+                    {new Date(store.publishRequestedAt).toLocaleDateString()}
                   </span>
                 </div>
                 {store.publishMessage && (
                   <div className="mt-3 p-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <strong>{t('messageFromSeller')}:</strong> {store.publishMessage}
+                      <strong>{t('messageFromSeller')}:</strong>{' '}
+                      {store.publishMessage}
                     </p>
                   </div>
                 )}
@@ -208,7 +218,12 @@ function PendingStoresContent() {
                   {t('preview')}
                 </a>
                 <button
-                  onClick={() => setRejectModal({ storeId: store._id, storeName: store.name })}
+                  onClick={() =>
+                    setRejectModal({
+                      storeId: store._id,
+                      storeName: store.name,
+                    })
+                  }
                   disabled={processingId === store._id}
                   className="px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 border border-red-300 dark:border-red-800 rounded-lg transition-colors disabled:opacity-50"
                 >
@@ -282,9 +297,8 @@ function PendingStoresContent() {
 
 export default function PendingStoresPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <PendingStoresContent />
     </ProtectedRoute>
   );
 }
-

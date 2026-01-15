@@ -3,14 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
+
+// Role bitmask values
+const RoleBit = {
+  USER: 1,
+  COURIER: 2,
+  SELLER: 4,
+  ADMIN: 8,
+} as const;
 
 interface User {
   _id: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'user' | 'seller' | 'courier' | 'admin';
+  role: number; // Now a bitmask number
   createdAt: string;
   balance?: number;
   profileImage?: string;
@@ -39,9 +48,9 @@ function UsersManagementContent() {
   const [roleChangeModal, setRoleChangeModal] = useState<{
     userId: string;
     userName: string;
-    currentRole: string;
+    currentRole: number;
   } | null>(null);
-  const [newRole, setNewRole] = useState('');
+  const [newRole, setNewRole] = useState<number>(0);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fetchUsers = async (page = 1) => {
@@ -79,24 +88,25 @@ function UsersManagementContent() {
   };
 
   const handleRoleChange = async () => {
-    if (!roleChangeModal || !newRole) return;
+    if (!roleChangeModal || newRole === 0) return;
 
     setProcessingId(roleChangeModal.userId);
     try {
-      const response = await api.put(`/admin/users/${roleChangeModal.userId}/role`, { role: newRole });
+      const response = await api.put(
+        `/admin/users/${roleChangeModal.userId}/role`,
+        { role: newRole },
+      );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to change role');
       }
       setUsers(
         users.map((u) =>
-          u._id === roleChangeModal.userId
-            ? { ...u, role: newRole as User['role'] }
-            : u
-        )
+          u._id === roleChangeModal.userId ? { ...u, role: newRole } : u,
+        ),
       );
       setRoleChangeModal(null);
-      setNewRole('');
+      setNewRole(0);
     } catch (err: any) {
       console.error('Failed to change role:', err);
       setError(err.message || 'Failed to change role');
@@ -105,17 +115,41 @@ function UsersManagementContent() {
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
-      case 'seller':
-        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-      case 'courier':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-zinc-700 dark:text-gray-300';
+  // Toggle a role bit in the newRole
+  const toggleRoleBit = (roleBit: number) => {
+    // USER role (bit 1) is always required
+    if (roleBit === RoleBit.USER) return;
+
+    if ((newRole & roleBit) !== 0) {
+      // Remove the role
+      setNewRole(newRole & ~roleBit);
+    } else {
+      // Add the role
+      setNewRole(newRole | roleBit);
     }
+  };
+
+  // Get display-friendly role names from bitmask
+  const getRoleNames = (role: number): string[] => {
+    const roles: string[] = [];
+    if ((role & RoleBit.ADMIN) !== 0) roles.push('Admin');
+    if ((role & RoleBit.SELLER) !== 0) roles.push('Seller');
+    if ((role & RoleBit.COURIER) !== 0) roles.push('Courier');
+    if (roles.length === 0) roles.push('User');
+    return roles;
+  };
+
+  const getRoleBadgeColor = (role: number) => {
+    if ((role & RoleBit.ADMIN) !== 0) {
+      return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+    }
+    if ((role & RoleBit.SELLER) !== 0) {
+      return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+    }
+    if ((role & RoleBit.COURIER) !== 0) {
+      return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+    }
+    return 'bg-gray-100 text-gray-700 dark:bg-zinc-700 dark:text-gray-300';
   };
 
   return (
@@ -175,7 +209,9 @@ function UsersManagementContent() {
           </div>
         ) : users.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">{t('noUsersFound')}</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              {t('noUsersFound')}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -201,7 +237,10 @@ function UsersManagementContent() {
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-zinc-700">
                 {users.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50 dark:hover:bg-zinc-700/50">
+                  <tr
+                    key={user._id}
+                    className="hover:bg-gray-50 dark:hover:bg-zinc-700/50"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-zinc-700 flex items-center justify-center overflow-hidden">
@@ -228,11 +267,16 @@ function UsersManagementContent() {
                       {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}
-                      >
-                        {t(`role${user.role.charAt(0).toUpperCase() + user.role.slice(1)}`)}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {getRoleNames(user.role).map((roleName) => (
+                          <span
+                            key={roleName}
+                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getRoleBadgeColor(user.role)}`}
+                          >
+                            {roleName}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {new Date(user.createdAt).toLocaleDateString()}
@@ -266,7 +310,10 @@ function UsersManagementContent() {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {t('showingUsers', {
               from: (pagination.page - 1) * pagination.limit + 1,
-              to: Math.min(pagination.page * pagination.limit, pagination.total),
+              to: Math.min(
+                pagination.page * pagination.limit,
+                pagination.total,
+              ),
               total: pagination.total,
             })}
           </p>
@@ -300,25 +347,69 @@ function UsersManagementContent() {
               {t('changeRoleFor', { name: roleChangeModal.userName })}
             </p>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('newRole')}
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('selectRoles')}
               </label>
-              <select
-                value={newRole}
-                onChange={(e) => setNewRole(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
-              >
-                <option value="user">{t('roleUser')}</option>
-                <option value="seller">{t('roleSeller')}</option>
-                <option value="courier">{t('roleCourier')}</option>
-                <option value="admin">{t('roleAdmin')}</option>
-              </select>
+              <div className="space-y-3">
+                {/* User role is always checked and disabled */}
+                <label className="flex items-center gap-3 cursor-not-allowed opacity-60">
+                  <input
+                    type="checkbox"
+                    checked={true}
+                    disabled
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('roleUser')} (base)
+                  </span>
+                </label>
+                {/* Seller */}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(newRole & RoleBit.SELLER) !== 0}
+                    onChange={() => toggleRoleBit(RoleBit.SELLER)}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('roleSeller')}
+                  </span>
+                </label>
+                {/* Courier */}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(newRole & RoleBit.COURIER) !== 0}
+                    onChange={() => toggleRoleBit(RoleBit.COURIER)}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('roleCourier')}
+                  </span>
+                </label>
+                {/* Admin */}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(newRole & RoleBit.ADMIN) !== 0}
+                    onChange={() => toggleRoleBit(RoleBit.ADMIN)}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('roleAdmin')}
+                  </span>
+                </label>
+              </div>
+              <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                Current role value: {newRole} (binary:{' '}
+                {newRole.toString(2).padStart(4, '0')})
+              </p>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => {
                   setRoleChangeModal(null);
-                  setNewRole('');
+                  setNewRole(0);
                 }}
                 className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-zinc-600 rounded-lg transition-colors"
               >
@@ -326,7 +417,10 @@ function UsersManagementContent() {
               </button>
               <button
                 onClick={handleRoleChange}
-                disabled={processingId === roleChangeModal.userId || newRole === roleChangeModal.currentRole}
+                disabled={
+                  processingId === roleChangeModal.userId ||
+                  newRole === roleChangeModal.currentRole
+                }
                 className="px-4 py-2 text-sm bg-[var(--accent-500)] hover:bg-[var(--accent-600)] text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {processingId === roleChangeModal.userId && (
@@ -344,9 +438,8 @@ function UsersManagementContent() {
 
 export default function UsersManagementPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <UsersManagementContent />
     </ProtectedRoute>
   );
 }
-

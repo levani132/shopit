@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
 
 interface OrderItem {
@@ -90,7 +91,9 @@ function OrdersManagementContent() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdatingStatus(orderId);
     try {
-      const response = await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus });
+      const response = await api.patch(`/admin/orders/${orderId}/status`, {
+        status: newStatus,
+      });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to update order status');
@@ -98,8 +101,8 @@ function OrdersManagementContent() {
       // Update the local state
       setOrders((prev) =>
         prev.map((order) =>
-          order._id === orderId ? { ...order, status: newStatus } : order
-        )
+          order._id === orderId ? { ...order, status: newStatus } : order,
+        ),
       );
     } catch (err: any) {
       console.error('Failed to update order status:', err);
@@ -172,7 +175,9 @@ function OrdersManagementContent() {
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">{t('noOrdersFound')}</p>
+            <p className="text-gray-500 dark:text-gray-400">
+              {t('noOrdersFound')}
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-zinc-700">
@@ -195,18 +200,24 @@ function OrdersManagementContent() {
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(order.status || 'pending')}`}
                     >
-                      {t(`order${(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}`)}
+                      {t(
+                        `order${(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}`,
+                      )}
                     </span>
                     <span className="font-semibold text-gray-900 dark:text-white">
                       ₾{order.totalPrice.toFixed(2)}
                     </span>
                     <button
                       onClick={() =>
-                        setExpandedOrderId(expandedOrderId === order._id ? null : order._id)
+                        setExpandedOrderId(
+                          expandedOrderId === order._id ? null : order._id,
+                        )
                       }
                       className="text-sm text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:underline"
                     >
-                      {expandedOrderId === order._id ? t('hideDetails') : t('showDetails')}
+                      {expandedOrderId === order._id
+                        ? t('hideDetails')
+                        : t('showDetails')}
                     </button>
                   </div>
                 </div>
@@ -237,11 +248,15 @@ function OrdersManagementContent() {
                         </div>
                         <div className="mt-2 pt-2 border-t border-gray-200 dark:border-zinc-600 space-y-1 text-sm">
                           <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">{t('subtotal')}</span>
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {t('subtotal')}
+                            </span>
                             <span>₾{order.itemsPrice.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600 dark:text-gray-400">{t('shipping')}</span>
+                            <span className="text-gray-600 dark:text-gray-400">
+                              {t('shipping')}
+                            </span>
                             <span>₾{order.shippingPrice.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between font-semibold">
@@ -260,7 +275,8 @@ function OrdersManagementContent() {
                             </h4>
                             <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-zinc-700/50 p-2 rounded">
                               <p>
-                                {order.shippingDetails.firstName} {order.shippingDetails.lastName}
+                                {order.shippingDetails.firstName}{' '}
+                                {order.shippingDetails.lastName}
                               </p>
                               <p>{order.shippingDetails.address}</p>
                               <p>{order.shippingDetails.city}</p>
@@ -272,16 +288,19 @@ function OrdersManagementContent() {
                         </h4>
                         <div className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
                           <p>
-                            {t('createdAt')}: {new Date(order.createdAt).toLocaleString()}
+                            {t('createdAt')}:{' '}
+                            {new Date(order.createdAt).toLocaleString()}
                           </p>
                           {order.paidAt && (
                             <p>
-                              {t('paidAt')}: {new Date(order.paidAt).toLocaleString()}
+                              {t('paidAt')}:{' '}
+                              {new Date(order.paidAt).toLocaleString()}
                             </p>
                           )}
                           {order.deliveredAt && (
                             <p>
-                              {t('deliveredAt')}: {new Date(order.deliveredAt).toLocaleString()}
+                              {t('deliveredAt')}:{' '}
+                              {new Date(order.deliveredAt).toLocaleString()}
                             </p>
                           )}
                         </div>
@@ -294,18 +313,34 @@ function OrdersManagementContent() {
                           <div className="flex gap-2">
                             <select
                               value={order.status || 'pending'}
-                              onChange={(e) => updateOrderStatus(order._id, e.target.value)}
+                              onChange={(e) =>
+                                updateOrderStatus(order._id, e.target.value)
+                              }
                               disabled={updatingStatus === order._id}
                               className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent disabled:opacity-50"
                             >
-                              <option value="pending">{t('orderPending')}</option>
+                              <option value="pending">
+                                {t('orderPending')}
+                              </option>
                               <option value="paid">{t('orderPaid')}</option>
-                              <option value="processing">{t('orderProcessing')}</option>
-                              <option value="ready_for_delivery">{t('orderReadyForDelivery')}</option>
-                              <option value="shipped">{t('orderShipped')}</option>
-                              <option value="delivered">{t('orderDelivered')}</option>
-                              <option value="cancelled">{t('orderCancelled')}</option>
-                              <option value="refunded">{t('orderRefunded')}</option>
+                              <option value="processing">
+                                {t('orderProcessing')}
+                              </option>
+                              <option value="ready_for_delivery">
+                                {t('orderReadyForDelivery')}
+                              </option>
+                              <option value="shipped">
+                                {t('orderShipped')}
+                              </option>
+                              <option value="delivered">
+                                {t('orderDelivered')}
+                              </option>
+                              <option value="cancelled">
+                                {t('orderCancelled')}
+                              </option>
+                              <option value="refunded">
+                                {t('orderRefunded')}
+                              </option>
                             </select>
                             {updatingStatus === order._id && (
                               <div className="flex items-center">
@@ -330,7 +365,10 @@ function OrdersManagementContent() {
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {t('showingOrders', {
               from: (pagination.page - 1) * pagination.limit + 1,
-              to: Math.min(pagination.page * pagination.limit, pagination.total),
+              to: Math.min(
+                pagination.page * pagination.limit,
+                pagination.total,
+              ),
               total: pagination.total,
             })}
           </p>
@@ -358,9 +396,8 @@ function OrdersManagementContent() {
 
 export default function OrdersManagementPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <OrdersManagementContent />
     </ProtectedRoute>
   );
 }
-

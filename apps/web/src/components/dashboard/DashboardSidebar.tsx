@@ -3,21 +3,20 @@
 import { usePathname } from 'next/navigation';
 import { Link } from '../../i18n/routing';
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../contexts/AuthContext';
-
-type UserRole = 'user' | 'seller' | 'courier' | 'admin';
+import { useAuth, Role, hasRole, hasAnyRole } from '../../contexts/AuthContext';
+import { RoleValue } from '@sellit/constants';
 
 interface NavItem {
   href: string;
   labelKey: string;
   icon: React.ReactNode;
-  roles?: UserRole[]; // If undefined, shown to all roles
+  roles?: RoleValue[]; // If undefined, shown to all roles
 }
 
 interface NavSection {
   titleKey?: string;
   items: NavItem[];
-  roles?: UserRole[]; // If undefined, shown to all roles
+  roles?: RoleValue[]; // If undefined, shown to all roles
 }
 
 // Icons
@@ -370,7 +369,7 @@ const ContentIcon = (
   </svg>
 );
 
-// Navigation sections - role-based
+// Navigation sections - role-based (using bitmask)
 const NAV_SECTIONS: NavSection[] = [
   // Overview - for sellers and couriers
   {
@@ -379,7 +378,7 @@ const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard',
         labelKey: 'overview',
         icon: OverviewIcon,
-        roles: ['seller', 'courier', 'admin'],
+        roles: [Role.SELLER, Role.COURIER, Role.ADMIN],
       },
     ],
   },
@@ -407,7 +406,7 @@ const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard/store',
         labelKey: 'storeSettings',
         icon: StoreIcon,
-        roles: ['seller', 'admin'],
+        roles: [Role.SELLER],
       },
       { href: '/dashboard/profile', labelKey: 'profile', icon: ProfileIcon },
       {
@@ -421,7 +420,7 @@ const NAV_SECTIONS: NavSection[] = [
   // Products section - sellers only
   {
     titleKey: 'sectionProducts',
-    roles: ['seller', 'admin'],
+    roles: [Role.SELLER],
     items: [
       {
         href: '/dashboard/attributes',
@@ -439,7 +438,7 @@ const NAV_SECTIONS: NavSection[] = [
   // Deliveries section - couriers only
   {
     titleKey: 'sectionDeliveries',
-    roles: ['courier', 'admin'],
+    roles: [Role.COURIER],
     items: [
       {
         href: '/dashboard/deliveries',
@@ -451,7 +450,7 @@ const NAV_SECTIONS: NavSection[] = [
   // Results section - sellers
   {
     titleKey: 'sectionResults',
-    roles: ['seller', 'admin'],
+    roles: [Role.SELLER],
     items: [
       { href: '/dashboard/orders', labelKey: 'orders', icon: OrdersIcon },
       { href: '/dashboard/balance', labelKey: 'balance', icon: BalanceIcon },
@@ -465,7 +464,7 @@ const NAV_SECTIONS: NavSection[] = [
   // Courier Results section
   {
     titleKey: 'sectionResults',
-    roles: ['courier'],
+    roles: [Role.COURIER],
     items: [
       {
         href: '/dashboard/courier-balance',
@@ -482,7 +481,7 @@ const NAV_SECTIONS: NavSection[] = [
   // Admin section - admin only
   {
     titleKey: 'sectionPlatformAdmin',
-    roles: ['admin'],
+    roles: [Role.ADMIN],
     items: [
       {
         href: '/dashboard/admin',
@@ -539,7 +538,7 @@ export function DashboardSidebar() {
   const { user, store } = useAuth();
 
   // Get user role, default to 'user' if not set
-  const userRole = (user?.role as UserRole) || 'user';
+  const userRole = (user?.role as RoleValue) || Role.USER;
 
   // Check if current path matches the nav item
   const isActive = (href: string) => {
@@ -556,10 +555,10 @@ export function DashboardSidebar() {
     return normalizedPath.startsWith(normalizedHref);
   };
 
-  // Check if a section/item should be shown for the current user role
-  const shouldShowForRole = (roles?: UserRole[]) => {
-    if (!roles) return true; // No role restriction
-    return roles.includes(userRole) || userRole === 'admin';
+  // Check if a section/item should be shown for the current user role (bitmask)
+  const shouldShowForRole = (roles?: RoleValue[]) => {
+    if (!roles || roles.length === 0) return true; // No role restriction
+    return hasAnyRole(userRole, roles);
   };
 
   // Filter sections and items based on role
@@ -608,7 +607,7 @@ export function DashboardSidebar() {
       </nav>
 
       {/* Store Preview Link - only for sellers with a store */}
-      {(userRole === 'seller' || userRole === 'admin') && store?.subdomain && (
+      {hasRole(userRole, Role.SELLER) && store?.subdomain && (
         <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
           <a
             href={`https://${store.subdomain}.shopit.ge`}

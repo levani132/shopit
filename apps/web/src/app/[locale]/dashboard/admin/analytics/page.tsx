@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
+import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
 
 interface RevenueData {
@@ -36,7 +37,9 @@ function AnalyticsContent() {
   const t = useTranslations('admin');
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [revenueData, setRevenueData] = useState<RevenueData | null>(null);
-  const [storeAnalytics, setStoreAnalytics] = useState<StoreAnalytics | null>(null);
+  const [storeAnalytics, setStoreAnalytics] = useState<StoreAnalytics | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,16 +51,16 @@ function AnalyticsContent() {
           api.get(`/admin/analytics/revenue?period=${period}`),
           api.get('/admin/analytics/stores'),
         ]);
-        
+
         if (!revenueRes.ok || !storeRes.ok) {
           throw new Error('Failed to fetch analytics');
         }
-        
+
         const [revenueData, storeData] = await Promise.all([
           revenueRes.json(),
           storeRes.json(),
         ]);
-        
+
         setRevenueData(revenueData);
         setStoreAnalytics(storeData);
       } catch (err: any) {
@@ -86,7 +89,9 @@ function AnalyticsContent() {
     );
   }
 
-  const maxRevenue = Math.max(...(revenueData?.dailyRevenue.map((d) => d.revenue) || [1]));
+  const maxRevenue = Math.max(
+    ...(revenueData?.dailyRevenue.map((d) => d.revenue) || [1]),
+  );
 
   return (
     <div className="space-y-6">
@@ -120,19 +125,25 @@ function AnalyticsContent() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('totalRevenue')}</p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            {t('totalRevenue')}
+          </p>
           <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">
             ₾{(revenueData?.totals.revenue || 0).toLocaleString()}
           </p>
         </div>
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('totalOrders')}</p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            {t('totalOrders')}
+          </p>
           <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
             {revenueData?.totals.orders || 0}
           </p>
         </div>
         <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('avgOrderValue')}</p>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            {t('avgOrderValue')}
+          </p>
           <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1">
             ₾{(revenueData?.totals.averageOrderValue || 0).toFixed(2)}
           </p>
@@ -198,7 +209,8 @@ function AnalyticsContent() {
                         {store.storeName}
                       </p>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {store.orderCount} {t('orders')} · {store.itemsSold} {t('items')}
+                        {store.orderCount} {t('orders')} · {store.itemsSold}{' '}
+                        {t('items')}
                       </p>
                     </div>
                   </div>
@@ -222,39 +234,40 @@ function AnalyticsContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {Object.entries(storeAnalytics.statusDistribution).map(([status, count]) => {
-                const total = Object.values(storeAnalytics.statusDistribution).reduce(
-                  (a, b) => a + b,
-                  0
-                );
-                const percentage = total > 0 ? (count / total) * 100 : 0;
+              {Object.entries(storeAnalytics.statusDistribution).map(
+                ([status, count]) => {
+                  const total = Object.values(
+                    storeAnalytics.statusDistribution,
+                  ).reduce((a, b) => a + b, 0);
+                  const percentage = total > 0 ? (count / total) * 100 : 0;
 
-                const statusColors: Record<string, string> = {
-                  published: 'bg-green-500',
-                  pending_review: 'bg-yellow-500',
-                  draft: 'bg-gray-400',
-                  rejected: 'bg-red-500',
-                };
+                  const statusColors: Record<string, string> = {
+                    published: 'bg-green-500',
+                    pending_review: 'bg-yellow-500',
+                    draft: 'bg-gray-400',
+                    rejected: 'bg-red-500',
+                  };
 
-                return (
-                  <div key={status}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-gray-700 dark:text-gray-300 capitalize">
-                        {status.replace('_', ' ')}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {count} ({percentage.toFixed(0)}%)
-                      </span>
+                  return (
+                    <div key={status}>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span className="text-gray-700 dark:text-gray-300 capitalize">
+                          {status.replace('_', ' ')}
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {count} ({percentage.toFixed(0)}%)
+                        </span>
+                      </div>
+                      <div className="h-2 bg-gray-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${statusColors[status] || 'bg-gray-400'} transition-all`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-2 bg-gray-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${statusColors[status] || 'bg-gray-400'} transition-all`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
             </div>
           )}
         </div>
@@ -265,9 +278,8 @@ function AnalyticsContent() {
 
 export default function AnalyticsPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin']}>
+    <ProtectedRoute allowedRoles={[Role.ADMIN]}>
       <AnalyticsContent />
     </ProtectedRoute>
   );
 }
-

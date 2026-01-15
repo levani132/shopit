@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -38,7 +39,7 @@ export class BogAdminController {
    */
   @Get('auth/authorize')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async authorize(@Res() res: Response) {
     try {
       const authUrl = this.bogTransferService.getAuthorizationUrl();
@@ -101,7 +102,7 @@ export class BogAdminController {
    */
   @Get('auth/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async checkAuthStatus() {
     const isAuthenticated = this.bogTransferService.isAuthenticated();
     const userInfo = this.bogTransferService.getUserInfo();
@@ -118,7 +119,7 @@ export class BogAdminController {
    */
   @Post('auth/logout')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async logout() {
     this.bogTransferService.clearTokens();
@@ -133,7 +134,7 @@ export class BogAdminController {
    */
   @Get('balance')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async getAccountBalance() {
     try {
       const info = await this.bogTransferService.getAccountBalance();
@@ -152,7 +153,7 @@ export class BogAdminController {
    */
   @Get('document/:uniqueKey')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   async getDocumentStatus(@Param('uniqueKey') uniqueKey: string) {
     try {
       this.logger.log(`Checking status for document: ${uniqueKey}`);
@@ -175,7 +176,7 @@ export class BogAdminController {
    */
   @Post('request-otp')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async requestOtp(@Body('uniqueKey') uniqueKey?: number) {
     try {
@@ -195,7 +196,7 @@ export class BogAdminController {
    */
   @Post('sign-document')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async signDocument(
     @Body('uniqueKey') uniqueKey: number,
@@ -218,7 +219,7 @@ export class BogAdminController {
    */
   @Post('cancel-document')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @HttpCode(HttpStatus.OK)
   async cancelDocument(@Body('uniqueKey') uniqueKey: number) {
     try {

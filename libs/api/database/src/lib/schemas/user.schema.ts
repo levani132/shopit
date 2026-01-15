@@ -1,15 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { Role as RoleConstants } from '@sellit/constants';
 
 export type UserDocument = HydratedDocument<User>;
 
-// User roles
-export enum Role {
-  ADMIN = 'admin',
-  SELLER = 'seller',
-  USER = 'user',
-  COURIER = 'courier',
-}
+/**
+ * Bitmask-based Role System
+ *
+ * Each role is a power of 2, allowing users to have multiple roles:
+ * - User = 1 (0001) - Basic user, can browse and buy
+ * - Courier = 2 (0010) - Can deliver orders
+ * - Seller = 4 (0100) - Can create store and sell products
+ * - Admin = 8 (1000) - Can manage platform
+ *
+ * Re-export Role from shared constants for backward compatibility
+ */
+export const Role = RoleConstants;
 
 export enum AuthProvider {
   EMAIL = 'EMAIL',
@@ -53,7 +59,8 @@ export class ShippingAddress {
   isDefault!: boolean;
 }
 
-export const ShippingAddressSchema = SchemaFactory.createForClass(ShippingAddress);
+export const ShippingAddressSchema =
+  SchemaFactory.createForClass(ShippingAddress);
 
 // Device tracking for multi-device support
 @Schema({ _id: false })
@@ -117,8 +124,8 @@ export class User {
   @Prop({ trim: true })
   beneficiaryBankCode?: string; // SWIFT/BIC code
 
-  @Prop({ type: String, enum: Role, default: Role.SELLER })
-  role!: Role;
+  @Prop({ type: Number, default: Role.USER })
+  role!: number;
 
   @Prop({ default: false })
   isProfileComplete!: boolean;
@@ -155,7 +162,7 @@ export class User {
 
   // ================== SELLER BALANCE ==================
   // Only applicable for sellers
-  
+
   @Prop({ default: 0, min: 0 })
   balance!: number; // Current available balance (GEL)
 

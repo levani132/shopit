@@ -1,16 +1,16 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../../contexts/AuthContext';
 import SetupRequirements from '../../../components/dashboard/SetupRequirements';
 
 export default function DashboardPage() {
   const t = useTranslations('dashboard');
   const { user } = useAuth();
 
-  const userRole = user?.role || 'user';
-  const isCourier = userRole === 'courier';
-  const isSeller = userRole === 'seller' || userRole === 'admin';
+  const userRole = user?.role ?? Role.USER;
+  const isCourier = hasRole(userRole, Role.COURIER);
+  const isSeller = hasRole(userRole, Role.SELLER);
 
   // TODO: Fetch real data from API based on role
   const sellerStats = {

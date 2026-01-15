@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Post,
@@ -171,7 +172,7 @@ export class OrdersController {
    */
   @Get('store-orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async getStoreOrders(@CurrentUser() user: { storeId: string }) {
     return this.ordersService.findStoreOrders(user.storeId);
   }
@@ -197,7 +198,7 @@ export class OrdersController {
    */
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async updateOrderStatus(
     @Param('id') id: string,
     @Body() body: { status: OrderStatus },
@@ -211,7 +212,7 @@ export class OrdersController {
    */
   @Patch(':id/delivered')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async markAsDelivered(
     @Param('id') id: string,
     @CurrentUser() user: { storeId: string },
@@ -243,7 +244,7 @@ export class OrdersController {
    */
   @Get('courier/available')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier', 'admin')
+  @Roles(Role.COURIER, Role.ADMIN)
   async getAvailableOrdersForCourier() {
     const orders = await this.ordersService.getOrdersReadyForDelivery();
     return this.addCourierEarningsToOrders(orders);
@@ -255,7 +256,7 @@ export class OrdersController {
    */
   @Get('courier/my-orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier', 'admin')
+  @Roles(Role.COURIER, Role.ADMIN)
   async getCourierOrders(@CurrentUser() user: { id: string; _id?: { toString(): string } }) {
     const userId = user.id || user._id?.toString();
     const orders = await this.ordersService.getOrdersByCourier(userId);
@@ -268,7 +269,7 @@ export class OrdersController {
    */
   @Get('courier/completed')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier', 'admin')
+  @Roles(Role.COURIER, Role.ADMIN)
   async getCompletedCourierOrders(
     @CurrentUser() user: { id: string; _id?: { toString(): string } },
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
@@ -284,7 +285,7 @@ export class OrdersController {
    */
   @Patch(':id/courier-status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier', 'admin')
+  @Roles(Role.COURIER, Role.ADMIN)
   async updateOrderStatusByCourier(
     @Param('id') id: string,
     @Body() body: { status: OrderStatus },
@@ -299,7 +300,7 @@ export class OrdersController {
    */
   @Patch(':id/assign-courier')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier', 'admin')
+  @Roles(Role.COURIER, Role.ADMIN)
   async assignOrderToCourier(
     @Param('id') id: string,
     @CurrentUser() user: { id: string; _id?: { toString(): string } },

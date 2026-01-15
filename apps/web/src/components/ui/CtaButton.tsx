@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '../../i18n/routing';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
 
 interface CtaButtonProps {
   size?: 'sm' | 'md' | 'lg';
@@ -15,13 +15,17 @@ interface CtaButtonProps {
  * - "Go to Dashboard" for logged-in sellers
  * - "Start for Free" for everyone else (including logged-in buyers)
  */
-export function CtaButton({ size = 'lg', showArrow = true, className = '' }: CtaButtonProps) {
+export function CtaButton({
+  size = 'lg',
+  showArrow = true,
+  className = '',
+}: CtaButtonProps) {
   const tCommon = useTranslations('common');
   const tNav = useTranslations('nav');
   const { user, isAuthenticated } = useAuth();
-  
-  const isSeller = user?.role === 'seller' || user?.role === 'admin';
-  
+
+  const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
+
   const sizeClasses = {
     sm: 'px-4 py-2 text-sm',
     md: 'px-6 py-3 text-base',
@@ -29,7 +33,10 @@ export function CtaButton({ size = 'lg', showArrow = true, className = '' }: Cta
   };
 
   const href = isAuthenticated && isSeller ? '/dashboard' : '/register';
-  const label = isAuthenticated && isSeller ? tNav('goToDashboard') : tCommon('startForFree');
+  const label =
+    isAuthenticated && isSeller
+      ? tNav('goToDashboard')
+      : tCommon('startForFree');
 
   return (
     <Link
@@ -55,5 +62,3 @@ export function CtaButton({ size = 'lg', showArrow = true, className = '' }: Cta
     </Link>
   );
 }
-
-

@@ -1,3 +1,4 @@
+import { Role } from '@sellit/constants';
 import {
   Controller,
   Get,
@@ -24,7 +25,7 @@ export class BalanceController {
    */
   @Get('debug')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async debugBalance(@CurrentUser() user: UserDocument & { storeId?: string }) {
     return this.balanceService.debugBalance(user._id.toString());
   }
@@ -34,7 +35,7 @@ export class BalanceController {
    */
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async getBalance(@CurrentUser() user: UserDocument & { storeId?: string }) {
     const result = await this.balanceService.getSellerBalance(user._id.toString());
     // Map to frontend-expected field names
@@ -52,7 +53,7 @@ export class BalanceController {
    */
   @Get('courier')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier')
+  @Roles(Role.COURIER)
   async getCourierBalance(@CurrentUser() user: UserDocument) {
     const result = await this.balanceService.getCourierBalance(user._id.toString());
     return {
@@ -69,7 +70,7 @@ export class BalanceController {
    */
   @Get('transactions')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async getTransactions(
     @CurrentUser() user: UserDocument & { storeId?: string },
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -83,7 +84,7 @@ export class BalanceController {
    */
   @Get('courier/transactions')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('courier')
+  @Roles(Role.COURIER)
   async getCourierTransactions(
     @CurrentUser() user: UserDocument,
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
@@ -98,7 +99,7 @@ export class BalanceController {
    */
   @Post('withdraw')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('seller', 'admin')
+  @Roles(Role.SELLER, Role.ADMIN)
   async requestWithdrawal(
     @CurrentUser() user: UserDocument & { storeId?: string },
     @Body() body: { amount: number },
