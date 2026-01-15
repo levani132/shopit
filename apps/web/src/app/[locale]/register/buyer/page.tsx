@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ShopItLogo } from '../../../../components/ui/ShopItLogo';
 import { getStoreBySubdomain } from '../../../../lib/api';
 import Link from 'next/link';
+import { Link as LocaleLink } from '../../../../i18n/routing';
 
 import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
 
@@ -42,6 +43,7 @@ function BuyerRegisterPageContent() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Store subdomain detection
   const [storeInfo, setStoreInfo] = useState<StoreInfo | null>(null);
@@ -326,9 +328,31 @@ function BuyerRegisterPageContent() {
               />
             </div>
 
+            {/* Terms Agreement Checkbox */}
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="agreeToTerms"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-gray-300 dark:border-zinc-600"
+                style={{ accentColor: storeColors ? storeColors[600] : 'var(--accent-600)' }}
+              />
+              <label htmlFor="agreeToTerms" className="text-sm text-gray-600 dark:text-gray-400">
+                I agree to the{' '}
+                <LocaleLink href="/terms" target="_blank" className="underline hover:text-gray-900 dark:hover:text-white" style={{ color: storeColors ? storeColors[600] : 'var(--accent-600)' }}>
+                  Terms of Service
+                </LocaleLink>{' '}
+                and{' '}
+                <LocaleLink href="/privacy" target="_blank" className="underline hover:text-gray-900 dark:hover:text-white" style={{ color: storeColors ? storeColors[600] : 'var(--accent-600)' }}>
+                  Privacy Policy
+                </LocaleLink>
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !agreedToTerms}
               className="w-full py-3 px-4 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 backgroundColor: storeColors
@@ -336,9 +360,11 @@ function BuyerRegisterPageContent() {
                   : 'var(--accent-600)',
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = storeColors
-                  ? storeColors[700]
-                  : 'var(--accent-700)';
+                if (!isSubmitting && agreedToTerms) {
+                  e.currentTarget.style.backgroundColor = storeColors
+                    ? storeColors[700]
+                    : 'var(--accent-700)';
+                }
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.backgroundColor = storeColors
@@ -365,7 +391,8 @@ function BuyerRegisterPageContent() {
           {/* Google Signup */}
           <button
             onClick={handleGoogleSignup}
-            className="w-full py-3 px-4 border border-gray-300 dark:border-zinc-600 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+            disabled={!agreedToTerms}
+            className="w-full py-3 px-4 border border-gray-300 dark:border-zinc-600 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path

@@ -23,19 +23,19 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-4">{t('product.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <a href="/#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('product.features')}
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link href="/pricing" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('product.pricing')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link href="/faq" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('product.faq')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -45,19 +45,14 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-4">{t('company.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('company.about')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('company.contact')}
-                </a>
-              </li>
-              <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  {t('company.blog')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -67,14 +62,14 @@ export function Footer() {
             <h3 className="text-white font-semibold mb-4">{t('legal.title')}</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('legal.terms')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
                   {t('legal.privacy')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

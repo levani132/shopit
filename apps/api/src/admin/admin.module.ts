@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AdminController } from './admin.controller';
+import { PublicSettingsController } from './public-settings.controller';
 import { SiteSettingsService } from './site-settings.service';
 import {
   User,
@@ -24,7 +25,7 @@ import { OrdersModule } from '../orders/orders.module';
     ]),
     forwardRef(() => OrdersModule),
   ],
-  controllers: [AdminController],
+  controllers: [AdminController, PublicSettingsController],
   providers: [SiteSettingsService],
   exports: [SiteSettingsService],
 })

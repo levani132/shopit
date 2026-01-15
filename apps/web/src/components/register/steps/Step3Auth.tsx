@@ -5,6 +5,7 @@ import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
+import { Link } from '../../../i18n/routing';
 
 // Build API base URL - use just the host, we'll add the prefix
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -37,6 +38,8 @@ export function Step3Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const tLegal = useTranslations('legal');
 
   const accentColor = BRAND_COLORS[data.brandColor] || BRAND_COLORS.indigo;
   
@@ -407,6 +410,28 @@ export function Step3Auth() {
                   <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
                 )}
               </div>
+
+              {/* Terms Agreement Checkbox */}
+              <div className="flex items-start gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  id="agreeToTerms"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="mt-1 w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500"
+                  style={{ accentColor: accentColor }}
+                />
+                <label htmlFor="agreeToTerms" className="text-xs text-gray-600 dark:text-gray-400">
+                  {tLegal('agreeToTerms')}{' '}
+                  <Link href="/terms" target="_blank" className="underline hover:text-gray-900 dark:hover:text-white" style={{ color: accentColor }}>
+                    {tLegal('termsOfService')}
+                  </Link>{' '}
+                  {tLegal('and')}{' '}
+                  <Link href="/privacy" target="_blank" className="underline hover:text-gray-900 dark:hover:text-white" style={{ color: accentColor }}>
+                    {tLegal('privacyPolicy')}
+                  </Link>
+                </label>
+              </div>
             </div>
 
             {/* Right Side - Title, Buttons */}
@@ -424,8 +449,8 @@ export function Step3Auth() {
               <button
                 type="button"
                 onClick={handleGoogleSignup}
-                disabled={isLoading}
-                className="w-full py-2 px-4 border border-gray-300 dark:border-zinc-700 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800 transition text-gray-700 dark:text-gray-300 text-sm"
+                disabled={isLoading || !agreedToTerms}
+                className="w-full py-2 px-4 border border-gray-300 dark:border-zinc-700 rounded-lg font-medium flex items-center justify-center gap-2 hover:bg-gray-50 dark:hover:bg-zinc-800 transition text-gray-700 dark:text-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path
@@ -473,8 +498,8 @@ export function Step3Auth() {
                 <button
                   type="button"
                   onClick={handleEmailSubmit}
-                  disabled={isLoading}
-                  className="flex-1 py-2 px-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 text-sm"
+                  disabled={isLoading || !agreedToTerms}
+                  className="flex-1 py-2 px-3 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   style={{ backgroundColor: accentColor }}
                 >
                   {isLoading ? t('creating') : t('createAccount')}

@@ -15,6 +15,7 @@ import { PaymentsModule } from '../payments/payments.module';
 import { WishlistModule } from '../wishlist/wishlist.module';
 import { AdminModule } from '../admin/admin.module';
 import { SettingsModule } from '../settings/settings.module';
+import { ContentModule } from '../content/content.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { SettingsModule } from '../settings/settings.module';
     WishlistModule,
     AdminModule,
     SettingsModule,
+    ContentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

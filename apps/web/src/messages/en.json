@@ -1039,6 +1039,206 @@
     "orders": "orders",
     "items": "items",
     "storeStatusDistribution": "Store Status Distribution",
-    "noDataYet": "No data yet"
+    "noDataYet": "No data yet",
+    "contentManagement": "Content",
+    "faqManagement": "FAQ Management",
+    "faqManagementDescription": "Manage frequently asked questions",
+    "aboutManagement": "About Us",
+    "aboutManagementDescription": "Edit the About Us page content",
+    "contactManagement": "Contact Info",
+    "contactManagementDescription": "Edit contact information",
+    "contactSubmissions": "Contact Messages",
+    "contactSubmissionsDescription": "View messages from the contact form",
+    "termsManagement": "Terms of Service",
+    "termsManagementDescription": "Edit terms of service content",
+    "privacyManagement": "Privacy Policy",
+    "privacyManagementDescription": "Edit privacy policy content",
+    "addFaq": "Add FAQ",
+    "editFaq": "Edit FAQ",
+    "faqQuestion": "Question",
+    "faqAnswer": "Answer",
+    "faqCategory": "Category",
+    "faqOrder": "Order",
+    "faqActive": "Active",
+    "seedFaqs": "Seed Initial FAQs",
+    "noFaqs": "No FAQs yet",
+    "missionKa": "Mission (Georgian)",
+    "missionEn": "Mission (English)",
+    "storyKa": "Story (Georgian)",
+    "storyEn": "Story (English)",
+    "contactEmail": "Contact Email",
+    "contactPhone": "Contact Phone",
+    "contactAddress": "Address",
+    "workingHours": "Working Hours",
+    "socialFacebook": "Facebook URL",
+    "socialInstagram": "Instagram URL",
+    "socialLinkedIn": "LinkedIn URL",
+    "contentKa": "Content (Georgian)",
+    "contentEn": "Content (English)",
+    "submissionStatus": "Status",
+    "submissionPending": "Pending",
+    "submissionRead": "Read",
+    "submissionReplied": "Replied",
+    "submissionArchived": "Archived",
+    "markAsRead": "Mark as Read",
+    "markAsReplied": "Mark as Replied",
+    "archive": "Archive",
+    "noSubmissions": "No messages yet"
+  },
+  "pricing": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Start selling for free. No hidden fees, no monthly charges.",
+    "freePlan": "Always Free",
+    "month": "month",
+    "noHiddenFees": "No setup fees, no monthly fees, no hidden costs",
+    "features": {
+      "unlimitedProducts": "Unlimited products",
+      "customDomain": "Custom subdomain",
+      "securePayments": "Secure payment processing",
+      "analyticsIncluded": "Sales analytics included",
+      "mobileOptimized": "Mobile-optimized store",
+      "customerSupport": "Customer support"
+    },
+    "commissionTitle": "How We Earn",
+    "commissionDescription": "We only charge a {percent}% commission on each sale. This covers payment processing, hosting, and all platform features. You keep the rest!",
+    "questionsTitle": "Have Questions?",
+    "questionsDescription": "Check out our FAQ for more details about pricing and features.",
+    "viewFaq": "View FAQ"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to common questions about ShopIt",
+    "categories": {
+      "all": "All",
+      "general": "General",
+      "sellers": "For Sellers",
+      "buyers": "For Buyers",
+      "couriers": "For Couriers",
+      "payments": "Payments"
+    },
+    "noFaqs": "No FAQs available",
+    "stillHaveQuestions": "Still Have Questions?",
+    "contactUs": "Our team is here to help you with any questions you may have.",
+    "contactButton": "Contact Us"
+  },
+  "about": {
+    "title": "About ShopIt",
+    "subtitle": "Empowering entrepreneurs to build their online presence",
+    "missionTitle": "Our Mission",
+    "missionDefault": "We believe everyone should have the opportunity to sell online. ShopIt makes it easy for anyone to create a professional online store in minutes, without any technical skills or upfront costs.",
+    "storyTitle": "Our Story",
+    "storyDefault": "ShopIt was born from a simple idea: make e-commerce accessible to everyone. We've built a platform that removes the barriers to online selling, allowing entrepreneurs to focus on what they do best - creating amazing products and serving their customers.",
+    "valuesTitle": "Our Values",
+    "values": {
+      "simplicity": {
+        "title": "Simplicity",
+        "description": "We make complex things simple. Create your store in minutes, not days."
+      },
+      "transparency": {
+        "title": "Transparency",
+        "description": "No hidden fees, no surprises. You always know what you're paying."
+      },
+      "support": {
+        "title": "Support",
+        "description": "We're here for you. Our team is always ready to help you succeed."
+      }
+    },
+    "ctaTitle": "Ready to Start?",
+    "ctaDescription": "Join thousands of sellers who trust ShopIt for their online business."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We'd love to hear from you. Get in touch with our team.",
+    "formTitle": "Send us a Message",
+    "name": "Your Name",
+    "email": "Email Address",
+    "subject": "Subject",
+    "message": "Message",
+    "send": "Send Message",
+    "sending": "Sending...",
+    "successTitle": "Message Sent!",
+    "successMessage": "Thank you for contacting us. We'll get back to you as soon as possible.",
+    "errorMessage": "Failed to send message. Please try again later.",
+    "infoTitle": "Contact Information",
+    "emailLabel": "Email",
+    "phoneLabel": "Phone",
+    "addressLabel": "Address",
+    "hoursLabel": "Working Hours"
+  },
+  "terms": {
+    "title": "Terms of Service",
+    "lastUpdated": "Last updated",
+    "backToHome": "Back to Home",
+    "sections": {
+      "general": {
+        "title": "1. General Terms",
+        "content": "By using ShopIt, you agree to these terms of service. ShopIt provides an e-commerce platform that allows sellers to create online stores, buyers to purchase products, and couriers to deliver orders."
+      },
+      "sellers": {
+        "title": "2. Seller Terms",
+        "content": "As a seller, you agree to provide accurate product information, fulfill orders promptly, and comply with all applicable laws. ShopIt charges a {commissionPercent}% commission on each sale, which is deducted from your earnings."
+      },
+      "buyers": {
+        "title": "3. Buyer Terms",
+        "content": "As a buyer, you agree to provide accurate delivery information and complete payment for orders. Product quality and descriptions are the responsibility of individual sellers."
+      },
+      "couriers": {
+        "title": "4. Courier Terms",
+        "content": "As a courier, you agree to deliver orders safely and on time. Couriers receive {courierPercent}% of the delivery fee for each completed delivery."
+      },
+      "payments": {
+        "title": "5. Payments",
+        "content": "All payments are processed securely through our payment partners. Sellers can withdraw their earnings once the minimum withdrawal amount of {minWithdrawal} GEL is reached."
+      },
+      "liability": {
+        "title": "6. Liability",
+        "content": "ShopIt acts as a platform connecting buyers, sellers, and couriers. We are not responsible for the quality of products, delivery issues between parties, or disputes arising from transactions."
+      },
+      "changes": {
+        "title": "7. Changes to Terms",
+        "content": "We may update these terms from time to time. Continued use of the platform constitutes acceptance of any changes."
+      }
+    }
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated",
+    "backToHome": "Back to Home",
+    "sections": {
+      "collection": {
+        "title": "1. Information We Collect",
+        "content": "We collect information you provide directly to us, including your name, email, phone number, delivery addresses, and payment information. We also collect information about your use of our platform."
+      },
+      "usage": {
+        "title": "2. How We Use Your Information",
+        "content": "We use your information to provide and improve our services, process transactions, send communications, and comply with legal obligations."
+      },
+      "sharing": {
+        "title": "3. Information Sharing",
+        "content": "We share your information with sellers to fulfill orders, couriers to deliver products, and payment processors to complete transactions. We do not sell your personal information."
+      },
+      "security": {
+        "title": "4. Data Security",
+        "content": "We implement appropriate security measures to protect your personal information. However, no method of transmission over the internet is 100% secure."
+      },
+      "cookies": {
+        "title": "5. Cookies",
+        "content": "We use cookies and similar technologies to improve your experience, analyze usage, and personalize content."
+      },
+      "rights": {
+        "title": "6. Your Rights",
+        "content": "You have the right to access, correct, or delete your personal information. Contact us to exercise these rights."
+      },
+      "contact": {
+        "title": "7. Contact Us",
+        "content": "If you have questions about this privacy policy, please contact us at support@shopit.ge."
+      }
+    }
+  },
+  "legal": {
+    "agreeToTerms": "I agree to the",
+    "termsOfService": "Terms of Service",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy"
   }
 }

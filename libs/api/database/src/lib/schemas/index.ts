@@ -34,3 +34,6 @@ export * from './info-page.schema';
 
 // Site Settings (Admin configurable)
 export * from './site-settings.schema';
+
+// Content Management (FAQ, About, Contact, Terms, Privacy)
+export * from './content.schema';

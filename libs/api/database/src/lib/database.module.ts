@@ -19,6 +19,20 @@ import {
   ServicePayment,
   ServicePaymentSchema,
 } from './schemas/service-payment.schema';
+import {
+  Faq,
+  FaqSchema,
+  AboutContent,
+  AboutContentSchema,
+  ContactContent,
+  ContactContentSchema,
+  ContactSubmission,
+  ContactSubmissionSchema,
+  TermsContent,
+  TermsContentSchema,
+  PrivacyContent,
+  PrivacyContentSchema,
+} from './schemas/content.schema';
 
 const schemas = MongooseModule.forFeature([
   { name: User.name, schema: UserSchema },
@@ -34,6 +48,12 @@ const schemas = MongooseModule.forFeature([
   { name: Order.name, schema: OrderSchema },
   { name: BalanceTransaction.name, schema: BalanceTransactionSchema },
   { name: ServicePayment.name, schema: ServicePaymentSchema },
+  { name: Faq.name, schema: FaqSchema },
+  { name: AboutContent.name, schema: AboutContentSchema },
+  { name: ContactContent.name, schema: ContactContentSchema },
+  { name: ContactSubmission.name, schema: ContactSubmissionSchema },
+  { name: TermsContent.name, schema: TermsContentSchema },
+  { name: PrivacyContent.name, schema: PrivacyContentSchema },
 ]);
 
 @Global()

@@ -19,6 +19,15 @@ src/
 │   │   ├── login/
 │   │   ├── register/
 │   │   ├── dashboard/
+│   │   │   └── admin/
+│   │   │       ├── content/    # Content management (FAQ, About, Contact, Terms, Privacy)
+│   │   │       └── settings/
+│   │   ├── pricing/       # Pricing page
+│   │   ├── faq/           # FAQ page
+│   │   ├── about/         # About page
+│   │   ├── contact/       # Contact page
+│   │   ├── terms/         # Terms of Service
+│   │   ├── privacy/       # Privacy Policy
 │   │   └── page.tsx       # Homepage
 │   ├── store/             # Store subdomain pages
 │   │   └── [subdomain]/
@@ -30,7 +39,7 @@ src/
 ├── components/
 │   ├── auth/              # Auth-related (ProtectedRoute)
 │   ├── dashboard/         # Dashboard components
-│   ├── home/              # Homepage sections
+│   ├── home/              # Homepage sections (Hero, HowItWorks, PaymentMethods, Delivery, Analytics)
 │   ├── layout/            # Header, Footer, ConditionalLayout
 │   ├── register/          # Multi-step registration
 │   ├── store/             # StoreHeader, StoreFooter
@@ -40,6 +49,7 @@ src/
 ├── data/                  # Mock data for development
 ├── hooks/                 # Custom hooks
 ├── i18n/                  # Internationalization
+├── messages/              # Translation files (en.json, ka.json)
 └── lib/                   # Utilities, API helpers
 ```
 
@@ -55,8 +65,16 @@ src/
 │   ├── dto/
 │   ├── guards/
 │   └── strategies/
+├── admin/                 # Admin module (site settings, public settings)
+│   ├── admin.controller.ts
+│   ├── public-settings.controller.ts  # Unauthenticated settings endpoint
+│   └── site-settings.service.ts
+├── content/               # Content management module
+│   ├── content.controller.ts  # FAQ, About, Contact, Terms, Privacy endpoints
+│   └── content.service.ts
 ├── stores/                # Store management
 ├── products/              # Product management
+├── orders/                # Orders, balance, delivery
 ├── upload/                # File uploads (S3)
 └── main.ts               # App bootstrap, CORS config
 ```
