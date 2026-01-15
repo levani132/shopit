@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth, hasAnyRole, Role } from '../../contexts/AuthContext';
+import { useAuth, hasAnyRole } from '../../contexts/AuthContext';
 import { useLocale } from 'next-intl';
-import { RoleValue } from '@sellit/constants';
+import { Role, RoleValue } from '@sellit/constants';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

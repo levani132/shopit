@@ -29,7 +29,8 @@ export default function FaqPage() {
       setLocale(urlLocale);
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/faq`)
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    fetch(`${API_BASE}/api/v1/content/faq`)
       .then((res) => res.json())
       .then((data) => setFaqs(data.filter((f: FaqItem) => f.isActive)))
       .catch(() => setFaqs([]));

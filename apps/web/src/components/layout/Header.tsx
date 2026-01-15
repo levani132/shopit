@@ -6,7 +6,8 @@ import { useLocale } from 'next-intl';
 import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItLogo } from '../ui/ShopItLogo';
-import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 
 export function Header() {
   const t = useTranslations();

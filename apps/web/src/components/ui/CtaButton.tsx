@@ -2,7 +2,8 @@
 
 import { useTranslations } from 'next-intl';
 import { Link } from '../../i18n/routing';
-import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 
 interface CtaButtonProps {
   size?: 'sm' | 'md' | 'lg';

@@ -7,7 +7,8 @@ import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { CartButton } from './CartButton';
-import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 import { getLatinInitial } from '../../lib/utils';
 import Link from 'next/link';
 

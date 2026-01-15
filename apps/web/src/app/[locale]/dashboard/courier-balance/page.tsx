@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useAuth, hasRole, Role } from '../../../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');

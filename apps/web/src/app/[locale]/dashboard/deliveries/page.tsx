@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useAuth, hasRole, Role } from '../../../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 import Image from 'next/image';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

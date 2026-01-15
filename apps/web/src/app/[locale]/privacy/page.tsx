@@ -22,13 +22,18 @@ export default function PrivacyPage() {
       setLocale(urlLocale);
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/privacy`)
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    fetch(`${API_BASE}/api/v1/content/privacy`)
       .then((res) => res.json())
       .then((data) => setContent(data))
       .catch(() => setContent(null));
   }, []);
 
-  const privacyText = content ? (locale === 'ka' ? content.contentKa : content.contentEn) : null;
+  const privacyText = content
+    ? locale === 'ka'
+      ? content.contentKa
+      : content.contentEn
+    : null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900">
@@ -40,7 +45,10 @@ export default function PrivacyPage() {
           </h1>
           {content?.lastUpdated && (
             <p className="mt-4 text-gray-500 dark:text-gray-400">
-              {t('lastUpdated')}: {new Date(content.lastUpdated).toLocaleDateString(locale === 'ka' ? 'ka-GE' : 'en-US')}
+              {t('lastUpdated')}:{' '}
+              {new Date(content.lastUpdated).toLocaleDateString(
+                locale === 'ka' ? 'ka-GE' : 'en-US',
+              )}
             </p>
           )}
         </div>
@@ -59,38 +67,66 @@ export default function PrivacyPage() {
             <div className="prose prose-lg dark:prose-invert max-w-none space-y-8">
               {/* Default Privacy Content */}
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.collection.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.collection.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.collection.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.collection.content')}
+                </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.usage.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.usage.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.usage.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.usage.content')}
+                </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.sharing.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.sharing.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.sharing.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.sharing.content')}
+                </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.security.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.security.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.security.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.security.content')}
+                </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.cookies.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.cookies.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.cookies.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.cookies.content')}
+                </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.rights.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.rights.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.rights.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.rights.content')}
+                </p>
               </section>
 
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t('sections.contact.title')}</h2>
-                <p className="text-gray-600 dark:text-gray-300">{t('sections.contact.content')}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t('sections.contact.title')}
+                </h2>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {t('sections.contact.content')}
+                </p>
               </section>
             </div>
           )}
@@ -101,8 +137,18 @@ export default function PrivacyPage() {
               href="/"
               className="inline-flex items-center gap-2 text-[var(--accent-600)] dark:text-[var(--accent-400)] font-medium hover:underline"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               {t('backToHome')}
             </Link>
@@ -112,4 +158,3 @@ export default function PrivacyPage() {
     </div>
   );
 }
-

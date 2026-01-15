@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useAuth, hasRole, Role } from '../../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 import SetupRequirements from '../../../components/dashboard/SetupRequirements';
 
 export default function DashboardPage() {

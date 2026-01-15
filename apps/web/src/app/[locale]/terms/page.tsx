@@ -29,22 +29,37 @@ export default function TermsPage() {
       setLocale(urlLocale);
     }
 
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     // Fetch terms content
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/content/terms`)
+    fetch(`${API_BASE}/api/v1/content/terms`)
       .then((res) => res.json())
       .then((data) => setContent(data))
       .catch(() => setContent(null));
 
     // Fetch settings for dynamic values
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/settings/public`)
+    fetch(`${API_BASE}/api/v1/admin/settings/public`)
       .then((res) => res.json())
       .then((data) => setSettings(data))
-      .catch(() => setSettings({ siteCommissionRate: 0.1, courierEarningsPercentage: 0.8, minimumWithdrawalAmount: 20 }));
+      .catch(() =>
+        setSettings({
+          siteCommissionRate: 0.1,
+          courierEarningsPercentage: 0.8,
+          minimumWithdrawalAmount: 20,
+        }),
+      );
   }, []);
 
-  const termsText = content ? (locale === 'ka' ? content.contentKa : content.contentEn) : null;
-  const commissionPercent = settings ? Math.round(settings.siteCommissionRate * 100) : 10;
-  const courierPercent = settings ? Math.round(settings.courierEarningsPercentage * 100) : 80;
+  const termsText = content
+    ? locale === 'ka'
+      ? content.contentKa
+      : content.contentEn
+    : null;
+  const commissionPercent = settings
+    ? Math.round(settings.siteCommissionRate * 100)
+    : 10;
+  const courierPercent = settings
+    ? Math.round(settings.courierEarningsPercentage * 100)
+    : 80;
   const minWithdrawal = settings?.minimumWithdrawalAmount || 20;
 
   // Replace placeholders with actual values
@@ -63,7 +78,10 @@ export default function TermsPage() {
           </h1>
           {content?.lastUpdated && (
             <p className="mt-4 text-gray-500 dark:text-gray-400">
-              {t('lastUpdated')}: {new Date(content.lastUpdated).toLocaleDateString(locale === 'ka' ? 'ka-GE' : 'en-US')}
+              {t('lastUpdated')}:{' '}
+              {new Date(content.lastUpdated).toLocaleDateString(
+                locale === 'ka' ? 'ka-GE' : 'en-US',
+              )}
             </p>
           )}
         </div>
@@ -110,8 +128,18 @@ export default function TermsPage() {
               href="/"
               className="inline-flex items-center gap-2 text-[var(--accent-600)] dark:text-[var(--accent-400)] font-medium hover:underline"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
               {t('backToHome')}
             </Link>
@@ -121,4 +149,3 @@ export default function TermsPage() {
     </div>
   );
 }
-

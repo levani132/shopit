@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ShopItLogo } from './ShopItLogo';
-import { useAuth, hasRole, Role } from '../../contexts/AuthContext';
+import { useAuth, hasRole } from '../../contexts/AuthContext';
+import { Role } from '@sellit/constants';
 import { getUserInitials } from '../../lib/utils';
 
 interface ShopItBarProps {
