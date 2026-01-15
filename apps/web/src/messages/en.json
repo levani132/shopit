@@ -261,6 +261,7 @@
     "noDevicesDescription": "Your active sessions will appear here.",
     "balanceDescription": "Track your earnings and request withdrawals.",
     "availableBalance": "Available Balance",
+    "waitingEarnings": "Waiting",
     "pendingWithdrawals": "Pending Withdrawals",
     "totalWithdrawn": "Total Withdrawn",
     "requestWithdrawal": "Request Withdrawal",

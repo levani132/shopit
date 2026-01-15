@@ -261,6 +261,7 @@
     "noDevicesDescription": "აქტიური სესიები აქ გამოჩნდება.",
     "balanceDescription": "თვალყური ადევნე შემოსავალს და მოითხოვე გადარიცხვა.",
     "availableBalance": "ხელმისაწვდომი ბალანსი",
+    "waitingEarnings": "მოლოდინში",
     "pendingWithdrawals": "მოლოდინში მყოფი გადარიცხვები",
     "totalWithdrawn": "სულ გადარიცხული",
     "requestWithdrawal": "გადარიცხვის მოთხოვნა",
