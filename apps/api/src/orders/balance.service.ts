@@ -50,12 +50,12 @@ export class BalanceService {
       return;
     }
 
-    // Get site settings for commission rates
+    // Get site settings for commission rates (with defaults if not set)
     const settings = await this.siteSettingsService.getSettings();
-    const SITE_COMMISSION_RATE = settings.siteCommissionRate;
-    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate;
-    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin;
-    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax;
+    const SITE_COMMISSION_RATE = settings.siteCommissionRate ?? 0.1; // Default 10%
+    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate ?? 0.05; // Default 5%
+    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin ?? 0.5; // Default 0.5 GEL
+    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax ?? 5; // Default 5 GEL
 
     // Group order items by store
     const itemsByStore = new Map<string, typeof order.orderItems>();
@@ -337,12 +337,12 @@ export class BalanceService {
       return 0;
     }
 
-    // Get site settings for commission rates
+    // Get site settings for commission rates (with defaults if not set)
     const settings = await this.siteSettingsService.getSettings();
-    const SITE_COMMISSION_RATE = settings.siteCommissionRate;
-    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate;
-    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin;
-    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax;
+    const SITE_COMMISSION_RATE = settings.siteCommissionRate ?? 0.1; // Default 10%
+    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate ?? 0.05; // Default 5%
+    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin ?? 0.5; // Default 0.5 GEL
+    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax ?? 5; // Default 5 GEL
 
     let totalWaitingEarnings = 0;
 
