@@ -53,9 +53,6 @@ export class BalanceService {
     // Get site settings for commission rates (with defaults if not set)
     const settings = await this.siteSettingsService.getSettings();
     const SITE_COMMISSION_RATE = settings.siteCommissionRate ?? 0.1; // Default 10%
-    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate ?? 0.05; // Default 5%
-    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin ?? 0.5; // Default 0.5 GEL
-    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax ?? 5; // Default 5 GEL
 
     // Group order items by store
     const itemsByStore = new Map<string, typeof order.orderItems>();
@@ -89,26 +86,10 @@ export class BalanceService {
         0,
       );
 
-      // Calculate commissions
+      // Calculate site commission (10% of product price)
+      // Note: Delivery fees are separate - paid by customer, go to courier
       const siteCommission = itemsTotalPrice * SITE_COMMISSION_RATE;
-
-      // Delivery commission (only for ShopIt courier)
-      let deliveryCommission = 0;
-      if (store.courierType !== 'seller') {
-        // ShopIt courier - calculate based on configurable rates
-        deliveryCommission = Math.min(
-          Math.max(
-            itemsTotalPrice * DELIVERY_COMMISSION_RATE,
-            DELIVERY_COMMISSION_MIN,
-          ),
-          DELIVERY_COMMISSION_MAX,
-        );
-      }
-
-      const totalCommissions = siteCommission + deliveryCommission;
-      // Ensure seller never gets negative earnings
-      // If commissions exceed item price, seller gets 0 (commissions are capped at item price)
-      const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
+      const finalAmount = itemsTotalPrice - siteCommission;
 
       // Update seller's balance
       await this.userModel.findByIdAndUpdate(seller._id, {
@@ -128,7 +109,6 @@ export class BalanceService {
         description: `Earnings from order #${order._id}`,
         commissionPercentage: SITE_COMMISSION_RATE * 100,
         commissionAmount: siteCommission,
-        deliveryCommissionAmount: deliveryCommission,
         productPrice: itemsTotalPrice,
         finalAmount: finalAmount,
       });
@@ -151,8 +131,6 @@ export class BalanceService {
    * Only for orders using ShopIt delivery (not seller self-delivery)
    *
    * Courier earnings = the shipping price paid by customer
-   * The delivery commission deducted from seller goes to ShopIt platform,
-   * but the actual shipping fee (paid by buyer) goes to the courier.
    */
   private async processCourierEarnings(order: OrderDocument): Promise<void> {
     if (!order.courierId) {
@@ -386,9 +364,6 @@ export class BalanceService {
     // Get site settings for commission rates (with defaults if not set)
     const settings = await this.siteSettingsService.getSettings();
     const SITE_COMMISSION_RATE = settings.siteCommissionRate ?? 0.1; // Default 10%
-    const DELIVERY_COMMISSION_RATE = settings.deliveryCommissionRate ?? 0.05; // Default 5%
-    const DELIVERY_COMMISSION_MIN = settings.deliveryCommissionMin ?? 0.5; // Default 0.5 GEL
-    const DELIVERY_COMMISSION_MAX = settings.deliveryCommissionMax ?? 5; // Default 5 GEL
 
     let totalWaitingEarnings = 0;
 
@@ -409,23 +384,10 @@ export class BalanceService {
           0,
         );
 
-        // Calculate commissions
+        // Calculate site commission (10% of product price)
+        // Note: Delivery fees are separate - paid by customer, go to courier
         const siteCommission = itemsTotalPrice * SITE_COMMISSION_RATE;
-
-        // Delivery commission (only for ShopIt courier)
-        let deliveryCommission = 0;
-        if (store.courierType !== 'seller') {
-          deliveryCommission = Math.min(
-            Math.max(
-              itemsTotalPrice * DELIVERY_COMMISSION_RATE,
-              DELIVERY_COMMISSION_MIN,
-            ),
-            DELIVERY_COMMISSION_MAX,
-          );
-        }
-
-        const totalCommissions = siteCommission + deliveryCommission;
-        const finalAmount = Math.max(0, itemsTotalPrice - totalCommissions);
+        const finalAmount = itemsTotalPrice - siteCommission;
 
         this.logger.debug(
           `Order ${order._id}: items price=${itemsTotalPrice}, final amount=${finalAmount}`,

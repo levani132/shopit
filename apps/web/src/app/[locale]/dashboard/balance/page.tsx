@@ -27,7 +27,6 @@ interface Transaction {
   };
   commissionPercentage?: number;
   commissionAmount?: number;
-  deliveryCommissionAmount?: number;
   productPrice?: number;
   finalAmount?: number;
 }
@@ -339,10 +338,8 @@ export default function BalancePage() {
                     : tx.amount;
                   const isPositive = isEarning || displayAmount >= 0;
 
-                  // Calculate total deductions for display
-                  const totalDeductions =
-                    (tx.commissionAmount ?? 0) +
-                    (tx.deliveryCommissionAmount ?? 0);
+                  // Calculate total deductions for display (site commission only)
+                  const totalDeductions = tx.commissionAmount ?? 0;
 
                   return (
                     <div

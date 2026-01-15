@@ -262,10 +262,9 @@ Calculated by `BalanceService.calculateWaitingEarnings()`:
 
 ### Commission Structure
 
-- **Site Fee**: 10% of order total (configurable in site settings)
-- **Delivery Commission**: Deducted from seller if using ShopIt courier (min/max configurable)
-- **Seller Receives**: `orderTotal - siteFee - deliveryCommission`
-- **Courier Receives**: The `shippingPrice` paid by customer
+- **Site Fee**: 10% of product price (configurable in site settings)
+- **Seller Receives**: `productPrice - siteFee` (e.g., ₾1.00 product → ₾0.90 to seller)
+- **Courier Receives**: The `shippingPrice` paid by customer (calculated separately based on distance/vehicle)
 
 ### Earnings Flow
 
