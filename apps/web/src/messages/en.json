@@ -800,6 +800,7 @@
     "deliveryOrders": "Delivery Orders",
     "availableOrders": "Available Orders",
     "myDeliveries": "My Deliveries",
+    "completedDeliveries": "Completed",
     "noAvailableOrders": "No available orders at the moment",
     "noAvailableOrdersDesc": "Check back later for new delivery opportunities",
     "pickupAddress": "Pickup",

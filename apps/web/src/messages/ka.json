@@ -800,6 +800,7 @@
     "deliveryOrders": "მისატანი შეკვეთები",
     "availableOrders": "ხელმისაწვდომი შეკვეთები",
     "myDeliveries": "ჩემი მიტანები",
+    "completedDeliveries": "დასრულებული",
     "noAvailableOrders": "ამჟამად შეკვეთები არ არის",
     "noAvailableOrdersDesc": "შეამოწმე მოგვიანებით ახალი შესაძლებლობებისთვის",
     "pickupAddress": "აღება",

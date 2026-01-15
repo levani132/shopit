@@ -834,6 +834,21 @@ export class OrdersService {
   }
 
   /**
+   * Get completed orders delivered by a specific courier
+   * Sorted by delivery date (most recent first)
+   */
+  async getCompletedOrdersByCourier(courierId: string, limit = 20): Promise<OrderDocument[]> {
+    return this.orderModel
+      .find({
+        courierId: new Types.ObjectId(courierId),
+        status: OrderStatus.DELIVERED,
+      })
+      .sort({ deliveredAt: -1, createdAt: -1 }) // Most recent first
+      .limit(limit)
+      .exec();
+  }
+
+  /**
    * Assign an order to a courier
    */
   async assignCourier(orderId: string, courierId: string): Promise<OrderDocument> {

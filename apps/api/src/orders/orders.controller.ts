@@ -8,6 +8,8 @@ import {
   UseGuards,
   Request,
   Query,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -257,6 +259,22 @@ export class OrdersController {
   async getCourierOrders(@CurrentUser() user: { id: string; _id?: { toString(): string } }) {
     const userId = user.id || user._id?.toString();
     const orders = await this.ordersService.getOrdersByCourier(userId);
+    return this.addCourierEarningsToOrders(orders);
+  }
+
+  /**
+   * Get completed orders delivered by the current courier
+   * Includes calculated courierEarning based on earnings percentage
+   */
+  @Get('courier/completed')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('courier', 'admin')
+  async getCompletedCourierOrders(
+    @CurrentUser() user: { id: string; _id?: { toString(): string } },
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+  ) {
+    const userId = user.id || user._id?.toString();
+    const orders = await this.ordersService.getCompletedOrdersByCourier(userId, limit);
     return this.addCourierEarningsToOrders(orders);
   }
 

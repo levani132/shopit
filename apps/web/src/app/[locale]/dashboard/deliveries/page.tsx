@@ -126,9 +126,10 @@ export default function DeliveriesPage() {
   const params = useParams();
   const locale = (params?.locale as string) || 'ka';
 
-  const [activeTab, setActiveTab] = useState<'available' | 'my'>('available');
+  const [activeTab, setActiveTab] = useState<'available' | 'my' | 'completed'>('available');
   const [availableOrders, setAvailableOrders] = useState<Order[]>([]);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
+  const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingOrder, setProcessingOrder] = useState<string | null>(null);
@@ -161,6 +162,20 @@ export default function DeliveriesPage() {
     }
   }, []);
 
+  const fetchCompletedOrders = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/orders/courier/completed?limit=50`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCompletedOrders(data);
+      }
+    } catch (err) {
+      console.error('Error fetching completed orders:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user || user.role !== 'courier') {
@@ -171,12 +186,12 @@ export default function DeliveriesPage() {
 
     const fetchData = async () => {
       setLoading(true);
-      await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
+      await Promise.all([fetchAvailableOrders(), fetchMyOrders(), fetchCompletedOrders()]);
       setLoading(false);
     };
 
     fetchData();
-  }, [authLoading, user, fetchAvailableOrders, fetchMyOrders]);
+  }, [authLoading, user, fetchAvailableOrders, fetchMyOrders, fetchCompletedOrders]);
 
   const handleAssignOrder = async (orderId: string) => {
     setProcessingOrder(orderId);
@@ -244,7 +259,11 @@ export default function DeliveriesPage() {
     );
   }
 
-  const displayOrders = activeTab === 'available' ? availableOrders : myOrders;
+  const displayOrders = activeTab === 'available' 
+    ? availableOrders 
+    : activeTab === 'my' 
+    ? myOrders 
+    : completedOrders;
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -256,7 +275,7 @@ export default function DeliveriesPage() {
       </p>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         <button
           onClick={() => setActiveTab('available')}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -276,6 +295,16 @@ export default function DeliveriesPage() {
           }`}
         >
           {t('myDeliveries')} ({myOrders.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('completed')}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            activeTab === 'completed'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
+          }`}
+        >
+          {t('completedDeliveries')} ({completedOrders.length})
         </button>
       </div>
 
@@ -512,39 +541,41 @@ export default function DeliveriesPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-2 mt-4">
-                  {activeTab === 'available' ? (
-                    <button
-                      onClick={() => handleAssignOrder(order._id)}
-                      disabled={!!processingOrder}
-                      className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {processingOrder === order._id ? '...' : t('assignToMe')}
-                    </button>
-                  ) : (
-                    <>
-                      {order.status === 'ready_for_delivery' && (
-                        <button
-                          onClick={() => handleUpdateStatus(order._id, 'shipped')}
-                          disabled={!!processingOrder}
-                          className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {processingOrder === order._id ? '...' : t('markAsShipped')}
-                        </button>
-                      )}
-                      {order.status === 'shipped' && (
-                        <button
-                          onClick={() => handleUpdateStatus(order._id, 'delivered')}
-                          disabled={!!processingOrder}
-                          className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {processingOrder === order._id ? '...' : t('markAsDelivered')}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
+                {/* Actions - hide for completed orders */}
+                {activeTab !== 'completed' && (
+                  <div className="flex gap-2 mt-4">
+                    {activeTab === 'available' ? (
+                      <button
+                        onClick={() => handleAssignOrder(order._id)}
+                        disabled={!!processingOrder}
+                        className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {processingOrder === order._id ? '...' : t('assignToMe')}
+                      </button>
+                    ) : (
+                      <>
+                        {order.status === 'ready_for_delivery' && (
+                          <button
+                            onClick={() => handleUpdateStatus(order._id, 'shipped')}
+                            disabled={!!processingOrder}
+                            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {processingOrder === order._id ? '...' : t('markAsShipped')}
+                          </button>
+                        )}
+                        {order.status === 'shipped' && (
+                          <button
+                            onClick={() => handleUpdateStatus(order._id, 'delivered')}
+                            disabled={!!processingOrder}
+                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {processingOrder === order._id ? '...' : t('markAsDelivered')}
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
