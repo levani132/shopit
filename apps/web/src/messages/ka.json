@@ -511,7 +511,26 @@
     "selfPickupOption": "მაღაზიიდან წაღება",
     "selfPickupFree": "უფასო",
     "selfPickupAddress": "წაღების მისამართი",
-    "contentManagement": "კონტენტი"
+    "contentManagement": "კონტენტი",
+    "myAccount": "ჩემი ანგარიში",
+    "activeOrders": "აქტიური შეკვეთები",
+    "wishlistItems": "სურვილების სია",
+    "savedAddresses": "შენახული მისამართები",
+    "recentOrders": "ბოლო შეკვეთები",
+    "viewAll": "ყველას ნახვა",
+    "viewMyOrders": "ჩემი შეკვეთები",
+    "manageAddresses": "მისამართების მართვა",
+    "failedToLoadDashboard": "მონაცემების ჩატვირთვა ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.",
+    "error": "შეცდომა",
+    "orderStatus": {
+      "pending": "მოლოდინში",
+      "processing": "დამუშავებაში",
+      "paid": "გადახდილი",
+      "shipped": "გაგზავნილი",
+      "in_transit": "გზაში",
+      "delivered": "ჩაბარებული",
+      "cancelled": "გაუქმებული"
+    }
   },
   "auth": {
     "login": "შესვლა",
@@ -864,6 +883,8 @@
     "loginToApplyDescription": "გთხოვთ შეხვიდეთ ან შექმნათ ანგარიში კურიერად განაცხადის გასაკეთებლად."
   },
   "admin": {
+    "adminPanel": "ადმინის პანელი",
+    "reviewNow": "განხილვა",
     "dashboardTitle": "ადმინის პანელი",
     "dashboardDescription": "პლატფორმის მიმოხილვა და მართვა",
     "pendingApprovalsAlert": "{stores} მაღაზია და {couriers} კურიერი მოლოდინშია",

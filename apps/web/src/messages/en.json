@@ -511,7 +511,26 @@
     "selfPickupOption": "Pick up from store",
     "selfPickupFree": "Free",
     "selfPickupAddress": "Pickup address",
-    "contentManagement": "Content"
+    "contentManagement": "Content",
+    "myAccount": "My Account",
+    "activeOrders": "Active Orders",
+    "wishlistItems": "Wishlist Items",
+    "savedAddresses": "Saved Addresses",
+    "recentOrders": "Recent Orders",
+    "viewAll": "View All",
+    "viewMyOrders": "View My Orders",
+    "manageAddresses": "Manage Addresses",
+    "failedToLoadDashboard": "Failed to load dashboard data. Please try again.",
+    "error": "Error",
+    "orderStatus": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "in_transit": "In Transit",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
   },
   "auth": {
     "login": "Login",
@@ -864,6 +883,8 @@
     "loginToApplyDescription": "Please login or create an account to apply as a courier."
   },
   "admin": {
+    "adminPanel": "Admin Panel",
+    "reviewNow": "Review Now",
     "dashboardTitle": "Admin Dashboard",
     "dashboardDescription": "Platform overview and management",
     "pendingApprovalsAlert": "{stores} stores and {couriers} couriers pending approval",
