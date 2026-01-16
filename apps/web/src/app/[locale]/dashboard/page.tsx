@@ -637,54 +637,69 @@ export default function DashboardPage() {
         Promise.all([
           fetch(`${API_URL}/api/v1/orders/my-orders`, {
             credentials: 'include',
-          }),
-          fetch(`${API_URL}/api/v1/wishlist`, { credentials: 'include' }),
+          }).catch(() => null),
+          fetch(`${API_URL}/api/v1/wishlist`, { credentials: 'include' }).catch(
+            () => null,
+          ),
           fetch(`${API_URL}/api/v1/users/addresses`, {
             credentials: 'include',
+          }).catch(() => null),
+        ])
+          .then(async ([ordersRes, wishlistRes, addressesRes]) => {
+            const orders =
+              ordersRes && ordersRes.ok ? await ordersRes.json() : [];
+            const wishlist =
+              wishlistRes && wishlistRes.ok ? await wishlistRes.json() : [];
+            const addresses =
+              addressesRes && addressesRes.ok ? await addressesRes.json() : [];
+
+            const orderList = Array.isArray(orders)
+              ? orders
+              : orders.orders || [];
+            const wishlistItems = Array.isArray(wishlist)
+              ? wishlist
+              : wishlist.items || [];
+            const addressList = Array.isArray(addresses)
+              ? addresses
+              : addresses.addresses || [];
+
+            const activeStatuses = [
+              'pending',
+              'processing',
+              'paid',
+              'shipped',
+              'in_transit',
+            ];
+            const activeOrders = orderList.filter((o: RecentOrder) =>
+              activeStatuses.includes(o.status),
+            );
+
+            setBuyerStats({
+              totalOrders: orderList.length,
+              activeOrders: activeOrders.length,
+              wishlistItems: wishlistItems.length,
+              savedAddresses: addressList.length,
+            });
+
+            // Get 3 most recent orders
+            const sortedOrders = orderList
+              .sort(
+                (a: RecentOrder, b: RecentOrder) =>
+                  new Date(b.createdAt).getTime() -
+                  new Date(a.createdAt).getTime(),
+              )
+              .slice(0, 3);
+            setRecentOrders(sortedOrders);
+          })
+          .catch(() => {
+            // Fallback to empty stats if everything fails
+            setBuyerStats({
+              totalOrders: 0,
+              activeOrders: 0,
+              wishlistItems: 0,
+              savedAddresses: 0,
+            });
           }),
-        ]).then(async ([ordersRes, wishlistRes, addressesRes]) => {
-          const orders = ordersRes.ok ? await ordersRes.json() : [];
-          const wishlist = wishlistRes.ok ? await wishlistRes.json() : [];
-          const addresses = addressesRes.ok ? await addressesRes.json() : [];
-
-          const orderList = Array.isArray(orders)
-            ? orders
-            : orders.orders || [];
-          const wishlistItems = Array.isArray(wishlist)
-            ? wishlist
-            : wishlist.items || [];
-          const addressList = Array.isArray(addresses)
-            ? addresses
-            : addresses.addresses || [];
-
-          const activeStatuses = [
-            'pending',
-            'processing',
-            'paid',
-            'shipped',
-            'in_transit',
-          ];
-          const activeOrders = orderList.filter((o: RecentOrder) =>
-            activeStatuses.includes(o.status),
-          );
-
-          setBuyerStats({
-            totalOrders: orderList.length,
-            activeOrders: activeOrders.length,
-            wishlistItems: wishlistItems.length,
-            savedAddresses: addressList.length,
-          });
-
-          // Get 3 most recent orders
-          const sortedOrders = orderList
-            .sort(
-              (a: RecentOrder, b: RecentOrder) =>
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime(),
-            )
-            .slice(0, 3);
-          setRecentOrders(sortedOrders);
-        }),
       );
 
       await Promise.allSettled(promises);
