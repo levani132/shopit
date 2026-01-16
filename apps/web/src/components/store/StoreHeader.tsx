@@ -10,6 +10,7 @@ import { CartButton } from './CartButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role, hasRole } from '@sellit/constants';
 import { getLatinInitial } from '../../lib/utils';
+import { getMainSiteUrl } from '../../utils/subdomain';
 import Link from 'next/link';
 
 interface SubcategoryData {
@@ -38,43 +39,6 @@ interface StoreHeaderProps {
     categories?: CategoryData[];
     initial?: string; // Pre-computed English initial for avatar display
   };
-}
-
-/**
- * Get the main site URL from a subdomain
- * e.g., storename.shopit.ge → https://shopit.ge
- * e.g., sample.localhost:3000 → http://localhost:3000
- */
-function getMainSiteUrl(): string {
-  if (typeof window === 'undefined') return '';
-
-  const hostname = window.location.hostname;
-  const protocol = window.location.protocol;
-  const port = window.location.port;
-
-  // For localhost subdomains (e.g., sample.localhost)
-  if (hostname.endsWith('.localhost')) {
-    const portSuffix = port ? `:${port}` : '';
-    return `${protocol}//localhost${portSuffix}`;
-  }
-
-  // If on plain localhost (no subdomain)
-  if (hostname === 'localhost') {
-    return '';
-  }
-
-  // Split hostname into parts
-  const parts = hostname.split('.');
-
-  // If we have a subdomain (e.g., storename.shopit.ge has 3 parts)
-  // Remove the first part to get the main domain
-  if (parts.length >= 3) {
-    const mainDomain = parts.slice(1).join('.');
-    return `${protocol}//${mainDomain}`;
-  }
-
-  // Already on main domain (2 parts like shopit.ge)
-  return '';
 }
 
 export function StoreHeader({ store }: StoreHeaderProps) {

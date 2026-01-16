@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
 import { Role } from '@sellit/constants';
 import { api } from '../../../../../lib/api';
+import { getStoreUrl, getBaseDomain } from '../../../../../utils/subdomain';
 
 interface PendingStore {
   _id: string;
@@ -181,7 +182,7 @@ function PendingStoresContent() {
                     {store.name}
                   </h3>
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    ({store.subdomain}.shopit.ge)
+                    ({store.subdomain}.{getBaseDomain().baseDomain})
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -210,7 +211,7 @@ function PendingStoresContent() {
               {/* Actions */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 <a
-                  href={`https://${store.subdomain}.shopit.ge`}
+                  href={getStoreUrl(store.subdomain)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-zinc-600 rounded-lg transition-colors"

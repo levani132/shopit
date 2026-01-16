@@ -5,6 +5,7 @@ import { Link } from '../../i18n/routing';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role, RoleValue, hasRole, hasAnyRole } from '@sellit/constants';
+import { getStoreUrl } from '../../utils/subdomain';
 
 interface NavItem {
   href: string;
@@ -568,7 +569,7 @@ export function DashboardSidebar() {
       {hasRole(userRole, Role.SELLER) && store?.subdomain && (
         <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
           <a
-            href={`https://${store.subdomain}.shopit.ge`}
+            href={getStoreUrl(store.subdomain)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"

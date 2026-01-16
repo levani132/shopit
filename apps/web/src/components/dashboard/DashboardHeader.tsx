@@ -8,6 +8,7 @@ import { ShopItLogo } from '../ui/ShopItLogo';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role, hasRole, getPrimaryRoleName } from '@sellit/constants';
+import { getStoreUrl } from '../../utils/subdomain';
 import PublishButton from './PublishButton';
 
 interface NavItem {
@@ -334,7 +335,7 @@ export function DashboardHeader() {
                     {/* View My Store - Only for sellers */}
                     {store && hasRole(user?.role ?? 0, Role.SELLER) && (
                       <a
-                        href={`https://${store.subdomain}.shopit.ge`}
+                        href={getStoreUrl(store.subdomain)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
@@ -468,7 +469,7 @@ export function DashboardHeader() {
             {store && hasRole(user?.role ?? 0, Role.SELLER) && (
               <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
                 <a
-                  href={`https://${store.subdomain}.shopit.ge`}
+                  href={getStoreUrl(store.subdomain)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsMenuOpen(false)}

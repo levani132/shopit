@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { getStoreUrl, getStoreProductUrl } from '../../../../utils/subdomain';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -25,6 +26,7 @@ interface WishlistItem {
 
 export default function WishlistPage() {
   const t = useTranslations('dashboard');
+  const locale = useLocale();
   const { user, isLoading: authLoading } = useAuth();
 
   const [items, setItems] = useState<WishlistItem[]>([]);
@@ -230,7 +232,7 @@ export default function WishlistPage() {
               <div className="p-4">
                 {item.store && (
                   <a
-                    href={`https://${item.store.subdomain}.shopit.ge`}
+                    href={getStoreUrl(item.store.subdomain)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-gray-500 dark:text-gray-400 hover:text-[var(--accent-500)] mb-1 block"
@@ -263,7 +265,11 @@ export default function WishlistPage() {
               {item.store && (
                 <div className="px-4 pb-4">
                   <a
-                    href={`https://${item.store.subdomain}.shopit.ge/products/${item.productId}`}
+                    href={getStoreProductUrl(
+                      item.store.subdomain,
+                      item.productId,
+                      locale,
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block w-full py-2 text-center text-sm font-medium rounded-lg transition-colors bg-[var(--accent-500)] text-white hover:bg-[var(--accent-600)]"
@@ -279,4 +285,3 @@ export default function WishlistPage() {
     </div>
   );
 }
-

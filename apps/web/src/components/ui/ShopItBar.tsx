@@ -7,45 +7,11 @@ import { ShopItLogo } from './ShopItLogo';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role, hasRole } from '@sellit/constants';
 import { getUserInitials } from '../../lib/utils';
+import { getMainSiteUrl } from '../../utils/subdomain';
 
 interface ShopItBarProps {
   variant?: 'store' | 'standalone';
   showCreateShop?: boolean;
-}
-
-/**
- * Get the main site URL from a subdomain
- * e.g., storename.shopit.ge → https://shopit.ge
- */
-function getMainSiteUrl(): string {
-  if (typeof window === 'undefined') return '';
-
-  const hostname = window.location.hostname;
-  const protocol = window.location.protocol;
-  const port = window.location.port;
-
-  // For localhost subdomains (e.g., sample.localhost)
-  if (hostname.endsWith('.localhost')) {
-    const portSuffix = port ? `:${port}` : '';
-    return `${protocol}//localhost${portSuffix}`;
-  }
-
-  // If on plain localhost (no subdomain)
-  if (hostname === 'localhost') {
-    return '';
-  }
-
-  // Split hostname into parts
-  const parts = hostname.split('.');
-
-  // If we have a subdomain (e.g., storename.shopit.ge has 3 parts)
-  if (parts.length >= 3) {
-    const mainDomain = parts.slice(1).join('.');
-    return `${protocol}//${mainDomain}`;
-  }
-
-  // Already on main domain
-  return '';
 }
 
 export function ShopItBar({

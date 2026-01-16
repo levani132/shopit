@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { CtaButton } from '../ui/CtaButton';
 import { getLatinInitial } from '../../lib/utils';
+import { getStoreUrl, getBaseDomain } from '../../utils/subdomain';
 
 // Placeholder stores - will be empty/mocked for now
 const placeholderStores = [
@@ -69,7 +70,9 @@ export function FeaturedStores() {
                 d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
               />
             </svg>
-            <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">{t('emptyState')}</p>
+            <p className="mt-4 text-gray-500 dark:text-gray-400 text-lg">
+              {t('emptyState')}
+            </p>
           </div>
         ) : (
           /* Stores grid */
@@ -123,11 +126,11 @@ function StoreCard({ store }: { store: Store }) {
           {store.name}
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {store.subdomain}.shopit.ge
+          {store.subdomain}.{getBaseDomain().baseDomain}
         </p>
 
         <a
-          href={`https://${store.subdomain}.shopit.ge`}
+          href={getStoreUrl(store.subdomain)}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:text-[var(--accent-700)] dark:hover:text-[var(--accent-300)] transition-colors"

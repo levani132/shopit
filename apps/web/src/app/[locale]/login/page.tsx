@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '../../../contexts/AuthContext';
 import { ShopItLogo } from '../../../components/ui/ShopItLogo';
 import { getStoreBySubdomain } from '../../../lib/api';
+import { getCouriersUrl } from '../../../utils/subdomain';
 import Link from 'next/link';
 
 import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
@@ -80,30 +81,17 @@ function LoginPageContent() {
 
     try {
       await login(email, password);
-      
+
       // Handle redirect after login
       if (redirectUrl) {
         // Handle cross-subdomain redirects (e.g., /couriers/ka/apply)
         if (redirectUrl.startsWith('/couriers/')) {
-          const hostname = window.location.hostname;
-          const protocol = window.location.protocol;
-          const port = window.location.port;
-          
-          let couriersUrl = '';
-          if (hostname === 'localhost') {
-            const portSuffix = port ? `:${port}` : '';
-            couriersUrl = `${protocol}//couriers.localhost${portSuffix}`;
-          } else if (hostname.includes('.')) {
-            // Production: shopit.ge -> couriers.shopit.ge
-            couriersUrl = `${protocol}//couriers.${hostname}`;
-          }
-          
           // Extract the path after /couriers (e.g., /ka/apply)
           const pathAfterCouriers = redirectUrl.replace('/couriers', '');
-          window.location.href = `${couriersUrl}${pathAfterCouriers}`;
+          window.location.href = `${getCouriersUrl()}${pathAfterCouriers}`;
           return;
         }
-        
+
         // Normal redirect within the same domain
         router.push(redirectUrl);
       } else if (isOnStore) {

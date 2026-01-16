@@ -4,44 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import Image from 'next/image';
 import { CtaButton } from '../ui/CtaButton';
-
-/**
- * Generate the couriers subdomain URL based on current hostname
- * e.g., shopit.ge -> couriers.shopit.ge
- * e.g., localhost:3000 -> couriers.localhost:3000
- */
-function getCouriersUrl(): string {
-  if (typeof window === 'undefined') {
-    // SSR fallback
-    return 'https://couriers.shopit.ge';
-  }
-
-  const { protocol, host } = window.location;
-  const [hostname, port] = host.split(':');
-
-  // For localhost, add subdomain before it
-  if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
-    const baseHost = hostname.replace(/^[^.]+\./, ''); // Remove any existing subdomain
-    const newHost = port
-      ? `couriers.${baseHost}:${port}`
-      : `couriers.${baseHost}`;
-    return `${protocol}//${newHost}`;
-  }
-
-  // For production domains like shopit.ge
-  const parts = hostname.split('.');
-  if (parts.length >= 2) {
-    // Get the base domain (e.g., shopit.ge from www.shopit.ge or just shopit.ge)
-    const baseDomain = parts.slice(-2).join('.');
-    const newHost = port
-      ? `couriers.${baseDomain}:${port}`
-      : `couriers.${baseDomain}`;
-    return `${protocol}//${newHost}`;
-  }
-
-  // Fallback
-  return 'https://couriers.shopit.ge';
-}
+import { getCouriersUrl } from '../../utils/subdomain';
 
 export function Delivery() {
   const t = useTranslations('delivery');

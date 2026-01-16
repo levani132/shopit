@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getStoreProductUrl, getStoreUrl } from '../../utils/subdomain';
 
 // Order status progression
 const statusOrder = ['pending', 'paid', 'processing', 'shipped', 'delivered'];
@@ -59,28 +60,78 @@ function formatDateLocalized(dateString: string, locale: string): string {
 // Status icons for timeline
 const statusIcons: Record<string, React.ReactNode> = {
   pending: (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
   ),
   paid: (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+      />
     </svg>
   ),
   processing: (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
     </svg>
   ),
   shipped: (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+      />
     </svg>
   ),
   delivered: (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+    <svg
+      className="w-3 h-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 13l4 4L19 7"
+      />
     </svg>
   ),
 };
@@ -146,16 +197,21 @@ function CompactTimeline({
   currentStatus: string;
   t: TranslationFn;
 }) {
-  const isCancelled = currentStatus === 'cancelled' || currentStatus === 'refunded';
+  const isCancelled =
+    currentStatus === 'cancelled' || currentStatus === 'refunded';
 
   // Map ready_for_delivery to processing for buyers (they shouldn't see internal status)
-  const displayStatus = currentStatus === 'ready_for_delivery' ? 'processing' : currentStatus;
+  const displayStatus =
+    currentStatus === 'ready_for_delivery' ? 'processing' : currentStatus;
   const currentIndex = statusOrder.indexOf(displayStatus);
 
   if (isCancelled) {
     return (
-      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}>
-        {currentStatus === 'cancelled' ? '✕' : '↩'} {t(`status.${currentStatus}`)}
+      <span
+        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[currentStatus]}`}
+      >
+        {currentStatus === 'cancelled' ? '✕' : '↩'}{' '}
+        {t(`status.${currentStatus}`)}
       </span>
     );
   }
@@ -196,7 +252,9 @@ function CompactTimeline({
             {!isLast && (
               <div
                 className={`w-4 h-0.5 ${
-                  index < currentIndex ? 'bg-green-500' : 'bg-gray-200 dark:bg-zinc-700'
+                  index < currentIndex
+                    ? 'bg-green-500'
+                    : 'bg-gray-200 dark:bg-zinc-700'
                 }`}
               />
             )}
@@ -208,13 +266,7 @@ function CompactTimeline({
 }
 
 // Expandable Order Footer Component
-function OrderFooter({
-  order,
-  t,
-}: {
-  order: Order;
-  t: TranslationFn;
-}) {
+function OrderFooter({ order, t }: { order: Order; t: TranslationFn }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const shippingDetails = order.shippingDetails;
@@ -232,11 +284,18 @@ function OrderFooter({
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
           {shippingDetails ? (
             <>
-              <span>{shippingDetails.city}, {shippingDetails.country}</span>
+              <span>
+                {shippingDetails.city}, {shippingDetails.country}
+              </span>
               <span className="text-gray-300 dark:text-zinc-600">•</span>
             </>
           ) : null}
@@ -259,13 +318,24 @@ function OrderFooter({
                 <p>{shippingDetails.address}</p>
                 <p>
                   {shippingDetails.city}
-                  {shippingDetails.postalCode && `, ${shippingDetails.postalCode}`}
+                  {shippingDetails.postalCode &&
+                    `, ${shippingDetails.postalCode}`}
                 </p>
                 <p>{shippingDetails.country}</p>
                 {shippingDetails.phoneNumber && (
                   <p className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                      />
                     </svg>
                     {shippingDetails.phoneNumber}
                   </p>
@@ -282,8 +352,18 @@ function OrderFooter({
                 <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                   <p className="flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-cyan-600 dark:text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <svg
+                        className="w-3 h-3 text-cyan-600 dark:text-cyan-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
                       </svg>
                     </span>
                     {order.courierId.firstName} {order.courierId.lastName}
@@ -306,13 +386,19 @@ function OrderFooter({
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('subtotal')}</span>
                   <span>
-                    ₾{(order.itemsPrice || order.totalPrice - (order.shippingPrice || 0)).toFixed(2)}
+                    ₾
+                    {(
+                      order.itemsPrice ||
+                      order.totalPrice - (order.shippingPrice || 0)
+                    ).toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-600 dark:text-gray-400">
                   <span>{t('shipping')}</span>
                   <span>
-                    {(order.shippingPrice || 0) > 0 ? `₾${(order.shippingPrice || 0).toFixed(2)}` : t('free')}
+                    {(order.shippingPrice || 0) > 0
+                      ? `₾${(order.shippingPrice || 0).toFixed(2)}`
+                      : t('free')}
                   </span>
                 </div>
                 <div className="flex justify-between font-semibold text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-zinc-700">
@@ -355,7 +441,7 @@ export function OrderCard({
       return `${productLinkBase}/products/${productId}`;
     }
     if (order.store?.subdomain) {
-      return `https://${order.store.subdomain}.shopit.ge/${locale}/products/${productId}`;
+      return getStoreProductUrl(order.store.subdomain, productId, locale);
     }
     return `/${locale}/products/${productId}`;
   };
@@ -376,13 +462,23 @@ export function OrderCard({
             </div>
             {showStoreName && order.store && (
               <a
-                href={`https://${order.store.subdomain}.shopit.ge`}
+                href={getStoreUrl(order.store.subdomain)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-[var(--accent-500)] transition-colors"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                  />
                 </svg>
                 {order.store.name}
               </a>
@@ -406,16 +502,41 @@ export function OrderCard({
             >
               {processingPayment === order._id ? (
                 <>
-                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  <svg
+                    className="w-4 h-4 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
                   </svg>
                   {t('processing')}
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    />
                   </svg>
                   {t('payNow')}
                 </>
@@ -431,11 +552,15 @@ export function OrderCard({
       {/* Order Items */}
       <div className="p-4 space-y-4">
         {order.orderItems.map((item, idx) => {
-          const variantAttributes = item.variantAttributes || 
-            (item.selectedAttributes 
-              ? Object.entries(item.selectedAttributes).map(([key, value]) => ({ attributeName: key, value }))
+          const variantAttributes =
+            item.variantAttributes ||
+            (item.selectedAttributes
+              ? Object.entries(item.selectedAttributes).map(([key, value]) => ({
+                  attributeName: key,
+                  value,
+                }))
               : []);
-          
+
           return (
             <Link
               key={idx}
@@ -457,7 +582,9 @@ export function OrderCard({
                 </p>
                 {variantAttributes.length > 0 && (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {variantAttributes.map((a) => `${a.attributeName}: ${a.value}`).join(', ')}
+                    {variantAttributes
+                      .map((a) => `${a.attributeName}: ${a.value}`)
+                      .join(', ')}
                   </p>
                 )}
                 <div className="flex justify-between items-center mt-1">
@@ -470,8 +597,18 @@ export function OrderCard({
                 </div>
               </div>
               <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
               </div>
             </Link>
@@ -486,4 +623,3 @@ export function OrderCard({
 }
 
 export { statusColors, formatDateLocalized };
-
