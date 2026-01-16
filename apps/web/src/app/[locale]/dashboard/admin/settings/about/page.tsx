@@ -101,7 +101,7 @@ export default function AboutSettingsPage() {
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 {t('missionKa')}
               </label>
               <textarea
@@ -110,11 +110,11 @@ export default function AboutSettingsPage() {
                 onChange={(e) =>
                   setAbout({ ...about, missionKa: e.target.value })
                 }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 text-gray-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 {t('missionEn')}
               </label>
               <textarea
@@ -123,7 +123,7 @@ export default function AboutSettingsPage() {
                 onChange={(e) =>
                   setAbout({ ...about, missionEn: e.target.value })
                 }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 text-gray-900 dark:text-white"
               />
             </div>
           </div>
@@ -136,7 +136,7 @@ export default function AboutSettingsPage() {
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 {t('storyKa')}
               </label>
               <textarea
@@ -145,11 +145,11 @@ export default function AboutSettingsPage() {
                 onChange={(e) =>
                   setAbout({ ...about, storyKa: e.target.value })
                 }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 text-gray-900 dark:text-white"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 {t('storyEn')}
               </label>
               <textarea
@@ -158,7 +158,7 @@ export default function AboutSettingsPage() {
                 onChange={(e) =>
                   setAbout({ ...about, storyEn: e.target.value })
                 }
-                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
+                className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 text-gray-900 dark:text-white"
               />
             </div>
           </div>

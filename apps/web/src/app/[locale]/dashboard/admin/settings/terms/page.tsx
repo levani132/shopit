@@ -99,7 +99,7 @@ export default function TermsSettingsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               {t('contentKa')}
             </label>
             <textarea
@@ -108,11 +108,11 @@ export default function TermsSettingsPage() {
               onChange={(e) =>
                 setTerms({ ...terms, contentKa: e.target.value })
               }
-              className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm"
+              className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm text-gray-900 dark:text-white"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
               {t('contentEn')}
             </label>
             <textarea
@@ -121,7 +121,7 @@ export default function TermsSettingsPage() {
               onChange={(e) =>
                 setTerms({ ...terms, contentEn: e.target.value })
               }
-              className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm"
+              className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm text-gray-900 dark:text-white"
             />
           </div>
         </div>
