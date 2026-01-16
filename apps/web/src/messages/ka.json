@@ -522,6 +522,8 @@
     "manageAddresses": "მისამართების მართვა",
     "failedToLoadDashboard": "მონაცემების ჩატვირთვა ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.",
     "error": "შეცდომა",
+    "courierApplicationPending": "კურიერის განაცხადი განხილვაშია",
+    "courierApplicationPendingDescription": "თქვენი კურიერის განაცხადი განიხილება. გაცნობებთ გადაწყვეტილების მიღებისთანერთად.",
     "orderStatus": {
       "pending": "მოლოდინში",
       "processing": "დამუშავებაში",
@@ -587,6 +589,7 @@
     "signOut": "გასვლა",
     "seller": "გამყიდველი",
     "courier": "კურიერი",
+    "courierPending": "კურიერი (მოლოდინში)",
     "admin": "ადმინი",
     "sellerDashboard": "გამყიდველის პანელი",
     "courierDashboard": "კურიერის პანელი",

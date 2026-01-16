@@ -522,6 +522,8 @@
     "manageAddresses": "Manage Addresses",
     "failedToLoadDashboard": "Failed to load dashboard data. Please try again.",
     "error": "Error",
+    "courierApplicationPending": "Courier Application Pending",
+    "courierApplicationPendingDescription": "Your courier application is being reviewed. We'll notify you once a decision has been made.",
     "orderStatus": {
       "pending": "Pending",
       "processing": "Processing",
@@ -587,6 +589,7 @@
     "signOut": "Sign Out",
     "seller": "Seller",
     "courier": "Courier",
+    "courierPending": "Courier (Pending)",
     "admin": "Admin",
     "sellerDashboard": "Seller Dashboard",
     "courierDashboard": "Courier Dashboard",

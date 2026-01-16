@@ -542,6 +542,9 @@ export class AuthController {
         beneficiaryBankCode: user.beneficiaryBankCode,
         isProfileComplete: user.isProfileComplete,
         authProvider: user.authProvider,
+        // Courier application status
+        courierAppliedAt: user.courierAppliedAt,
+        isCourierApproved: user.isCourierApproved,
       },
       store: store
         ? {

@@ -28,6 +28,7 @@ export interface User {
   vehicleType?: string;
   workingAreas?: string[];
   isCourierApproved?: boolean;
+  courierAppliedAt?: string; // ISO date string when courier application was submitted
   // Balance fields (for sellers and couriers)
   balance?: number;
   pendingWithdrawals?: number;

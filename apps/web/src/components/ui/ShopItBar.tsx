@@ -43,6 +43,8 @@ export function ShopItBar({
 
   const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
   const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
+  const hasPendingCourierApplication =
+    user?.courierAppliedAt && !isCourier && !user?.isCourierApproved;
   const initials = user
     ? getUserInitials(user.firstName, user.lastName, user.email)
     : '';
@@ -148,6 +150,11 @@ export function ShopItBar({
                         {isCourier && (
                           <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-blue-500 text-white">
                             {t('courier')}
+                          </span>
+                        )}
+                        {hasPendingCourierApplication && (
+                          <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-yellow-500 text-white">
+                            {t('courierPending')}
                           </span>
                         )}
                       </div>

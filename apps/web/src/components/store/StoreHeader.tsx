@@ -402,6 +402,8 @@ interface MobileNavProps {
     lastName: string;
     email: string;
     role: number;
+    courierAppliedAt?: string;
+    isCourierApproved?: boolean;
   } | null;
   mainSiteUrl: string;
   locale: string;
@@ -421,6 +423,9 @@ function MobileNav({
   const { logout } = useAuth();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
+  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
+  const hasPendingCourierApplication =
+    user?.courierAppliedAt && !isCourier && !user?.isCourierApproved;
   const hasCategories = categories.length > 0;
 
   // Get localized category name
@@ -639,6 +644,50 @@ function MobileNav({
                 </svg>
                 {t('sellerDashboard')}
               </a>
+            )}
+
+            {/* Courier Dashboard Link */}
+            {isCourier && (
+              <a
+                href={`${mainSiteUrl}/${locale}/dashboard`}
+                className="flex items-center gap-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                onClick={onClose}
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+                  />
+                </svg>
+                {t('courierDashboard')}
+              </a>
+            )}
+
+            {/* Pending Courier Status */}
+            {hasPendingCourierApplication && (
+              <div className="flex items-center gap-3 text-yellow-600 dark:text-yellow-400">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                {t('courierPending')}
+              </div>
             )}
 
             {/* Logout */}

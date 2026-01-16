@@ -163,6 +163,12 @@ export function DashboardHeader() {
   const { theme, toggleTheme } = useTheme();
   const { user, store, logout } = useAuth();
 
+  // Role checks
+  const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
+  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
+  const hasPendingCourierApplication =
+    user?.courierAppliedAt && !isCourier && !user?.isCourierApproved;
+
   // Close user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -323,9 +329,30 @@ export function DashboardHeader() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                           {user?.email}
                         </p>
-                        <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
-                          {tNav(getPrimaryRoleName(user?.role ?? 0))}
-                        </span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {isSeller && (
+                            <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
+                              {tNav('seller')}
+                            </span>
+                          )}
+                          {isCourier && (
+                            <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                              {tNav('courier')}
+                            </span>
+                          )}
+                          {hasPendingCourierApplication && (
+                            <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
+                              {t('courierApplicationPending')}
+                            </span>
+                          )}
+                          {!isSeller &&
+                            !isCourier &&
+                            !hasPendingCourierApplication && (
+                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
+                                {tNav(getPrimaryRoleName(user?.role ?? 0))}
+                              </span>
+                            )}
+                        </div>
                       </div>
                     </div>
                   </div>

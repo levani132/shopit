@@ -735,6 +735,10 @@ export default function DashboardPage() {
     );
   }
 
+  // Check if user has pending courier application (applied but not yet a courier)
+  const hasPendingCourierApplication =
+    user?.courierAppliedAt && !isCourier && !user?.isCourierApproved;
+
   return (
     <div className="max-w-7xl mx-auto space-y-10">
       {/* Header */}
@@ -747,6 +751,15 @@ export default function DashboardPage() {
           {t('overviewDescription')}
         </p>
       </div>
+
+      {/* Pending Courier Application Banner */}
+      {hasPendingCourierApplication && (
+        <AlertBanner
+          type="info"
+          title={t('courierApplicationPending')}
+          message={t('courierApplicationPendingDescription')}
+        />
+      )}
 
       {/* Admin Section */}
       {isAdmin && adminStats && <AdminOverview stats={adminStats} />}

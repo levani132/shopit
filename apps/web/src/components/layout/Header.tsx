@@ -345,15 +345,21 @@ interface HeaderUserMenuProps {
     lastName: string;
     email: string;
     role: number;
+    courierAppliedAt?: string;
+    isCourierApproved?: boolean;
   };
   onLogout: () => void;
 }
 
 function HeaderUserMenu({ user, onLogout }: HeaderUserMenuProps) {
   const t = useTranslations('nav');
+  const tDashboard = useTranslations('dashboard');
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const isSeller = hasRole(user.role ?? 0, Role.SELLER);
+  const isCourier = hasRole(user.role ?? 0, Role.COURIER);
+  const hasPendingCourierApplication =
+    user.courierAppliedAt && !isCourier && !user.isCourierApproved;
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -408,11 +414,23 @@ function HeaderUserMenu({ user, onLogout }: HeaderUserMenuProps) {
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user.email}
               </p>
-              {isSeller && (
-                <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full bg-[var(--accent-500)] text-white">
-                  {t('seller')}
-                </span>
-              )}
+              <div className="flex flex-wrap gap-1 mt-1">
+                {isSeller && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-500)] text-white">
+                    {t('seller')}
+                  </span>
+                )}
+                {isCourier && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500 text-white">
+                    {t('courier')}
+                  </span>
+                )}
+                {hasPendingCourierApplication && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500 text-white">
+                    {tDashboard('courierApplicationPending')}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
