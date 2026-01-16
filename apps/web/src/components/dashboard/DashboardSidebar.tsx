@@ -347,7 +347,7 @@ const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard',
         labelKey: 'overview',
         icon: OverviewIcon,
-        roles: [Role.SELLER, Role.COURIER, Role.ADMIN],
+        roles: [Role.USER, Role.SELLER, Role.COURIER, Role.ADMIN],
       },
     ],
   },
