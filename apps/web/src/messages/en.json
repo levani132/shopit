@@ -878,6 +878,8 @@
     "alreadyCourierDescription": "You've already been approved as a courier. Go to your dashboard to start delivering.",
     "applicationSubmitted": "Application Submitted!",
     "applicationSubmittedDescription": "Thank you for applying! We'll review your application and get back to you within 24-48 hours. You'll receive an email notification once approved.",
+    "applicationPending": "Application Pending",
+    "applicationPendingDescription": "Your courier application is currently being reviewed. We'll notify you once a decision has been made. This usually takes 24-48 hours.",
     "backToHome": "Back to Home",
     "loginToApply": "Login Required",
     "loginToApplyDescription": "Please login or create an account to apply as a courier."

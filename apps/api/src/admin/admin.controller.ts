@@ -287,8 +287,10 @@ export class AdminController {
       throw new BadRequestException('User is already a courier');
     }
 
-    // Add courier role to existing roles
+    // Add courier role to existing roles and mark as approved
     user.role = user.role | Role.COURIER;
+    user.isCourierApproved = true;
+    user.courierApprovedAt = new Date();
     await user.save();
 
     this.logger.log(`User ${user.email} approved as courier`);
@@ -318,9 +320,11 @@ export class AdminController {
       throw new NotFoundException('User not found');
     }
 
-    // Clear courier application data
+    // Clear courier application data so they can reapply
     user.courierMotivationLetter = undefined;
     user.courierProfileImage = undefined;
+    user.courierAppliedAt = undefined;
+    user.accountNumber = undefined;
     await user.save();
 
     this.logger.log(

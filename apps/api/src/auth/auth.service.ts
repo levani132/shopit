@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument, AuthProvider, Role } from '@sellit/api-database';
+import { hasRole } from '@sellit/constants';
 import { Store, StoreDocument } from '@sellit/api-database';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -1114,8 +1115,8 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if already a courier
-    if (user.role === Role.COURIER) {
+    // Check if already a courier (has COURIER role)
+    if (hasRole(user.role, Role.COURIER)) {
       if (user.isCourierApproved) {
         return {
           message: 'You are already an approved courier.',
@@ -1128,8 +1129,15 @@ export class AuthService {
       };
     }
 
-    // Update user with courier info
-    user.role = Role.COURIER;
+    // Check if already has a pending application
+    if (user.courierAppliedAt && !user.isCourierApproved) {
+      return {
+        message: 'Your courier application is pending approval.',
+        status: 'pending',
+      };
+    }
+
+    // Update user with courier info (don't set role - only admin can do that)
     user.phoneNumber = data.phoneNumber;
     user.identificationNumber = data.identificationNumber;
     user.accountNumber = data.accountNumber;
@@ -1162,11 +1170,15 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
+    const isCourier = hasRole(user.role, Role.COURIER);
+    const hasPendingApplication = !!(user.courierAppliedAt && !isCourier);
+
     return {
-      isCourier: user.role === Role.COURIER,
+      isCourier,
       isApproved: user.isCourierApproved || false,
       appliedAt: user.courierAppliedAt,
       approvedAt: user.courierApprovedAt,
+      hasPendingApplication,
     };
   }
 
@@ -1186,8 +1198,8 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if already a courier
-    if (user.role === Role.COURIER) {
+    // Check if already a courier (has COURIER role)
+    if (hasRole(user.role, Role.COURIER)) {
       if (user.isCourierApproved) {
         return {
           message: 'You are already an approved courier.',
@@ -1200,14 +1212,21 @@ export class AuthService {
       };
     }
 
+    // Check if already has a pending application
+    if (user.courierMotivationLetter) {
+      return {
+        message: 'Your courier application is pending approval.',
+        status: 'pending',
+      };
+    }
+
     // Validate IBAN (Georgian IBAN format: GE + 2 check digits + 2 letter bank code + 16 digit account)
     const ibanRegex = /^GE\d{2}[A-Z]{2}\d{16}$/;
     if (!ibanRegex.test(data.iban.replace(/\s/g, ''))) {
       throw new BadRequestException('Invalid Georgian IBAN format');
     }
 
-    // Update user with courier info
-    user.role = Role.COURIER;
+    // Update user with courier info (don't set role - only admin can do that on approval)
     user.accountNumber = data.iban.replace(/\s/g, '');
     user.courierMotivationLetter = data.motivationLetter;
     if (data.profileImage) {

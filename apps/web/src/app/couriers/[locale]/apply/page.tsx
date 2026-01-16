@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -12,6 +12,13 @@ import { CourierHeader } from '../../../../components/courier/CourierHeader';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
+interface CourierStatus {
+  isCourier: boolean;
+  isApproved: boolean;
+  hasPendingApplication?: boolean;
+  appliedAt?: string;
+}
+
 export default function CourierApplyPage() {
   const t = useTranslations('courier');
   const tCommon = useTranslations('common');
@@ -20,6 +27,10 @@ export default function CourierApplyPage() {
   const locale = (params?.locale as string) || 'en';
   const { isAuthenticated, user } = useAuth();
 
+  const [courierStatus, setCourierStatus] = useState<CourierStatus | null>(
+    null,
+  );
+  const [checkingStatus, setCheckingStatus] = useState(true);
   const [formData, setFormData] = useState({
     iban: '',
     motivationLetter: '',
@@ -30,6 +41,32 @@ export default function CourierApplyPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check courier status on mount
+  useEffect(() => {
+    const checkCourierStatus = async () => {
+      if (!isAuthenticated) {
+        setCheckingStatus(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/api/v1/auth/courier/status`, {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCourierStatus(data);
+        }
+      } catch (err) {
+        console.error('Failed to check courier status:', err);
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
+    checkCourierStatus();
+  }, [isAuthenticated]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -87,8 +124,20 @@ export default function CourierApplyPage() {
     }
   };
 
+  // Loading state while checking courier status
+  if (checkingStatus) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+        <CourierHeader />
+        <div className="flex items-center justify-center px-4 py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent" />
+        </div>
+      </div>
+    );
+  }
+
   // If user is already a courier, redirect to dashboard
-  if (hasRole(user?.role ?? 0, Role.COURIER)) {
+  if (hasRole(user?.role ?? 0, Role.COURIER) || courierStatus?.isCourier) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
         <CourierHeader />
@@ -120,6 +169,46 @@ export default function CourierApplyPage() {
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
             >
               {t('goToDashboard')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If user has pending application
+  if (courierStatus?.hasPendingApplication) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
+        <CourierHeader />
+        <div className="flex items-center justify-center px-4 py-20">
+          <div className="max-w-md w-full text-center">
+            <div className="w-20 h-20 mx-auto mb-6 bg-yellow-500/20 rounded-full flex items-center justify-center">
+              <svg
+                className="w-10 h-10 text-yellow-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-4">
+              {t('applicationPending')}
+            </h1>
+            <p className="text-gray-400 mb-8">
+              {t('applicationPendingDescription')}
+            </p>
+            <Link
+              href={`/${locale}`}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors inline-block"
+            >
+              {t('backToHome')}
             </Link>
           </div>
         </div>
