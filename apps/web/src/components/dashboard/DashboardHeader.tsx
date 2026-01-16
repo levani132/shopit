@@ -6,12 +6,8 @@ import { Link, usePathname } from '../../i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { useTheme } from '../theme/ThemeProvider';
-import {
-  useAuth,
-  hasRole,
-  Role,
-  getPrimaryRoleName,
-} from '../../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { Role, hasRole, getPrimaryRoleName } from '@sellit/constants';
 import PublishButton from './PublishButton';
 
 interface NavItem {

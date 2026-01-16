@@ -5,8 +5,8 @@ import { useTranslations } from 'next-intl';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useAuth, hasRole } from '../../../../contexts/AuthContext';
-import { Role } from '@sellit/constants';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { Role, hasRole } from '@sellit/constants';
 import { CourierHeader } from '../../../../components/courier/CourierHeader';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

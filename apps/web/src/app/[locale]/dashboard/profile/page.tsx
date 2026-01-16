@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useAuth, hasRole } from '../../../../contexts/AuthContext';
-import { Role } from '@sellit/constants';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { Role, hasRole } from '@sellit/constants';
 import {
   GEORGIAN_BANKS,
   detectBankFromIban,
@@ -169,7 +169,7 @@ export default function ProfilePage() {
     }
     // Validate Georgian phone: +995XXXXXXXXX, 995XXXXXXXXX, or 5XXXXXXXX
     if (phoneNumber) {
-      const cleaned = phoneNumber.replace(/[\s\-\(\)]/g, '');
+      const cleaned = phoneNumber.replace(/[\s\-()]/g, '');
       const isValid =
         /^\+995[5]\d{8}$/.test(cleaned) || // +995 5XX XXX XXX
         /^995[5]\d{8}$/.test(cleaned) || // 995 5XX XXX XXX

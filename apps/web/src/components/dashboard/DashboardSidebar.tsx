@@ -3,8 +3,8 @@
 import { usePathname } from 'next/navigation';
 import { Link } from '../../i18n/routing';
 import { useTranslations } from 'next-intl';
-import { useAuth, hasRole, hasAnyRole } from '../../contexts/AuthContext';
-import { Role, RoleValue } from '@sellit/constants';
+import { useAuth } from '../../contexts/AuthContext';
+import { Role, RoleValue, hasRole, hasAnyRole } from '@sellit/constants';
 
 interface NavItem {
   href: string;

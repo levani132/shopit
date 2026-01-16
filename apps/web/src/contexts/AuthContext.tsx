@@ -9,17 +9,7 @@ import React, {
   useMemo,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Role,
-  RoleValue,
-  hasRole,
-  hasAnyRole,
-  getPrimaryRoleName,
-  getRoleNamesString,
-} from '@sellit/constants';
-
-// Re-export for convenience
-export { Role, hasRole, hasAnyRole, getPrimaryRoleName, getRoleNamesString };
+import { Role, RoleValue, hasAnyRole } from '@sellit/constants';
 
 // Types
 export interface User {

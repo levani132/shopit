@@ -3,8 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from '../../i18n/routing';
-import { useAuth, hasRole } from '../../contexts/AuthContext';
-import { Role } from '@sellit/constants';
+import { useAuth } from '../../contexts/AuthContext';
+import { Role, hasRole } from '@sellit/constants';
 
 const slides = [
   {

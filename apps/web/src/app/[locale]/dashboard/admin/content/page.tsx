@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useAuth, hasRole } from '../../../../../contexts/AuthContext';
-import { Role } from '@sellit/constants';
+import { useAuth } from '../../../../../contexts/AuthContext';
+import { Role, hasRole } from '@sellit/constants';
 
 interface FaqItem {
   _id: string;
