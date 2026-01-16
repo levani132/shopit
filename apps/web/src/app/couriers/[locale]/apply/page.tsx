@@ -454,17 +454,23 @@ export default function CourierApplyPage() {
                   <option value="" className="bg-slate-800">
                     {t('selectVehicleType')}
                   </option>
-                  <option value="car" className="bg-slate-800">
-                    🚗 {t('vehicleCar')}
-                  </option>
-                  <option value="motorcycle" className="bg-slate-800">
-                    🏍️ {t('vehicleMotorcycle')}
+                  <option value="walking" className="bg-slate-800">
+                    🚶 {t('vehicleWalking')}
                   </option>
                   <option value="bicycle" className="bg-slate-800">
                     🚲 {t('vehicleBicycle')}
                   </option>
-                  <option value="walking" className="bg-slate-800">
-                    🚶 {t('vehicleWalking')}
+                  <option value="motorcycle" className="bg-slate-800">
+                    🏍️ {t('vehicleMotorcycle')}
+                  </option>
+                  <option value="car" className="bg-slate-800">
+                    🚗 {t('vehicleCar')}
+                  </option>
+                  <option value="suv" className="bg-slate-800">
+                    🚙 {t('vehicleSuv')}
+                  </option>
+                  <option value="van" className="bg-slate-800">
+                    🚐 {t('vehicleVan')}
                   </option>
                 </select>
                 <p className="text-xs text-gray-500 mt-2">

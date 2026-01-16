@@ -231,6 +231,15 @@ export class Order {
   @Prop()
   courierAssignedAt?: Date;
 
+  // Required shipping size for this order (largest item size)
+  // Used to filter orders for couriers based on their vehicle type
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+    default: 'small',
+  })
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+
   // Delivery deadline (calculated from paidAt + prep time + delivery estimate)
   @Prop()
   deliveryDeadline?: Date;
@@ -257,4 +266,4 @@ OrderSchema.index({ externalOrderId: 1 });
 OrderSchema.index({ isPaid: 1, stockReservationExpires: 1 }); // For stock release cron
 OrderSchema.index({ 'guestInfo.email': 1 }); // Find guest orders by email
 OrderSchema.index({ courierId: 1, status: 1 }); // For courier's assigned orders
-
+OrderSchema.index({ status: 1, shippingSize: 1, courierId: 1 }); // For filtering available orders by shipping size

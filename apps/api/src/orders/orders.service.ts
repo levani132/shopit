@@ -25,6 +25,11 @@ import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
 import { SiteSettingsService } from '../admin/site-settings.service';
 import { DeliveryFeeService, ShippingSize } from './delivery-fee.service';
+import {
+  VehicleType,
+  VEHICLE_CAPACITIES,
+  SHIPPING_SIZES,
+} from '@sellit/constants';
 
 @Injectable()
 export class OrdersService {
@@ -127,7 +132,9 @@ export class OrdersService {
 
     // For guest orders, require guest info
     if ((!userId || dto.isGuestOrder) && !dto.guestInfo) {
-      throw new BadRequestException('Guest checkout requires guest information.');
+      throw new BadRequestException(
+        'Guest checkout requires guest information.',
+      );
     }
 
     const session = await this.connection.startSession();
@@ -166,7 +173,11 @@ export class OrdersService {
           }
 
           // Check and reserve stock
-          if (item.variantId && product.hasVariants && product.variants?.length) {
+          if (
+            item.variantId &&
+            product.hasVariants &&
+            product.variants?.length
+          ) {
             const variantIndex = product.variants.findIndex(
               (v) => v._id.toString() === item.variantId,
             );
@@ -204,28 +215,36 @@ export class OrdersService {
           let actualPrice: number;
           let actualImage: string;
 
-          if (item.variantId && product.hasVariants && product.variants?.length) {
+          if (
+            item.variantId &&
+            product.hasVariants &&
+            product.variants?.length
+          ) {
             const variant = product.variants.find(
               (v) => v._id.toString() === item.variantId,
             );
             if (variant) {
               // Use variant price if set, otherwise use product price
-              actualPrice = product.isOnSale && (variant.salePrice || product.salePrice)
-                ? (variant.salePrice || product.salePrice || product.price)
-                : (variant.price || product.price);
+              actualPrice =
+                product.isOnSale && (variant.salePrice || product.salePrice)
+                  ? variant.salePrice || product.salePrice || product.price
+                  : variant.price || product.price;
               // Use variant image if available
-              actualImage = variant.images?.[0] || product.images?.[0] || item.image;
+              actualImage =
+                variant.images?.[0] || product.images?.[0] || item.image;
             } else {
-              actualPrice = product.isOnSale && product.salePrice
-                ? product.salePrice
-                : product.price;
+              actualPrice =
+                product.isOnSale && product.salePrice
+                  ? product.salePrice
+                  : product.price;
               actualImage = product.images?.[0] || item.image;
             }
           } else {
             // Non-variant product
-            actualPrice = product.isOnSale && product.salePrice
-              ? product.salePrice
-              : product.price;
+            actualPrice =
+              product.isOnSale && product.salePrice
+                ? product.salePrice
+                : product.price;
             actualImage = product.images?.[0] || item.image;
           }
 
@@ -245,8 +264,12 @@ export class OrdersService {
             storeName: store.name, // Use DB store name
             courierType: store.courierType,
             // If noPrepRequired is true, prep time is 0 (items ship same day)
-            prepTimeMinDays: store.noPrepRequired ? 0 : (store.prepTimeMinDays || 0),
-            prepTimeMaxDays: store.noPrepRequired ? 0 : (store.prepTimeMaxDays || 0),
+            prepTimeMinDays: store.noPrepRequired
+              ? 0
+              : store.prepTimeMinDays || 0,
+            prepTimeMaxDays: store.noPrepRequired
+              ? 0
+              : store.prepTimeMaxDays || 0,
             deliveryMinDays: store.deliveryMinDays,
             deliveryMaxDays: store.deliveryMaxDays,
             shippingSize: product.shippingSize || 'small',
@@ -272,24 +295,33 @@ export class OrdersService {
           shippingPrice = 0;
         } else {
           // Group items by store for shipping calculation
-          const storeIds = new Set(enhancedOrderItems.map((i) => i.storeId.toString()));
-          
+          const storeIds = new Set(
+            enhancedOrderItems.map((i) => i.storeId.toString()),
+          );
+
           for (const storeId of storeIds) {
-            const store = await this.storeModel.findById(storeId).session(session);
+            const store = await this.storeModel
+              .findById(storeId)
+              .session(session);
             if (!store) continue;
 
             if (store.courierType === 'shopit') {
               // ShopIt delivery - calculate based on distance and product size
-              
+
               // Validate locations
               if (!store.location?.lat || !store.location?.lng) {
-                this.logger.warn(`Store ${store.name} has no location set for ShopIt delivery`);
+                this.logger.warn(
+                  `Store ${store.name} has no location set for ShopIt delivery`,
+                );
                 throw new BadRequestException(
                   `Store "${store.name}" has not configured its location for delivery`,
                 );
               }
 
-              if (!dto.shippingDetails?.location?.lat || !dto.shippingDetails?.location?.lng) {
+              if (
+                !dto.shippingDetails?.location?.lat ||
+                !dto.shippingDetails?.location?.lng
+              ) {
                 throw new BadRequestException(
                   'Delivery address location is required for ShopIt delivery. Please select a location on the map.',
                 );
@@ -299,7 +331,12 @@ export class OrdersService {
               const storeItems = enhancedOrderItems.filter(
                 (i) => i.storeId.toString() === storeId,
               );
-              const sizes: ShippingSize[] = ['small', 'medium', 'large', 'extra_large'];
+              const sizes: ShippingSize[] = [
+                'small',
+                'medium',
+                'large',
+                'extra_large',
+              ];
               let maxSizeIndex = 0;
               for (const item of storeItems) {
                 const size = (item as any).shippingSize || 'small';
@@ -309,11 +346,15 @@ export class OrdersService {
               const largestSize = sizes[maxSizeIndex];
 
               // Calculate delivery fee
-              const deliveryResult = await this.deliveryFeeService.calculateDeliveryFee(
-                { lat: store.location.lat, lng: store.location.lng },
-                { lat: dto.shippingDetails.location.lat, lng: dto.shippingDetails.location.lng },
-                largestSize,
-              );
+              const deliveryResult =
+                await this.deliveryFeeService.calculateDeliveryFee(
+                  { lat: store.location.lat, lng: store.location.lng },
+                  {
+                    lat: dto.shippingDetails.location.lat,
+                    lng: dto.shippingDetails.location.lng,
+                  },
+                  largestSize,
+                );
 
               shippingPrice += deliveryResult.fee;
               this.logger.log(
@@ -364,6 +405,22 @@ export class OrdersService {
           // Recipient name for courier display
           recipientName,
         };
+
+        // Calculate the largest shipping size for the entire order
+        // This is used to filter which couriers can see/accept this order
+        const allSizes: ShippingSize[] = [
+          'small',
+          'medium',
+          'large',
+          'extra_large',
+        ];
+        let orderMaxSizeIndex = 0;
+        for (const item of enhancedOrderItems) {
+          const size = (item as any).shippingSize || 'small';
+          const index = allSizes.indexOf(size);
+          if (index > orderMaxSizeIndex) orderMaxSizeIndex = index;
+        }
+        orderData.shippingSize = allSizes[orderMaxSizeIndex];
 
         if (userId && !dto.isGuestOrder) {
           orderData.user = new Types.ObjectId(userId);
@@ -428,9 +485,13 @@ export class OrdersService {
     // If store subdomain is provided, find the store and filter by its ID
     if (storeSubdomain) {
       this.logger.log(`Filtering orders by store subdomain: ${storeSubdomain}`);
-      const store = await this.storeModel.findOne({ subdomain: storeSubdomain });
+      const store = await this.storeModel.findOne({
+        subdomain: storeSubdomain,
+      });
       if (store) {
-        this.logger.log(`Found store: ${store._id} for subdomain: ${storeSubdomain}`);
+        this.logger.log(
+          `Found store: ${store._id} for subdomain: ${storeSubdomain}`,
+        );
         query['orderItems.storeId'] = store._id;
       } else {
         this.logger.log(`Store not found for subdomain: ${storeSubdomain}`);
@@ -447,13 +508,15 @@ export class OrdersService {
       .populate('courierId', 'firstName lastName phoneNumber')
       .sort({ createdAt: -1 });
     this.logger.log(`Found ${orders.length} orders`);
-    
+
     // Log storeIds in found orders for debugging
     if (orders.length > 0) {
-      const storeIds = orders.flatMap(o => o.orderItems.map(i => i.storeId?.toString()));
+      const storeIds = orders.flatMap((o) =>
+        o.orderItems.map((i) => i.storeId?.toString()),
+      );
       this.logger.log(`Order storeIds: ${storeIds.join(', ')}`);
     }
-    
+
     return orders;
   }
 
@@ -517,11 +580,11 @@ export class OrdersService {
 
   /**
    * Calculate delivery deadline based on order items' prep and delivery times
-   * 
+   *
    * For ShopIt courier (courierType !== 'seller'):
    * - Tbilisi: 1-3 days (use max 3)
    * - Outside Tbilisi: 3-5 days (use max 5)
-   * 
+   *
    * For seller-handled delivery:
    * - Uses store's deliveryMaxDays setting
    */
@@ -531,12 +594,13 @@ export class OrdersService {
 
     // Check if delivery is within Tbilisi (case-insensitive check)
     const deliveryCity = order.shippingDetails?.city?.toLowerCase() || '';
-    const isTbilisi = deliveryCity.includes('tbilisi') || deliveryCity.includes('თბილისი');
+    const isTbilisi =
+      deliveryCity.includes('tbilisi') || deliveryCity.includes('თბილისი');
 
     // Get the maximum prep + delivery days from all order items
     for (const item of order.orderItems) {
       const prepDays = item.prepTimeMaxDays || 0;
-      
+
       let deliveryDays: number;
       if (item.courierType === 'seller') {
         // Seller handles delivery - use store's setting
@@ -545,7 +609,7 @@ export class OrdersService {
         // ShopIt courier - use location-based estimate
         deliveryDays = isTbilisi ? 3 : 5; // 1-3 days Tbilisi, 3-5 days outside
       }
-      
+
       const totalDays = prepDays + deliveryDays;
       if (totalDays > maxDays) {
         maxDays = totalDays;
@@ -596,7 +660,7 @@ export class OrdersService {
 
   /**
    * Update order status (seller action)
-   * 
+   *
    * Status transition rules:
    * - CANCELLED/REFUNDED: No changes allowed
    * - PENDING: No manual status changes allowed (must wait for payment)
@@ -648,13 +712,14 @@ export class OrdersService {
 
     // Rule 2: After paid, cannot go back to pending
     if (newStatus === OrderStatus.PENDING) {
-      throw new BadRequestException(
-        'Cannot set order status back to pending.',
-      );
+      throw new BadRequestException('Cannot set order status back to pending.');
     }
 
     // Cannot manually set to CANCELLED or REFUNDED through this endpoint
-    if (newStatus === OrderStatus.CANCELLED || newStatus === OrderStatus.REFUNDED) {
+    if (
+      newStatus === OrderStatus.CANCELLED ||
+      newStatus === OrderStatus.REFUNDED
+    ) {
       throw new BadRequestException(
         'Use the dedicated cancel or refund endpoints for these actions.',
       );
@@ -684,7 +749,7 @@ export class OrdersService {
 
     // Rule 4: Define allowed statuses based on courier type
     let allowedStatuses: OrderStatus[];
-    
+
     if (usesShopItDelivery) {
       // ShopIt delivery: Sellers can only go up to READY_FOR_DELIVERY
       // SHIPPED and DELIVERED can only be set by couriers
@@ -704,7 +769,11 @@ export class OrdersService {
     }
 
     if (!allowedStatuses.includes(newStatus)) {
-      if (usesShopItDelivery && (newStatus === OrderStatus.SHIPPED || newStatus === OrderStatus.DELIVERED)) {
+      if (
+        usesShopItDelivery &&
+        (newStatus === OrderStatus.SHIPPED ||
+          newStatus === OrderStatus.DELIVERED)
+      ) {
         throw new BadRequestException(
           'With ShopIt delivery, only couriers can mark orders as shipped or delivered. Set status to "Ready for Delivery" when the order is prepared.',
         );
@@ -770,7 +839,10 @@ export class OrdersService {
     }
 
     // Couriers can only set SHIPPED or DELIVERED
-    if (newStatus !== OrderStatus.SHIPPED && newStatus !== OrderStatus.DELIVERED) {
+    if (
+      newStatus !== OrderStatus.SHIPPED &&
+      newStatus !== OrderStatus.DELIVERED
+    ) {
       throw new BadRequestException(
         'Couriers can only set status to shipped or delivered.',
       );
@@ -804,19 +876,64 @@ export class OrdersService {
    * Get orders ready for delivery (for couriers)
    * Returns orders with status READY_FOR_DELIVERY from ShopIt delivery stores
    * Sorted by delivery deadline (most urgent first)
+   * Filtered by courier's vehicle capacity if vehicleType is provided
    */
-  async getOrdersReadyForDelivery(): Promise<OrderDocument[]> {
+  async getOrdersReadyForDelivery(
+    courierId?: string,
+    vehicleType?: string,
+  ): Promise<OrderDocument[]> {
+    // Build query for available orders
+    const query: Record<string, unknown> = {
+      status: OrderStatus.READY_FOR_DELIVERY,
+      courierId: { $exists: false },
+    };
+
+    // If courier has a vehicle type, filter orders by compatible shipping sizes
+    if (vehicleType && this.isValidVehicleType(vehicleType)) {
+      const compatibleSizes = this.getCompatibleShippingSizes(
+        vehicleType as VehicleType,
+      );
+      if (compatibleSizes.length < 4) {
+        // Only add filter if not all sizes are compatible
+        query.shippingSize = { $in: compatibleSizes };
+      }
+    }
+
     // Find orders that are ready for delivery and not yet assigned
     const orders = await this.orderModel
-      .find({
-        status: OrderStatus.READY_FOR_DELIVERY,
-        courierId: { $exists: false },
-      })
+      .find(query)
       .sort({ deliveryDeadline: 1, createdAt: 1 }) // Most urgent first
       .limit(50)
       .exec();
 
     return orders;
+  }
+
+  /**
+   * Check if a vehicle type is valid
+   */
+  private isValidVehicleType(type: string): boolean {
+    return ['walking', 'bicycle', 'motorcycle', 'car', 'suv', 'van'].includes(
+      type,
+    );
+  }
+
+  /**
+   * Get compatible shipping sizes for a vehicle type
+   * Based on VEHICLE_CAPACITIES - returns sizes where capacity > 0
+   */
+  private getCompatibleShippingSizes(vehicleType: VehicleType): ShippingSize[] {
+    const capacity = VEHICLE_CAPACITIES[vehicleType];
+    const compatible: ShippingSize[] = [];
+
+    for (const size of SHIPPING_SIZES) {
+      // Size is compatible if capacity is -1 (unlimited) or > 0
+      if (capacity[size] === -1 || capacity[size] > 0) {
+        compatible.push(size as ShippingSize);
+      }
+    }
+
+    return compatible;
   }
 
   /**
@@ -837,7 +954,10 @@ export class OrdersService {
    * Get completed orders delivered by a specific courier
    * Sorted by delivery date (most recent first)
    */
-  async getCompletedOrdersByCourier(courierId: string, limit = 20): Promise<OrderDocument[]> {
+  async getCompletedOrdersByCourier(
+    courierId: string,
+    limit = 20,
+  ): Promise<OrderDocument[]> {
     return this.orderModel
       .find({
         courierId: new Types.ObjectId(courierId),
@@ -851,7 +971,10 @@ export class OrdersService {
   /**
    * Assign an order to a courier
    */
-  async assignCourier(orderId: string, courierId: string): Promise<OrderDocument> {
+  async assignCourier(
+    orderId: string,
+    courierId: string,
+  ): Promise<OrderDocument> {
     const order = await this.findById(orderId);
 
     if (order.status !== OrderStatus.READY_FOR_DELIVERY) {
@@ -938,4 +1061,3 @@ export class OrdersService {
     }
   }
 }
-

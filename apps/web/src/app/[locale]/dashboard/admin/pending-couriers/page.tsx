@@ -33,14 +33,18 @@ function PendingCouriersContent() {
 
   const getVehicleInfo = (vehicleType?: string) => {
     switch (vehicleType) {
-      case 'car':
-        return { icon: '🚗', label: t('vehicleCar') };
-      case 'motorcycle':
-        return { icon: '🏍️', label: t('vehicleMotorcycle') };
-      case 'bicycle':
-        return { icon: '🚲', label: t('vehicleBicycle') };
       case 'walking':
         return { icon: '🚶', label: t('vehicleWalking') };
+      case 'bicycle':
+        return { icon: '🚲', label: t('vehicleBicycle') };
+      case 'motorcycle':
+        return { icon: '🏍️', label: t('vehicleMotorcycle') };
+      case 'car':
+        return { icon: '🚗', label: t('vehicleCar') };
+      case 'suv':
+        return { icon: '🚙', label: t('vehicleSuv') };
+      case 'van':
+        return { icon: '🚐', label: t('vehicleVan') };
       default:
         return null;
     }

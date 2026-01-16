@@ -15,15 +15,28 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { OrdersService } from './orders.service';
-import { DeliveryFeeService, Location, ShippingSize } from './delivery-fee.service';
+import {
+  DeliveryFeeService,
+  Location,
+  ShippingSize,
+} from './delivery-fee.service';
 import { SiteSettingsService } from '../admin/site-settings.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import { CreateOrderDto, ValidateCartDto, CalculateShippingDto } from './dto/order.dto';
-import { OrderStatus, Product, ProductDocument, OrderDocument } from '@sellit/api-database';
+import {
+  CreateOrderDto,
+  ValidateCartDto,
+  CalculateShippingDto,
+} from './dto/order.dto';
+import {
+  OrderStatus,
+  Product,
+  ProductDocument,
+  OrderDocument,
+} from '@sellit/api-database';
 
 @Controller('orders')
 export class OrdersController {
@@ -31,7 +44,8 @@ export class OrdersController {
     private readonly ordersService: OrdersService,
     private readonly deliveryFeeService: DeliveryFeeService,
     private readonly siteSettingsService: SiteSettingsService,
-    @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
   ) {}
 
   /**
@@ -41,11 +55,13 @@ export class OrdersController {
     const settings = await this.siteSettingsService.getSettings();
     const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
 
-    return orders.map(order => {
+    return orders.map((order) => {
       const orderObj = order.toObject ? order.toObject() : order;
       return {
         ...orderObj,
-        courierEarning: Math.round(orderObj.shippingPrice * courierEarningsPercentage * 100) / 100,
+        courierEarning:
+          Math.round(orderObj.shippingPrice * courierEarningsPercentage * 100) /
+          100,
       };
     });
   }
@@ -127,10 +143,7 @@ export class OrdersController {
    */
   @Post()
   @UseGuards(OptionalJwtAuthGuard)
-  async createOrder(
-    @Body() dto: CreateOrderDto,
-    @Request() req: any,
-  ) {
+  async createOrder(@Body() dto: CreateOrderDto, @Request() req: any) {
     // req.user is populated if authenticated, null otherwise
     // Convert ObjectId to string if necessary
     const rawUserId = req.user?.id || req.user?._id;
@@ -162,8 +175,13 @@ export class OrdersController {
     @Query('storeSubdomain') storeSubdomain?: string,
   ) {
     const userId = user.id || user._id?.toString();
-    console.log(`[Orders] my-orders request - userId: ${userId}, storeSubdomain: ${storeSubdomain}`);
-    const orders = await this.ordersService.findUserOrders(userId, storeSubdomain);
+    console.log(
+      `[Orders] my-orders request - userId: ${userId}, storeSubdomain: ${storeSubdomain}`,
+    );
+    const orders = await this.ordersService.findUserOrders(
+      userId,
+      storeSubdomain,
+    );
     return orders;
   }
 
@@ -189,7 +207,9 @@ export class OrdersController {
    * Get order by external order ID (for payment verification)
    */
   @Get('external/:externalOrderId')
-  async getOrderByExternalId(@Param('externalOrderId') externalOrderId: string) {
+  async getOrderByExternalId(
+    @Param('externalOrderId') externalOrderId: string,
+  ) {
     return this.ordersService.findByExternalOrderId(externalOrderId);
   }
 
@@ -240,13 +260,25 @@ export class OrdersController {
   /**
    * Get orders ready for delivery (courier action)
    * Returns orders with status READY_FOR_DELIVERY that use ShopIt delivery
+   * Filtered by courier's vehicle type capacity
    * Includes calculated courierEarning based on earnings percentage
    */
   @Get('courier/available')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.COURIER, Role.ADMIN)
-  async getAvailableOrdersForCourier() {
-    const orders = await this.ordersService.getOrdersReadyForDelivery();
+  async getAvailableOrdersForCourier(
+    @CurrentUser()
+    user: {
+      id: string;
+      _id?: { toString(): string };
+      vehicleType?: string;
+    },
+  ) {
+    const userId = user.id || user._id?.toString();
+    const orders = await this.ordersService.getOrdersReadyForDelivery(
+      userId,
+      user.vehicleType,
+    );
     return this.addCourierEarningsToOrders(orders);
   }
 
@@ -257,7 +289,9 @@ export class OrdersController {
   @Get('courier/my-orders')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.COURIER, Role.ADMIN)
-  async getCourierOrders(@CurrentUser() user: { id: string; _id?: { toString(): string } }) {
+  async getCourierOrders(
+    @CurrentUser() user: { id: string; _id?: { toString(): string } },
+  ) {
     const userId = user.id || user._id?.toString();
     const orders = await this.ordersService.getOrdersByCourier(userId);
     return this.addCourierEarningsToOrders(orders);
@@ -275,7 +309,10 @@ export class OrdersController {
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
   ) {
     const userId = user.id || user._id?.toString();
-    const orders = await this.ordersService.getCompletedOrdersByCourier(userId, limit);
+    const orders = await this.ordersService.getCompletedOrdersByCourier(
+      userId,
+      limit,
+    );
     return this.addCourierEarningsToOrders(orders);
   }
 
@@ -309,4 +346,3 @@ export class OrdersController {
     return this.ordersService.assignCourier(id, userId);
   }
 }
-

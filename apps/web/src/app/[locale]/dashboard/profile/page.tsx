@@ -742,10 +742,12 @@ export default function ProfilePage() {
                   className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                 >
                   <option value="">Select vehicle type</option>
-                  <option value="car">🚗 Car</option>
-                  <option value="motorcycle">🏍️ Motorcycle</option>
-                  <option value="bicycle">🚲 Bicycle</option>
                   <option value="walking">🚶 Walking</option>
+                  <option value="bicycle">🚲 Bicycle</option>
+                  <option value="motorcycle">🏍️ Motorcycle</option>
+                  <option value="car">🚗 Car</option>
+                  <option value="suv">🚙 SUV</option>
+                  <option value="van">🚐 Van</option>
                 </select>
               </div>
 
