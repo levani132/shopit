@@ -886,7 +886,16 @@
     "applicationPendingDescription": "შენი კურიერის განაცხადი ამჟამად განიხილება. გაცნობებთ გადაწყვეტილების მიღებისთანავე. ეს ჩვეულებრივ 24-48 საათს მოითხოვს.",
     "backToHome": "მთავარზე დაბრუნება",
     "loginToApply": "საჭიროა ავტორიზაცია",
-    "loginToApplyDescription": "გთხოვთ შეხვიდეთ ან შექმნათ ანგარიში კურიერად განაცხადის გასაკეთებლად."
+    "loginToApplyDescription": "გთხოვთ შეხვიდეთ ან შექმნათ ანგარიში კურიერად განაცხადის გასაკეთებლად.",
+    "vehicleType": "ტრანსპორტის ტიპი",
+    "vehicleTypeDescription": "აირჩიეთ ტრანსპორტის ტიპი, რომელსაც გამოიყენებთ მიტანისთვის. ეს დაგვეხმარება შესაბამისი შეკვეთების შერჩევაში.",
+    "selectVehicleType": "აირჩიეთ ტრანსპორტი",
+    "vehicleCar": "მანქანა",
+    "vehicleMotorcycle": "მოტოციკლი",
+    "vehicleBicycle": "ველოსიპედი",
+    "vehicleWalking": "ფეხით",
+    "vehicleTypeNote": "მოგვიანებით შეგიძლიათ შეცვალოთ პროფილის პარამეტრებში.",
+    "vehicleTypeRequired": "გთხოვთ აირჩიოთ ტრანსპორტის ტიპი"
   },
   "notifications": {
     "title": "შეტყობინებები",
@@ -1035,6 +1044,10 @@
     "viewLetter": "წერილის ნახვა",
     "hideLetter": "წერილის დამალვა",
     "motivationLetter": "სამოტივაციო წერილი",
+    "vehicleCar": "მანქანა",
+    "vehicleMotorcycle": "მოტოციკლი",
+    "vehicleBicycle": "ველოსიპედი",
+    "vehicleWalking": "ფეხით",
     "rejectCourier": "განაცხადის უარყოფა",
     "rejectCourierConfirm": "დარწმუნებული ხართ, რომ გსურთ {name}-ის განაცხადის უარყოფა?",
     "usersManagementTitle": "მომხმარებლების მართვა",

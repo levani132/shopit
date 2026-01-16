@@ -34,6 +34,7 @@ export default function CourierApplyPage() {
   const [formData, setFormData] = useState({
     iban: '',
     motivationLetter: '',
+    vehicleType: '',
   });
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -93,6 +94,11 @@ export default function CourierApplyPage() {
       return;
     }
 
+    if (!formData.vehicleType) {
+      setError(t('vehicleTypeRequired'));
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
@@ -100,6 +106,7 @@ export default function CourierApplyPage() {
       const submitData = new FormData();
       submitData.append('iban', formData.iban);
       submitData.append('motivationLetter', formData.motivationLetter);
+      submitData.append('vehicleType', formData.vehicleType);
       if (profileImage) {
         submitData.append('profileImage', profileImage);
       }
@@ -418,6 +425,51 @@ export default function CourierApplyPage() {
                   className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
                 <p className="text-xs text-gray-500 mt-2">{t('ibanNote')}</p>
+              </div>
+            </div>
+
+            {/* Vehicle Type */}
+            <div className="bg-white/5 rounded-2xl border border-white/10 p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
+                {t('vehicleType')}
+              </h2>
+              <p className="text-gray-400 text-sm mb-4">
+                {t('vehicleTypeDescription')}
+              </p>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {t('vehicleType')} *
+                </label>
+                <select
+                  value={formData.vehicleType}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      vehicleType: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                >
+                  <option value="" className="bg-slate-800">
+                    {t('selectVehicleType')}
+                  </option>
+                  <option value="car" className="bg-slate-800">
+                    🚗 {t('vehicleCar')}
+                  </option>
+                  <option value="motorcycle" className="bg-slate-800">
+                    🏍️ {t('vehicleMotorcycle')}
+                  </option>
+                  <option value="bicycle" className="bg-slate-800">
+                    🚲 {t('vehicleBicycle')}
+                  </option>
+                  <option value="walking" className="bg-slate-800">
+                    🚶 {t('vehicleWalking')}
+                  </option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  {t('vehicleTypeNote')}
+                </p>
               </div>
             </div>
 

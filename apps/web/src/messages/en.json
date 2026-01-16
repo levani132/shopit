@@ -886,7 +886,16 @@
     "applicationPendingDescription": "Your courier application is currently being reviewed. We'll notify you once a decision has been made. This usually takes 24-48 hours.",
     "backToHome": "Back to Home",
     "loginToApply": "Login Required",
-    "loginToApplyDescription": "Please login or create an account to apply as a courier."
+    "loginToApplyDescription": "Please login or create an account to apply as a courier.",
+    "vehicleType": "Vehicle Type",
+    "vehicleTypeDescription": "Select the type of vehicle you'll use for deliveries. This helps us match you with appropriate orders.",
+    "selectVehicleType": "Select vehicle type",
+    "vehicleCar": "Car",
+    "vehicleMotorcycle": "Motorcycle",
+    "vehicleBicycle": "Bicycle",
+    "vehicleWalking": "Walking",
+    "vehicleTypeNote": "You can change this later in your profile settings.",
+    "vehicleTypeRequired": "Please select a vehicle type"
   },
   "notifications": {
     "title": "Notifications",
@@ -1035,6 +1044,10 @@
     "viewLetter": "View Letter",
     "hideLetter": "Hide Letter",
     "motivationLetter": "Motivation Letter",
+    "vehicleCar": "Car",
+    "vehicleMotorcycle": "Motorcycle",
+    "vehicleBicycle": "Bicycle",
+    "vehicleWalking": "Walking",
     "rejectCourier": "Reject Application",
     "rejectCourierConfirm": "Are you sure you want to reject {name}'s application?",
     "usersManagementTitle": "Users Management",

@@ -14,6 +14,7 @@ interface PendingCourier {
   courierMotivationLetter: string;
   courierProfileImage?: string;
   accountNumber?: string;
+  vehicleType?: string;
   createdAt: string;
 }
 
@@ -29,6 +30,21 @@ function PendingCouriersContent() {
   } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const getVehicleInfo = (vehicleType?: string) => {
+    switch (vehicleType) {
+      case 'car':
+        return { icon: '🚗', label: t('vehicleCar') };
+      case 'motorcycle':
+        return { icon: '🏍️', label: t('vehicleMotorcycle') };
+      case 'bicycle':
+        return { icon: '🚲', label: t('vehicleBicycle') };
+      case 'walking':
+        return { icon: '🚶', label: t('vehicleWalking') };
+      default:
+        return null;
+    }
+  };
 
   const fetchCouriers = async () => {
     try {
@@ -180,10 +196,25 @@ function PendingCouriersContent() {
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {courier.email}
                   </p>
-                  <div className="mt-2 flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
                     {courier.accountNumber && (
                       <span>
                         {t('iban')}: {courier.accountNumber}
+                      </span>
+                    )}
+                    {courier.vehicleType && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">
+                        {(() => {
+                          const vehicle = getVehicleInfo(courier.vehicleType);
+                          return vehicle ? (
+                            <>
+                              <span>{vehicle.icon}</span>
+                              <span>{vehicle.label}</span>
+                            </>
+                          ) : (
+                            courier.vehicleType
+                          );
+                        })()}
                       </span>
                     )}
                     <span>

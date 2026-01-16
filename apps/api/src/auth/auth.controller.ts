@@ -978,6 +978,7 @@ export class AuthController {
     body: {
       iban: string;
       motivationLetter: string;
+      vehicleType?: string;
     },
     @UploadedFiles()
     files?: {
@@ -1006,6 +1007,7 @@ export class AuthController {
     return this.authService.applyCourierWithMotivation(user._id.toString(), {
       iban: body.iban,
       motivationLetter: body.motivationLetter,
+      vehicleType: body.vehicleType,
       profileImage: profileImageUrl,
     });
   }

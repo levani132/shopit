@@ -62,7 +62,7 @@ export class AuthResponseDto {
 export interface TokenPayload {
   sub: string;
   email: string;
-  role: string;
+  role: number;
   type: 'access' | 'refresh' | 'session';
   sessionId?: string;
   jti?: string;

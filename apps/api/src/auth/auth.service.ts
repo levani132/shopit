@@ -1162,6 +1162,7 @@ export class AuthService {
   async getCourierStatus(userId: string): Promise<{
     isCourier: boolean;
     isApproved: boolean;
+    hasPendingApplication: boolean;
     appliedAt?: Date;
     approvedAt?: Date;
   }> {
@@ -1190,6 +1191,7 @@ export class AuthService {
     data: {
       iban: string;
       motivationLetter: string;
+      vehicleType?: string;
       profileImage?: string;
     },
   ): Promise<{ message: string; status: string }> {
@@ -1231,6 +1233,9 @@ export class AuthService {
     user.courierMotivationLetter = data.motivationLetter;
     if (data.profileImage) {
       user.courierProfileImage = data.profileImage;
+    }
+    if (data.vehicleType) {
+      user.vehicleType = data.vehicleType;
     }
     user.courierAppliedAt = new Date();
     user.isCourierApproved = false; // Requires admin approval
