@@ -1048,6 +1048,8 @@
     "aboutManagementDescription": "Edit the About Us page content",
     "contactManagement": "Contact Info",
     "contactManagementDescription": "Edit contact information",
+    "contactEmailPhoneNote": "Support email and phone number are now managed in Site Settings under the Platform tab. This ensures a single source of truth for contact information displayed across the site.",
+    "goToSiteSettings": "Go to Site Settings",
     "contactSubmissions": "Contact Messages",
     "contactSubmissionsDescription": "View messages from the contact form",
     "termsManagement": "Terms of Service",

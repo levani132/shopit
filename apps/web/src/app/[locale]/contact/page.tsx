@@ -4,8 +4,10 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 
 interface ContactInfo {
+  // These come from SiteSettings (public endpoint)
   email: string;
   phone: string;
+  // These come from ContactContent
   address: string;
   workingHours: string;
   socialLinks?: {
@@ -31,10 +33,27 @@ export default function ContactPage() {
 
   useEffect(() => {
     const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    fetch(`${API_BASE}/api/v1/content/contact`)
-      .then((res) => res.json())
-      .then((data) => setContactInfo(data))
-      .catch(() => {
+    const fetchContactData = async () => {
+      try {
+        // Fetch both contact content and public site settings in parallel
+        const [contactRes, settingsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/v1/content/contact`),
+          fetch(`${API_BASE}/api/v1/admin/settings/public`),
+        ]);
+
+        const contactData = contactRes.ok ? await contactRes.json() : {};
+        const settingsData = settingsRes.ok ? await settingsRes.json() : {};
+
+        setContactInfo({
+          // Email and phone from Site Settings (single source of truth)
+          email: settingsData.supportEmail || 'support@shopit.ge',
+          phone: settingsData.supportPhone || '',
+          // Other contact info from ContactContent
+          address: contactData.address || '',
+          workingHours: contactData.workingHours || '',
+          socialLinks: contactData.socialLinks || {},
+        });
+      } catch {
         // Fallback defaults
         setContactInfo({
           email: 'support@shopit.ge',
@@ -42,7 +61,10 @@ export default function ContactPage() {
           address: '',
           workingHours: '',
         });
-      });
+      }
+    };
+
+    fetchContactData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

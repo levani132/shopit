@@ -1045,6 +1045,8 @@
     "aboutManagementDescription": "ჩვენს შესახებ გვერდის რედაქტირება",
     "contactManagement": "საკონტაქტო ინფო",
     "contactManagementDescription": "საკონტაქტო ინფორმაციის რედაქტირება",
+    "contactEmailPhoneNote": "ელფოსტა და ტელეფონის ნომერი ახლა იმართება საიტის პარამეტრებში, პლატფორმის ჩანართში. ეს უზრუნველყოფს საკონტაქტო ინფორმაციის ერთ წყაროს მთელს საიტზე.",
+    "goToSiteSettings": "საიტის პარამეტრებში გადასვლა",
     "contactSubmissions": "შეტყობინებები",
     "contactSubmissionsDescription": "კონტაქტის ფორმიდან შეტყობინებების ნახვა",
     "termsManagement": "მომსახურების პირობები",

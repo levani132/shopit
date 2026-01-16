@@ -25,8 +25,7 @@ interface AboutContent {
 }
 
 interface ContactContent {
-  email: string;
-  phone: string;
+  // Note: email and phone are managed in Site Settings (Platform tab)
   address: string;
   workingHours: string;
   socialLinks?: {
@@ -75,8 +74,6 @@ export default function ContentManagementPage() {
 
   // Contact state
   const [contact, setContact] = useState<ContactContent>({
-    email: '',
-    phone: '',
     address: '',
     workingHours: '',
     socialLinks: {},
@@ -634,34 +631,50 @@ export default function ContentManagementPage() {
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {t('contactManagement')}
                 </h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      {t('contactEmail')}
-                    </label>
-                    <input
-                      type="email"
-                      value={contact.email}
-                      onChange={(e) =>
-                        setContact({ ...contact, email: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      {t('contactPhone')}
-                    </label>
-                    <input
-                      type="tel"
-                      value={contact.phone}
-                      onChange={(e) =>
-                        setContact({ ...contact, phone: e.target.value })
-                      }
-                      className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
-                    />
+
+                {/* Note about email/phone in Site Settings */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <svg
+                      className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <div>
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        {t('contactEmailPhoneNote')}
+                      </p>
+                      <a
+                        href="/dashboard/admin/settings?tab=platform"
+                        className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {t('goToSiteSettings')}
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </a>
+                    </div>
                   </div>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">

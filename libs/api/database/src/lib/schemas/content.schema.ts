@@ -18,10 +18,10 @@ export class Faq {
   @Prop({ required: true })
   answerEn: string;
 
-  @Prop({ 
-    type: String, 
+  @Prop({
+    type: String,
     enum: ['general', 'sellers', 'buyers', 'couriers', 'payments'],
-    default: 'general' 
+    default: 'general',
   })
   category: string;
 
@@ -66,11 +66,8 @@ export type ContactContentDocument = ContactContent & Document;
 
 @Schema({ timestamps: true })
 export class ContactContent {
-  @Prop({ default: 'support@shopit.ge' })
-  email: string;
-
-  @Prop({ default: '' })
-  phone: string;
+  // NOTE: email and phone have been moved to SiteSettings (supportEmail, supportPhone)
+  // This ensures a single source of truth for contact information.
 
   @Prop({ default: '' })
   address: string;
@@ -86,7 +83,8 @@ export class ContactContent {
   };
 }
 
-export const ContactContentSchema = SchemaFactory.createForClass(ContactContent);
+export const ContactContentSchema =
+  SchemaFactory.createForClass(ContactContent);
 
 // ===== Contact Form Submission Schema =====
 export type ContactSubmissionDocument = ContactSubmission & Document;
@@ -105,14 +103,18 @@ export class ContactSubmission {
   @Prop({ required: true })
   message: string;
 
-  @Prop({ default: 'pending', enum: ['pending', 'read', 'replied', 'archived'] })
+  @Prop({
+    default: 'pending',
+    enum: ['pending', 'read', 'replied', 'archived'],
+  })
   status: string;
 
   @Prop()
   adminNotes?: string;
 }
 
-export const ContactSubmissionSchema = SchemaFactory.createForClass(ContactSubmission);
+export const ContactSubmissionSchema =
+  SchemaFactory.createForClass(ContactSubmission);
 
 // ===== Terms of Service Schema =====
 export type TermsContentDocument = TermsContent & Document;
@@ -146,5 +148,5 @@ export class PrivacyContent {
   lastUpdated: Date;
 }
 
-export const PrivacyContentSchema = SchemaFactory.createForClass(PrivacyContent);
-
+export const PrivacyContentSchema =
+  SchemaFactory.createForClass(PrivacyContent);

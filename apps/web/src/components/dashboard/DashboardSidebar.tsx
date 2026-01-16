@@ -494,6 +494,11 @@ const NAV_SECTIONS: NavSection[] = [
         icon: SettingsIcon,
       },
       {
+        href: '/dashboard/admin/content',
+        labelKey: 'contentManagement',
+        icon: ContentIcon,
+      },
+      {
         href: '/dashboard/admin/pending-stores',
         labelKey: 'pendingStores',
         icon: PendingIcon,
@@ -522,11 +527,6 @@ const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard/admin/analytics',
         labelKey: 'platformAnalytics',
         icon: ChartBarIcon,
-      },
-      {
-        href: '/dashboard/admin/content',
-        labelKey: 'contentManagement',
-        icon: ContentIcon,
       },
     ],
   },

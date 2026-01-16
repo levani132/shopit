@@ -22,7 +22,7 @@ export class PublicSettingsController {
       minimumWithdrawalAmount: settings.minimumWithdrawalAmount,
       platformName: settings.platformName,
       supportEmail: settings.supportEmail,
+      supportPhone: settings.supportPhone,
     };
   }
 }
-
