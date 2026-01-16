@@ -14,6 +14,7 @@ import {
   SiteSettingsSchema,
 } from '@sellit/api-database';
 import { OrdersModule } from '../orders/orders.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { OrdersModule } from '../orders/orders.module';
       { name: SiteSettings.name, schema: SiteSettingsSchema },
     ]),
     forwardRef(() => OrdersModule),
+    NotificationsModule,
   ],
   controllers: [AdminController, PublicSettingsController],
   providers: [SiteSettingsService],

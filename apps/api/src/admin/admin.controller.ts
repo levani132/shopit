@@ -40,8 +40,11 @@ import {
   StoreDocument,
   Order,
   OrderDocument,
+  NotificationType,
+  NotificationCategory,
 } from '@sellit/api-database';
 import { BalanceService } from '../orders/balance.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -57,6 +60,7 @@ export class AdminController {
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
     @Inject(forwardRef(() => BalanceService))
     private readonly balanceService: BalanceService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   // ===== Site Settings =====
@@ -295,6 +299,25 @@ export class AdminController {
 
     this.logger.log(`User ${user.email} approved as courier`);
 
+    // Send notification to user
+    await this.notificationsService.createNotification({
+      userId: user._id.toString(),
+      title: 'Courier Application Approved',
+      message:
+        'Congratulations! Your courier application has been approved. You can now start accepting delivery orders.',
+      type: NotificationType.IMPORTANT,
+      category: NotificationCategory.COURIER_APPROVED,
+      link: '/dashboard/deliveries',
+      titleLocalized: {
+        en: 'Courier Application Approved',
+        ka: 'კურიერის განაცხადი დამტკიცებულია',
+      },
+      messageLocalized: {
+        en: 'Congratulations! Your courier application has been approved. You can now start accepting delivery orders.',
+        ka: 'გილოცავთ! თქვენი კურიერის განაცხადი დამტკიცებულია. ახლა შეგიძლიათ დაიწყოთ მიწოდების შეკვეთების მიღება.',
+      },
+    });
+
     return {
       message: 'Courier approved successfully',
       user: {
@@ -320,6 +343,11 @@ export class AdminController {
       throw new NotFoundException('User not found');
     }
 
+    const userId = user._id.toString();
+    const rejectionReason =
+      body.reason ||
+      'Your application did not meet our requirements at this time.';
+
     // Clear courier application data so they can reapply
     user.courierMotivationLetter = undefined;
     user.courierProfileImage = undefined;
@@ -330,6 +358,25 @@ export class AdminController {
     this.logger.log(
       `Courier application rejected for ${user.email}: ${body.reason}`,
     );
+
+    // Send notification to user
+    await this.notificationsService.createNotification({
+      userId,
+      title: 'Courier Application Not Approved',
+      message: `We're sorry, but your courier application was not approved. ${rejectionReason} You can apply again anytime.`,
+      type: NotificationType.IMPORTANT,
+      category: NotificationCategory.COURIER_REJECTED,
+      link: '/dashboard/profile',
+      metadata: { reason: rejectionReason },
+      titleLocalized: {
+        en: 'Courier Application Not Approved',
+        ka: 'კურიერის განაცხადი არ დამტკიცდა',
+      },
+      messageLocalized: {
+        en: `We're sorry, but your courier application was not approved. ${rejectionReason} You can apply again anytime.`,
+        ka: `სამწუხაროდ, თქვენი კურიერის განაცხადი არ დამტკიცდა. ${rejectionReason} ნებისმიერ დროს შეგიძლიათ ხელახლა მოითხოვოთ.`,
+      },
+    });
 
     return {
       message: 'Courier application rejected',

@@ -16,6 +16,7 @@ import { WishlistModule } from '../wishlist/wishlist.module';
 import { AdminModule } from '../admin/admin.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ContentModule } from '../content/content.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { ContentModule } from '../content/content.module';
     AdminModule,
     SettingsModule,
     ContentModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

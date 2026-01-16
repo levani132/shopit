@@ -37,3 +37,7 @@ export * from './site-settings.schema';
 
 // Content Management (FAQ, About, Contact, Terms, Privacy)
 export * from './content.schema';
+
+// Notifications
+export * from './notification.schema';
+export * from './notification-settings.schema';
