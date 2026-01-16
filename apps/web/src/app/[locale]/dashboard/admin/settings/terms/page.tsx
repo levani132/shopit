@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { SectionCard, SectionTitle, LegalContent } from '../../../../../../components/dashboard/admin/SettingsLayout';
+import {
+  SectionCard,
+  SectionTitle,
+  LegalContent,
+} from '../../../../../../components/dashboard/admin/SettingsLayout';
 
 // Build API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -16,13 +20,18 @@ export default function TermsSettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Fetch terms content
   useEffect(() => {
     const fetchTerms = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/terms`, { credentials: 'include' });
+        const res = await fetch(`${API_URL}/content/terms`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           setTerms(await res.json());
         }
@@ -90,20 +99,28 @@ export default function TermsSettingsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">{t('contentKa')}</label>
+            <label className="block text-sm font-medium mb-1">
+              {t('contentKa')}
+            </label>
             <textarea
               rows={15}
               value={terms.contentKa}
-              onChange={(e) => setTerms({ ...terms, contentKa: e.target.value })}
+              onChange={(e) =>
+                setTerms({ ...terms, contentKa: e.target.value })
+              }
               className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">{t('contentEn')}</label>
+            <label className="block text-sm font-medium mb-1">
+              {t('contentEn')}
+            </label>
             <textarea
               rows={15}
               value={terms.contentEn}
-              onChange={(e) => setTerms({ ...terms, contentEn: e.target.value })}
+              onChange={(e) =>
+                setTerms({ ...terms, contentEn: e.target.value })
+              }
               className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600 font-mono text-sm"
             />
           </div>

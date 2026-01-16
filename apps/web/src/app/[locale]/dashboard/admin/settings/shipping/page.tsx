@@ -22,7 +22,9 @@ export default function ShippingSettingsPage() {
         <InputField
           label={t('defaultRatePerMinute')}
           value={settings.defaultDeliveryRatePerMinute}
-          onChange={(v) => updateSetting('defaultDeliveryRatePerMinute', v as number)}
+          onChange={(v) =>
+            updateSetting('defaultDeliveryRatePerMinute', v as number)
+          }
           suffix="₾/min"
           step={0.1}
           min={0}
@@ -54,28 +56,36 @@ export default function ShippingSettingsPage() {
           title={t('bikeMotorcycle')}
           icon="🏍️"
           settings={settings.bikeShipping}
-          onUpdate={(field, value) => updateShipping('bikeShipping', field, value)}
+          onUpdate={(field, value) =>
+            updateShipping('bikeShipping', field, value)
+          }
           t={t}
         />
         <ShippingCard
           title={t('car')}
           icon="🚗"
           settings={settings.carShipping}
-          onUpdate={(field, value) => updateShipping('carShipping', field, value)}
+          onUpdate={(field, value) =>
+            updateShipping('carShipping', field, value)
+          }
           t={t}
         />
         <ShippingCard
           title={t('suv')}
           icon="🚙"
           settings={settings.suvShipping}
-          onUpdate={(field, value) => updateShipping('suvShipping', field, value)}
+          onUpdate={(field, value) =>
+            updateShipping('suvShipping', field, value)
+          }
           t={t}
         />
         <ShippingCard
           title={t('vanTruck')}
           icon="🚛"
           settings={settings.vanShipping}
-          onUpdate={(field, value) => updateShipping('vanShipping', field, value)}
+          onUpdate={(field, value) =>
+            updateShipping('vanShipping', field, value)
+          }
           t={t}
         />
       </div>

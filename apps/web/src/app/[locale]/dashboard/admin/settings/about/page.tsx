@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { SectionCard, SectionTitle, AboutContent } from '../../../../../../components/dashboard/admin/SettingsLayout';
+import {
+  SectionCard,
+  SectionTitle,
+  AboutContent,
+} from '../../../../../../components/dashboard/admin/SettingsLayout';
 
 // Build API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -18,13 +22,18 @@ export default function AboutSettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Fetch about content
   useEffect(() => {
     const fetchAbout = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/about`, { credentials: 'include' });
+        const res = await fetch(`${API_URL}/content/about`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           setAbout(await res.json());
         }
@@ -92,20 +101,28 @@ export default function AboutSettingsPage() {
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">{t('missionKa')}</label>
+              <label className="block text-sm font-medium mb-1">
+                {t('missionKa')}
+              </label>
               <textarea
                 rows={4}
                 value={about.missionKa}
-                onChange={(e) => setAbout({ ...about, missionKa: e.target.value })}
+                onChange={(e) =>
+                  setAbout({ ...about, missionKa: e.target.value })
+                }
                 className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('missionEn')}</label>
+              <label className="block text-sm font-medium mb-1">
+                {t('missionEn')}
+              </label>
               <textarea
                 rows={4}
                 value={about.missionEn}
-                onChange={(e) => setAbout({ ...about, missionEn: e.target.value })}
+                onChange={(e) =>
+                  setAbout({ ...about, missionEn: e.target.value })
+                }
                 className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
               />
             </div>
@@ -119,20 +136,28 @@ export default function AboutSettingsPage() {
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">{t('storyKa')}</label>
+              <label className="block text-sm font-medium mb-1">
+                {t('storyKa')}
+              </label>
               <textarea
                 rows={6}
                 value={about.storyKa}
-                onChange={(e) => setAbout({ ...about, storyKa: e.target.value })}
+                onChange={(e) =>
+                  setAbout({ ...about, storyKa: e.target.value })
+                }
                 className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('storyEn')}</label>
+              <label className="block text-sm font-medium mb-1">
+                {t('storyEn')}
+              </label>
               <textarea
                 rows={6}
                 value={about.storyEn}
-                onChange={(e) => setAbout({ ...about, storyEn: e.target.value })}
+                onChange={(e) =>
+                  setAbout({ ...about, storyEn: e.target.value })
+                }
                 className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
               />
             </div>

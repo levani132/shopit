@@ -21,7 +21,9 @@ export default function CommissionSettingsPage() {
         <InputField
           label={t('siteCommissionRate')}
           value={(settings.siteCommissionRate * 100).toFixed(0)}
-          onChange={(v) => updateSetting('siteCommissionRate', (v as number) / 100)}
+          onChange={(v) =>
+            updateSetting('siteCommissionRate', (v as number) / 100)
+          }
           suffix="%"
           min={0}
           max={100}
@@ -34,7 +36,9 @@ export default function CommissionSettingsPage() {
         <InputField
           label={t('courierEarningsPercentage')}
           value={(settings.courierEarningsPercentage * 100).toFixed(0)}
-          onChange={(v) => updateSetting('courierEarningsPercentage', (v as number) / 100)}
+          onChange={(v) =>
+            updateSetting('courierEarningsPercentage', (v as number) / 100)
+          }
           suffix="%"
           min={0}
           max={100}
@@ -47,7 +51,9 @@ export default function CommissionSettingsPage() {
         <InputField
           label={t('minimumWithdrawalAmount')}
           value={settings.minimumWithdrawalAmount}
-          onChange={(v) => updateSetting('minimumWithdrawalAmount', v as number)}
+          onChange={(v) =>
+            updateSetting('minimumWithdrawalAmount', v as number)
+          }
           suffix="₾"
           min={0}
         />

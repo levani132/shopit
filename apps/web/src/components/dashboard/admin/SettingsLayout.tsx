@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useEffect, memo, createContext, useContext, ReactNode } from 'react';
+import {
+  useState,
+  useEffect,
+  memo,
+  createContext,
+  useContext,
+  ReactNode,
+} from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { Link } from '../../../i18n/routing';
@@ -97,11 +104,14 @@ interface SettingsContextType {
   success: boolean;
   setSuccess: React.Dispatch<React.SetStateAction<boolean>>;
   handleSave: () => Promise<void>;
-  updateSetting: <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => void;
+  updateSetting: <K extends keyof SiteSettings>(
+    key: K,
+    value: SiteSettings[K],
+  ) => void;
   updateShipping: (
     type: 'bikeShipping' | 'carShipping' | 'suvShipping' | 'vanShipping',
     field: keyof VehicleShippingConfig,
-    value: number
+    value: number,
   ) => void;
 }
 
@@ -199,7 +209,9 @@ export const InputField = memo(function InputField({
         )}
       </div>
       {helperText && (
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          {helperText}
+        </p>
       )}
     </div>
   );
@@ -221,7 +233,9 @@ export const ToggleField = memo(function ToggleField({
       <div>
         <p className="font-medium text-gray-900 dark:text-white">{label}</p>
         {helperText && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">{helperText}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {helperText}
+          </p>
         )}
       </div>
       <button
@@ -303,7 +317,9 @@ export const SectionCard = memo(function SectionCard({
   className?: string;
 }) {
   return (
-    <div className={`bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 ${className}`}>
+    <div
+      className={`bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6 ${className}`}
+    >
       {children}
     </div>
   );
@@ -317,7 +333,9 @@ export const SectionTitle = memo(function SectionTitle({
   className?: string;
 }) {
   return (
-    <h3 className={`text-lg font-semibold text-gray-900 dark:text-white ${className}`}>
+    <h3
+      className={`text-lg font-semibold text-gray-900 dark:text-white ${className}`}
+    >
       {children}
     </h3>
   );
@@ -334,20 +352,52 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { id: 'commission', labelKey: 'commissionSettings', href: '/dashboard/admin/settings/commission' },
-  { id: 'shipping', labelKey: 'shippingSettings', href: '/dashboard/admin/settings/shipping' },
-  { id: 'contact', labelKey: 'contactSettings', href: '/dashboard/admin/settings/contact' },
-  { id: 'features', labelKey: 'featureFlags', href: '/dashboard/admin/settings/features' },
-  { id: 'faq', labelKey: 'faqManagement', href: '/dashboard/admin/settings/faq' },
-  { id: 'about', labelKey: 'aboutManagement', href: '/dashboard/admin/settings/about' },
-  { id: 'terms', labelKey: 'termsManagement', href: '/dashboard/admin/settings/terms' },
-  { id: 'privacy', labelKey: 'privacyManagement', href: '/dashboard/admin/settings/privacy' },
+  {
+    id: 'commission',
+    labelKey: 'commissionSettings',
+    href: '/dashboard/admin/settings/commission',
+  },
+  {
+    id: 'shipping',
+    labelKey: 'shippingSettings',
+    href: '/dashboard/admin/settings/shipping',
+  },
+  {
+    id: 'contact',
+    labelKey: 'contactSettings',
+    href: '/dashboard/admin/settings/contact',
+  },
+  {
+    id: 'features',
+    labelKey: 'featureFlags',
+    href: '/dashboard/admin/settings/features',
+  },
+  {
+    id: 'faq',
+    labelKey: 'faqManagement',
+    href: '/dashboard/admin/settings/faq',
+  },
+  {
+    id: 'about',
+    labelKey: 'aboutManagement',
+    href: '/dashboard/admin/settings/about',
+  },
+  {
+    id: 'terms',
+    labelKey: 'termsManagement',
+    href: '/dashboard/admin/settings/terms',
+  },
+  {
+    id: 'privacy',
+    labelKey: 'privacyManagement',
+    href: '/dashboard/admin/settings/privacy',
+  },
 ];
 
 function SettingsLayoutContent({ children }: { children: ReactNode }) {
   const t = useTranslations('admin');
   const pathname = usePathname();
-  
+
   const [settings, setSettings] = useState<SiteSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -365,10 +415,11 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
         }
         const data = await response.json();
         setSettings(data.settings);
-    } catch (err: unknown) {
-      console.error('Failed to fetch settings:', err);
-      const message = err instanceof Error ? err.message : 'Failed to fetch settings';
-      setError(message);
+      } catch (err: unknown) {
+        console.error('Failed to fetch settings:', err);
+        const message =
+          err instanceof Error ? err.message : 'Failed to fetch settings';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -415,14 +466,18 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {
       console.error('Failed to save settings:', err);
-      const message = err instanceof Error ? err.message : 'Failed to save settings';
+      const message =
+        err instanceof Error ? err.message : 'Failed to save settings';
       setError(message);
     } finally {
       setSaving(false);
     }
   };
 
-  const updateSetting = <K extends keyof SiteSettings>(key: K, value: SiteSettings[K]) => {
+  const updateSetting = <K extends keyof SiteSettings>(
+    key: K,
+    value: SiteSettings[K],
+  ) => {
     if (settings) {
       setSettings({ ...settings, [key]: value });
     }
@@ -431,7 +486,7 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
   const updateShipping = (
     type: 'bikeShipping' | 'carShipping' | 'suvShipping' | 'vanShipping',
     field: keyof VehicleShippingConfig,
-    value: number
+    value: number,
   ) => {
     if (settings) {
       setSettings({
@@ -442,10 +497,16 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
   };
 
   // Get current tab from pathname
-  const currentTab = TABS.find((tab) => pathname.includes(tab.id))?.id || 'commission';
+  const currentTab =
+    TABS.find((tab) => pathname.includes(tab.id))?.id || 'commission';
 
   // Show save button only for settings-related tabs (not content tabs)
-  const isSettingsTab = ['commission', 'shipping', 'contact', 'features'].includes(currentTab);
+  const isSettingsTab = [
+    'commission',
+    'shipping',
+    'contact',
+    'features',
+  ].includes(currentTab);
 
   if (loading) {
     return (
@@ -500,7 +561,9 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
         {/* Success/Error Messages */}
         {success && (
           <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-green-600 dark:text-green-400">{t('settingsSaved')}</p>
+            <p className="text-green-600 dark:text-green-400">
+              {t('settingsSaved')}
+            </p>
           </div>
         )}
         {error && (
@@ -531,7 +594,9 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
         {/* Content - Error state */}
         {!settings && error && (
           <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-600 dark:text-red-400">{error || 'Settings not found'}</p>
+            <p className="text-red-600 dark:text-red-400">
+              {error || 'Settings not found'}
+            </p>
           </div>
         )}
 

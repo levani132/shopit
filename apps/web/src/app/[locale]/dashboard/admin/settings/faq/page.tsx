@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { SectionCard, FaqItem } from '../../../../../../components/dashboard/admin/SettingsLayout';
+import {
+  SectionCard,
+  FaqItem,
+} from '../../../../../../components/dashboard/admin/SettingsLayout';
 
 // Build API base URL
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -14,13 +17,18 @@ export default function FaqSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingFaq, setEditingFaq] = useState<Partial<FaqItem> | null>(null);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Fetch FAQs
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/admin/faq`, { credentials: 'include' });
+        const res = await fetch(`${API_URL}/content/admin/faq`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           setFaqs(await res.json());
         }
@@ -95,7 +103,9 @@ export default function FaqSettingsPage() {
         credentials: 'include',
       });
       if (res.ok) {
-        const faRes = await fetch(`${API_URL}/content/admin/faq`, { credentials: 'include' });
+        const faRes = await fetch(`${API_URL}/content/admin/faq`, {
+          credentials: 'include',
+        });
         if (faRes.ok) setFaqs(await faRes.json());
         showMessage('success', t('faqsSeeded'));
       }
@@ -180,7 +190,10 @@ export default function FaqSettingsPage() {
                       type="text"
                       value={editingFaq.questionKa || ''}
                       onChange={(e) =>
-                        setEditingFaq({ ...editingFaq, questionKa: e.target.value })
+                        setEditingFaq({
+                          ...editingFaq,
+                          questionKa: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
                     />
@@ -193,7 +206,10 @@ export default function FaqSettingsPage() {
                       type="text"
                       value={editingFaq.questionEn || ''}
                       onChange={(e) =>
-                        setEditingFaq({ ...editingFaq, questionEn: e.target.value })
+                        setEditingFaq({
+                          ...editingFaq,
+                          questionEn: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
                     />
@@ -208,7 +224,10 @@ export default function FaqSettingsPage() {
                       rows={4}
                       value={editingFaq.answerKa || ''}
                       onChange={(e) =>
-                        setEditingFaq({ ...editingFaq, answerKa: e.target.value })
+                        setEditingFaq({
+                          ...editingFaq,
+                          answerKa: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
                     />
@@ -221,7 +240,10 @@ export default function FaqSettingsPage() {
                       rows={4}
                       value={editingFaq.answerEn || ''}
                       onChange={(e) =>
-                        setEditingFaq({ ...editingFaq, answerEn: e.target.value })
+                        setEditingFaq({
+                          ...editingFaq,
+                          answerEn: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
                     />
@@ -235,7 +257,10 @@ export default function FaqSettingsPage() {
                     <select
                       value={editingFaq.category || 'general'}
                       onChange={(e) =>
-                        setEditingFaq({ ...editingFaq, category: e.target.value })
+                        setEditingFaq({
+                          ...editingFaq,
+                          category: e.target.value,
+                        })
                       }
                       className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
                     >
@@ -254,7 +279,10 @@ export default function FaqSettingsPage() {
                       type="number"
                       value={editingFaq.order || 0}
                       onChange={(e) =>
-                        setEditingFaq({ ...editingFaq, order: parseInt(e.target.value) })
+                        setEditingFaq({
+                          ...editingFaq,
+                          order: parseInt(e.target.value),
+                        })
                       }
                       className="w-full px-3 py-2 border rounded-lg dark:bg-zinc-700 dark:border-zinc-600"
                     />
@@ -265,7 +293,10 @@ export default function FaqSettingsPage() {
                         type="checkbox"
                         checked={editingFaq.isActive !== false}
                         onChange={(e) =>
-                          setEditingFaq({ ...editingFaq, isActive: e.target.checked })
+                          setEditingFaq({
+                            ...editingFaq,
+                            isActive: e.target.checked,
+                          })
                         }
                       />
                       <span className="text-sm">{t('faqActive')}</span>

@@ -17,7 +17,7 @@ const API_URL = `${API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api
 export default function ContactSettingsPage() {
   const t = useTranslations('admin');
   const { settings, updateSetting, handleSave, saving } = useSettings();
-  
+
   // Contact content state (address, working hours, social links)
   const [contact, setContact] = useState<ContactContent>({
     address: '',
@@ -26,13 +26,18 @@ export default function ContactSettingsPage() {
   });
   const [contactLoading, setContactLoading] = useState(true);
   const [contactSaving, setContactSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   // Fetch contact content
   useEffect(() => {
     const fetchContact = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/contact`, { credentials: 'include' });
+        const res = await fetch(`${API_URL}/content/contact`, {
+          credentials: 'include',
+        });
         if (res.ok) {
           setContact(await res.json());
         }
@@ -131,7 +136,9 @@ export default function ContactSettingsPage() {
             <InputField
               label={t('workingHours')}
               value={contact.workingHours}
-              onChange={(v) => setContact({ ...contact, workingHours: v as string })}
+              onChange={(v) =>
+                setContact({ ...contact, workingHours: v as string })
+              }
               type="text"
               placeholder="Mon-Fri: 9:00 - 18:00"
             />
@@ -154,7 +161,10 @@ export default function ContactSettingsPage() {
               onChange={(v) =>
                 setContact({
                   ...contact,
-                  socialLinks: { ...contact.socialLinks, facebook: v as string },
+                  socialLinks: {
+                    ...contact.socialLinks,
+                    facebook: v as string,
+                  },
                 })
               }
               type="url"
@@ -166,7 +176,10 @@ export default function ContactSettingsPage() {
               onChange={(v) =>
                 setContact({
                   ...contact,
-                  socialLinks: { ...contact.socialLinks, instagram: v as string },
+                  socialLinks: {
+                    ...contact.socialLinks,
+                    instagram: v as string,
+                  },
                 })
               }
               type="url"
@@ -178,7 +191,10 @@ export default function ContactSettingsPage() {
               onChange={(v) =>
                 setContact({
                   ...contact,
-                  socialLinks: { ...contact.socialLinks, linkedin: v as string },
+                  socialLinks: {
+                    ...contact.socialLinks,
+                    linkedin: v as string,
+                  },
                 })
               }
               type="url"
