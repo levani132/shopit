@@ -6,10 +6,13 @@ import { NextRequest, NextResponse } from 'next/server';
 const LOCALE_COOKIE = 'NEXT_LOCALE';
 
 // Main domains that should NOT be treated as store subdomains
+// Includes both production and dev environment main domains
 const MAIN_DOMAINS = [
   'localhost',
+  'dev.localhost',
   'shopit.ge',
   'www.shopit.ge',
+  'dev.shopit.ge',
   'shopit.com',
   'www.shopit.com',
   'shopit-dev.vercel.app',
@@ -124,9 +127,19 @@ function getSubdomain(hostname: string): string | null {
     return null;
   }
 
+  // For dev.localhost subdomains (e.g., sample.dev.localhost)
+  if (host.endsWith('.dev.localhost')) {
+    return host.replace('.dev.localhost', '');
+  }
+
   // For localhost subdomains (e.g., sample.localhost)
   if (host.endsWith('.localhost')) {
     return host.replace('.localhost', '');
+  }
+
+  // For dev.shopit.ge subdomains (e.g., sample.dev.shopit.ge)
+  if (host.endsWith('.dev.shopit.ge')) {
+    return host.replace('.dev.shopit.ge', '');
   }
 
   // For production domains (e.g., mystore.shopit.ge)
