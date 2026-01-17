@@ -568,7 +568,7 @@
     "failedToLoadDashboard": "მონაცემების ჩატვირთვა ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.",
     "error": "შეცდომა",
     "courierApplicationPending": "კურიერის განაცხადი განხილვაშია",
-    "courierApplicationPendingDescription": "თქვენი კურიერის განაცხადი განიხილება. გაცნობებთ გადაწყვეტილების მიღებისთანერთად.",
+    "courierApplicationPendingDescription": "თქვენი კურიერის განაცხადი განიხილება. გაცნობებთ გადაწყვეტილების მიღებისთანავე.",
     "orderStatus": {
       "pending": "მოლოდინში",
       "processing": "დამუშავებაში",

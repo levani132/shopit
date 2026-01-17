@@ -264,7 +264,7 @@ export class AdminController {
         role: { $bitsAllClear: Role.COURIER },
       })
       .select(
-        'firstName lastName email courierMotivationLetter courierProfileImage accountNumber createdAt',
+        'firstName lastName email courierMotivationLetter courierProfileImage accountNumber vehicleType workingAreas createdAt',
       )
       .sort({ createdAt: 1 })
       .lean();
