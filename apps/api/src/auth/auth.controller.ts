@@ -545,6 +545,9 @@ export class AuthController {
         // Courier application status
         courierAppliedAt: user.courierAppliedAt,
         isCourierApproved: user.isCourierApproved,
+        // Courier settings
+        vehicleType: user.vehicleType,
+        workingAreas: user.workingAreas,
       },
       store: store
         ? {
@@ -574,6 +577,8 @@ export class AuthController {
       identificationNumber?: string;
       accountNumber?: string;
       beneficiaryBankCode?: string;
+      vehicleType?: string;
+      workingAreas?: string[];
     },
   ) {
     const updatedUser = await this.authService.updateUserProfile(
@@ -592,6 +597,8 @@ export class AuthController {
         identificationNumber: updatedUser.identificationNumber,
         accountNumber: updatedUser.accountNumber,
         beneficiaryBankCode: updatedUser.beneficiaryBankCode,
+        vehicleType: updatedUser.vehicleType,
+        workingAreas: updatedUser.workingAreas,
         isProfileComplete: updatedUser.isProfileComplete,
       },
     };

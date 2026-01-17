@@ -1029,6 +1029,8 @@ export class AuthService {
       identificationNumber?: string;
       accountNumber?: string;
       beneficiaryBankCode?: string;
+      vehicleType?: string;
+      workingAreas?: string[];
     },
   ): Promise<UserDocument> {
     const user = await this.userModel.findById(userId);
@@ -1046,6 +1048,8 @@ export class AuthService {
       user.accountNumber = data.accountNumber;
     if (data.beneficiaryBankCode !== undefined)
       user.beneficiaryBankCode = data.beneficiaryBankCode;
+    if (data.vehicleType !== undefined) user.vehicleType = data.vehicleType;
+    if (data.workingAreas !== undefined) user.workingAreas = data.workingAreas;
 
     // Check if profile is now complete
     const hasRequiredFields = !!(

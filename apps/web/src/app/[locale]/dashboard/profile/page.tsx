@@ -79,11 +79,7 @@ export default function ProfilePage() {
   const [isDeletingCourierRole, setIsDeletingCourierRole] = useState(false);
 
   const handleDeleteStore = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to delete your store? All products, orders, and store data will be permanently deleted. Your user account will be kept.',
-      )
-    ) {
+    if (!confirm(t('deleteStoreConfirm'))) {
       return;
     }
 
@@ -113,11 +109,7 @@ export default function ProfilePage() {
   };
 
   const handleDeleteCourierRole = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to remove your courier account? You will no longer be able to deliver orders.',
-      )
-    ) {
+    if (!confirm(t('removeCourierConfirm'))) {
       return;
     }
 
@@ -204,15 +196,15 @@ export default function ProfilePage() {
     const newErrors: FormErrors = {};
 
     if (!currentPassword) {
-      newErrors.currentPassword = 'Current password is required';
+      newErrors.currentPassword = t('currentPasswordRequired');
     }
     if (!newPassword) {
-      newErrors.newPassword = 'New password is required';
+      newErrors.newPassword = t('newPasswordRequired');
     } else if (newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
+      newErrors.newPassword = t('passwordMinLength');
     }
     if (newPassword !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('passwordsDoNotMatch');
     }
 
     setErrors(newErrors);
@@ -363,7 +355,7 @@ export default function ProfilePage() {
           {t('profile')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Manage your personal and banking information.
+          {t('profileDescription')}
         </p>
       </div>
 
@@ -385,7 +377,7 @@ export default function ProfilePage() {
         {/* Account Info (read-only) */}
         <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Account
+            {t('account')}
           </h2>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-bold text-2xl">
@@ -418,10 +410,10 @@ export default function ProfilePage() {
                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                       />
                     </svg>
-                    Signed in with Google
+                    {t('signedInWithGoogle')}
                   </span>
                 ) : (
-                  'Email account'
+                  t('emailAccount')
                 )}
               </p>
               {user?.isProfileComplete && (
@@ -437,7 +429,7 @@ export default function ProfilePage() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  Profile complete
+                  {t('profileComplete')}
                 </span>
               )}
             </div>
@@ -535,7 +527,7 @@ export default function ProfilePage() {
             disabled={isSavingPersonal}
             className="px-6 py-2.5 bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-600)] transition-colors disabled:opacity-50"
           >
-            {isSavingPersonal ? 'Saving...' : 'Save Personal Info'}
+            {isSavingPersonal ? t('saving') : t('savePersonalInfo')}
           </button>
         </div>
 
@@ -644,7 +636,7 @@ export default function ProfilePage() {
               disabled={isSavingBank}
               className="px-6 py-2.5 bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-600)] transition-colors disabled:opacity-50"
             >
-              {isSavingBank ? 'Saving...' : 'Save Banking Info'}
+              {isSavingBank ? t('saving') : t('saveBankingInfo')}
             </button>
           </div>
         )}
@@ -653,19 +645,19 @@ export default function ProfilePage() {
         {!isGoogleUser && (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Security
+              {t('security')}
             </h2>
 
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Current Password
+                  {t('currentPassword')}
                 </label>
                 <input
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
+                  placeholder={t('enterCurrentPassword')}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                 />
                 {errors.currentPassword && (
@@ -678,13 +670,13 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    New Password
+                    {t('newPassword')}
                   </label>
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
+                    placeholder={t('enterNewPassword')}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                   />
                   {errors.newPassword && (
@@ -696,13 +688,13 @@ export default function ProfilePage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Confirm New Password
+                    {t('confirmNewPassword')}
                   </label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
+                    placeholder={t('confirmNewPasswordPlaceholder')}
                     className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                   />
                   {errors.confirmPassword && (
@@ -719,7 +711,7 @@ export default function ProfilePage() {
               disabled={isSavingPassword}
               className="px-6 py-2.5 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50"
             >
-              {isSavingPassword ? 'Changing...' : 'Change Password'}
+              {isSavingPassword ? t('changingPassword') : t('changePassword')}
             </button>
           </div>
         )}
@@ -728,42 +720,44 @@ export default function ProfilePage() {
         {isCourier && (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-zinc-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Courier Settings
+              {t('courierSettings')}
             </h2>
 
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Vehicle Type
+                  {t('vehicleType')}
                 </label>
                 <select
                   value={vehicleType}
                   onChange={(e) => setVehicleType(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                 >
-                  <option value="">Select vehicle type</option>
-                  <option value="walking">🚶 Walking</option>
-                  <option value="bicycle">🚲 Bicycle</option>
-                  <option value="motorcycle">🏍️ Motorcycle</option>
-                  <option value="car">🚗 Car</option>
-                  <option value="suv">🚙 SUV</option>
-                  <option value="van">🚐 Van</option>
+                  <option value="">{t('selectVehicleType')}</option>
+                  <option value="walking">🚶 {t('vehicleWalking')}</option>
+                  <option value="bicycle">🚲 {t('vehicleBicycle')}</option>
+                  <option value="motorcycle">
+                    🏍️ {t('vehicleMotorcycle')}
+                  </option>
+                  <option value="car">🚗 {t('vehicleCar')}</option>
+                  <option value="suv">🚙 {t('vehicleSuv')}</option>
+                  <option value="van">🚐 {t('vehicleVan')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Working Areas
+                  {t('workingAreas')}
                 </label>
                 <input
                   type="text"
                   value={workingAreas}
                   onChange={(e) => setWorkingAreas(e.target.value)}
-                  placeholder="Tbilisi, Batumi, Kutaisi (comma separated)"
+                  placeholder={t('workingAreasPlaceholder')}
                   className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent transition"
                 />
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Enter the cities or regions where you can make deliveries.
+                  {t('workingAreasHint')}
                 </p>
               </div>
             </div>
@@ -773,7 +767,7 @@ export default function ProfilePage() {
               disabled={isSavingCourier}
               className="px-6 py-2.5 bg-[var(--accent-500)] text-white rounded-lg hover:bg-[var(--accent-600)] transition-colors disabled:opacity-50"
             >
-              {isSavingCourier ? 'Saving...' : 'Save Courier Settings'}
+              {isSavingCourier ? t('saving') : t('saveCourierSettings')}
             </button>
           </div>
         )}
@@ -781,10 +775,10 @@ export default function ProfilePage() {
         {/* Danger Zone */}
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
           <h2 className="text-lg font-semibold text-red-700 dark:text-red-400 mb-2">
-            Danger Zone
+            {t('dangerZone')}
           </h2>
           <p className="text-red-600 dark:text-red-400 text-sm mb-4">
-            These actions are irreversible. Please be careful.
+            {t('dangerZoneDescription')}
           </p>
           <div className="flex flex-wrap gap-3">
             {isSeller && (
@@ -793,7 +787,7 @@ export default function ProfilePage() {
                 disabled={isDeletingStore}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               >
-                {isDeletingStore ? 'Deleting...' : 'Delete Store'}
+                {isDeletingStore ? t('deletingStore') : t('deleteStore')}
               </button>
             )}
             {isCourier && (
@@ -803,24 +797,20 @@ export default function ProfilePage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {isDeletingCourierRole
-                  ? 'Removing...'
-                  : 'Remove Courier Account'}
+                  ? t('removingCourierAccount')
+                  : t('removeCourierAccount')}
               </button>
             )}
             <button
               onClick={() => {
-                if (
-                  confirm(
-                    'Are you sure you want to delete your account? This action cannot be undone.',
-                  )
-                ) {
+                if (confirm(t('deleteAccountConfirm'))) {
                   // TODO: Implement account deletion
                   alert('Account deletion is not yet implemented.');
                 }
               }}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
-              Delete Account
+              {t('deleteAccount')}
             </button>
           </div>
         </div>
