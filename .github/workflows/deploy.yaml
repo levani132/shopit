@@ -12,6 +12,7 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment: Production
 
     steps:
       - name: Checkout
@@ -45,7 +46,7 @@ jobs:
         run: |
           cat > apps/web/.env.production << 'EOF'
           NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_API_PREFIX }}
+          NEXT_PUBLIC_API_PREFIX=${{ env.NEXT_PUBLIC_API_PREFIX }}
           EOF
 
       # --- Build WEB ---
