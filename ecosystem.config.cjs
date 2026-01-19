@@ -2,11 +2,12 @@ module.exports = {
   apps: [
     {
       name: "api",
-      cwd: "/var/www/shopit/apps/api",
-      script: "dist/main.js",
+      cwd: "/var/www/shopit/apps/api/dist",
+      script: "main.js",
       env: {
         NODE_ENV: "production",
         PORT: "3001",
+        NODE_PATH: "/var/www/shopit/apps/api/dist/workspace_modules",
       },
     },
     {

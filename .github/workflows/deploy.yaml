@@ -26,28 +26,33 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
-      # --- Build API (your API uses webpack-cli build in apps/api) ---
+      # --- Build API ---
       - name: Build API via Nx
         run: |
           NODE_OPTIONS="--max-old-space-size=2048" npx nx build api --configuration=production
 
-      # --- Build WEB (choose ONE of the two; keep the one that works for your repo) ---
+      # ✅ IMPORTANT: create runtime dist package.json + lockfile + workspace_modules for @shopit/*
+      - name: Prepare API runtime (prune + copy workspace modules)
+        run: |
+          npx nx run api:prune
+
+          echo "API dist content:"
+          ls -lah apps/api/dist || true
+          echo "workspace_modules (top):"
+          find apps/api/dist/workspace_modules -maxdepth 3 -type d | sed -n '1,120p'
+
+      # --- Build WEB ---
       - name: Build WEB via Nx
         run: |
           NODE_OPTIONS="--max-old-space-size=4096" npx nx build web --configuration=production
 
-      # If you don't use Nx for web build, comment the step above and use this instead:
-      # - name: Build WEB via Next
-      #   run: |
-      #     cd apps/web
-      #     NODE_OPTIONS="--max-old-space-size=4096" npx next build
-
-      # Create a small deploy bundle (no node_modules)
+      # Create deploy bundle (no node_modules, but INCLUDE api/dist/workspace_modules)
       - name: Prepare deploy bundle
         run: |
           rm -rf deploy
           mkdir -p deploy/apps/api deploy/apps/web
 
+          # API dist (includes main.js + package.json + package-lock.json + workspace_modules)
           rsync -a --delete \
             --exclude ".git" \
             --exclude "node_modules" \
@@ -57,6 +62,7 @@ jobs:
             --exclude ".env.*" \
             apps/api/dist/ deploy/apps/api/dist/
 
+          # WEB dist
           rsync -a --delete \
             --exclude ".git" \
             --exclude "node_modules" \
@@ -66,11 +72,14 @@ jobs:
           rsync -a apps/web/public/ deploy/apps/web/public/ || true
           rsync -a apps/web/package.json deploy/apps/web/package.json || true
 
+          # Root files (optional, keep if you want)
           rsync -a package.json package-lock.json nx.json deploy/ || true
           rsync -a ecosystem.config.cjs deploy/ || true
 
-          echo "Deploy bundle content:"
-          find deploy -maxdepth 4 -type f | sed -n '1,200p'
+          echo "Deploy bundle content (API dist top-level):"
+          find deploy/apps/api/dist -maxdepth 2 -type f | sed -n '1,200p'
+          echo "Deploy bundle content (workspace_modules top):"
+          find deploy/apps/api/dist/workspace_modules -maxdepth 3 -type d | sed -n '1,120p'
 
       - name: Upload bundle to droplet (rsync over SSH)
         uses: burnett01/rsync-deployments@v8
@@ -99,14 +108,24 @@ jobs:
 
             cd "${{ secrets.APP_DIR }}"
 
-            npm -v
+            echo "Node:"
             node -v
+            npm -v
 
-            # Ensure deps exist on server (runtime only)
-            # This is MUCH lighter than building on the server.
-            npm ci --omit=dev --no-audit --no-fund
+            # ✅ Install deps for API runtime (inside dist)
+            if [ -f "apps/api/dist/package.json" ]; then
+              cd apps/api/dist
+              npm ci --omit=dev --no-audit --no-fund
+              cd -
+            else
+              echo "ERROR: apps/api/dist/package.json not found. Did api:prune run?"
+              exit 1
+            fi
 
-            # Start or reload
+            cd "${{ secrets.APP_DIR }}"
+            npm ci --omit=dev --no-audit --no-fund || true
+
+            # Restart
             pm2 startOrReload ecosystem.config.cjs
             pm2 save
             pm2 status
