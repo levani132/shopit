@@ -44,10 +44,10 @@ jobs:
 
       - name: Create web env file for build
         run: |
-          cat > apps/web/.env.production << 'EOF'
-          NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_API_PREFIX=${{ env.NEXT_PUBLIC_API_PREFIX }}
-          EOF
+          {
+            echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}"
+            echo "NEXT_PUBLIC_API_PREFIX=${{ vars.NEXT_PUBLIC_API_PREFIX }}"
+          } > apps/web/.env.production
       
       - name: Verify web env file (safe)
         run: |
