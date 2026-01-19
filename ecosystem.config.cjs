@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "api",
-      cwd: "/var/www/shopit/apps/api/dist",
-      script: "main.js",
+      cwd: "/var/www/shopit",
+      script: "apps/api/dist/main.js",
       env: {
         NODE_ENV: "production",
         PORT: "3001",
