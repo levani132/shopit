@@ -45,8 +45,9 @@ jobs:
       # Create a small deploy bundle (no node_modules)
       - name: Prepare deploy bundle
         run: |
-          rm -rf /tmp/deploy
-          mkdir -p /tmp/deploy/apps/api /tmp/deploy/apps/web
+          rm -rf deploy
+          mkdir -p deploy/apps/api deploy/apps/web
+
           rsync -a --delete \
             --exclude ".git" \
             --exclude "node_modules" \
@@ -54,22 +55,28 @@ jobs:
             --exclude "tmp" \
             --exclude ".env" \
             --exclude ".env.*" \
-            apps/api/dist /tmp/deploy/apps/api/
+            apps/api/dist/ deploy/apps/api/dist/
+
           rsync -a --delete \
             --exclude ".git" \
             --exclude "node_modules" \
             --exclude ".nx" \
-            apps/web/.next /tmp/deploy/apps/web/
-          rsync -a apps/web/public /tmp/deploy/apps/web/ || true
-          rsync -a apps/web/package.json /tmp/deploy/apps/web/ || true
-          rsync -a package.json package-lock.json nx.json /tmp/deploy/ || true
-          rsync -a ecosystem.config.cjs /tmp/deploy/ || true
+            apps/web/.next/ deploy/apps/web/.next/
+
+          rsync -a apps/web/public/ deploy/apps/web/public/ || true
+          rsync -a apps/web/package.json deploy/apps/web/package.json || true
+
+          rsync -a package.json package-lock.json nx.json deploy/ || true
+          rsync -a ecosystem.config.cjs deploy/ || true
+
+          echo "Deploy bundle content:"
+          find deploy -maxdepth 4 -type f | sed -n '1,200p'
 
       - name: Upload bundle to droplet (rsync over SSH)
-        uses: burnett01/rsync-deployments@7.0.2
+        uses: burnett01/rsync-deployments@v8
         with:
-          switches: -avzr --delete
-          path: /tmp/deploy/
+          switches: -avzr --delete --exclude ".env" --exclude ".env.*"
+          path: deploy/
           remote_path: ${{ secrets.APP_DIR }}/
           remote_host: ${{ secrets.SSH_HOST }}
           remote_user: ${{ secrets.SSH_USER }}
