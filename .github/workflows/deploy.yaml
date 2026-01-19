@@ -45,7 +45,8 @@ jobs:
       # Create a small deploy bundle (no node_modules)
       - name: Prepare deploy bundle
         run: |
-          mkdir -p /tmp/deploy
+          rm -rf /tmp/deploy
+          mkdir -p /tmp/deploy/apps/api /tmp/deploy/apps/web
           rsync -a --delete \
             --exclude ".git" \
             --exclude "node_modules" \
