@@ -41,6 +41,13 @@ jobs:
           echo "workspace_modules (top):"
           find apps/api/dist/workspace_modules -maxdepth 3 -type d | sed -n '1,120p'
 
+      - name: Create web env file for build
+        run: |
+          cat > apps/web/.env.production << 'EOF'
+          NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SITE_URL=${{ env.NEXT_PUBLIC_API_PREFIX }}
+          EOF
+
       # --- Build WEB ---
       - name: Build WEB via Nx
         run: |
