@@ -92,7 +92,15 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             set -e
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+            nvm use 20
+
             cd "${{ secrets.APP_DIR }}"
+
+            npm -v
+            node -v
 
             # Ensure deps exist on server (runtime only)
             # This is MUCH lighter than building on the server.
