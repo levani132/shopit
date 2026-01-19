@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "api",
-      cwd: "/var/www/shopit",
-      script: "apps/api/dist/main.js",
+      cwd: "/var/www/shopit/apps/api",
+      script: "dist/main.js",
       env: {
         NODE_ENV: "production",
         PORT: "3001",
@@ -12,7 +12,7 @@ module.exports = {
     {
       name: "web",
       cwd: "/var/www/shopit/apps/web",
-      script: "node_modules/next/dist/bin/next",
+      script: "../../node_modules/next/dist/bin/next",
       args: "start -p 3000",
       env: {
         NODE_ENV: "production",
