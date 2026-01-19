@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { RoleValue } from '@sellit/constants';
+import { RoleValue } from '@shopit/constants';
 
 export const ROLES_KEY = 'roles';
 

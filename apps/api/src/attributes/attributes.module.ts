@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Attribute, AttributeSchema } from '@sellit/api-database';
+import { Attribute, AttributeSchema } from '@shopit/api-database';
 import { AttributesController } from './attributes.controller';
 import { AttributesService } from './attributes.service';
 

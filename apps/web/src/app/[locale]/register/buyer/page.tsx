@@ -7,7 +7,7 @@ import { getStoreBySubdomain } from '../../../../lib/api';
 import Link from 'next/link';
 import { Link as LocaleLink } from '../../../../i18n/routing';
 
-import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
+import { ACCENT_COLORS, AccentColorName } from '@shopit/constants';
 
 interface StoreInfo {
   name: string;

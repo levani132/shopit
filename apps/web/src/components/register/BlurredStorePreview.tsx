@@ -2,7 +2,7 @@
 
 import { useRegistration } from './RegistrationContext';
 import { ShopItLogo } from '../ui/ShopItLogo';
-import { STORE_BRAND_COLORS } from '@sellit/constants';
+import { STORE_BRAND_COLORS } from '@shopit/constants';
 import { getLatinInitial } from '../../lib/utils';
 
 const SAMPLE_CATEGORIES = [

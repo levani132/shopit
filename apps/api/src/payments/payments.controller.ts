@@ -11,7 +11,7 @@ import { PaymentsService } from './payments.service';
 import { ServicePaymentService } from './service-payment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import type { UserDocument } from '@sellit/api-database';
+import type { UserDocument } from '@shopit/api-database';
 
 // BOG callback data structure
 interface BogCallbackData {

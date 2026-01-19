@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional } from 'class-validator';
-import { NotificationPreference } from '@sellit/api-database';
+import { NotificationPreference } from '@shopit/api-database';
 
 export class UpdateNotificationSettingsDto {
   @ApiPropertyOptional({

@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 import { CourierHeader } from '../../../components/courier/CourierHeader';
 
 export default function CourierLandingPage() {

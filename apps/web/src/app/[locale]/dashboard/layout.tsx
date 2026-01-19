@@ -5,7 +5,7 @@ import { DashboardSidebar } from '../../../components/dashboard/DashboardSidebar
 import { DashboardHeader } from '../../../components/dashboard/DashboardHeader';
 import { DashboardProtectedRoute } from '../../../components/auth/ProtectedRoute';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
+import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

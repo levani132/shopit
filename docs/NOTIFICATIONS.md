@@ -115,7 +115,7 @@ To send a notification from the API:
 
 ```typescript
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType, NotificationCategory } from '@sellit/api-database';
+import { NotificationType, NotificationCategory } from '@shopit/api-database';
 
 // Inject the service
 constructor(private readonly notificationsService: NotificationsService) {}

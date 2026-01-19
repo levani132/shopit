@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';

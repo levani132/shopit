@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLocale } from 'next-intl';
-import { Role, RoleValue, hasAnyRole } from '@sellit/constants';
+import { Role, RoleValue, hasAnyRole } from '@shopit/constants';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

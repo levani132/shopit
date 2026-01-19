@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { Link } from '../../i18n/routing';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 
 interface CtaButtonProps {
   size?: 'sm' | 'md' | 'lg';

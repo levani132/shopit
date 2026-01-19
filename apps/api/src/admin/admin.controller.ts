@@ -1,4 +1,4 @@
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import {
   Controller,
   Get,
@@ -42,7 +42,7 @@ import {
   OrderDocument,
   NotificationType,
   NotificationCategory,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { BalanceService } from '../orders/balance.service';
 import { NotificationsService } from '../notifications/notifications.service';
 

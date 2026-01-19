@@ -4,7 +4,7 @@ import { StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
 import { PublishController } from './publish.controller';
 import { PublishService } from './publish.service';
-import { Store, StoreSchema, User, UserSchema } from '@sellit/api-database';
+import { Store, StoreSchema, User, UserSchema } from '@shopit/api-database';
 import { UploadModule } from '../upload/upload.module';
 import { AuthModule } from '../auth/auth.module';
 

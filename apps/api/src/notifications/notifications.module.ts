@@ -5,7 +5,7 @@ import {
   NotificationSchema,
   NotificationSettings,
   NotificationSettingsSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 

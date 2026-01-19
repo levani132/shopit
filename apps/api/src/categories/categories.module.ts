@@ -7,7 +7,7 @@ import {
   SubcategorySchema,
   Store,
   StoreSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { CategoriesController } from './categories.controller';
 import { CategoriesService } from './categories.service';
 import { CategoryStatsModule } from '../category-stats/category-stats.module';

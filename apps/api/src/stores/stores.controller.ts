@@ -26,8 +26,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
-import type { UserDocument } from '@sellit/api-database';
-import { Role } from '@sellit/api-database';
+import type { UserDocument } from '@shopit/api-database';
+import { Role } from '@shopit/api-database';
 import 'multer';
 
 @ApiTags('stores')

@@ -12,7 +12,7 @@ import {
   OrderSchema,
   SiteSettings,
   SiteSettingsSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { OrdersModule } from '../orders/orders.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 

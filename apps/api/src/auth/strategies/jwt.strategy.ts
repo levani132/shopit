@@ -10,7 +10,7 @@ import {
   Store,
   StoreDocument,
   Role,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { Request } from 'express';
 
 export interface JwtPayload {

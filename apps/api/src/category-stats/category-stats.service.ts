@@ -8,7 +8,7 @@ import {
   AttributeDocument,
   Product,
   ProductDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 interface VariantAttributeInfo {
   attributeId: string;

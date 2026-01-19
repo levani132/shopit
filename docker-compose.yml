@@ -2,13 +2,13 @@ services:
   # MongoDB Database
   mongodb:
     image: mongo:7
-    container_name: sellit-mongodb
+    container_name: shopit-mongodb
     environment:
-      MONGO_INITDB_ROOT_USERNAME: sellit
-      MONGO_INITDB_ROOT_PASSWORD: sellit
-      MONGO_INITDB_DATABASE: sellit
+      MONGO_INITDB_ROOT_USERNAME: shopit
+      MONGO_INITDB_ROOT_PASSWORD: shopit
+      MONGO_INITDB_DATABASE: shopit
     ports:
-      - '27017:27017'
+      - "27017:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:
@@ -20,13 +20,13 @@ services:
   # Redis for caching (optional)
   redis:
     image: redis:7-alpine
-    container_name: sellit-redis
+    container_name: shopit-redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,18 +34,18 @@ services:
   # MinIO for S3-compatible storage
   minio:
     image: minio/minio:latest
-    container_name: sellit-minio
+    container_name: shopit-minio
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     command: server /data --console-address ":9001"
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - "9000:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3

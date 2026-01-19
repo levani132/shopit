@@ -1,5 +1,5 @@
 {
-  "name": "@sellit/api",
+  "name": "@shopit/api",
   "version": "0.0.1",
   "private": true,
   "nx": {

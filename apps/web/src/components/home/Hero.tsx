@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from '../../i18n/routing';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 
 const slides = [
   {

@@ -42,7 +42,7 @@ import { GoogleProfile } from './strategies/google.strategy';
 import { UploadService } from '../upload/upload.service';
 import { cookieConfig } from '../config/cookie.config';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import type { UserDocument } from '@sellit/api-database';
+import type { UserDocument } from '@shopit/api-database';
 import * as crypto from 'crypto';
 import 'multer'; // Import for Express.Multer.File types
 

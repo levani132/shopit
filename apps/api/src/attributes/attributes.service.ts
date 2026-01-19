@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Attribute, AttributeDocument } from '@sellit/api-database';
+import { Attribute, AttributeDocument } from '@shopit/api-database';
 import {
   CreateAttributeDto,
   UpdateAttributeDto,

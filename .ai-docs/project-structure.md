@@ -81,7 +81,7 @@ src/
 
 ## Shared Libraries
 
-### `@sellit/constants`
+### `@shopit/constants`
 Path: `libs/shared/constants/`
 
 Contains:
@@ -89,18 +89,18 @@ Contains:
 - App-wide constants (limits, routes, etc.)
 - Error constants
 
-### `@sellit/types`
+### `@shopit/types`
 Path: `libs/shared/types/`
 
 TypeScript interfaces for:
 - User, Store, Product, Post, etc.
 
-### `@sellit/validators`
+### `@shopit/validators`
 Path: `libs/shared/validators/`
 
 Shared validation functions.
 
-### `@sellit/database`
+### `@shopit/database`
 Path: `libs/api/database/`
 
 Mongoose schemas:
@@ -169,8 +169,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
 
 Libraries are imported by their package name:
 ```typescript
-import { ACCENT_COLORS } from '@sellit/constants';
-import { User } from '@sellit/types';
+import { ACCENT_COLORS } from '@shopit/constants';
+import { User } from '@shopit/types';
 ```
 
 The mapping is handled by Nx through `tsconfig.json` paths and `package.json` exports.

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Link } from '../../i18n/routing';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, RoleValue, hasRole, hasAnyRole } from '@sellit/constants';
+import { Role, RoleValue, hasRole, hasAnyRole } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 
 interface NavItem {

@@ -16,7 +16,7 @@ import {
 import { WishlistService } from './wishlist.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import type { UserDocument } from '@sellit/api-database';
+import type { UserDocument } from '@shopit/api-database';
 
 @ApiTags('wishlist')
 @Controller('wishlist')

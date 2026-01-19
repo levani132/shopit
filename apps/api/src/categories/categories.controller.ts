@@ -1,4 +1,4 @@
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import {
   Controller,
   Get,

@@ -1,4 +1,4 @@
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import {
   Controller,
   Get,
@@ -20,7 +20,7 @@ import {
   ContactContent,
   TermsContent,
   PrivacyContent,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 @Controller('content')
 export class ContentController {

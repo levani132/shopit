@@ -1,7 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsInt, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
-import { NotificationType } from '@sellit/api-database';
+import { NotificationType } from '@shopit/api-database';
 
 export class GetNotificationsDto {
   @ApiPropertyOptional({ description: 'Page number', default: 1 })

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../contexts/AuthContext';
-import { hasRole, Role, getPrimaryRoleName } from '@sellit/constants';
+import { hasRole, Role, getPrimaryRoleName } from '@shopit/constants';
 import { getUserInitials } from '../../lib/utils';
 import Link from 'next/link';
 

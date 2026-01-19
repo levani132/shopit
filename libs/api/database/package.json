@@ -1,5 +1,5 @@
 {
-  "name": "@sellit/api-database",
+  "name": "@shopit/api-database",
   "version": "0.0.1",
   "private": true,
   "main": "./src/index.ts",

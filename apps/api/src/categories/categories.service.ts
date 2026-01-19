@@ -6,7 +6,7 @@ import {
   CategoryDocument,
   Subcategory,
   SubcategoryDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import {
   CreateCategoryDto,
   UpdateCategoryDto,

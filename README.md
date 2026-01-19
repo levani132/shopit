@@ -15,7 +15,7 @@ A multi-vendor e-commerce platform where anyone can create their own online stor
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd sellit
+cd shopit
 
 # Install dependencies
 npm install
@@ -42,7 +42,7 @@ npm run dev
 ## 📁 Project Structure
 
 ```
-sellit/
+shopit/
 ├── apps/
 │   ├── web/                    # Next.js frontend (customer-facing stores)
 │   └── api/                    # NestJS backend API

@@ -19,7 +19,7 @@ import {
   StoreDocument,
   User,
   UserDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { CreateOrderDto, ValidateCartDto } from './dto/order.dto';
 import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
@@ -29,7 +29,7 @@ import {
   VehicleType,
   VEHICLE_CAPACITIES,
   SHIPPING_SIZES,
-} from '@sellit/constants';
+} from '@shopit/constants';
 
 @Injectable()
 export class OrdersService {

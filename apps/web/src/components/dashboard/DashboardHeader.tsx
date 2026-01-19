@@ -7,7 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole, getPrimaryRoleName } from '@sellit/constants';
+import { Role, hasRole, getPrimaryRoleName } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 import PublishButton from './PublishButton';
 

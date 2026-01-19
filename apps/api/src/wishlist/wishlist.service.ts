@@ -12,7 +12,7 @@ import {
   ProductDocument,
   Store,
   StoreDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 @Injectable()
 export class WishlistService {

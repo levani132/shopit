@@ -13,7 +13,7 @@ import {
   BalanceTransaction,
   BalanceTransactionDocument,
   TransactionType,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { SiteSettingsService } from '../admin/site-settings.service';
 
 @Injectable()

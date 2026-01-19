@@ -14,7 +14,7 @@ import {
   TermsContentDocument,
   PrivacyContent,
   PrivacyContentDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 @Injectable()
 export class ContentService {

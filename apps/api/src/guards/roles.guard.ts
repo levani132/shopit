@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { UserDocument } from '@sellit/api-database';
-import { hasAnyRole, RoleValue } from '@sellit/constants';
+import { UserDocument } from '@shopit/api-database';
+import { hasAnyRole, RoleValue } from '@shopit/constants';
 
 @Injectable()
 export class RolesGuard implements CanActivate {

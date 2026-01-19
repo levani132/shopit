@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 import Image from 'next/image';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

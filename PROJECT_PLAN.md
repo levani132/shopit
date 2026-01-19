@@ -197,7 +197,7 @@ A platform where users can create their own online stores with custom subdomains
 ### Folder Structure
 
 ```
-sellit/
+shopit/
 ├── apps/
 │   ├── web/                    # Next.js frontend (customer-facing)
 │   ├── dashboard/              # Next.js admin dashboard (future)

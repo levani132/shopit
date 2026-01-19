@@ -1,5 +1,5 @@
 /**
- * SellIt API Server
+ * ShopIt API Server
  * Multi-vendor e-commerce platform backend
  */
 

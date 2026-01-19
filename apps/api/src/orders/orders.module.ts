@@ -14,7 +14,7 @@ import {
   BalanceTransactionSchema,
   SiteSettings,
   SiteSettingsSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { OrdersController } from './orders.controller';
 import { BalanceController } from './balance.controller';
 import { OrdersService } from './orders.service';

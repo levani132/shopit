@@ -8,7 +8,7 @@ import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { CartButton } from './CartButton';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 import { getLatinInitial } from '../../lib/utils';
 import { getMainSiteUrl } from '../../utils/subdomain';
 import Link from 'next/link';

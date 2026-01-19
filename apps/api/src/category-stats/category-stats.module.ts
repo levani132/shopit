@@ -7,7 +7,7 @@ import {
   AttributeSchema,
   Product,
   ProductSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { CategoryStatsService } from './category-stats.service';
 
 @Module({

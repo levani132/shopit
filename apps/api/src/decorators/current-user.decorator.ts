@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { UserDocument } from '@sellit/api-database';
+import { UserDocument } from '@shopit/api-database';
 
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): UserDocument => {

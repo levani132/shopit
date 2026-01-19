@@ -5,7 +5,7 @@ import {
   SiteSettings,
   SiteSettingsDocument,
   VehicleShippingConfig,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 /**
  * Service for managing site-wide settings

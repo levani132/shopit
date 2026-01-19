@@ -14,7 +14,7 @@ All color constants are defined in:
 libs/shared/constants/src/lib/app.constants.ts
 ```
 
-Package name: `@sellit/constants`
+Package name: `@shopit/constants`
 
 ## Exports
 
@@ -35,7 +35,7 @@ import {
   
   // Helper function
   getAccentColorCssVars,     // Generates CSS variable object from color name
-} from '@sellit/constants';
+} from '@shopit/constants';
 ```
 
 ## Usage Patterns
@@ -46,7 +46,7 @@ Store pages use CSS variables set in the layout:
 
 ```typescript
 // In store layout (apps/web/src/app/store/[subdomain]/[locale]/layout.tsx)
-import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
+import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
 
 const accentColors = getAccentColorCssVars(store.accentColor as AccentColorName);
 // Returns: { '--store-accent-50': '#...', '--store-accent-500': '#...', etc. }
@@ -71,7 +71,7 @@ Main site uses `AccentColorProvider` which sets `--accent-*` CSS variables:
 When you need hex values directly (not CSS variables):
 
 ```typescript
-import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
+import { ACCENT_COLORS, AccentColorName } from '@shopit/constants';
 
 const colors = ACCENT_COLORS[brandColor as AccentColorName] || ACCENT_COLORS.indigo;
 // colors.500, colors.600, colors.700

@@ -8,7 +8,7 @@ import {
   OrderStatus,
   Product,
   ProductDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 @Injectable()
 export class StockReservationService {

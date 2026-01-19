@@ -5,7 +5,7 @@ import {
   ProductSchema,
   Attribute,
   AttributeSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { ProductsController } from './products.controller';
 import { ProductsService } from './products.service';
 import { UploadModule } from '../upload/upload.module';

@@ -13,7 +13,7 @@ import {
   Attribute,
   AttributeDocument,
   ProductVariant,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import {
   ListProductsDto,
   CreateProductDto,

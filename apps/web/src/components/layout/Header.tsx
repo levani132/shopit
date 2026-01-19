@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTheme } from '../theme/ThemeProvider';
 import { ShopItLogo } from '../ui/ShopItLogo';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 
 export function Header() {
   const t = useTranslations();

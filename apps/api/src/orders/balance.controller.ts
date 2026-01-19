@@ -1,4 +1,4 @@
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import {
   Controller,
   Get,
@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../decorators/roles.decorator';
 import { CurrentUser } from '../decorators/current-user.decorator';
-import { UserDocument } from '@sellit/api-database';
+import { UserDocument } from '@shopit/api-database';
 
 @Controller('balance')
 export class BalanceController {

@@ -1,4 +1,4 @@
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import {
   Controller,
   Post,
@@ -36,7 +36,7 @@ import {
   Product,
   ProductDocument,
   OrderDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 @Controller('orders')
 export class OrdersController {

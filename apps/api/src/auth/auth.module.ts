@@ -11,7 +11,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { User, UserSchema, Store, StoreSchema } from '@sellit/api-database';
+import { User, UserSchema, Store, StoreSchema } from '@shopit/api-database';
 
 // Factory to conditionally provide GoogleStrategy
 const googleStrategyProvider: Provider = {

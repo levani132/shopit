@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import { api } from '../../../../../lib/api';
 
 interface OrderItem {

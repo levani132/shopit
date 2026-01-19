@@ -12,7 +12,7 @@ import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { Link } from '../../../i18n/routing';
 import { ProtectedRoute } from '../../auth/ProtectedRoute';
-import { Role } from '@sellit/constants';
+import { Role } from '@shopit/constants';
 import { api } from '../../../lib/api';
 
 // ============================================================================

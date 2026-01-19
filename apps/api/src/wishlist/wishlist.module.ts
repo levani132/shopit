@@ -9,7 +9,7 @@ import {
   ProductSchema,
   Store,
   StoreSchema,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({

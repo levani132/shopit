@@ -9,7 +9,7 @@ import {
   NotificationSettings,
   NotificationSettingsDocument,
   NotificationPreference,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 import { GetNotificationsDto, UpdateNotificationSettingsDto } from './dto';
 
 export interface CreateNotificationData {

@@ -11,7 +11,7 @@ import {
   ServicePaymentStatus,
   Store,
   StoreDocument,
-} from '@sellit/api-database';
+} from '@shopit/api-database';
 
 interface BogTokenResponse {
   access_token: string;

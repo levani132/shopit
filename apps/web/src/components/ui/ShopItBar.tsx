@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ShopItLogo } from './ShopItLogo';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@sellit/constants';
+import { Role, hasRole } from '@shopit/constants';
 import { getUserInitials } from '../../lib/utils';
 import { getMainSiteUrl } from '../../utils/subdomain';
 

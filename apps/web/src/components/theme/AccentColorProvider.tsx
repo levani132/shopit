@@ -11,7 +11,7 @@ import { usePathname } from 'next/navigation';
 import {
   MAIN_SITE_ACCENT_COLORS,
   MainSiteAccentColorName,
-} from '@sellit/constants';
+} from '@shopit/constants';
 
 export type AccentColorName = MainSiteAccentColorName;
 

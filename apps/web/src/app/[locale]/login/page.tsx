@@ -9,7 +9,7 @@ import { getStoreBySubdomain } from '../../../lib/api';
 import { getCouriersUrl } from '../../../utils/subdomain';
 import Link from 'next/link';
 
-import { ACCENT_COLORS, AccentColorName } from '@sellit/constants';
+import { ACCENT_COLORS, AccentColorName } from '@shopit/constants';
 
 interface StoreInfo {
   name: string;

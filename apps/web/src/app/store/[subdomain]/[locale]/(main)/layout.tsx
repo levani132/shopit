@@ -8,7 +8,7 @@ import {
 } from '../../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../../data/mock-stores';
 import { StoreLayoutContent } from '../../../../../components/store/StoreLayoutContent';
-import { getAccentColorCssVars, AccentColorName } from '@sellit/constants';
+import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
 import { getLatinInitial } from '../../../../../lib/utils';
 
 interface MainStoreLayoutProps {

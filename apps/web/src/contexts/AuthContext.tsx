@@ -9,7 +9,7 @@ import React, {
   useMemo,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { Role, RoleValue, hasAnyRole } from '@sellit/constants';
+import { Role, RoleValue, hasAnyRole } from '@shopit/constants';
 
 // Types
 export interface User {
