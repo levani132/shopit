@@ -48,6 +48,12 @@ jobs:
           NEXT_PUBLIC_API_URL=${{ env.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_API_PREFIX=${{ env.NEXT_PUBLIC_API_PREFIX }}
           EOF
+      
+      - name: Verify web env file (safe)
+        run: |
+          echo "NEXT_PUBLIC_API_URL=$(grep NEXT_PUBLIC_API_URL apps/web/.env.production | sed 's/=.*/=*** /')"
+          echo "NEXT_PUBLIC_API_PREFIX=$(grep NEXT_PUBLIC_API_PREFIX apps/web/.env.production | sed 's/=.*/=*** /')"
+
 
       # --- Build WEB ---
       - name: Build WEB via Nx
