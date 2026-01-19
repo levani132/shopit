@@ -27,10 +27,9 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       # --- Build API (your API uses webpack-cli build in apps/api) ---
-      - name: Build API
+      - name: Build API via Nx
         run: |
-          cd apps/api
-          NODE_OPTIONS="--max-old-space-size=2048" npx webpack-cli build
+          NODE_OPTIONS="--max-old-space-size=2048" npx nx build api --configuration=production
 
       # --- Build WEB (choose ONE of the two; keep the one that works for your repo) ---
       - name: Build WEB via Nx
