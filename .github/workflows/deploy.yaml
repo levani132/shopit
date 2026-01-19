@@ -103,7 +103,6 @@ jobs:
             set -e
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
-
             nvm use 20
 
             cd "${{ secrets.APP_DIR }}"
@@ -112,20 +111,12 @@ jobs:
             node -v
             npm -v
 
-            # ✅ Install deps for API runtime (inside dist)
-            if [ -f "apps/api/dist/package.json" ]; then
-              cd apps/api/dist
-              npm ci --omit=dev --no-audit --no-fund
-              cd -
-            else
-              echo "ERROR: apps/api/dist/package.json not found. Did api:prune run?"
-              exit 1
-            fi
+            # Install prod deps ONCE at repo root (this is where the API will resolve them from)
+            npm ci --omit=dev --no-audit --no-fund
 
-            cd "${{ secrets.APP_DIR }}"
-            npm ci --omit=dev --no-audit --no-fund || true
+            # Make sure dist doesn't have its own node_modules (prevents Nest duplicate module identity)
+            rm -rf apps/api/dist/node_modules || true
 
-            # Restart
             pm2 startOrReload ecosystem.config.cjs
             pm2 save
             pm2 status
