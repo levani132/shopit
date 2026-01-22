@@ -623,13 +623,17 @@ export class RoutesService {
 
   /**
    * Calculate distances from starting point to each order's pickup and delivery
-   * Only includes orders with valid coordinates (skips orders without proper location data)
+   * Uses fallback coordinates for orders missing location data
    */
   private async calculateOrderDistances(
     orders: OrderDocument[],
     startingPoint: { lat: number; lng: number },
   ): Promise<OrderWithDistance[]> {
     const ordersWithDistance: OrderWithDistance[] = [];
+
+    // Default Tbilisi center (fallback for missing coordinates)
+    const DEFAULT_LAT = 41.7151;
+    const DEFAULT_LNG = 44.8271;
 
     // Valid coordinate bounds for Georgia region
     const VALID_LAT_MIN = 41.0;
@@ -640,7 +644,7 @@ export class RoutesService {
     // Helper to validate coordinates
     const isValidCoordinate = (
       coord: { lat: number; lng: number } | undefined,
-    ): coord is { lat: number; lng: number } => {
+    ): boolean => {
       if (!coord) return false;
       if (typeof coord.lat !== 'number' || typeof coord.lng !== 'number')
         return false;
@@ -653,29 +657,26 @@ export class RoutesService {
     };
 
     for (const order of orders) {
-      // Skip orders without valid coordinates
+      // Use valid coordinates or fallback to defaults
+      const pickupLocation = isValidCoordinate(order.pickupLocation)
+        ? { lat: order.pickupLocation!.lat, lng: order.pickupLocation!.lng }
+        : { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+
+      const deliveryLocation = isValidCoordinate(order.deliveryLocation)
+        ? { lat: order.deliveryLocation!.lat, lng: order.deliveryLocation!.lng }
+        : { lat: DEFAULT_LAT, lng: DEFAULT_LNG };
+
+      // Log warning for orders using fallback coordinates
       if (!isValidCoordinate(order.pickupLocation)) {
         this.logger.warn(
-          `Order ${order._id} has invalid/missing pickup coordinates, skipping for route planning`,
+          `Order ${order._id} missing pickup coordinates, using default`,
         );
-        continue;
       }
       if (!isValidCoordinate(order.deliveryLocation)) {
         this.logger.warn(
-          `Order ${order._id} has invalid/missing delivery coordinates, skipping for route planning`,
+          `Order ${order._id} missing delivery coordinates, using default`,
         );
-        continue;
       }
-
-      const pickupLocation = {
-        lat: order.pickupLocation.lat,
-        lng: order.pickupLocation.lng,
-      };
-
-      const deliveryLocation = {
-        lat: order.deliveryLocation.lat,
-        lng: order.deliveryLocation.lng,
-      };
 
       const pickupDistance = this.calculateHaversineDistance(
         startingPoint,
@@ -693,13 +694,6 @@ export class RoutesService {
         pickupLocation,
         deliveryLocation,
       });
-    }
-
-    if (ordersWithDistance.length === 0 && orders.length > 0) {
-      this.logger.warn(
-        `All ${orders.length} orders were skipped due to missing/invalid coordinates. ` +
-          `Ensure stores have location set and orders include delivery coordinates.`,
-      );
     }
 
     // Sort by pickup distance from starting point
