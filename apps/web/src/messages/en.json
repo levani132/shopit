@@ -145,6 +145,7 @@
     "authorName": "Author Name",
     "enterAuthorName": "Enter your name or business name",
     "authorNameRequired": "Author name is required",
+    "fullNameRequired": "Please enter your full name (first and last name)",
     "showAuthorOnHomepage": "Show author name on homepage",
     "authorVisibilityNote": "Even if hidden, your name is required for administrative purposes",
     "coverImage": "Cover Image",

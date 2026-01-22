@@ -7,7 +7,17 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Store, StoreDocument, User, UserDocument } from '@shopit/api-database';
+import {
+  Store,
+  StoreDocument,
+  User,
+  UserDocument,
+  Product,
+  ProductDocument,
+  Order,
+  OrderDocument,
+  OrderStatus,
+} from '@shopit/api-database';
 
 export interface UpdateStoreDto {
   name?: string;
@@ -50,6 +60,8 @@ export class StoresService {
   constructor(
     @InjectModel(Store.name) private storeModel: Model<StoreDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
   ) {}
 
   async findBySubdomain(subdomain: string): Promise<StoreDocument | null> {
@@ -465,5 +477,68 @@ export class StoresService {
       $unset: { storeId: 1 },
       $set: { role: Role.USER },
     });
+  }
+
+  /**
+   * Get store statistics for seller dashboard
+   */
+  async getStoreStats(ownerId: string): Promise<{
+    totalProducts: number;
+    totalOrders: number;
+    totalRevenue: number;
+    pendingOrders: number;
+  }> {
+    const store = await this.findByOwnerId(ownerId);
+
+    if (!store) {
+      return {
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+      };
+    }
+
+    const storeId = store._id;
+
+    // Count total products
+    const totalProducts = await this.productModel.countDocuments({
+      store: storeId,
+      isDeleted: { $ne: true },
+    });
+
+    // Count orders and calculate revenue
+    const orders = await this.orderModel.find({
+      'orderItems.storeId': storeId,
+    });
+
+    let totalRevenue = 0;
+    let pendingOrders = 0;
+
+    for (const order of orders) {
+      // Sum revenue from order items belonging to this store
+      for (const item of order.orderItems) {
+        if (item.storeId?.toString() === storeId.toString()) {
+          totalRevenue += item.price * item.qty;
+        }
+      }
+
+      // Check if order has pending items for this store
+      const isPending = [
+        OrderStatus.PENDING,
+        OrderStatus.PAID,
+        OrderStatus.PROCESSING,
+      ].includes(order.status);
+      if (isPending) {
+        pendingOrders++;
+      }
+    }
+
+    return {
+      totalProducts,
+      totalOrders: orders.length,
+      totalRevenue,
+      pendingOrders,
+    };
   }
 }

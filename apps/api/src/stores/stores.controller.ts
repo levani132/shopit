@@ -106,6 +106,17 @@ export class StoresController {
     };
   }
 
+  @Get('stats')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get current user's store statistics" })
+  @ApiResponse({ status: 200, description: 'Store stats returned' })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  async getMyStoreStats(@CurrentUser() user: UserDocument) {
+    const stats = await this.storesService.getStoreStats(user._id.toString());
+    return stats;
+  }
+
   @Get('subdomain-info')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

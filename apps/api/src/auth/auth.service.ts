@@ -475,9 +475,11 @@ export class AuthService {
     const subdomain = await this.findAvailableSubdomain(dto.storeName);
     const hashedPassword = await this.hashPassword(dto.password);
 
-    const nameParts = dto.authorName.split(' ');
+    const nameParts = dto.authorName.trim().split(' ').filter(Boolean);
     const firstName = nameParts[0] || dto.authorName;
-    const lastName = nameParts.slice(1).join(' ') || '';
+    // If only one name part provided, use it as both first and last name
+    const lastName =
+      nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
 
     const user = new this.userModel({
       email: dto.email.toLowerCase(),
