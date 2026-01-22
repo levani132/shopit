@@ -8,7 +8,9 @@
     "dev:api": "npx nx serve api",
     "build": "npx nx run-many -t build",
     "test": "npx nx run-many -t test",
-    "lint": "npx nx run-many -t lint"
+    "lint": "npx nx run-many -t lint",
+    "build:api": "nx build api",
+    "start:api": "node apps/api/dist/main.js"
   },
   "private": true,
   "devDependencies": {
