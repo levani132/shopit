@@ -280,7 +280,7 @@ export function getStoreSubdomain(): string | null {
 
   // For production domains (e.g., sample.shopit.ge)
   const parts = hostname.split('.');
-  if (parts.length >= 3 && parts[0] !== 'www') {
+  if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'dev') {
     return parts[0];
   }
 
