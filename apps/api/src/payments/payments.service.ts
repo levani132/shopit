@@ -27,6 +27,16 @@ export class PaymentsService {
   ) {}
 
   /**
+   * Check if payment should be skipped (for dev/test environments)
+   * By default, SKIP_PAYMENT is false, meaning real payments are required.
+   * Set SKIP_PAYMENT=true to simulate payments without actual BOG processing.
+   */
+  private isPaymentSkipped(): boolean {
+    const skipPayment = this.configService.get<string>('SKIP_PAYMENT');
+    return skipPayment === 'true';
+  }
+
+  /**
    * Get BOG access token
    */
   private async getToken(): Promise<string> {
@@ -86,9 +96,52 @@ export class PaymentsService {
     redirectUrl: string;
     externalOrderId: string;
   }> {
+    const externalOrderId = uuidv4();
+
+    // If SKIP_PAYMENT is enabled, simulate successful payment immediately
+    if (this.isPaymentSkipped()) {
+      this.logger.warn(
+        `[DEV MODE] SKIP_PAYMENT is enabled - simulating payment for order ${data.orderId}`,
+      );
+
+      // Update order with external order ID
+      await this.ordersService.updateExternalOrderId(
+        data.orderId,
+        externalOrderId,
+      );
+
+      // Immediately mark order as paid
+      const paymentResult = {
+        id: `simulated_${externalOrderId}`,
+        status: 'COMPLETED',
+        updateTime: new Date().toISOString(),
+        emailAddress: data.customer?.email || 'simulated@dev.local',
+      };
+
+      await this.ordersService.markAsPaidByExternalId(
+        externalOrderId,
+        paymentResult,
+      );
+
+      this.logger.log(
+        `[DEV MODE] Order ${data.orderId} automatically marked as paid`,
+      );
+
+      // Return a fake redirect URL that goes directly to success page
+      const baseUrl =
+        this.configService.get('FRONTEND_URL') || 'https://shopit.ge';
+      const successUrl = data.successUrl || `${baseUrl}/checkout/success`;
+
+      return {
+        orderId: data.orderId,
+        bogOrderId: `simulated_${uuidv4()}`,
+        redirectUrl: successUrl,
+        externalOrderId,
+      };
+    }
+
     try {
       const token = await this.getToken();
-      const externalOrderId = uuidv4();
 
       // Build basket items
       const basket = data.items.map((item) => ({
