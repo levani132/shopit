@@ -407,7 +407,7 @@ export class OrdersService {
         };
 
         // Calculate the largest shipping size for the entire order
-        // This is used to filter which couriers can see/accept this order
+        // This is used as initial estimation for vehicle type needed
         const allSizes: ShippingSize[] = [
           'small',
           'medium',
@@ -420,7 +420,9 @@ export class OrdersService {
           const index = allSizes.indexOf(size);
           if (index > orderMaxSizeIndex) orderMaxSizeIndex = index;
         }
-        orderData.shippingSize = allSizes[orderMaxSizeIndex];
+        const estimatedSize = allSizes[orderMaxSizeIndex];
+        orderData.estimatedShippingSize = estimatedSize;
+        orderData.shippingSize = estimatedSize; // Effective size (will be updated when seller confirms)
 
         if (userId && !dto.isGuestOrder) {
           orderData.user = new Types.ObjectId(userId);
@@ -799,6 +801,58 @@ export class OrdersService {
   }
 
   /**
+   * Update order shipping size (seller action)
+   * Allows seller to confirm or change the estimated shipping size
+   * Only allowed before order is assigned to a courier
+   */
+  async updateShippingSize(
+    orderId: string,
+    storeId: string,
+    newSize: 'small' | 'medium' | 'large' | 'extra_large',
+  ): Promise<OrderDocument> {
+    const order = await this.findById(orderId);
+
+    // Verify this store has items in the order
+    const hasStoreItems = order.orderItems.some(
+      (item) => item.storeId.toString() === storeId,
+    );
+
+    if (!hasStoreItems) {
+      throw new BadRequestException(
+        'You do not have permission to update this order.',
+      );
+    }
+
+    // Cannot update shipping size after courier is assigned
+    if (order.courierId) {
+      throw new BadRequestException(
+        'Cannot change shipping size after a courier has been assigned.',
+      );
+    }
+
+    // Cannot update if order is already delivered/cancelled/refunded
+    if (
+      order.status === OrderStatus.CANCELLED ||
+      order.status === OrderStatus.REFUNDED ||
+      order.status === OrderStatus.DELIVERED
+    ) {
+      throw new BadRequestException(
+        'Cannot change shipping size for completed or cancelled orders.',
+      );
+    }
+
+    // Update both confirmedShippingSize and shippingSize (effective)
+    order.confirmedShippingSize = newSize;
+    order.shippingSize = newSize;
+
+    this.logger.log(
+      `Order ${orderId} shipping size updated from ${order.estimatedShippingSize} to ${newSize} by seller`,
+    );
+
+    return order.save();
+  }
+
+  /**
    * Update order status (courier action)
    * Only for orders using ShopIt delivery
    */
@@ -874,39 +928,85 @@ export class OrdersService {
 
   /**
    * Get orders ready for delivery (for couriers)
-   * Returns orders with status READY_FOR_DELIVERY from ShopIt delivery stores
-   * Sorted by delivery deadline (most urgent first)
-   * Filtered by courier's vehicle capacity if vehicleType is provided
+   * Returns ALL orders with status READY_FOR_DELIVERY from ShopIt delivery stores
+   *
+   * Sorting priority:
+   * 1. By delivery deadline (earliest first - most urgent)
+   * 2. Orders that this vehicle can carry (matching size)
+   * 3. Orders smaller than this vehicle capacity
+   * 4. Everything else from smallest to biggest
    */
   async getOrdersReadyForDelivery(
     courierId?: string,
     vehicleType?: string,
   ): Promise<OrderDocument[]> {
-    // Build query for available orders
+    // Build query for ALL available orders (not filtered by vehicle)
     const query: Record<string, unknown> = {
       status: OrderStatus.READY_FOR_DELIVERY,
       courierId: { $exists: false },
     };
 
-    // If courier has a vehicle type, filter orders by compatible shipping sizes
-    if (vehicleType && this.isValidVehicleType(vehicleType)) {
-      const compatibleSizes = this.getCompatibleShippingSizes(
-        vehicleType as VehicleType,
-      );
-      if (compatibleSizes.length < 4) {
-        // Only add filter if not all sizes are compatible
-        query.shippingSize = { $in: compatibleSizes };
-      }
-    }
-
-    // Find orders that are ready for delivery and not yet assigned
+    // Find all orders that are ready for delivery and not yet assigned
     const orders = await this.orderModel
       .find(query)
       .sort({ deliveryDeadline: 1, createdAt: 1 }) // Most urgent first
-      .limit(50)
+      .limit(100)
       .exec();
 
-    return orders;
+    // If no vehicle type provided, return all orders sorted by deadline
+    if (!vehicleType || !this.isValidVehicleType(vehicleType)) {
+      return orders;
+    }
+
+    // Get compatible sizes for this vehicle
+    const compatibleSizes = this.getCompatibleShippingSizes(
+      vehicleType as VehicleType,
+    );
+
+    // Size priority (smallest to largest)
+    const sizeOrder: Record<string, number> = {
+      small: 1,
+      medium: 2,
+      large: 3,
+      extra_large: 4,
+    };
+
+    // Sort orders with custom logic:
+    // 1. First, orders are already sorted by deadline
+    // 2. Within similar deadlines, prioritize by vehicle compatibility
+    const sortedOrders = orders.sort((a, b) => {
+      // First compare by deadline (already done by DB, but keep for stability)
+      const deadlineA = a.deliveryDeadline?.getTime() || Infinity;
+      const deadlineB = b.deliveryDeadline?.getTime() || Infinity;
+
+      if (deadlineA !== deadlineB) {
+        return deadlineA - deadlineB;
+      }
+
+      // Get effective shipping size for each order
+      const sizeA =
+        a.confirmedShippingSize ||
+        a.estimatedShippingSize ||
+        a.shippingSize ||
+        'small';
+      const sizeB =
+        b.confirmedShippingSize ||
+        b.estimatedShippingSize ||
+        b.shippingSize ||
+        'small';
+
+      const canCarryA = compatibleSizes.includes(sizeA as ShippingSize);
+      const canCarryB = compatibleSizes.includes(sizeB as ShippingSize);
+
+      // Orders this vehicle can carry come first
+      if (canCarryA && !canCarryB) return -1;
+      if (!canCarryA && canCarryB) return 1;
+
+      // Within same category, sort by size (smaller first for can carry, then rest smallest to biggest)
+      return sizeOrder[sizeA] - sizeOrder[sizeB];
+    });
+
+    return sortedOrders;
   }
 
   /**

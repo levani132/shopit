@@ -63,7 +63,41 @@ interface Order {
   courierId?: Courier;
   courierAssignedAt?: string;
   deliveryDeadline?: string;
+  // Shipping size fields
+  estimatedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+  confirmedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 }
+
+type ShippingSize = 'small' | 'medium' | 'large' | 'extra_large';
+
+const shippingSizeLabels: Record<
+  ShippingSize,
+  { label: string; icon: string; color: string }
+> = {
+  small: {
+    label: 'sizeSmall',
+    icon: '🚲',
+    color:
+      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  },
+  medium: {
+    label: 'sizeMedium',
+    icon: '🚗',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  },
+  large: {
+    label: 'sizeLarge',
+    icon: '🚙',
+    color:
+      'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  extra_large: {
+    label: 'sizeExtraLarge',
+    icon: '🚐',
+    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  },
+};
 
 const statusColors: Record<string, string> = {
   pending:
@@ -149,6 +183,8 @@ export default function DashboardOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [showSizeEditor, setShowSizeEditor] = useState(false);
+  const [updatingSize, setUpdatingSize] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -222,6 +258,47 @@ export default function DashboardOrdersPage() {
       console.error('Error updating order status:', err);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const updateShippingSize = async (orderId: string, newSize: ShippingSize) => {
+    setUpdatingSize(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/${orderId}/shipping-size`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shippingSize: newSize }),
+        },
+      );
+
+      if (response.ok) {
+        setOrders(
+          orders.map((order) =>
+            order._id === orderId
+              ? {
+                  ...order,
+                  confirmedShippingSize: newSize,
+                  shippingSize: newSize,
+                }
+              : order,
+          ),
+        );
+        if (selectedOrder?._id === orderId) {
+          setSelectedOrder({
+            ...selectedOrder,
+            confirmedShippingSize: newSize,
+            shippingSize: newSize,
+          });
+        }
+        setShowSizeEditor(false);
+      }
+    } catch (err) {
+      console.error('Error updating shipping size:', err);
+    } finally {
+      setUpdatingSize(false);
     }
   };
 
@@ -455,6 +532,110 @@ export default function DashboardOrdersPage() {
                             true,
                           )}
                         </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Shipping Size Section */}
+                  {selectedOrder.estimatedShippingSize && (
+                    <div className="border border-gray-200 dark:border-zinc-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                          {t('orderShippingSize')}
+                        </p>
+                        {!selectedOrder.courierId && !showSizeEditor && (
+                          <button
+                            onClick={() => setShowSizeEditor(true)}
+                            className="text-xs text-[var(--accent-600)] hover:text-[var(--accent-700)] font-medium"
+                          >
+                            {t('changeSize')}
+                          </button>
+                        )}
+                      </div>
+
+                      {showSizeEditor && !selectedOrder.courierId ? (
+                        <div className="space-y-2">
+                          {(
+                            [
+                              'small',
+                              'medium',
+                              'large',
+                              'extra_large',
+                            ] as ShippingSize[]
+                          ).map((size) => {
+                            const sizeInfo = shippingSizeLabels[size];
+                            const currentSize =
+                              selectedOrder.confirmedShippingSize ||
+                              selectedOrder.estimatedShippingSize;
+                            const isSelected = currentSize === size;
+                            return (
+                              <button
+                                key={size}
+                                onClick={() =>
+                                  updateShippingSize(selectedOrder._id, size)
+                                }
+                                disabled={updatingSize}
+                                className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                  isSelected
+                                    ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20'
+                                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                                } ${updatingSize ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                <span className="text-lg">{sizeInfo.icon}</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {t(sizeInfo.label)}
+                                </span>
+                                {isSelected && (
+                                  <svg
+                                    className="w-4 h-4 ml-auto text-[var(--accent-600)]"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                          <button
+                            onClick={() => setShowSizeEditor(false)}
+                            className="w-full text-center text-xs text-gray-500 hover:text-gray-700 py-1"
+                          >
+                            {t('cancel')}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {/* Current/Confirmed Size */}
+                          {(() => {
+                            const currentSize =
+                              selectedOrder.confirmedShippingSize ||
+                              selectedOrder.estimatedShippingSize ||
+                              'small';
+                            const sizeInfo = shippingSizeLabels[currentSize];
+                            return (
+                              <div
+                                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${sizeInfo.color}`}
+                              >
+                                <span>{sizeInfo.icon}</span>
+                                <span className="text-sm font-medium">
+                                  {t(sizeInfo.label)}
+                                </span>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Show if it was estimated vs confirmed */}
+                          <p className="text-xs text-gray-400">
+                            {selectedOrder.confirmedShippingSize
+                              ? t('confirmedSize')
+                              : t('estimatedSize')}
+                          </p>
+                        </div>
                       )}
                     </div>
                   )}

@@ -231,8 +231,27 @@ export class Order {
   @Prop()
   courierAssignedAt?: Date;
 
-  // Required shipping size for this order (largest item size)
+  // Estimated shipping size for this order (auto-calculated from largest item size)
+  // Used as initial suggestion for vehicle type needed
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+    default: 'small',
+  })
+  estimatedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+
+  // Confirmed shipping size for this order (set by seller, can be different from estimated)
+  // If not set, estimatedShippingSize is used
   // Used to filter orders for couriers based on their vehicle type
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+  })
+  confirmedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+
+  // Effective shipping size (confirmed if set, otherwise estimated)
+  // This is a virtual field computed at query time
+  // For backward compatibility, we also keep 'shippingSize' as a field that stores the effective value
   @Prop({
     type: String,
     enum: ['small', 'medium', 'large', 'extra_large'],

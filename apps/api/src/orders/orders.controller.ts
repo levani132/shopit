@@ -228,6 +228,26 @@ export class OrdersController {
   }
 
   /**
+   * Update order shipping size (seller action)
+   * Allows seller to confirm or override the estimated vehicle size
+   */
+  @Patch(':id/shipping-size')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SELLER, Role.ADMIN)
+  async updateOrderShippingSize(
+    @Param('id') id: string,
+    @Body()
+    body: { shippingSize: 'small' | 'medium' | 'large' | 'extra_large' },
+    @CurrentUser() user: { storeId: string },
+  ) {
+    return this.ordersService.updateShippingSize(
+      id,
+      user.storeId,
+      body.shippingSize,
+    );
+  }
+
+  /**
    * Mark order as delivered (seller action)
    */
   @Patch(':id/delivered')

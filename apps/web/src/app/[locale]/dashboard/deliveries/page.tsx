@@ -18,7 +18,10 @@ interface OrderItem {
   qty: number;
   price: number;
   storeName: string;
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 }
+
+type ShippingSize = 'small' | 'medium' | 'large' | 'extra_large';
 
 interface Order {
   _id: string;
@@ -46,7 +49,52 @@ interface Order {
   recipientName?: string;
   // Courier earnings (calculated by API based on earnings percentage)
   courierEarning?: number;
+  // Shipping size
+  estimatedShippingSize?: ShippingSize;
+  confirmedShippingSize?: ShippingSize;
+  shippingSize?: ShippingSize;
 }
+
+// Shipping size styling
+const shippingSizeConfig: Record<
+  ShippingSize,
+  { label: string; icon: string; color: string; bg: string }
+> = {
+  small: {
+    label: 'sizeSmall',
+    icon: '🚲',
+    color: 'text-green-700 dark:text-green-400',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+  },
+  medium: {
+    label: 'sizeMedium',
+    icon: '🚗',
+    color: 'text-blue-700 dark:text-blue-400',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+  },
+  large: {
+    label: 'sizeLarge',
+    icon: '🚙',
+    color: 'text-orange-700 dark:text-orange-400',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+  },
+  extra_large: {
+    label: 'sizeExtraLarge',
+    icon: '🚐',
+    color: 'text-red-700 dark:text-red-400',
+    bg: 'bg-red-100 dark:bg-red-900/30',
+  },
+};
+
+// Vehicle type to compatible shipping sizes
+const vehicleCapabilities: Record<string, ShippingSize[]> = {
+  walking: ['small'],
+  bicycle: ['small'],
+  motorcycle: ['small'],
+  car: ['small', 'medium'],
+  suv: ['small', 'medium', 'large'],
+  van: ['small', 'medium', 'large', 'extra_large'],
+};
 
 // Georgian month names for proper localized date formatting
 const georgianMonths = [
@@ -140,6 +188,36 @@ export default function DeliveriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingOrder, setProcessingOrder] = useState<string | null>(null);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  // Get the courier's vehicle type
+  const courierVehicleType =
+    (user as { vehicleType?: string } | null)?.vehicleType || 'car';
+
+  // Check if courier can carry an order
+  const canCarryOrder = (order: Order): boolean => {
+    const orderSize =
+      order.confirmedShippingSize ||
+      order.estimatedShippingSize ||
+      order.shippingSize ||
+      'small';
+    const compatibleSizes =
+      vehicleCapabilities[courierVehicleType] || vehicleCapabilities['car'];
+    return compatibleSizes.includes(orderSize);
+  };
+
+  // Toggle order item expansion
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
 
   const fetchAvailableOrders = useCallback(async () => {
     try {
@@ -374,142 +452,188 @@ export default function DeliveriesPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {displayOrders.map((order) => (
-            <div
-              key={order._id}
-              className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden"
-            >
-              {/* Order Header */}
-              <div className="p-4 bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-700">
-                <div className="flex flex-wrap justify-between items-center gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Order #{order._id.slice(-8).toUpperCase()}
-                    </p>
-                    <p className="font-semibold text-gray-900 dark:text-white">
-                      ₾{order.totalPrice.toFixed(2)}
-                    </p>
-                  </div>
+          {displayOrders.map((order) => {
+            const orderSize =
+              order.confirmedShippingSize ||
+              order.estimatedShippingSize ||
+              order.shippingSize ||
+              'small';
+            const sizeConfig = shippingSizeConfig[orderSize];
+            const canCarry = canCarryOrder(order);
+            const isExpanded = expandedOrders.has(order._id);
 
-                  {/* Delivery Deadline */}
-                  {order.deliveryDeadline && (
-                    <div className="text-center">
+            return (
+              <div
+                key={order._id}
+                className={`bg-white dark:bg-zinc-800 rounded-xl border overflow-hidden transition-colors ${
+                  !canCarry && activeTab === 'available'
+                    ? 'border-red-200 dark:border-red-900/50 opacity-75'
+                    : 'border-gray-200 dark:border-zinc-700'
+                }`}
+              >
+                {/* Order Header */}
+                <div className="p-4 bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-200 dark:border-zinc-700">
+                  <div className="flex flex-wrap justify-between items-center gap-4">
+                    <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {t('deliveryDeadline')}
+                        Order #{order._id.slice(-8).toUpperCase()}
                       </p>
-                      {(() => {
-                        const remaining = getRemainingTime(
-                          order.deliveryDeadline,
-                        );
-                        return (
-                          <p
-                            className={`font-semibold ${
-                              remaining.urgency === 'danger'
-                                ? 'text-red-600 dark:text-red-400'
-                                : remaining.urgency === 'warning'
-                                  ? 'text-orange-600 dark:text-orange-400'
-                                  : 'text-gray-900 dark:text-white'
-                            }`}
-                          >
-                            {remaining.isOverdue ? '⚠️ ' : '⏰ '}
-                            {remaining.text}
-                          </p>
-                        );
-                      })()}
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        {formatDateLocalized(
-                          order.deliveryDeadline,
-                          locale,
-                          true,
+                      <p className="font-semibold text-gray-900 dark:text-white">
+                        ₾{order.totalPrice.toFixed(2)}
+                      </p>
+                    </div>
+
+                    {/* Shipping Size Indicator */}
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        {t('orderSize')}
+                      </p>
+                      <div
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${sizeConfig.bg} ${sizeConfig.color}`}
+                      >
+                        <span>{sizeConfig.icon}</span>
+                        <span className="text-xs font-medium">
+                          {t(sizeConfig.label)}
+                        </span>
+                      </div>
+                      {activeTab === 'available' && !canCarry && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                          {t('cannotCarry')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Delivery Deadline */}
+                    {order.deliveryDeadline && (
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('deliveryDeadline')}
+                        </p>
+                        {(() => {
+                          const remaining = getRemainingTime(
+                            order.deliveryDeadline,
+                          );
+                          return (
+                            <p
+                              className={`font-semibold ${
+                                remaining.urgency === 'danger'
+                                  ? 'text-red-600 dark:text-red-400'
+                                  : remaining.urgency === 'warning'
+                                    ? 'text-orange-600 dark:text-orange-400'
+                                    : 'text-gray-900 dark:text-white'
+                              }`}
+                            >
+                              {remaining.isOverdue ? '⚠️ ' : '⏰ '}
+                              {remaining.text}
+                            </p>
+                          );
+                        })()}
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {formatDateLocalized(
+                            order.deliveryDeadline,
+                            locale,
+                            true,
+                          )}
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {t('yourEarning')}
+                      </p>
+                      <p className="font-semibold text-green-600 dark:text-green-400">
+                        ₾
+                        {(order.courierEarning ?? order.shippingPrice).toFixed(
+                          2,
                         )}
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Items Accordion */}
+                <div className="p-4">
+                  {/* Accordion Header */}
+                  <button
+                    onClick={() => toggleOrderExpansion(order._id)}
+                    className="w-full flex items-center justify-between mb-4 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                        />
+                      </svg>
+                      {order.orderItems.length} {t('items')}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      {isExpanded ? t('hideItems') : t('showItems')}
+                      <svg
+                        className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </span>
+                  </button>
+
+                  {/* Accordion Content - Items List */}
+                  {isExpanded && (
+                    <div className="mb-4 space-y-2 bg-gray-50 dark:bg-zinc-900/50 rounded-lg p-3">
+                      {order.orderItems.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-3 bg-white dark:bg-zinc-800 rounded-lg p-2"
+                        >
+                          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                            <Image
+                              src={item.image || '/placeholder.png'}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {locale === 'en' && item.nameEn
+                                ? item.nameEn
+                                : item.name}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {item.storeName} × {item.qty}
+                            </p>
+                          </div>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            ₾{(item.price * item.qty).toFixed(2)}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   )}
 
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t('yourEarning')}
-                    </p>
-                    <p className="font-semibold text-green-600 dark:text-green-400">
-                      ₾
-                      {(order.courierEarning ?? order.shippingPrice).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Order Items */}
-              <div className="p-4">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {order.orderItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 bg-gray-100 dark:bg-zinc-700 rounded-lg px-3 py-2"
-                    >
-                      <div className="relative w-10 h-10 rounded overflow-hidden">
-                        <Image
-                          src={item.image || '/placeholder.png'}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {item.storeName} × {item.qty}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Addresses: Pickup and Delivery */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Pickup Address (Store) */}
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center gap-2 mb-3">
-                      <svg
-                        className="w-5 h-5 text-blue-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                        />
-                      </svg>
-                      <p className="font-medium text-blue-700 dark:text-blue-300">
-                        {t('pickupAddress')}
-                      </p>
-                    </div>
-                    {order.pickupStoreName && (
-                      <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                        {order.pickupStoreName}
-                      </p>
-                    )}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      {order.pickupAddress || order.orderItems[0]?.storeName}
-                      {order.pickupCity && `, ${order.pickupCity}`}
-                    </p>
-
-                    {/* Action Buttons for Pickup */}
-                    <div className="flex gap-2">
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${order.pickupAddress || ''} ${order.pickupCity || ''}`,
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                      >
+                  {/* Addresses: Pickup and Delivery */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Pickup Address (Store) */}
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-2 mb-3">
                         <svg
-                          className="w-5 h-5"
+                          className="w-5 h-5 text-blue-500"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -518,15 +642,32 @@ export default function DeliveriesPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                           />
                         </svg>
-                        {t('openInMaps')}
-                      </a>
-                      {order.pickupPhoneNumber && (
+                        <p className="font-medium text-blue-700 dark:text-blue-300">
+                          {t('pickupAddress')}
+                        </p>
+                      </div>
+                      {order.pickupStoreName && (
+                        <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                          {order.pickupStoreName}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        {order.pickupAddress || order.orderItems[0]?.storeName}
+                        {order.pickupCity && `, ${order.pickupCity}`}
+                      </p>
+
+                      {/* Action Buttons for Pickup */}
+                      <div className="flex gap-2">
                         <a
-                          href={`tel:${order.pickupPhoneNumber}`}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${order.pickupAddress || ''} ${order.pickupCity || ''}`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                         >
                           <svg
                             className="w-5 h-5"
@@ -538,65 +679,40 @@ export default function DeliveriesPage() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                             />
                           </svg>
-                          {t('callShop')}
+                          {t('openInMaps')}
                         </a>
-                      )}
+                        {order.pickupPhoneNumber && (
+                          <a
+                            href={`tel:${order.pickupPhoneNumber}`}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              />
+                            </svg>
+                            {t('callShop')}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Delivery Address (Customer) */}
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
-                    <div className="flex items-center gap-2 mb-3">
-                      <svg
-                        className="w-5 h-5 text-green-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <p className="font-medium text-green-700 dark:text-green-300">
-                        {t('deliveryAddress')}
-                      </p>
-                    </div>
-                    {order.recipientName && (
-                      <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">
-                        {order.recipientName}
-                      </p>
-                    )}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                      {order.shippingDetails.address},{' '}
-                      {order.shippingDetails.city}
-                      {order.shippingDetails.postalCode &&
-                        `, ${order.shippingDetails.postalCode}`}
-                    </p>
-
-                    {/* Action Buttons for Delivery */}
-                    <div className="flex gap-2">
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${order.shippingDetails.address} ${order.shippingDetails.city}`,
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-                      >
+                    {/* Delivery Address (Customer) */}
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2 mb-3">
                         <svg
-                          className="w-5 h-5"
+                          className="w-5 h-5 text-green-500"
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -605,15 +721,40 @@ export default function DeliveriesPage() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                           />
                         </svg>
-                        {t('openInMaps')}
-                      </a>
-                      {order.shippingDetails.phoneNumber && (
+                        <p className="font-medium text-green-700 dark:text-green-300">
+                          {t('deliveryAddress')}
+                        </p>
+                      </div>
+                      {order.recipientName && (
+                        <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                          {order.recipientName}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        {order.shippingDetails.address},{' '}
+                        {order.shippingDetails.city}
+                        {order.shippingDetails.postalCode &&
+                          `, ${order.shippingDetails.postalCode}`}
+                      </p>
+
+                      {/* Action Buttons for Delivery */}
+                      <div className="flex gap-2">
                         <a
-                          href={`tel:${order.shippingDetails.phoneNumber}`}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${order.shippingDetails.address} ${order.shippingDetails.city}`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                         >
                           <svg
                             className="w-5 h-5"
@@ -625,64 +766,85 @@ export default function DeliveriesPage() {
                               strokeLinecap="round"
                               strokeLinejoin="round"
                               strokeWidth={2}
-                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                             />
                           </svg>
-                          {t('callCustomer')}
+                          {t('openInMaps')}
                         </a>
-                      )}
+                        {order.shippingDetails.phoneNumber && (
+                          <a
+                            href={`tel:${order.shippingDetails.phoneNumber}`}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              />
+                            </svg>
+                            {t('callCustomer')}
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Actions - hide for completed orders */}
-                {activeTab !== 'completed' && (
-                  <div className="flex gap-2 mt-4">
-                    {activeTab === 'available' ? (
-                      <button
-                        onClick={() => handleAssignOrder(order._id)}
-                        disabled={!!processingOrder}
-                        className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                      >
-                        {processingOrder === order._id
-                          ? '...'
-                          : t('assignToMe')}
-                      </button>
-                    ) : (
-                      <>
-                        {order.status === 'ready_for_delivery' && (
-                          <button
-                            onClick={() =>
-                              handleUpdateStatus(order._id, 'shipped')
-                            }
-                            disabled={!!processingOrder}
-                            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {processingOrder === order._id
-                              ? '...'
-                              : t('markAsShipped')}
-                          </button>
-                        )}
-                        {order.status === 'shipped' && (
-                          <button
-                            onClick={() =>
-                              handleUpdateStatus(order._id, 'delivered')
-                            }
-                            disabled={!!processingOrder}
-                            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {processingOrder === order._id
-                              ? '...'
-                              : t('markAsDelivered')}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
+                  {/* Actions - hide for completed orders */}
+                  {activeTab !== 'completed' && (
+                    <div className="flex gap-2 mt-4">
+                      {activeTab === 'available' ? (
+                        <button
+                          onClick={() => handleAssignOrder(order._id)}
+                          disabled={!!processingOrder}
+                          className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {processingOrder === order._id
+                            ? '...'
+                            : t('assignToMe')}
+                        </button>
+                      ) : (
+                        <>
+                          {order.status === 'ready_for_delivery' && (
+                            <button
+                              onClick={() =>
+                                handleUpdateStatus(order._id, 'shipped')
+                              }
+                              disabled={!!processingOrder}
+                              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {processingOrder === order._id
+                                ? '...'
+                                : t('markAsShipped')}
+                            </button>
+                          )}
+                          {order.status === 'shipped' && (
+                            <button
+                              onClick={() =>
+                                handleUpdateStatus(order._id, 'delivered')
+                              }
+                              disabled={!!processingOrder}
+                              className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {processingOrder === order._id
+                                ? '...'
+                                : t('markAsDelivered')}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

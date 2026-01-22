@@ -53,14 +53,14 @@ The landing page (`/couriers/[locale]/page.tsx`) includes:
 
 ## Courier Application Requirements
 
-| Field                 | Required | Description                          |
-| --------------------- | -------- | ------------------------------------ |
-| `phoneNumber`         | Yes      | Contact number                       |
-| `identificationNumber`| Yes      | Georgian personal ID (11 digits)     |
-| `accountNumber`       | Yes      | Bank account (IBAN) for payouts      |
-| `beneficiaryBankCode` | No       | SWIFT/BIC code (default: BAGAGE22)   |
-| `vehicleType`         | No       | car, motorcycle, bicycle, walking    |
-| `workingAreas`        | No       | Regions/cities for deliveries        |
+| Field                  | Required | Description                        |
+| ---------------------- | -------- | ---------------------------------- |
+| `phoneNumber`          | Yes      | Contact number                     |
+| `identificationNumber` | Yes      | Georgian personal ID (11 digits)   |
+| `accountNumber`        | Yes      | Bank account (IBAN) for payouts    |
+| `beneficiaryBankCode`  | No       | SWIFT/BIC code (default: BAGAGE22) |
+| `vehicleType`          | No       | car, motorcycle, bicycle, walking  |
+| `workingAreas`         | No       | Regions/cities for deliveries      |
 
 ## API Endpoints
 
@@ -90,10 +90,15 @@ Response: {
 
 ```
 GET /api/v1/orders/courier/available
-// Returns orders with status READY_FOR_DELIVERY
+// Returns ALL orders with status READY_FOR_DELIVERY
+// Sorted by: deadline, then vehicle match, then size
+// Includes: estimatedShippingSize, confirmedShippingSize, shippingSize
 
 GET /api/v1/orders/courier/my-orders
 // Returns orders assigned to current courier
+
+GET /api/v1/orders/courier/completed
+// Returns completed deliveries by this courier
 
 PATCH /api/v1/orders/:id/assign-courier
 // Courier claims an order
@@ -102,6 +107,43 @@ PATCH /api/v1/orders/:id/courier-status
 Body: { status: 'shipped' | 'delivered' }
 // Courier updates order status
 ```
+
+## Order Display Features
+
+### Available Orders Page
+
+The deliveries page (`/dashboard/deliveries`) shows all available orders with enhanced features:
+
+#### Order Card Elements
+
+- **Order ID & Value**: Quick identification and total price
+- **Shipping Size Badge**: Required vehicle type indicator
+  - 🚲 Small (Bike/Motorcycle)
+  - 🚗 Medium (Car)
+  - 🚙 Large (SUV)
+  - 🚐 Extra Large (Van/Truck)
+- **Compatibility Warning**: Shows if courier's vehicle cannot carry the order
+- **Delivery Deadline**: Time remaining with urgency coloring
+- **Courier Earnings**: Amount the courier will earn
+
+#### Order Items Accordion
+
+Click "Show Items" to expand and see:
+
+- Product images and names
+- Store name and quantity
+- Price per item
+
+#### Sorting Logic
+
+Orders are sorted in this priority:
+
+1. Earliest delivery deadline first
+2. Orders the courier's vehicle can handle
+3. Orders smaller than the courier's vehicle
+4. Remaining orders from smallest to largest
+
+This allows couriers to see all opportunities while prioritizing what they can deliver.
 
 ## Middleware Configuration
 
@@ -141,4 +183,3 @@ See the `courier` section for all available translation keys.
 
 - [DELIVERY.md](./DELIVERY.md) - Delivery system documentation
 - [ORDERS.md](./ORDERS.md) - Order management documentation
-
