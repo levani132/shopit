@@ -903,6 +903,8 @@
     "sizeMedium": "Medium (Car)",
     "sizeLarge": "Large (SUV)",
     "sizeExtraLarge": "Extra Large (Van)",
+    "sizeRegular": "Regular (Car)",
+    "sizeXL": "XL (Van)",
     "pickupAddress": "Pickup",
     "deliveryAddress": "Delivery",
     "assignToMe": "Take This Order",

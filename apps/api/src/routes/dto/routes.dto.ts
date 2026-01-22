@@ -8,7 +8,6 @@ import {
   IsEnum,
   Min,
   Max,
-  IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -60,6 +59,17 @@ export class RoutePreviewDto {
 }
 
 /**
+ * Order item for stop details
+ */
+export class OrderItemPreviewDto {
+  name!: string;
+  nameEn?: string;
+  qty!: number;
+  price!: number;
+  image?: string;
+}
+
+/**
  * Stop preview for route selection
  */
 export class RouteStopPreviewDto {
@@ -72,9 +82,13 @@ export class RouteStopPreviewDto {
   estimatedArrival!: string; // ISO date string
   storeName?: string;
   contactName?: string;
+  contactPhone?: string;
   orderValue?: number;
   courierEarning?: number; // Courier's earning from this delivery (with commission applied)
   breakDurationMinutes?: number;
+  shippingSize?: 'regular' | 'large' | 'xl';
+  deliveryDeadline?: string; // ISO date string
+  orderItems?: OrderItemPreviewDto[];
 }
 
 /**

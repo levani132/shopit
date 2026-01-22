@@ -72,6 +72,8 @@ interface AlgorithmStop {
   storeName?: string;
   orderValue?: number;
   courierEarning?: number; // Courier's earning from this delivery (shipping price * earnings percentage)
+  shippingSize?: 'regular' | 'large' | 'xl';
+  deliveryDeadline?: Date;
   orderItems?: {
     name: string;
     nameEn?: string;
@@ -247,8 +249,15 @@ export class RoutesService {
         storeName: stop.type === 'pickup' ? order?.pickupStoreName : undefined,
         orderValue: order?.totalPrice,
         courierEarning: order
-          ? Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100
+          ? Math.round(order.shippingPrice * courierEarningsPercentage * 100) /
+            100
           : undefined,
+        shippingSize: order
+          ? this.mapShippingSize(
+              order.shippingSize || order.estimatedShippingSize,
+            )
+          : undefined,
+        deliveryDeadline: order?.deliveryDeadline,
         orderItems: order?.orderItems?.map((item) => ({
           name: item.name,
           nameEn: item.nameEn,
@@ -682,7 +691,7 @@ export class RoutesService {
     // Reserve time for break if needed
     const breakTime = includeBreak ? TIME_CONSTANTS.BREAK_DURATION : 0;
     const effectiveTargetDuration = targetDuration - breakTime;
-    
+
     // For shorter routes (1h), be more lenient to include orders
     // Allow up to 105% of target for 1h routes, 100% for longer routes
     const targetThreshold = targetDuration <= 60 ? 1.05 : 1.0;
@@ -690,7 +699,9 @@ export class RoutesService {
 
     // Helper to calculate courier earning for an order
     const calculateCourierEarning = (order: OrderDocument): number => {
-      return Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100;
+      return (
+        Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100
+      );
     };
 
     // Greedy algorithm: always pick the nearest valid stop
@@ -815,7 +826,9 @@ export class RoutesService {
 
       if (nearestOrder) {
         const deliveryStop = this.createDeliveryStop(nearestOrder);
-        deliveryStop.courierEarning = calculateCourierEarning(nearestOrder.order);
+        deliveryStop.courierEarning = calculateCourierEarning(
+          nearestOrder.order,
+        );
         stops.push(deliveryStop);
         currentTime +=
           nearestTime +
@@ -900,8 +913,12 @@ export class RoutesService {
         estimatedArrival: estimatedTime.toISOString(),
         storeName: stop.storeName,
         contactName: stop.contactName,
+        contactPhone: stop.contactPhone,
         orderValue: stop.orderValue,
         courierEarning: stop.courierEarning,
+        shippingSize: stop.shippingSize,
+        deliveryDeadline: stop.deliveryDeadline?.toISOString(),
+        orderItems: stop.orderItems,
         breakDurationMinutes:
           stop.type === StopType.BREAK
             ? TIME_CONSTANTS.BREAK_DURATION
@@ -936,6 +953,10 @@ export class RoutesService {
       contactPhone: order.pickupPhoneNumber,
       storeName: order.pickupStoreName,
       orderValue: order.totalPrice,
+      shippingSize: this.mapShippingSize(
+        order.shippingSize || order.estimatedShippingSize,
+      ),
+      deliveryDeadline: order.deliveryDeadline,
       orderItems: order.orderItems.map((item) => ({
         name: item.name,
         nameEn: item.nameEn,
@@ -961,6 +982,10 @@ export class RoutesService {
       contactName: order.recipientName,
       contactPhone: order.shippingDetails.phoneNumber,
       orderValue: order.totalPrice,
+      shippingSize: this.mapShippingSize(
+        order.shippingSize || order.estimatedShippingSize,
+      ),
+      deliveryDeadline: order.deliveryDeadline,
       orderItems: order.orderItems.map((item) => ({
         name: item.name,
         nameEn: item.nameEn,
@@ -969,6 +994,25 @@ export class RoutesService {
         price: item.price,
       })),
     };
+  }
+
+  /**
+   * Map order shipping size to simplified route shipping size
+   */
+  private mapShippingSize(
+    size?: string,
+  ): 'regular' | 'large' | 'xl' | undefined {
+    switch (size) {
+      case 'small':
+      case 'medium':
+        return 'regular';
+      case 'large':
+        return 'large';
+      case 'extra_large':
+        return 'xl';
+      default:
+        return undefined;
+    }
   }
 
   /**

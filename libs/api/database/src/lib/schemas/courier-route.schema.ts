@@ -97,6 +97,14 @@ export class RouteStop {
   @Prop()
   courierEarning?: number;
 
+  // Shipping size for vehicle requirements
+  @Prop()
+  shippingSize?: 'regular' | 'large' | 'xl';
+
+  // Delivery deadline from the order
+  @Prop()
+  deliveryDeadline?: Date;
+
   @Prop({ type: [Object], default: [] })
   orderItems?: {
     name: string;

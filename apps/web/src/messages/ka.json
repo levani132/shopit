@@ -903,6 +903,8 @@
     "sizeMedium": "საშუალო (მანქანა)",
     "sizeLarge": "დიდი (ჯიპი)",
     "sizeExtraLarge": "ძალიან დიდი (ფურგონი)",
+    "sizeRegular": "ჩვეულებრივი (მანქანა)",
+    "sizeXL": "XL (ფურგონი)",
     "pickupAddress": "აღება",
     "deliveryAddress": "მიტანა",
     "assignToMe": "ავიღებ შეკვეთას",

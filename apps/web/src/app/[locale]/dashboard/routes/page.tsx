@@ -13,11 +13,46 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 // ===================== Types =====================
 
+type ShippingSize = 'regular' | 'large' | 'xl';
+
+// Shipping size styling
+const shippingSizeConfig: Record<
+  ShippingSize,
+  { label: string; icon: string; color: string; bg: string }
+> = {
+  regular: {
+    label: 'sizeRegular',
+    icon: '🚗',
+    color: 'text-green-700 dark:text-green-400',
+    bg: 'bg-green-100 dark:bg-green-900/30',
+  },
+  large: {
+    label: 'sizeLarge',
+    icon: '🚙',
+    color: 'text-orange-700 dark:text-orange-400',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+  },
+  xl: {
+    label: 'sizeXL',
+    icon: '🚐',
+    color: 'text-red-700 dark:text-red-400',
+    bg: 'bg-red-100 dark:bg-red-900/30',
+  },
+};
+
 interface Location {
   lat: number;
   lng: number;
   address: string;
   city: string;
+}
+
+interface OrderItem {
+  name: string;
+  nameEn?: string;
+  image: string;
+  qty: number;
+  price: number;
 }
 
 interface RouteStop {
@@ -30,9 +65,13 @@ interface RouteStop {
   estimatedArrival: string;
   storeName?: string;
   contactName?: string;
+  contactPhone?: string;
   orderValue?: number;
   courierEarning?: number;
   breakDurationMinutes?: number;
+  shippingSize?: ShippingSize;
+  deliveryDeadline?: string;
+  orderItems?: OrderItem[];
 }
 
 interface RoutePreview {
@@ -70,6 +109,8 @@ interface ActiveRoute {
     storeName?: string;
     orderValue?: number;
     courierEarning?: number;
+    shippingSize?: ShippingSize;
+    deliveryDeadline?: string;
     orderItems?: {
       name: string;
       nameEn?: string;
@@ -134,6 +175,20 @@ export default function RoutesPage() {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('list');
   const [refreshCountdown, setRefreshCountdown] = useState(30);
+  const [expandedStops, setExpandedStops] = useState<Set<string>>(new Set());
+
+  // Toggle stop expansion
+  const toggleStopExpansion = (stopId: string) => {
+    setExpandedStops((prev) => {
+      const next = new Set(prev);
+      if (next.has(stopId)) {
+        next.delete(stopId);
+      } else {
+        next.add(stopId);
+      }
+      return next;
+    });
+  };
 
   // Fetch saved addresses
   const fetchAddresses = useCallback(async () => {
@@ -552,11 +607,13 @@ export default function RoutesPage() {
             )}
 
             {/* Courier Earning */}
-            {currentStop.type === 'delivery' && currentStop.courierEarning !== undefined && (
-              <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-4">
-                💰 {t('yourEarning')}: ₾{currentStop.courierEarning.toFixed(2)}
-              </p>
-            )}
+            {currentStop.type === 'delivery' &&
+              currentStop.courierEarning !== undefined && (
+                <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-4">
+                  💰 {t('yourEarning')}: ₾
+                  {currentStop.courierEarning.toFixed(2)}
+                </p>
+              )}
 
             {/* Actions */}
             <div className="flex flex-wrap gap-2">
@@ -784,7 +841,13 @@ export default function RoutesPage() {
           <span>•</span>
           <span>{selectedRoute.estimatedDistanceKm} km</span>
           <span>•</span>
-          <span>⏱️ {Math.floor(selectedRoute.estimatedTime / 60) > 0 ? `${Math.floor(selectedRoute.estimatedTime / 60)}h ` : ''}{selectedRoute.estimatedTime % 60}min</span>
+          <span>
+            ⏱️{' '}
+            {Math.floor(selectedRoute.estimatedTime / 60) > 0
+              ? `${Math.floor(selectedRoute.estimatedTime / 60)}h `
+              : ''}
+            {selectedRoute.estimatedTime % 60}min
+          </span>
         </div>
 
         {error && (
@@ -817,50 +880,258 @@ export default function RoutesPage() {
           </button>
         </div>
 
-        {/* Stops List */}
+        {/* Stops List - Enhanced Card View */}
         {viewMode === 'list' && (
-          <div className="space-y-2 mb-6">
-            {selectedRoute.stops.map((stop, idx) => (
-              <div
-                key={stop.stopId}
-                className="bg-white dark:bg-zinc-800 rounded-lg p-4 border border-gray-200 dark:border-zinc-700"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-medium">
-                    {idx + 1}
+          <div className="space-y-4 mb-6">
+            {selectedRoute.stops.map((stop, idx) => {
+              const isExpanded = expandedStops.has(stop.stopId);
+              const sizeConfig = stop.shippingSize
+                ? shippingSizeConfig[stop.shippingSize]
+                : null;
+              const isPickup = stop.type === 'pickup';
+              const isDelivery = stop.type === 'delivery';
+              const isBreak = stop.type === 'break';
+
+              return (
+                <div
+                  key={stop.stopId}
+                  className={`bg-white dark:bg-zinc-800 rounded-xl border overflow-hidden transition-all ${
+                    isPickup
+                      ? 'border-blue-200 dark:border-blue-800'
+                      : isDelivery
+                        ? 'border-green-200 dark:border-green-800'
+                        : 'border-gray-200 dark:border-zinc-700'
+                  }`}
+                >
+                  {/* Stop Header */}
+                  <div
+                    className={`p-4 ${
+                      isPickup
+                        ? 'bg-blue-50 dark:bg-blue-900/20'
+                        : isDelivery
+                          ? 'bg-green-50 dark:bg-green-900/20'
+                          : 'bg-gray-50 dark:bg-zinc-900/50'
+                    } border-b border-gray-200 dark:border-zinc-700`}
+                  >
+                    <div className="flex flex-wrap justify-between items-center gap-4">
+                      {/* Stop Number & Type */}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg">
+                          {idx + 1}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            <span className="text-xl">
+                              {isPickup ? '📦' : isDelivery ? '🏠' : '☕'}
+                            </span>
+                            {isPickup
+                              ? t('pickup')
+                              : isDelivery
+                                ? t('delivery')
+                                : t('break')}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {stop.storeName || stop.contactName || stop.address}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Shipping Size */}
+                      {sizeConfig && (
+                        <div className="text-center">
+                          <div
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md ${sizeConfig.bg} ${sizeConfig.color}`}
+                          >
+                            <span>{sizeConfig.icon}</span>
+                            <span className="text-xs font-medium">
+                              {t(sizeConfig.label)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* ETA & Earnings */}
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('estimatedTime')}
+                        </p>
+                        <p className="font-semibold text-gray-900 dark:text-white">
+                          {formatTime(stop.estimatedArrival, locale)}
+                        </p>
+                        {isDelivery && stop.courierEarning !== undefined && (
+                          <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                            +₾{stop.courierEarning.toFixed(2)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-xl">
-                    {stop.type === 'pickup'
-                      ? '📦'
-                      : stop.type === 'delivery'
-                        ? '🏠'
-                        : '☕'}
-                  </span>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {stop.type === 'pickup'
-                        ? `${t('pickup')} - ${stop.storeName || stop.address}`
-                        : stop.type === 'delivery'
-                          ? `${t('delivery')} - ${stop.contactName || stop.address}`
-                          : t('break')}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {stop.address}, {stop.city}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {formatTime(stop.estimatedArrival, locale)}
-                    </p>
-                    {stop.type === 'delivery' && stop.courierEarning !== undefined && (
-                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-                        +₾{stop.courierEarning.toFixed(2)}
+
+                  {/* Stop Body */}
+                  <div className="p-4">
+                    {/* Address with Mini Map Preview */}
+                    <div className="mb-4">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                        📍 {stop.address}, {stop.city}
+                      </p>
+                      {/* Mini Map Preview */}
+                      <div className="h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700">
+                        <RouteMap
+                          stops={[
+                            {
+                              id: stop.stopId,
+                              type: stop.type as
+                                | 'pickup'
+                                | 'delivery'
+                                | 'break',
+                              coordinates: stop.coordinates,
+                              address: `${stop.address}, ${stop.city}`,
+                              label: stop.storeName || stop.contactName,
+                            },
+                          ]}
+                          height="128px"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    {!isBreak && (
+                      <div className="flex gap-2 mb-4">
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            `${stop.address} ${stop.city}`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+                            />
+                          </svg>
+                          {t('openInMaps')}
+                        </a>
+                        {stop.contactPhone && (
+                          <a
+                            href={`tel:${stop.contactPhone}`}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              />
+                            </svg>
+                            {isPickup ? t('callShop') : t('callCustomer')}
+                          </a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Order Items Accordion (only for pickup/delivery with items) */}
+                    {!isBreak &&
+                      stop.orderItems &&
+                      stop.orderItems.length > 0 && (
+                        <>
+                          <button
+                            onClick={() => toggleStopExpansion(stop.stopId)}
+                            className="w-full flex items-center justify-between py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                          >
+                            <span className="flex items-center gap-2">
+                              <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                                />
+                              </svg>
+                              {stop.orderItems.length} {t('items')}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              {isExpanded ? t('hideItems') : t('showItems')}
+                              <svg
+                                className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </span>
+                          </button>
+
+                          {isExpanded && (
+                            <div className="mt-2 space-y-2 bg-gray-50 dark:bg-zinc-900/50 rounded-lg p-3">
+                              {stop.orderItems.map((item, itemIdx) => (
+                                <div
+                                  key={itemIdx}
+                                  className="flex items-center gap-3 bg-white dark:bg-zinc-800 rounded-lg p-2"
+                                >
+                                  <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                    <Image
+                                      src={item.image || '/placeholder.png'}
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                      {locale === 'en' && item.nameEn
+                                        ? item.nameEn
+                                        : item.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                                      × {item.qty}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                    ₾{(item.price * item.qty).toFixed(2)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                    {/* Break info */}
+                    {isBreak && stop.breakDurationMinutes && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        ☕ {stop.breakDurationMinutes} {t('minutes')}
                       </p>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -963,7 +1234,11 @@ export default function RoutesPage() {
                   ~{route.durationLabel}
                 </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-                  ⏱️ {Math.floor(route.estimatedTime / 60) > 0 ? `${Math.floor(route.estimatedTime / 60)}h ` : ''}{route.estimatedTime % 60}min
+                  ⏱️{' '}
+                  {Math.floor(route.estimatedTime / 60) > 0
+                    ? `${Math.floor(route.estimatedTime / 60)}h `
+                    : ''}
+                  {route.estimatedTime % 60}min
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   {route.orderCount} {t('orders')}
