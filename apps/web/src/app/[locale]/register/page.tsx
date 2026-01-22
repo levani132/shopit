@@ -11,25 +11,7 @@ import {
   Step2Details,
   Step3Auth,
 } from '../../../components/register';
-
-/**
- * Extract subdomain from hostname
- * Returns null if on main domain
- */
-function getSubdomainFromHostname(): string | null {
-  if (typeof window === 'undefined') return null;
-
-  const hostname = window.location.hostname;
-  const parts = hostname.split('.');
-
-  // If we have more than 2 parts (e.g., storename.shopit.ge)
-  // and it's not www, return the subdomain
-  if (parts.length > 2 && parts[0] !== 'www') {
-    return parts[0];
-  }
-
-  return null;
-}
+import { getStoreSubdomain } from '../../../utils/subdomain';
 
 function RegistrationSteps() {
   const { step, showMobileCta } = useRegistration();
@@ -64,7 +46,7 @@ export default function RegisterPage() {
 
   // Check if on store subdomain and redirect to buyer registration
   useEffect(() => {
-    const subdomain = getSubdomainFromHostname();
+    const subdomain = getStoreSubdomain();
     if (subdomain) {
       // On store subdomain, redirect to buyer registration
       router.replace('/register/buyer');
