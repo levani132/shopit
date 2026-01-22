@@ -73,6 +73,7 @@ export class RouteStopPreviewDto {
   storeName?: string;
   contactName?: string;
   orderValue?: number;
+  courierEarning?: number; // Courier's earning from this delivery (with commission applied)
   breakDurationMinutes?: number;
 }
 

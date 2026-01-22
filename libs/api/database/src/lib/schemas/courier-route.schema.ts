@@ -93,6 +93,10 @@ export class RouteStop {
   @Prop()
   orderValue?: number;
 
+  // Courier's earning for this delivery (shipping price * earnings percentage)
+  @Prop()
+  courierEarning?: number;
+
   @Prop({ type: [Object], default: [] })
   orderItems?: {
     name: string;

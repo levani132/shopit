@@ -71,6 +71,7 @@ interface AlgorithmStop {
   contactPhone?: string;
   storeName?: string;
   orderValue?: number;
+  courierEarning?: number; // Courier's earning from this delivery (shipping price * earnings percentage)
   orderItems?: {
     name: string;
     nameEn?: string;
@@ -186,6 +187,10 @@ export class RoutesService {
     courierId: string,
     dto: ClaimRouteDto,
   ): Promise<CourierRouteDocument> {
+    // Get courier earnings percentage for calculating per-order earnings
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
     // Check if courier already has an active route
     const existingRoute = await this.courierRouteModel.findOne({
       courierId: new Types.ObjectId(courierId),
@@ -241,6 +246,9 @@ export class RoutesService {
             : order?.shippingDetails?.phoneNumber,
         storeName: stop.type === 'pickup' ? order?.pickupStoreName : undefined,
         orderValue: order?.totalPrice,
+        courierEarning: order
+          ? Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100
+          : undefined,
         orderItems: order?.orderItems?.map((item) => ({
           name: item.name,
           nameEn: item.nameEn,
@@ -598,17 +606,33 @@ export class RoutesService {
   ): Promise<OrderWithDistance[]> {
     const ordersWithDistance: OrderWithDistance[] = [];
 
+    // Default Tbilisi center (fallback only)
+    const DEFAULT_LAT = 41.7151;
+    const DEFAULT_LNG = 44.8271;
+
     for (const order of orders) {
+      // Use actual coordinates from order, falling back to defaults if missing
       const pickupLocation = {
-        lat: order.pickupAddress ? 41.7151 : 41.7151, // Default Tbilisi
-        lng: order.pickupAddress ? 44.8271 : 44.8271,
+        lat: order.pickupLocation?.lat ?? DEFAULT_LAT,
+        lng: order.pickupLocation?.lng ?? DEFAULT_LNG,
       };
 
-      // Try to get coordinates from order if available
-      // For now, use fallback distance calculation
-      const deliveryLocation = order.shippingDetails?.city
-        ? { lat: 41.7151, lng: 44.8271 } // Placeholder
-        : { lat: 41.7151, lng: 44.8271 };
+      const deliveryLocation = {
+        lat: order.deliveryLocation?.lat ?? DEFAULT_LAT,
+        lng: order.deliveryLocation?.lng ?? DEFAULT_LNG,
+      };
+
+      // Log warning if using fallback coordinates
+      if (!order.pickupLocation?.lat || !order.pickupLocation?.lng) {
+        this.logger.warn(
+          `Order ${order._id} missing pickup coordinates, using default`,
+        );
+      }
+      if (!order.deliveryLocation?.lat || !order.deliveryLocation?.lng) {
+        this.logger.warn(
+          `Order ${order._id} missing delivery coordinates, using default`,
+        );
+      }
 
       const pickupDistance = this.calculateHaversineDistance(
         startingPoint,
@@ -644,6 +668,10 @@ export class RoutesService {
     maxItems: number,
     includeBreak: boolean,
   ): Promise<RoutePreviewDto | null> {
+    // Get courier earnings percentage for calculating per-order earnings
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
     const stops: AlgorithmStop[] = [];
     const usedOrderIds = new Set<string>();
     let currentLocation = startingPoint;
@@ -659,6 +687,11 @@ export class RoutesService {
     // Allow up to 105% of target for 1h routes, 100% for longer routes
     const targetThreshold = targetDuration <= 60 ? 1.05 : 1.0;
     const maxAllowedTime = effectiveTargetDuration * targetThreshold;
+
+    // Helper to calculate courier earning for an order
+    const calculateCourierEarning = (order: OrderDocument): number => {
+      return Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100;
+    };
 
     // Greedy algorithm: always pick the nearest valid stop
     while (currentTime < effectiveTargetDuration * 0.9) {
@@ -732,6 +765,9 @@ export class RoutesService {
 
       if (currentTime + stopTime > maxAllowedTime) break;
 
+      // Add courier earning to the stop
+      bestStop.courierEarning = calculateCourierEarning(bestOrder.order);
+
       // Add the stop
       stops.push(bestStop);
       currentTime += stopTime;
@@ -778,7 +814,9 @@ export class RoutesService {
       }
 
       if (nearestOrder) {
-        stops.push(this.createDeliveryStop(nearestOrder));
+        const deliveryStop = this.createDeliveryStop(nearestOrder);
+        deliveryStop.courierEarning = calculateCourierEarning(nearestOrder.order);
+        stops.push(deliveryStop);
         currentTime +=
           nearestTime +
           TIME_CONSTANTS.HANDLING_TIME +
@@ -863,6 +901,7 @@ export class RoutesService {
         storeName: stop.storeName,
         contactName: stop.contactName,
         orderValue: stop.orderValue,
+        courierEarning: stop.courierEarning,
         breakDurationMinutes:
           stop.type === StopType.BREAK
             ? TIME_CONSTANTS.BREAK_DURATION

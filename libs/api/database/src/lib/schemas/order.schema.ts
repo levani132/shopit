@@ -172,6 +172,20 @@ export class Order {
   @Prop()
   pickupPhoneNumber?: string;
 
+  // Pickup location coordinates (from store)
+  @Prop({ type: Object })
+  pickupLocation?: {
+    lat: number;
+    lng: number;
+  };
+
+  // Delivery location coordinates (from user's shipping address)
+  @Prop({ type: Object })
+  deliveryLocation?: {
+    lat: number;
+    lng: number;
+  };
+
   // Recipient name (denormalized for courier use)
   @Prop()
   recipientName?: string;

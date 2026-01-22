@@ -31,6 +31,7 @@ interface RouteStop {
   storeName?: string;
   contactName?: string;
   orderValue?: number;
+  courierEarning?: number;
   breakDurationMinutes?: number;
 }
 
@@ -68,6 +69,7 @@ interface ActiveRoute {
     contactPhone?: string;
     storeName?: string;
     orderValue?: number;
+    courierEarning?: number;
     orderItems?: {
       name: string;
       nameEn?: string;
@@ -549,10 +551,10 @@ export default function RoutesPage() {
               </div>
             )}
 
-            {/* Order Value */}
-            {currentStop.orderValue && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {t('orderValue')}: ₾{currentStop.orderValue.toFixed(2)}
+            {/* Courier Earning */}
+            {currentStop.type === 'delivery' && currentStop.courierEarning !== undefined && (
+              <p className="text-sm text-green-600 dark:text-green-400 font-medium mb-4">
+                💰 {t('yourEarning')}: ₾{currentStop.courierEarning.toFixed(2)}
               </p>
             )}
 
@@ -850,9 +852,9 @@ export default function RoutesPage() {
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {formatTime(stop.estimatedArrival, locale)}
                     </p>
-                    {stop.orderValue && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        ₾{stop.orderValue.toFixed(2)}
+                    {stop.type === 'delivery' && stop.courierEarning !== undefined && (
+                      <p className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        +₾{stop.courierEarning.toFixed(2)}
                       </p>
                     )}
                   </div>

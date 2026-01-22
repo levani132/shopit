@@ -402,6 +402,10 @@ export class OrdersService {
           pickupAddress: pickupStore?.address,
           pickupCity: pickupStore?.city,
           pickupPhoneNumber: pickupStore?.phone,
+          // Pickup location coordinates (from store)
+          pickupLocation: pickupStore?.location,
+          // Delivery location coordinates (from shipping address)
+          deliveryLocation: dto.shippingDetails?.location,
           // Recipient name for courier display
           recipientName,
         };
