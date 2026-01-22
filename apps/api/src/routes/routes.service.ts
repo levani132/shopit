@@ -227,6 +227,21 @@ export class RoutesService {
         ? orders.find((o) => o._id.toString() === stop.orderId)
         : null;
 
+      // Get location - for break stops, use the location from DTO; for order stops, use order data
+      let location: RouteLocation;
+      if (stop.type === 'break' && stop.location) {
+        location = {
+          address: stop.location.address || 'Break',
+          city: stop.location.city || 'N/A',
+          coordinates: {
+            lat: stop.location.lat,
+            lng: stop.location.lng,
+          },
+        };
+      } else {
+        location = this.getStopLocation(order, stop.type);
+      }
+
       const routeStop: RouteStop = {
         _id: stop.stopId,
         type:
@@ -236,7 +251,7 @@ export class RoutesService {
               ? StopType.DELIVERY
               : StopType.BREAK,
         status: StopStatus.PENDING,
-        location: this.getStopLocation(order, stop.type),
+        location,
         orderId: order ? order._id : undefined,
         contactName:
           stop.type === 'pickup'
@@ -608,6 +623,7 @@ export class RoutesService {
 
   /**
    * Calculate distances from starting point to each order's pickup and delivery
+   * Only includes orders with valid coordinates (skips orders without proper location data)
    */
   private async calculateOrderDistances(
     orders: OrderDocument[],
@@ -615,33 +631,51 @@ export class RoutesService {
   ): Promise<OrderWithDistance[]> {
     const ordersWithDistance: OrderWithDistance[] = [];
 
-    // Default Tbilisi center (fallback only)
-    const DEFAULT_LAT = 41.7151;
-    const DEFAULT_LNG = 44.8271;
+    // Valid coordinate bounds for Georgia region
+    const VALID_LAT_MIN = 41.0;
+    const VALID_LAT_MAX = 43.5;
+    const VALID_LNG_MIN = 40.0;
+    const VALID_LNG_MAX = 47.0;
+
+    // Helper to validate coordinates
+    const isValidCoordinate = (
+      coord: { lat: number; lng: number } | undefined,
+    ): coord is { lat: number; lng: number } => {
+      if (!coord) return false;
+      if (typeof coord.lat !== 'number' || typeof coord.lng !== 'number')
+        return false;
+      if (isNaN(coord.lat) || isNaN(coord.lng)) return false;
+      // Filter out 0,0 (null island) and coordinates outside Georgia region
+      if (coord.lat === 0 && coord.lng === 0) return false;
+      if (coord.lat < VALID_LAT_MIN || coord.lat > VALID_LAT_MAX) return false;
+      if (coord.lng < VALID_LNG_MIN || coord.lng > VALID_LNG_MAX) return false;
+      return true;
+    };
 
     for (const order of orders) {
-      // Use actual coordinates from order, falling back to defaults if missing
+      // Skip orders without valid coordinates
+      if (!isValidCoordinate(order.pickupLocation)) {
+        this.logger.warn(
+          `Order ${order._id} has invalid/missing pickup coordinates, skipping for route planning`,
+        );
+        continue;
+      }
+      if (!isValidCoordinate(order.deliveryLocation)) {
+        this.logger.warn(
+          `Order ${order._id} has invalid/missing delivery coordinates, skipping for route planning`,
+        );
+        continue;
+      }
+
       const pickupLocation = {
-        lat: order.pickupLocation?.lat ?? DEFAULT_LAT,
-        lng: order.pickupLocation?.lng ?? DEFAULT_LNG,
+        lat: order.pickupLocation.lat,
+        lng: order.pickupLocation.lng,
       };
 
       const deliveryLocation = {
-        lat: order.deliveryLocation?.lat ?? DEFAULT_LAT,
-        lng: order.deliveryLocation?.lng ?? DEFAULT_LNG,
+        lat: order.deliveryLocation.lat,
+        lng: order.deliveryLocation.lng,
       };
-
-      // Log warning if using fallback coordinates
-      if (!order.pickupLocation?.lat || !order.pickupLocation?.lng) {
-        this.logger.warn(
-          `Order ${order._id} missing pickup coordinates, using default`,
-        );
-      }
-      if (!order.deliveryLocation?.lat || !order.deliveryLocation?.lng) {
-        this.logger.warn(
-          `Order ${order._id} missing delivery coordinates, using default`,
-        );
-      }
 
       const pickupDistance = this.calculateHaversineDistance(
         startingPoint,
@@ -659,6 +693,13 @@ export class RoutesService {
         pickupLocation,
         deliveryLocation,
       });
+    }
+
+    if (ordersWithDistance.length === 0 && orders.length > 0) {
+      this.logger.warn(
+        `All ${orders.length} orders were skipped due to missing/invalid coordinates. ` +
+          `Ensure stores have location set and orders include delivery coordinates.`,
+      );
     }
 
     // Sort by pickup distance from starting point
@@ -860,7 +901,7 @@ export class RoutesService {
         type: StopType.BREAK,
         location: stops[midPoint - 1].location,
         address: 'Break',
-        city: '',
+        city: stops[midPoint - 1].city || 'N/A',
       };
       stops.splice(midPoint, 0, breakStop);
       currentTime += TIME_CONSTANTS.BREAK_DURATION;
@@ -1078,25 +1119,32 @@ export class RoutesService {
     type: string,
   ): RouteLocation {
     if (!order) {
+      // Break stop - use placeholder values (actual location set by previous stop context)
       return {
         address: 'Break',
-        city: '',
+        city: 'N/A',
         coordinates: { lat: 0, lng: 0 },
       };
     }
 
     if (type === 'pickup') {
       return {
-        address: order.pickupAddress || '',
-        city: order.pickupCity || '',
-        coordinates: { lat: 41.7151, lng: 44.8271 }, // Placeholder
+        address: order.pickupAddress || 'Unknown Address',
+        city: order.pickupCity || 'Unknown City',
+        coordinates: {
+          lat: order.pickupLocation?.lat ?? 0,
+          lng: order.pickupLocation?.lng ?? 0,
+        },
       };
     }
 
     return {
-      address: order.shippingDetails.address,
-      city: order.shippingDetails.city,
-      coordinates: { lat: 41.7151, lng: 44.8271 }, // Placeholder
+      address: order.shippingDetails?.address || 'Unknown Address',
+      city: order.shippingDetails?.city || 'Unknown City',
+      coordinates: {
+        lat: order.deliveryLocation?.lat ?? 0,
+        lng: order.deliveryLocation?.lng ?? 0,
+      },
     };
   }
 

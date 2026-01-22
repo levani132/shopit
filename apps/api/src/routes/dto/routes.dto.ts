@@ -118,6 +118,22 @@ export class ClaimRouteDto {
   includeBreaks?: boolean;
 }
 
+export class BreakLocationDto {
+  @IsNumber()
+  lat!: number;
+
+  @IsNumber()
+  lng!: number;
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+}
+
 export class ClaimStopDto {
   @IsString()
   stopId!: string;
@@ -128,6 +144,12 @@ export class ClaimStopDto {
 
   @IsEnum(['pickup', 'delivery', 'break'])
   type!: 'pickup' | 'delivery' | 'break';
+
+  // Location for break stops (since they don't have an orderId)
+  @ValidateNested()
+  @Type(() => BreakLocationDto)
+  @IsOptional()
+  location?: BreakLocationDto;
 }
 
 /**

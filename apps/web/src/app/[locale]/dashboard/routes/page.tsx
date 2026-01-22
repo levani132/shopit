@@ -290,6 +290,17 @@ export default function RoutesPage() {
             stopId: s.stopId,
             orderId: s.orderId,
             type: s.type,
+            // Include location for break stops (they don't have an orderId)
+            ...(s.type === 'break' && s.coordinates
+              ? {
+                  location: {
+                    lat: s.coordinates.lat,
+                    lng: s.coordinates.lng,
+                    address: s.address,
+                    city: s.city,
+                  },
+                }
+              : {}),
           })),
           orderIds: selectedRoute.stops
             .filter((s) => s.orderId)

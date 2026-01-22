@@ -6,9 +6,32 @@ import { useState, useEffect, useMemo } from 'react';
 const DEFAULT_CENTER = { lat: 41.7151, lng: 44.8271 };
 const DEFAULT_ZOOM = 13;
 
+// Valid coordinate bounds for Georgia region
+const VALID_LAT_MIN = 41.0;
+const VALID_LAT_MAX = 43.5;
+const VALID_LNG_MIN = 40.0;
+const VALID_LNG_MAX = 47.0;
+
 // CartoDB Voyager tiles - same as AddressPicker
 const TILE_URL =
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+/**
+ * Check if coordinates are valid (within Georgia region and not default 0,0)
+ */
+function isValidCoordinate(
+  coord: { lat: number; lng: number } | undefined | null,
+): boolean {
+  if (!coord) return false;
+  if (typeof coord.lat !== 'number' || typeof coord.lng !== 'number')
+    return false;
+  if (isNaN(coord.lat) || isNaN(coord.lng)) return false;
+  // Filter out 0,0 (null island) and coordinates outside Georgia region
+  if (coord.lat === 0 && coord.lng === 0) return false;
+  if (coord.lat < VALID_LAT_MIN || coord.lat > VALID_LAT_MAX) return false;
+  if (coord.lng < VALID_LNG_MIN || coord.lng > VALID_LNG_MAX) return false;
+  return true;
+}
 
 interface Coordinates {
   lat: number;
@@ -116,13 +139,20 @@ function LeafletMap({
     );
   }, []);
 
+  // Filter stops with valid coordinates
+  const validStops = useMemo(() => {
+    return stops.filter((s) => isValidCoordinate(s.coordinates));
+  }, [stops]);
+
   // Calculate bounds to fit all markers
   const bounds = useMemo(() => {
-    if (!L || stops.length === 0) return null;
+    if (!L || validStops.length === 0) return null;
 
     const allPoints: Coordinates[] = [
-      ...(startingPoint ? [startingPoint] : []),
-      ...stops.map((s) => s.coordinates),
+      ...(startingPoint && isValidCoordinate(startingPoint)
+        ? [startingPoint]
+        : []),
+      ...validStops.map((s) => s.coordinates),
     ];
 
     if (allPoints.length === 0) return null;
@@ -134,7 +164,7 @@ function LeafletMap({
       [Math.min(...lats), Math.min(...lngs)],
       [Math.max(...lats), Math.max(...lngs)],
     );
-  }, [L, stops, startingPoint]);
+  }, [L, validStops, startingPoint]);
 
   // Create custom icons for different stop types
   const createIcon = useMemo(() => {
@@ -255,27 +285,31 @@ function LeafletMap({
     };
   }, [L]);
 
-  // Route line coordinates
+  // Route line coordinates (only valid coordinates)
   const routeLine = useMemo(() => {
     const points: [number, number][] = [];
-    if (startingPoint) {
+    if (startingPoint && isValidCoordinate(startingPoint)) {
       points.push([startingPoint.lat, startingPoint.lng]);
     }
-    stops.forEach((stop) => {
+    validStops.forEach((stop) => {
       points.push([stop.coordinates.lat, stop.coordinates.lng]);
     });
     return points;
-  }, [stops, startingPoint]);
+  }, [validStops, startingPoint]);
 
-  // Map center
+  // Map center (use first valid coordinate or default)
   const center = useMemo(() => {
-    if (startingPoint) return startingPoint;
-    if (stops.length > 0) return stops[0].coordinates;
+    if (startingPoint && isValidCoordinate(startingPoint)) return startingPoint;
+    if (validStops.length > 0) return validStops[0].coordinates;
     return DEFAULT_CENTER;
-  }, [startingPoint, stops]);
+  }, [startingPoint, validStops]);
 
   // Fit bounds component
-  const FitBounds = ({ bounds: b }: { bounds: import('leaflet').LatLngBounds }) => {
+  const FitBounds = ({
+    bounds: b,
+  }: {
+    bounds: import('leaflet').LatLngBounds;
+  }) => {
     const map = useMap?.();
     useEffect(() => {
       if (map && b) {
@@ -285,7 +319,15 @@ function LeafletMap({
     return null;
   };
 
-  if (!isLoaded || !MapContainer || !TileLayer || !Marker || !Popup || !Polyline || !L) {
+  if (
+    !isLoaded ||
+    !MapContainer ||
+    !TileLayer ||
+    !Marker ||
+    !Popup ||
+    !Polyline ||
+    !L
+  ) {
     return (
       <div
         className="bg-gray-100 dark:bg-zinc-800 rounded-xl flex items-center justify-center"
@@ -337,101 +379,106 @@ function LeafletMap({
             url={TILE_URL}
           />
 
-        {/* Fit bounds */}
-        {bounds && useMap && <FitBounds bounds={bounds} />}
+          {/* Fit bounds */}
+          {bounds && useMap && <FitBounds bounds={bounds} />}
 
-        {/* Route line */}
-        {routeLine.length > 1 && (
-          <Polyline
-            positions={routeLine}
-            pathOptions={{
-              color: '#6366f1',
-              weight: 4,
-              opacity: 0.7,
-              dashArray: '10, 10',
-            }}
-          />
-        )}
+          {/* Route line */}
+          {routeLine.length > 1 && (
+            <Polyline
+              positions={routeLine}
+              pathOptions={{
+                color: '#6366f1',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '10, 10',
+              }}
+            />
+          )}
 
-        {/* Starting point marker */}
-        {startingPoint && createIcon && (
-          <Marker
-            position={[startingPoint.lat, startingPoint.lng]}
-            icon={createIcon('start', false)}
-          >
-            <Popup>
-              <div className="text-center">
-                <strong>Starting Point</strong>
-              </div>
-            </Popup>
-          </Marker>
-        )}
-
-        {/* Stop markers */}
-        {stops.map((stop, index) => {
-          const isCurrentStop = index === currentStopIndex;
-          const icon = createNumberedIcon
-            ? createNumberedIcon(index + 1, stop.type, isCurrentStop, stop.status)
-            : undefined;
-
-          return (
+          {/* Starting point marker */}
+          {startingPoint && isValidCoordinate(startingPoint) && createIcon && (
             <Marker
-              key={stop.id}
-              position={[stop.coordinates.lat, stop.coordinates.lng]}
-              icon={icon}
+              position={[startingPoint.lat, startingPoint.lng]}
+              icon={createIcon('start', false)}
             >
               <Popup>
-                <div className="min-w-[150px]">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">
-                      {stop.type === 'pickup'
-                        ? '📦'
-                        : stop.type === 'delivery'
-                          ? '🏠'
-                          : '☕'}
-                    </span>
-                    <strong>
-                      {stop.type === 'pickup'
-                        ? 'Pickup'
-                        : stop.type === 'delivery'
-                          ? 'Delivery'
-                          : 'Break'}
-                    </strong>
-                  </div>
-                  {stop.label && (
-                    <p className="text-sm font-medium">{stop.label}</p>
-                  )}
-                  <p className="text-sm text-gray-600">{stop.address}</p>
-                  {stop.status && (
-                    <p
-                      className={`text-xs mt-1 ${
-                        stop.status === 'completed'
-                          ? 'text-green-600'
-                          : stop.status === 'arrived'
-                            ? 'text-blue-600'
-                            : 'text-gray-500'
-                      }`}
-                    >
-                      {stop.status === 'completed'
-                        ? '✓ Completed'
-                        : stop.status === 'arrived'
-                          ? '📍 Arrived'
-                          : stop.status === 'skipped'
-                            ? '⏭ Skipped'
-                            : '⏳ Pending'}
-                    </p>
-                  )}
-                  {isCurrentStop && (
-                    <p className="text-xs text-indigo-600 font-medium mt-1">
-                      ➤ Current Stop
-                    </p>
-                  )}
+                <div className="text-center">
+                  <strong>Starting Point</strong>
                 </div>
               </Popup>
             </Marker>
-          );
-        })}
-      </MapContainer>
+          )}
+
+          {/* Stop markers (only valid coordinates) */}
+          {validStops.map((stop, index) => {
+            const isCurrentStop = index === currentStopIndex;
+            const icon = createNumberedIcon
+              ? createNumberedIcon(
+                  index + 1,
+                  stop.type,
+                  isCurrentStop,
+                  stop.status,
+                )
+              : undefined;
+
+            return (
+              <Marker
+                key={stop.id}
+                position={[stop.coordinates.lat, stop.coordinates.lng]}
+                icon={icon}
+              >
+                <Popup>
+                  <div className="min-w-[150px]">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">
+                        {stop.type === 'pickup'
+                          ? '📦'
+                          : stop.type === 'delivery'
+                            ? '🏠'
+                            : '☕'}
+                      </span>
+                      <strong>
+                        {stop.type === 'pickup'
+                          ? 'Pickup'
+                          : stop.type === 'delivery'
+                            ? 'Delivery'
+                            : 'Break'}
+                      </strong>
+                    </div>
+                    {stop.label && (
+                      <p className="text-sm font-medium">{stop.label}</p>
+                    )}
+                    <p className="text-sm text-gray-600">{stop.address}</p>
+                    {stop.status && (
+                      <p
+                        className={`text-xs mt-1 ${
+                          stop.status === 'completed'
+                            ? 'text-green-600'
+                            : stop.status === 'arrived'
+                              ? 'text-blue-600'
+                              : 'text-gray-500'
+                        }`}
+                      >
+                        {stop.status === 'completed'
+                          ? '✓ Completed'
+                          : stop.status === 'arrived'
+                            ? '📍 Arrived'
+                            : stop.status === 'skipped'
+                              ? '⏭ Skipped'
+                              : '⏳ Pending'}
+                      </p>
+                    )}
+                    {isCurrentStop && (
+                      <p className="text-xs text-indigo-600 font-medium mt-1">
+                        ➤ Current Stop
+                      </p>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MapContainer>
       </div>
     </>
   );
