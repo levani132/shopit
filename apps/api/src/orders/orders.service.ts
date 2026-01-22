@@ -524,17 +524,63 @@ export class OrdersService {
       this.logger.log(`Order storeIds: ${storeIds.join(', ')}`);
     }
 
+    // Populate storeSubdomain for order items that don't have it (backwards compatibility)
+    await this.populateStoreSubdomains(orders);
+
     return orders;
+  }
+
+  /**
+   * Populate storeSubdomain for order items that don't have it (backwards compatibility)
+   */
+  private async populateStoreSubdomains(
+    orders: OrderDocument[],
+  ): Promise<void> {
+    // Collect unique storeIds that need subdomain lookup
+    const storeIdsToLookup = new Set<string>();
+    for (const order of orders) {
+      for (const item of order.orderItems) {
+        if (!item.storeSubdomain && item.storeId) {
+          storeIdsToLookup.add(item.storeId.toString());
+        }
+      }
+    }
+
+    // Fetch stores if needed
+    if (storeIdsToLookup.size > 0) {
+      const stores = await this.storeModel.find({
+        _id: {
+          $in: Array.from(storeIdsToLookup).map((id) => new Types.ObjectId(id)),
+        },
+      });
+      const storeMap = new Map(
+        stores.map((s) => [s._id.toString(), s.subdomain]),
+      );
+
+      // Populate storeSubdomain on order items
+      for (const order of orders) {
+        for (const item of order.orderItems) {
+          if (!item.storeSubdomain && item.storeId) {
+            item.storeSubdomain = storeMap.get(item.storeId.toString());
+          }
+        }
+      }
+    }
   }
 
   /**
    * Find orders for a store (seller view)
    */
   async findStoreOrders(storeId: string): Promise<OrderDocument[]> {
-    return this.orderModel
+    const orders = await this.orderModel
       .find({ 'orderItems.storeId': new Types.ObjectId(storeId) })
       .populate('courierId', 'firstName lastName phoneNumber')
       .sort({ createdAt: -1 });
+
+    // Populate storeSubdomain for order items that don't have it (backwards compatibility)
+    await this.populateStoreSubdomains(orders);
+
+    return orders;
   }
 
   /**
