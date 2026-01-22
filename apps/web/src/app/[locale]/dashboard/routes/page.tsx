@@ -96,45 +96,11 @@ interface SavedAddress {
 
 // ===================== Helper Functions =====================
 
-const georgianMonths = [
-  'იანვარი',
-  'თებერვალი',
-  'მარტი',
-  'აპრილი',
-  'მაისი',
-  'ივნისი',
-  'ივლისი',
-  'აგვისტო',
-  'სექტემბერი',
-  'ოქტომბერი',
-  'ნოემბერი',
-  'დეკემბერი',
-];
-
 function formatTime(dateString: string, locale: string): string {
   const date = new Date(dateString);
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
   return `${hours}:${minutes}`;
-}
-
-function formatDateTime(dateString: string, locale: string): string {
-  const date = new Date(dateString);
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-
-  if (locale === 'ka') {
-    const day = date.getDate();
-    const month = georgianMonths[date.getMonth()];
-    return `${day} ${month}, ${hours}:${minutes}`;
-  }
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 // ===================== Component =====================
