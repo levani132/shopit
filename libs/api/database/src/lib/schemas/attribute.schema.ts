@@ -1,19 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { BilingualText } from './store.schema';
 
 export type AttributeDocument = HydratedDocument<Attribute>;
 export type AttributeValueDocument = HydratedDocument<AttributeValue>;
-
-/**
- * Bilingual text field - supports Georgian (ka) and English (en)
- */
-export class BilingualText {
-  @Prop({ trim: true })
-  ka?: string; // Georgian
-
-  @Prop({ trim: true })
-  en?: string; // English
-}
 
 /**
  * Attribute Value - individual option for an attribute
@@ -39,12 +29,13 @@ export class AttributeValue {
   order!: number; // Display order
 }
 
-export const AttributeValueSchema = SchemaFactory.createForClass(AttributeValue);
+export const AttributeValueSchema =
+  SchemaFactory.createForClass(AttributeValue);
 
 /**
  * Attribute - a customizable product property
  * e.g., "Size", "Color", "Material", "Gender"
- * 
+ *
  * Types:
  * - text: Standard text values (Size, Material, Gender)
  * - color: Color with hex code for visual display
@@ -85,5 +76,3 @@ export const AttributeSchema = SchemaFactory.createForClass(Attribute);
 AttributeSchema.index({ storeId: 1, slug: 1 }, { unique: true });
 AttributeSchema.index({ storeId: 1, order: 1 });
 AttributeSchema.index({ storeId: 1, isActive: 1 });
-
-

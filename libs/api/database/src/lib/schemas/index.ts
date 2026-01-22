@@ -41,3 +41,6 @@ export * from './content.schema';
 // Notifications
 export * from './notification.schema';
 export * from './notification-settings.schema';
+
+// Courier Routes
+export * from './courier-route.schema';
