@@ -275,29 +275,42 @@ export class PaymentsService {
         `Processing payment for external_order_id: ${external_order_id}, order_id: ${order_id}, status: ${status}`,
       );
 
-      // Verify payment status with BOG API
+      // SECURITY: Always verify payment status with BOG API
+      // Never trust callback data alone - a hacker could forge callbacks
       let paymentStatus;
       try {
-        if (order_id) {
-          this.logger.log(`Fetching payment status for order_id: ${order_id}`);
-          paymentStatus = await this.getPaymentStatus(order_id);
-          this.logger.log(
-            'Payment status from BOG API:',
-            JSON.stringify(paymentStatus, null, 2),
+        if (!order_id) {
+          this.logger.error(
+            'SECURITY: No order_id in callback - cannot verify with BOG API',
           );
+          return {
+            success: false,
+            message: 'Cannot verify payment: missing order_id',
+          };
         }
-      } catch (error: any) {
+
+        this.logger.log(`Fetching payment status for order_id: ${order_id}`);
+        paymentStatus = await this.getPaymentStatus(order_id);
         this.logger.log(
-          'Error fetching payment status from BOG API:',
+          'Payment status from BOG API:',
+          JSON.stringify(paymentStatus, null, 2),
+        );
+      } catch (error: any) {
+        // SECURITY: If we can't verify with BOG API, reject the callback
+        // Never fall back to trusting the callback data
+        this.logger.error(
+          'SECURITY: Failed to verify payment with BOG API - rejecting callback:',
           error.message,
         );
-        paymentStatus = { order_status: { key: status } };
+        return {
+          success: false,
+          message: 'Cannot verify payment status with payment provider',
+        };
       }
 
       // BOG returns order_status.key = "completed"
-      const statusKey =
-        paymentStatus?.order_status?.key?.toLowerCase() ||
-        status?.toLowerCase();
+      // SECURITY: Only use the verified status from BOG API, not callback data
+      const statusKey = paymentStatus?.order_status?.key?.toLowerCase();
 
       const isPaymentSuccessful = statusKey === 'completed';
 
