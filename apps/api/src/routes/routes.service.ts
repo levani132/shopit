@@ -2,6 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
+import { SiteSettingsService } from '../admin/site-settings.service';
 import {
   CourierRoute,
   CourierRouteDocument,
@@ -94,6 +95,7 @@ export class RoutesService {
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private configService: ConfigService,
+    private siteSettingsService: SiteSettingsService,
   ) {
     this.apiKey = this.configService.get<string>('OPENROUTE_API_KEY') || '';
     if (!this.apiKey) {
@@ -652,6 +654,11 @@ export class RoutesService {
     // Reserve time for break if needed
     const breakTime = includeBreak ? TIME_CONSTANTS.BREAK_DURATION : 0;
     const effectiveTargetDuration = targetDuration - breakTime;
+    
+    // For shorter routes (1h), be more lenient to include orders
+    // Allow up to 105% of target for 1h routes, 100% for longer routes
+    const targetThreshold = targetDuration <= 60 ? 1.05 : 1.0;
+    const maxAllowedTime = effectiveTargetDuration * targetThreshold;
 
     // Greedy algorithm: always pick the nearest valid stop
     while (currentTime < effectiveTargetDuration * 0.9) {
@@ -723,7 +730,7 @@ export class RoutesService {
         TIME_CONSTANTS.HANDLING_TIME +
         TIME_CONSTANTS.REST_TIME_PER_STOP;
 
-      if (currentTime + stopTime > effectiveTargetDuration) break;
+      if (currentTime + stopTime > maxAllowedTime) break;
 
       // Add the stop
       stops.push(bestStop);
@@ -1030,12 +1037,23 @@ export class RoutesService {
 
   /**
    * Calculate route earnings
+   * Applies courier earnings percentage (commission deduction)
    */
   private async calculateRouteEarnings(
     orders: OrderDocument[],
   ): Promise<number> {
-    // Sum up shipping prices (courier's earning)
-    return orders.reduce((sum, order) => sum + (order.shippingPrice || 0), 0);
+    // Get courier earnings percentage from settings (default 80%)
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
+    // Sum up shipping prices and apply commission
+    const totalShipping = orders.reduce(
+      (sum, order) => sum + (order.shippingPrice || 0),
+      0,
+    );
+
+    // Courier receives courierEarningsPercentage of shipping (e.g., 80%)
+    return Math.round(totalShipping * courierEarningsPercentage * 100) / 100;
   }
 
   /**

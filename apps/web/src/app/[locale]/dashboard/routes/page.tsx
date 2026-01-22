@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import Image from 'next/image';
+import { RouteMap } from '../../../../components/ui/RouteMap';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -695,13 +696,50 @@ export default function RoutesPage() {
           </div>
         )}
 
-        {/* Map View Placeholder */}
+        {/* Map View */}
         {viewMode === 'map' && (
-          <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl h-80 flex items-center justify-center">
-            <p className="text-gray-500 dark:text-gray-400">
-              {t('mapComingSoon')}
-            </p>
-          </div>
+          <RouteMap
+            stops={[
+              // Current stop
+              ...(currentStop
+                ? [
+                    {
+                      id: currentStop._id,
+                      type: currentStop.type as 'pickup' | 'delivery' | 'break',
+                      coordinates: currentStop.location.coordinates,
+                      address: `${currentStop.location.address}, ${currentStop.location.city}`,
+                      label:
+                        currentStop.type === 'pickup'
+                          ? currentStop.storeName
+                          : currentStop.contactName,
+                      status: currentStop.status as
+                        | 'pending'
+                        | 'arrived'
+                        | 'completed'
+                        | 'skipped',
+                      isCurrentStop: true,
+                    },
+                  ]
+                : []),
+              // Upcoming stops
+              ...upcomingStops.map((stop) => ({
+                id: stop._id,
+                type: stop.type as 'pickup' | 'delivery' | 'break',
+                coordinates: stop.location.coordinates,
+                address: `${stop.location.address}, ${stop.location.city}`,
+                label:
+                  stop.type === 'pickup' ? stop.storeName : stop.contactName,
+                status: stop.status as
+                  | 'pending'
+                  | 'arrived'
+                  | 'completed'
+                  | 'skipped',
+              })),
+            ]}
+            startingPoint={activeRoute.startingPoint.coordinates}
+            currentStopIndex={0}
+            height="320px"
+          />
         )}
 
         {/* Abandon Button */}
@@ -743,6 +781,8 @@ export default function RoutesPage() {
           </span>
           <span>•</span>
           <span>{selectedRoute.estimatedDistanceKm} km</span>
+          <span>•</span>
+          <span>⏱️ {Math.floor(selectedRoute.estimatedTime / 60) > 0 ? `${Math.floor(selectedRoute.estimatedTime / 60)}h ` : ''}{selectedRoute.estimatedTime % 60}min</span>
         </div>
 
         {error && (
@@ -822,12 +862,21 @@ export default function RoutesPage() {
           </div>
         )}
 
-        {/* Map View Placeholder */}
+        {/* Map View */}
         {viewMode === 'map' && (
-          <div className="bg-gray-100 dark:bg-zinc-800 rounded-xl h-80 flex items-center justify-center mb-6">
-            <p className="text-gray-500 dark:text-gray-400">
-              {t('mapComingSoon')}
-            </p>
+          <div className="mb-6">
+            <RouteMap
+              stops={selectedRoute.stops.map((stop) => ({
+                id: stop.stopId,
+                type: stop.type as 'pickup' | 'delivery' | 'break',
+                coordinates: stop.coordinates,
+                address: `${stop.address}, ${stop.city}`,
+                label:
+                  stop.type === 'pickup' ? stop.storeName : stop.contactName,
+              }))}
+              startingPoint={startingPoint || undefined}
+              height="320px"
+            />
           </div>
         )}
 
@@ -910,6 +959,9 @@ export default function RoutesPage() {
               >
                 <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   ~{route.durationLabel}
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                  ⏱️ {Math.floor(route.estimatedTime / 60) > 0 ? `${Math.floor(route.estimatedTime / 60)}h ` : ''}{route.estimatedTime % 60}min
                 </p>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   {route.orderCount} {t('orders')}

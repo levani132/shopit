@@ -10,6 +10,7 @@ import {
 } from '@shopit/api-database';
 import { RoutesController } from './routes.controller';
 import { RoutesService } from './routes.service';
+import { SiteSettingsModule } from '../admin/site-settings.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RoutesService } from './routes.service';
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
     ]),
+    SiteSettingsModule,
   ],
   controllers: [RoutesController],
   providers: [RoutesService],
