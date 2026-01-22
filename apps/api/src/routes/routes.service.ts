@@ -28,7 +28,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 const TIME_CONSTANTS = {
   HANDLING_TIME: 5, // Time to pick up or deliver an order
-  REST_TIME_PER_STOP: 10, // Rest time per stop
+  REST_TIME_PER_STOP: 5, // Extra time between stops
   BREAK_DURATION: 30, // Break duration for long routes
   BUFFER_FACTOR: 0.15, // 15% buffer for unexpected delays
 };
@@ -300,10 +300,15 @@ export class RoutesService {
       });
 
       totalDistance += travelTime.distance;
+      // Add travel time to get arrival time
       currentTime = new Date(
         currentTime.getTime() + travelTime.duration * 1000,
       );
 
+      // Set arrival time BEFORE adding handling time
+      stop.estimatedArrival = currentTime;
+
+      // Add handling time and rest time for next stop calculation
       if (stop.type === StopType.BREAK) {
         currentTime = new Date(
           currentTime.getTime() + TIME_CONSTANTS.BREAK_DURATION * 60 * 1000,
@@ -317,7 +322,6 @@ export class RoutesService {
         );
       }
 
-      stop.estimatedArrival = currentTime;
       currentLocation = {
         lat: stop.location.coordinates.lat,
         lng: stop.location.coordinates.lng,
@@ -916,22 +920,38 @@ export class RoutesService {
     // Convert stops to preview format
     const now = new Date();
     let estimatedTime = now;
+    let prevLocation = { lat: startingPoint.lat, lng: startingPoint.lng };
     const previewStops: RouteStopPreviewDto[] = stops.map((stop) => {
+      // Calculate travel time from previous location to this stop
       const travelMinutes = this.estimateTravelTime(
-        {
-          lat: estimatedTime ? stop.location.lat : startingPoint.lat,
-          lng: estimatedTime ? stop.location.lng : startingPoint.lng,
-        },
+        prevLocation,
         stop.location,
       );
+
+      // Add travel time to get arrival time at this stop
       estimatedTime = new Date(
-        estimatedTime.getTime() +
-          (travelMinutes +
-            TIME_CONSTANTS.HANDLING_TIME +
-            TIME_CONSTANTS.REST_TIME_PER_STOP) *
-            60 *
-            1000,
+        estimatedTime.getTime() + travelMinutes * 60 * 1000,
       );
+
+      // Store arrival time before adding handling time
+      const arrivalTime = new Date(estimatedTime);
+
+      // Add handling time and rest time for next stop calculation
+      if (stop.type === StopType.BREAK) {
+        estimatedTime = new Date(
+          estimatedTime.getTime() + TIME_CONSTANTS.BREAK_DURATION * 60 * 1000,
+        );
+      } else {
+        estimatedTime = new Date(
+          estimatedTime.getTime() +
+            (TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP) *
+              60 *
+              1000,
+        );
+      }
+
+      // Update previous location for next iteration
+      prevLocation = stop.location;
 
       return {
         stopId: stop.id,
@@ -945,7 +965,7 @@ export class RoutesService {
         address: stop.address,
         city: stop.city,
         coordinates: stop.location,
-        estimatedArrival: estimatedTime.toISOString(),
+        estimatedArrival: arrivalTime.toISOString(),
         storeName: stop.storeName,
         contactName: stop.contactName,
         contactPhone: stop.contactPhone,
