@@ -122,6 +122,9 @@ export class OrderItem {
   @Prop({ required: true })
   storeName!: string; // Denormalized
 
+  @Prop()
+  storeSubdomain?: string; // Denormalized for product links
+
   // Delivery info (denormalized from store at time of order)
   @Prop()
   courierType?: string; // 'shopit' or 'seller'

@@ -262,6 +262,7 @@ export class OrdersService {
             variantAttributes: item.variantAttributes || [],
             storeId: new Types.ObjectId(item.storeId),
             storeName: store.name, // Use DB store name
+            storeSubdomain: store.subdomain, // For product links
             courierType: store.courierType,
             // If noPrepRequired is true, prep time is 0 (items ship same day)
             prepTimeMinDays: store.noPrepRequired

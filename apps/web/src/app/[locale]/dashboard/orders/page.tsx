@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useAuth } from '../../../../contexts/AuthContext';
+import { getStoreProductUrl } from '../../../../utils/subdomain';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -16,6 +17,7 @@ interface OrderItem {
   image: string;
   qty: number;
   price: number;
+  storeSubdomain?: string;
   variantAttributes?: Array<{
     attributeName: string;
     value: string;
@@ -647,42 +649,61 @@ export default function DashboardOrdersPage() {
                     Items
                   </p>
                   <div className="space-y-3">
-                    {selectedOrder.orderItems.map((item, idx) => (
-                      <div key={idx} className="flex gap-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
-                          <Image
-                            src={item.image || '/placeholder.webp'}
-                            alt={item.name}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {locale === 'en' && item.nameEn
-                              ? item.nameEn
-                              : item.name}
-                          </p>
-                          {item.variantAttributes &&
-                            item.variantAttributes.length > 0 && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.variantAttributes
-                                  .map((a) => `${a.attributeName}: ${a.value}`)
-                                  .join(', ')}
-                              </p>
-                            )}
-                          <div className="flex justify-between mt-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              x{item.qty}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              ₾{(item.price * item.qty).toFixed(2)}
-                            </span>
+                    {selectedOrder.orderItems.map((item, idx) => {
+                      // Build product URL using proper subdomain
+                      const productUrl = item.storeSubdomain
+                        ? getStoreProductUrl(
+                            item.storeSubdomain,
+                            item.productId,
+                            locale,
+                          )
+                        : `/${locale}/products/${item.productId}`;
+
+                      return (
+                        <a
+                          key={idx}
+                          href={productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex gap-3 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg p-1 -m-1 transition-colors"
+                        >
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
+                            <Image
+                              src={item.image || '/placeholder.webp'}
+                              alt={item.name}
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate hover:text-cyan-600 dark:hover:text-cyan-400">
+                              {locale === 'en' && item.nameEn
+                                ? item.nameEn
+                                : item.name}
+                            </p>
+                            {item.variantAttributes &&
+                              item.variantAttributes.length > 0 && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {item.variantAttributes
+                                    .map(
+                                      (a) => `${a.attributeName}: ${a.value}`,
+                                    )
+                                    .join(', ')}
+                                </p>
+                              )}
+                            <div className="flex justify-between mt-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                x{item.qty}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                ₾{(item.price * item.qty).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
 
