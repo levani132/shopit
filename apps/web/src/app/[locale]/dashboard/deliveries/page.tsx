@@ -49,6 +49,8 @@ interface Order {
   recipientName?: string;
   // Courier earnings (calculated by API based on earnings percentage)
   courierEarning?: number;
+  // Delivery completion
+  deliveredAt?: string;
   // Shipping size
   estimatedShippingSize?: ShippingSize;
   confirmedShippingSize?: ShippingSize;
@@ -503,8 +505,43 @@ export default function DeliveriesPage() {
                       )}
                     </div>
 
-                    {/* Delivery Deadline */}
-                    {order.deliveryDeadline && (
+                    {/* Delivery Deadline / Delivered Date */}
+                    {activeTab === 'completed' && order.deliveredAt ? (
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {t('deliveredOn')}
+                        </p>
+                        {(() => {
+                          const wasLate =
+                            order.deliveryDeadline &&
+                            new Date(order.deliveredAt) >
+                              new Date(order.deliveryDeadline);
+                          return (
+                            <>
+                              <p
+                                className={`font-semibold ${
+                                  wasLate
+                                    ? 'text-orange-600 dark:text-orange-400'
+                                    : 'text-green-600 dark:text-green-400'
+                                }`}
+                              >
+                                {wasLate ? '⚠️ ' : '✓ '}
+                                {formatDateLocalized(
+                                  order.deliveredAt,
+                                  locale,
+                                  true,
+                                )}
+                              </p>
+                              {wasLate && (
+                                <p className="text-xs text-orange-500 dark:text-orange-400">
+                                  {t('deliveredLate')}
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : order.deliveryDeadline ? (
                       <div className="text-center">
                         <p className="text-sm text-gray-500 dark:text-gray-400">
                           {t('deliveryDeadline')}
@@ -536,7 +573,7 @@ export default function DeliveriesPage() {
                           )}
                         </p>
                       </div>
-                    )}
+                    ) : null}
 
                     <div className="text-right">
                       <p className="text-sm text-gray-500 dark:text-gray-400">

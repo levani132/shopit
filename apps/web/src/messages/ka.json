@@ -914,6 +914,8 @@
     "deliveryFee": "შენი შემოსავალი",
     "yourEarning": "შენი შემოსავალი",
     "deliveryDeadline": "ვადა",
+    "deliveredOn": "მიტანილია",
+    "deliveredLate": "დაგვიანებით",
     "estimatedTime": "სავარაუდო დრო",
     "courierBalance": "კურიერის ბალანსი",
     "pendingDeliveries": "მიმდინარე შეკვეთებიდან",

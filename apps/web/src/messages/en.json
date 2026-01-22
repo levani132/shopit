@@ -914,6 +914,8 @@
     "deliveryFee": "Your Earnings",
     "yourEarning": "Your Earning",
     "deliveryDeadline": "Deadline",
+    "deliveredOn": "Delivered",
+    "deliveredLate": "Late delivery",
     "estimatedTime": "Est. Time",
     "courierBalance": "Courier Balance",
     "pendingDeliveries": "From pending deliveries",
