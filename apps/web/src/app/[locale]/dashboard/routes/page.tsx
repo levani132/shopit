@@ -176,6 +176,8 @@ export default function RoutesPage() {
   const [viewMode, setViewMode] = useState<'map' | 'list'>('list');
   const [refreshCountdown, setRefreshCountdown] = useState(30);
   const [expandedStopId, setExpandedStopId] = useState<string | null>(null);
+  const [showRouteMenu, setShowRouteMenu] = useState(false);
+  const [nothingInBagModal, setNothingInBagModal] = useState(false);
 
   // Toggle stop expansion (accordion - only one at a time)
   const toggleStopExpansion = (stopId: string) => {
@@ -379,8 +381,13 @@ export default function RoutesPage() {
       );
 
       if (response.ok) {
-        const updatedRoute = await response.json();
-        setActiveRoute(updatedRoute);
+        const data = await response.json();
+        if (data.nothingInBag) {
+          // Show modal - courier has nothing in bag
+          setNothingInBagModal(true);
+        } else {
+          setActiveRoute(data.route);
+        }
       }
     } catch (err) {
       console.error('Error handling cannot carry:', err);
@@ -506,15 +513,51 @@ export default function RoutesPage() {
               {t('stopsCompleted')}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('estimatedEnd')}
-            </p>
-            <p className="font-semibold text-gray-900 dark:text-white">
-              {activeRoute.estimatedEndTime
-                ? formatTime(activeRoute.estimatedEndTime, locale)
-                : '-'}
-            </p>
+          <div className="flex items-start gap-4">
+            <div className="text-right">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t('estimatedEnd')}
+              </p>
+              <p className="font-semibold text-gray-900 dark:text-white">
+                {activeRoute.estimatedEndTime
+                  ? formatTime(activeRoute.estimatedEndTime, locale)
+                  : '-'}
+              </p>
+            </div>
+            {/* Three-dot menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowRouteMenu(!showRouteMenu)}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </button>
+              {showRouteMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowRouteMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 z-20">
+                    <button
+                      onClick={() => {
+                        setShowRouteMenu(false);
+                        abandonRoute();
+                      }}
+                      className="w-full px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      🚫 {t('abandonRoute')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -658,7 +701,9 @@ export default function RoutesPage() {
                   }
                   className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
                 >
-                  {t('markArrived')}
+                  {currentStop.type === 'pickup'
+                    ? t('arrivedAtPickup')
+                    : t('arrivedAtDelivery')}
                 </button>
               )}
 
@@ -909,13 +954,45 @@ export default function RoutesPage() {
           />
         )}
 
-        {/* Abandon Button */}
-        <button
-          onClick={abandonRoute}
-          className="w-full mt-6 px-4 py-3 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-lg transition-colors hover:bg-red-200 dark:hover:bg-red-900/40"
-        >
-          🚫 {t('abandonRoute')}
-        </button>
+        {/* Nothing in Bag Modal */}
+        {nothingInBagModal && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setNothingInBagModal(false)}
+            />
+            <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+              <div className="bg-white dark:bg-zinc-800 rounded-xl p-6 max-w-sm w-full shadow-2xl">
+                <div className="text-center mb-4">
+                  <span className="text-4xl">🎒</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+                  {t('nothingInBagTitle')}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+                  {t('nothingInBagDescription')}
+                </p>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setNothingInBagModal(false)}
+                    className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors"
+                  >
+                    {t('continueDelivery')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setNothingInBagModal(false);
+                      abandonRoute();
+                    }}
+                    className="w-full px-4 py-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-medium rounded-lg transition-colors hover:bg-red-200 dark:hover:bg-red-900/50"
+                  >
+                    {t('abandonRoute')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }

@@ -13,7 +13,10 @@ import {
   GuestInfo,
 } from '../../../../../../contexts/CheckoutContext';
 import { getLocalizedText } from '../../../../../../lib/utils';
-import { AddressPicker, AddressResult } from '../../../../../../components/ui/AddressPicker';
+import {
+  AddressPicker,
+  AddressResult,
+} from '../../../../../../components/ui/AddressPicker';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
@@ -590,17 +593,17 @@ export default function CheckoutPage() {
           }
         } else if (saveNewAddress) {
           // Create new address
-        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(addressForm),
-        });
+          const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(addressForm),
+          });
 
-        if (response.ok) {
-          const newAddress = await response.json();
-          setSavedAddresses([...savedAddresses, newAddress]);
-          selectAddress(newAddress);
+          if (response.ok) {
+            const newAddress = await response.json();
+            setSavedAddresses([...savedAddresses, newAddress]);
+            selectAddress(newAddress);
           }
         } else {
           // Use address without saving
@@ -640,7 +643,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      setShippingEstimate((prev) => ({ ...prev, isLoading: true, error: undefined }));
+      setShippingEstimate((prev) => ({
+        ...prev,
+        isLoading: true,
+        error: undefined,
+      }));
 
       // Send product IDs so backend fetches current sizes from database
       const products = storeItems.map((item) => ({
@@ -649,15 +656,18 @@ export default function CheckoutPage() {
       }));
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/orders/calculate-shipping`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            storeLocation: storeInfo.location,
-            customerLocation,
-            products, // Send product IDs for DB lookup
-          }),
-        });
+        const response = await fetch(
+          `${API_URL}/api/v1/orders/calculate-shipping`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              storeLocation: storeInfo.location,
+              customerLocation,
+              products, // Send product IDs for DB lookup
+            }),
+          },
+        );
 
         if (response.ok) {
           const data = await response.json();
@@ -700,38 +710,11 @@ export default function CheckoutPage() {
   // Handle address picker change
   const handleAddressPickerChange = (result: AddressResult) => {
     setAddressPickerValue(result);
-    // Extract city from address (simple heuristic - look for common Georgian cities)
-    const addressParts = result.address.split(',').map((p) => p.trim());
-    let city = 'Tbilisi'; // Default
-    const georgianCities = [
-      'Tbilisi',
-      'თბილისი',
-      'Batumi',
-      'ბათუმი',
-      'Kutaisi',
-      'ქუთაისი',
-      'Rustavi',
-      'რუსთავი',
-      'Gori',
-      'გორი',
-      'Zugdidi',
-      'ზუგდიდი',
-      'Poti',
-      'ფოთი',
-      'Telavi',
-      'თელავი',
-    ];
-    for (const part of addressParts) {
-      if (georgianCities.some((c) => part.toLowerCase().includes(c.toLowerCase()))) {
-        city = part;
-        break;
-      }
-    }
 
     setAddressForm((prev) => ({
       ...prev,
       address: result.address,
-      city,
+      city: result.city,
       location: result.location,
     }));
 
@@ -1253,8 +1236,8 @@ export default function CheckoutPage() {
                             />
                           </svg>
                         </button>
-                        </div>
                       </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1280,13 +1263,14 @@ export default function CheckoutPage() {
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {t('fullAddress')} *
-                      </label>
+                    </label>
                     <AddressPicker
                       value={
                         addressPickerValue ||
                         (addressForm.address && addressForm.location
                           ? {
                               address: addressForm.address,
+                              city: addressForm.city,
                               location: addressForm.location,
                             }
                           : undefined)
@@ -1332,8 +1316,12 @@ export default function CheckoutPage() {
                                   {t('estimatedDelivery')}:
                                 </span>{' '}
                                 {/* 1-3 days for Tbilisi, 3-5 days outside */}
-                                {addressForm.city.toLowerCase().includes('tbilisi') ||
-                                addressForm.city.toLowerCase().includes('თბილისი')
+                                {addressForm.city
+                                  .toLowerCase()
+                                  .includes('tbilisi') ||
+                                addressForm.city
+                                  .toLowerCase()
+                                  .includes('თბილისი')
                                   ? t('deliveryDays', { days: '1-3' })
                                   : t('deliveryDays', { days: '3-5' })}
                               </div>
@@ -1344,10 +1332,9 @@ export default function CheckoutPage() {
                           )}
                         </div>
                       )}
-                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {t('phone')} *
@@ -1405,7 +1392,9 @@ export default function CheckoutPage() {
                       type="submit"
                       className="flex-1 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
                     >
-                      {editingAddressId ? t('updateAddress') : t('useThisAddress')}
+                      {editingAddressId
+                        ? t('updateAddress')
+                        : t('useThisAddress')}
                     </button>
                     {(savedAddresses.length > 0 || editingAddressId) && (
                       <button

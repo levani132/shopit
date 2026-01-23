@@ -365,4 +365,18 @@ export class OrdersController {
     const userId = user.id || user._id?.toString();
     return this.ordersService.assignCourier(id, userId);
   }
+
+  /**
+   * Abandon/unassign order from courier (courier abandons the order)
+   */
+  @Patch(':id/unassign-courier')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.COURIER, Role.ADMIN)
+  async unassignOrderFromCourier(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; _id?: { toString(): string } },
+  ) {
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.unassignCourier(id, userId);
+  }
 }

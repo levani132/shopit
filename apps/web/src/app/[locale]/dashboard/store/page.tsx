@@ -1214,6 +1214,7 @@ function StoreSettingsPageContent() {
                       formData.address && formData.location
                         ? {
                             address: formData.address,
+                            city: 'Tbilisi',
                             location: formData.location,
                           }
                         : undefined

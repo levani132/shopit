@@ -42,6 +42,7 @@ interface Location {
 
 interface AddressResult {
   address: string;
+  city: string;
   location: Location;
 }
 
@@ -67,6 +68,11 @@ interface AddressPickerProps {
   disabled?: boolean;
   error?: string;
   className?: string;
+}
+
+// Extract city from Photon properties
+function extractCity(props: PhotonFeature['properties']): string {
+  return props.city || props.state || 'Tbilisi'; // Default to Tbilisi if not found
 }
 
 // Format address from Photon result
@@ -104,6 +110,7 @@ function AddressPickerMap({
   const t = useTranslations('common');
   // Initialize searchQuery from value prop
   const [searchQuery, setSearchQuery] = useState(value?.address || '');
+  const [currentCity, setCurrentCity] = useState(value?.city || 'Tbilisi');
   const [searchResults, setSearchResults] = useState<PhotonFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -250,8 +257,12 @@ function AddressPickerMap({
   // When user finishes editing (blur), save the manually typed address with current location
   const handleInputBlur = () => {
     if (isManuallyEdited && searchQuery.trim() && markerPosition) {
-      // User manually edited the text - save with current map location
-      onChange({ address: searchQuery.trim(), location: markerPosition });
+      // User manually edited the text - save with current map location and last known city
+      onChange({
+        address: searchQuery.trim(),
+        city: currentCity,
+        location: markerPosition,
+      });
     }
     setIsManuallyEdited(false);
   };
@@ -260,14 +271,16 @@ function AddressPickerMap({
   const handleSelectAddress = (feature: PhotonFeature) => {
     const [lng, lat] = feature.geometry.coordinates;
     const address = formatAddress(feature.properties);
+    const city = extractCity(feature.properties);
     const location = { lat, lng };
 
     setSearchQuery(address);
+    setCurrentCity(city);
     setMarkerPosition(location);
     setMapCenter(location);
     setShowResults(false);
     setIsManuallyEdited(false); // Reset - this was a selection, not manual edit
-    onChange({ address, location });
+    onChange({ address, city, location });
   };
 
   // Reverse geocode from coordinates
@@ -287,22 +300,26 @@ function AddressPickerMap({
         const data = await response.json();
         if (data.features && data.features.length > 0) {
           const address = formatAddress(data.features[0].properties);
+          const city = extractCity(data.features[0].properties);
           setSearchQuery(address);
+          setCurrentCity(city);
           setIsManuallyEdited(false); // Reset - this was from map click
-          onChange({ address, location });
+          onChange({ address, city, location });
         } else {
           // If no address found, use coordinates
           const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
           setSearchQuery(address);
+          setCurrentCity('Tbilisi');
           setIsManuallyEdited(false);
-          onChange({ address, location });
+          onChange({ address, city: 'Tbilisi', location });
         }
       } catch (err) {
         console.error('Reverse geocode error:', err);
         const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
         setSearchQuery(address);
+        setCurrentCity('Tbilisi');
         setIsManuallyEdited(false);
-        onChange({ address, location });
+        onChange({ address, city: 'Tbilisi', location });
       }
     },
     [onChange, t],

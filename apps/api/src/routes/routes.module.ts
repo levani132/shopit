@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
   CourierRoute,
@@ -11,6 +11,7 @@ import {
 import { RoutesController } from './routes.controller';
 import { RoutesService } from './routes.service';
 import { AdminModule } from '../admin/admin.module';
+import { OrdersModule } from '../orders/orders.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AdminModule } from '../admin/admin.module';
       { name: User.name, schema: UserSchema },
     ]),
     AdminModule,
+    forwardRef(() => OrdersModule),
   ],
   controllers: [RoutesController],
   providers: [RoutesService],

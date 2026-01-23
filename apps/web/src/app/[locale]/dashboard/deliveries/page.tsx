@@ -191,6 +191,11 @@ export default function DeliveriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [processingOrder, setProcessingOrder] = useState<string | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [orderMenuOpen, setOrderMenuOpen] = useState<string | null>(null);
+  const [abandonModal, setAbandonModal] = useState<{
+    orderId: string;
+    hasPickedUp: boolean;
+  } | null>(null);
 
   // Get the courier's vehicle type
   const courierVehicleType =
@@ -348,6 +353,46 @@ export default function DeliveriesPage() {
     } catch (err) {
       console.error('Error updating order status:', err);
       setError('Failed to update order status');
+    } finally {
+      setProcessingOrder(null);
+    }
+  };
+
+  // Open abandon modal - checks if order has been picked up
+  const openAbandonModal = (order: Order) => {
+    setOrderMenuOpen(null);
+    const hasPickedUp = order.status === 'shipped';
+    setAbandonModal({ orderId: order._id, hasPickedUp });
+  };
+
+  // Confirm abandon with optional return confirmation
+  const confirmAbandonOrder = async (returnedItems = false) => {
+    if (!abandonModal) return;
+
+    // If order was picked up but user didn't confirm return, don't proceed
+    if (abandonModal.hasPickedUp && !returnedItems) {
+      return;
+    }
+
+    setProcessingOrder(abandonModal.orderId);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/orders/${abandonModal.orderId}/unassign-courier`,
+        {
+          method: 'PATCH',
+          credentials: 'include',
+        },
+      );
+      if (response.ok) {
+        await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
+        setAbandonModal(null);
+      } else {
+        const data = await response.json();
+        setError(data.message || t('abandonFailed'));
+      }
+    } catch (err) {
+      console.error('Error abandoning order:', err);
+      setError(t('abandonFailed'));
     } finally {
       setProcessingOrder(null);
     }
@@ -586,6 +631,45 @@ export default function DeliveriesPage() {
                         )}
                       </p>
                     </div>
+
+                    {/* Three-dot menu for my orders */}
+                    {activeTab === 'my' && (
+                      <div className="relative">
+                        <button
+                          onClick={() =>
+                            setOrderMenuOpen(
+                              orderMenuOpen === order._id ? null : order._id,
+                            )
+                          }
+                          className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
+                        >
+                          <svg
+                            className="w-5 h-5 text-gray-500 dark:text-gray-400"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                          </svg>
+                        </button>
+                        {orderMenuOpen === order._id && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-10"
+                              onClick={() => setOrderMenuOpen(null)}
+                            />
+                            <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-zinc-800 rounded-lg shadow-lg border border-gray-200 dark:border-zinc-700 z-20">
+                              <button
+                                onClick={() => openAbandonModal(order)}
+                                disabled={processingOrder === order._id}
+                                className="w-full px-4 py-3 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                              >
+                                🚫 {t('abandonOrder')}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -882,6 +966,78 @@ export default function DeliveriesPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Abandon Order Modal */}
+      {abandonModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => !processingOrder && setAbandonModal(null)}
+          />
+          <div className="relative bg-white dark:bg-zinc-800 rounded-xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {t('abandonOrder')}
+            </h3>
+
+            {abandonModal.hasPickedUp ? (
+              <>
+                <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                  <p className="text-orange-800 dark:text-orange-300 font-medium mb-2">
+                    ⚠️ {t('itemsPickedUpWarning')}
+                  </p>
+                  <p className="text-sm text-orange-700 dark:text-orange-400">
+                    {t('returnItemsInstructions')}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => confirmAbandonOrder(true)}
+                    disabled={!!processingOrder}
+                    className="w-full px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {processingOrder ? (
+                      <span className="animate-spin">⏳</span>
+                    ) : (
+                      <>✓ {t('confirmItemsReturned')}</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setAbandonModal(null)}
+                    disabled={!!processingOrder}
+                    className="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {t('continueDelivery')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {t('confirmAbandonOrder')}
+                </p>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setAbandonModal(null)}
+                    disabled={!!processingOrder}
+                    className="flex-1 px-4 py-3 bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 font-medium rounded-lg transition-colors hover:bg-gray-200 dark:hover:bg-zinc-600 disabled:opacity-50"
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    onClick={() => confirmAbandonOrder()}
+                    disabled={!!processingOrder}
+                    className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {processingOrder ? '...' : t('abandonOrder')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -119,7 +119,7 @@ export default function AddressesPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.address || !formData.city || !formData.phoneNumber) {
+    if (!formData.address || !formData.phoneNumber || !formData.location) {
       return;
     }
 
@@ -387,6 +387,7 @@ export default function AddressesPage() {
                     formData.address && formData.location
                       ? {
                           address: formData.address,
+                          city: formData.city,
                           location: formData.location,
                         }
                       : undefined
@@ -395,41 +396,25 @@ export default function AddressesPage() {
                     setFormData({
                       ...formData,
                       address: result.address,
+                      city: result.city,
                       location: result.location,
                     });
                   }}
                   placeholder={tCheckout('searchAddress')}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {tCheckout('city')} *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    required
-                    placeholder={t('enterCityManually')}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {tCheckout('postalCode')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, postalCode: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {tCheckout('postalCode')}
+                </label>
+                <input
+                  type="text"
+                  value={formData.postalCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, postalCode: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

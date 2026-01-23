@@ -140,6 +140,13 @@ export class OrderItem {
 
   @Prop()
   deliveryMaxDays?: number;
+
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+    required: true,
+  })
+  shippingSize!: 'small' | 'medium' | 'large' | 'extra_large';
 }
 
 export const OrderItemSchema = SchemaFactory.createForClass(OrderItem);

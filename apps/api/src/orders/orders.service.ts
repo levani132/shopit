@@ -25,6 +25,7 @@ import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
 import { SiteSettingsService } from '../admin/site-settings.service';
 import { DeliveryFeeService, ShippingSize } from './delivery-fee.service';
+import { RoutesService } from '../routes/routes.service';
 import {
   VehicleType,
   VEHICLE_CAPACITIES,
@@ -46,6 +47,8 @@ export class OrdersService {
     private balanceService: BalanceService,
     private siteSettingsService: SiteSettingsService,
     private deliveryFeeService: DeliveryFeeService,
+    @Inject(forwardRef(() => RoutesService))
+    private routesService: RoutesService,
   ) {}
 
   /**
@@ -1151,6 +1154,50 @@ export class OrdersService {
 
     order.courierId = new Types.ObjectId(courierId);
     order.courierAssignedAt = new Date();
+    return order.save();
+  }
+
+  /**
+   * Unassign an order from a courier (courier abandons the order)
+   * Only the assigned courier can abandon their order
+   * Also removes the order from any active route
+   */
+  async unassignCourier(
+    orderId: string,
+    courierId: string,
+  ): Promise<OrderDocument> {
+    const order = await this.findById(orderId);
+
+    // Only allow unassigning if the order is assigned to this courier
+    if (!order.courierId || order.courierId.toString() !== courierId) {
+      throw new BadRequestException('You are not assigned to this order.');
+    }
+
+    // Can only abandon orders that haven't been delivered yet
+    if (order.status === OrderStatus.DELIVERED) {
+      throw new BadRequestException('Cannot abandon a delivered order.');
+    }
+
+    // Remove order from any active route
+    try {
+      await this.routesService.removeOrderFromRoute(courierId, orderId);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.warn(
+        `Failed to remove order ${orderId} from route: ${errorMessage}`,
+      );
+      // Continue with unassignment even if route update fails
+    }
+
+    // Reset courier assignment
+    order.courierId = undefined;
+    order.courierAssignedAt = undefined;
+
+    // If the order was shipped (in transit), reset to ready_for_delivery
+    if (order.status === OrderStatus.SHIPPED) {
+      order.status = OrderStatus.READY_FOR_DELIVERY;
+    }
+
     return order.save();
   }
 

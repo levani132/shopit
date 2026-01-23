@@ -1,8 +1,15 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import { SiteSettingsService } from '../admin/site-settings.service';
+import { BalanceService } from '../orders/balance.service';
 import {
   CourierRoute,
   CourierRouteDocument,
@@ -99,6 +106,8 @@ export class RoutesService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private configService: ConfigService,
     private siteSettingsService: SiteSettingsService,
+    @Inject(forwardRef(() => BalanceService))
+    private balanceService: BalanceService,
   ) {
     this.apiKey = this.configService.get<string>('OPENROUTE_API_KEY') || '';
     if (!this.apiKey) {
@@ -246,7 +255,7 @@ export class RoutesService {
     const orders = await this.orderModel.find({
       _id: { $in: orderIds },
       status: OrderStatus.READY_FOR_DELIVERY,
-      courierId: { $exists: false },
+      $or: [{ courierId: { $exists: false } }, { courierId: null }],
     });
 
     if (orders.length !== orderIds.length) {
@@ -400,7 +409,7 @@ export class RoutesService {
 
     await route.save();
 
-    // Assign orders to courier
+    // Assign orders to courier (status stays READY_FOR_DELIVERY)
     await this.orderModel.updateMany(
       { _id: { $in: orderIds } },
       {
@@ -462,13 +471,25 @@ export class RoutesService {
         stop.completedAt = new Date();
         route.completedStops += 1;
 
-        // If this was a delivery, update order status
+        // If this was a delivery, update order status and process earnings
         if (stop.type === StopType.DELIVERY && stop.orderId) {
-          await this.orderModel.findByIdAndUpdate(stop.orderId, {
-            status: OrderStatus.DELIVERED,
-            isDelivered: true,
-            deliveredAt: new Date(),
-          });
+          const order = await this.orderModel.findByIdAndUpdate(
+            stop.orderId,
+            {
+              status: OrderStatus.DELIVERED,
+              isDelivered: true,
+              deliveredAt: new Date(),
+            },
+            { new: true },
+          );
+
+          // Process seller and courier earnings
+          if (order) {
+            await this.balanceService.processOrderEarnings(order);
+
+            // Update route's actual earnings
+            route.actualEarnings += stop.courierEarning || 0;
+          }
         }
 
         // If this was a pickup, update order status to shipped
@@ -503,7 +524,7 @@ export class RoutesService {
       route.status = RouteStatus.COMPLETED;
       route.completedAt = new Date();
       route.actualEndTime = new Date();
-      route.actualEarnings = route.estimatedEarnings; // TODO: Calculate actual
+      // actualEarnings is already updated incrementally when each delivery is completed
     }
 
     await route.save();
@@ -511,13 +532,14 @@ export class RoutesService {
   }
 
   /**
-   * Handle "can't carry more" - reorder remaining stops
-   * Prioritize deliveries over pickups
+   * Handle "can't carry more" - postpone current pickup order
+   * The order is moved after the next delivery so courier can make space first
+   * Returns { postponed: true } if order was moved, or { nothingInBag: true } if nothing to deliver first
    */
   async cannotCarryMore(
     courierId: string,
     routeId: string,
-  ): Promise<CourierRouteDocument> {
+  ): Promise<{ route: CourierRouteDocument; nothingInBag?: boolean }> {
     const route = await this.courierRouteModel.findOne({
       _id: new Types.ObjectId(routeId),
       courierId: new Types.ObjectId(courierId),
@@ -528,37 +550,108 @@ export class RoutesService {
       throw new BadRequestException('Active route not found');
     }
 
-    // Get remaining stops (from current index onwards)
     const currentIndex = route.currentStopIndex;
-    const remainingStops = route.stops.slice(currentIndex);
+    const currentStop = route.stops[currentIndex];
 
-    // Separate deliveries and pickups
-    const deliveries = remainingStops.filter(
-      (s) => s.type === StopType.DELIVERY && s.status === StopStatus.PENDING,
-    );
-    const pickups = remainingStops.filter(
-      (s) => s.type === StopType.PICKUP && s.status === StopStatus.PENDING,
-    );
-    const breaks = remainingStops.filter(
-      (s) => s.type === StopType.BREAK && s.status === StopStatus.PENDING,
+    // Only works on pickup stops
+    if (!currentStop || currentStop.type !== StopType.PICKUP) {
+      throw new BadRequestException(
+        'Can only use "can\'t carry more" on pickup stops',
+      );
+    }
+
+    const currentOrderId = currentStop.orderId?.toString();
+    if (!currentOrderId) {
+      throw new BadRequestException('Current stop has no order');
+    }
+
+    // Get remaining stops (from current index onwards, excluding the current pickup)
+    const remainingStops = route.stops.slice(currentIndex + 1);
+
+    // Find deliveries for orders that are ALREADY picked up (completed pickup stops before current)
+    const completedPickupOrderIds = new Set(
+      route.stops
+        .slice(0, currentIndex)
+        .filter(
+          (s) =>
+            s.type === StopType.PICKUP &&
+            s.status === StopStatus.COMPLETED &&
+            s.orderId,
+        )
+        .map((s) => s.orderId?.toString()),
     );
 
-    // Reorder: deliveries first, then pickups, breaks distributed
-    const reorderedRemaining = [...deliveries, ...pickups];
-    if (breaks.length > 0 && reorderedRemaining.length > 2) {
-      // Insert break in the middle
-      const midPoint = Math.floor(reorderedRemaining.length / 2);
-      reorderedRemaining.splice(midPoint, 0, ...breaks);
+    // Find pending deliveries for already picked up orders
+    const pendingDeliveriesForPickedUpOrders = remainingStops.filter(
+      (s) =>
+        s.type === StopType.DELIVERY &&
+        s.status === StopStatus.PENDING &&
+        s.orderId &&
+        completedPickupOrderIds.has(s.orderId.toString()),
+    );
+
+    // If courier has nothing in the bag (no picked up items waiting to be delivered)
+    if (pendingDeliveriesForPickedUpOrders.length === 0) {
+      return { route, nothingInBag: true };
+    }
+
+    // Find the delivery stop for the current order (the one we're postponing)
+    const currentOrderDeliveryIndex = remainingStops.findIndex(
+      (s) =>
+        s.type === StopType.DELIVERY &&
+        s.orderId?.toString() === currentOrderId,
+    );
+
+    // Remove current pickup and its delivery from remaining stops
+    const currentPickup = currentStop;
+    const currentDelivery =
+      currentOrderDeliveryIndex >= 0
+        ? remainingStops[currentOrderDeliveryIndex]
+        : null;
+
+    // Filter out both pickup (already at currentIndex) and delivery for this order
+    const filteredRemaining = remainingStops.filter(
+      (s) => s.orderId?.toString() !== currentOrderId,
+    );
+
+    // Insert the postponed order AFTER the first delivery
+    // Position: after firstDelivery in the filtered list
+    // We need to recalculate position since we removed elements
+    const newFirstDeliveryIndex = filteredRemaining.findIndex(
+      (s) =>
+        s.type === StopType.DELIVERY &&
+        s.status === StopStatus.PENDING &&
+        s.orderId &&
+        completedPickupOrderIds.has(s.orderId.toString()),
+    );
+
+    // Insert pickup and delivery after the first delivery
+    const insertPosition =
+      newFirstDeliveryIndex >= 0 ? newFirstDeliveryIndex + 1 : 0;
+
+    // Build new remaining stops: insert pickup, then delivery after first delivery
+    const newRemainingStops = [...filteredRemaining];
+    if (currentDelivery) {
+      newRemainingStops.splice(
+        insertPosition,
+        0,
+        currentPickup,
+        currentDelivery,
+      );
+    } else {
+      newRemainingStops.splice(insertPosition, 0, currentPickup);
     }
 
     // Update route stops
-    route.stops = [
-      ...route.stops.slice(0, currentIndex),
-      ...reorderedRemaining,
-    ];
+    route.stops = [...route.stops.slice(0, currentIndex), ...newRemainingStops];
 
     await route.save();
-    return route;
+
+    this.logger.log(
+      `Postponed order ${currentOrderId} in route ${route._id}. Moved after first delivery.`,
+    );
+
+    return { route };
   }
 
   /**
@@ -611,6 +704,118 @@ export class RoutesService {
   }
 
   /**
+   * Remove a specific order from an active route
+   * Called when a courier abandons an individual order from the deliveries page
+   * Returns null if the order wasn't part of any active route
+   */
+  async removeOrderFromRoute(
+    courierId: string,
+    orderId: string,
+  ): Promise<CourierRouteDocument | null> {
+    const orderObjectId = new Types.ObjectId(orderId);
+    const courierObjectId = new Types.ObjectId(courierId);
+
+    // Find active route for this courier that contains this order
+    const route = await this.courierRouteModel.findOne({
+      courierId: courierObjectId,
+      status: RouteStatus.ACTIVE,
+      'stops.orderId': orderObjectId,
+    });
+
+    if (!route) {
+      // Order wasn't part of any active route
+      return null;
+    }
+
+    // Track the current stop's _id before filtering
+    const currentStopId = route.stops[route.currentStopIndex]?._id || null;
+
+    // Count how many stops before the current index will be removed
+    const stopsBeforeCurrentToRemove = route.stops
+      .slice(0, route.currentStopIndex)
+      .filter(
+        (stop) => stop.orderId && stop.orderId.toString() === orderId,
+      ).length;
+
+    // Count how many completed stops will be removed
+    const completedStopsToRemove = route.stops.filter(
+      (stop) =>
+        stop.orderId &&
+        stop.orderId.toString() === orderId &&
+        stop.status === StopStatus.COMPLETED,
+    ).length;
+
+    // Remove all stops related to this order (both pickup and delivery)
+    const originalStopCount = route.stops.length;
+    route.stops = route.stops.filter(
+      (stop) => !stop.orderId || stop.orderId.toString() !== orderId,
+    );
+
+    // Check if route has any remaining delivery stops
+    const remainingDeliveryStops = route.stops.filter(
+      (s) => s.type === StopType.DELIVERY,
+    );
+
+    if (remainingDeliveryStops.length === 0) {
+      // No more deliveries - mark route as completed/abandoned
+      route.status = RouteStatus.COMPLETED;
+      route.completedAt = new Date();
+      route.actualEndTime = new Date();
+      this.logger.log(
+        `Route ${route._id} completed after last order was removed`,
+      );
+    } else {
+      // Update orderIds array - remove the abandoned order
+      route.orderIds = route.orderIds.filter(
+        (oid) => oid.toString() !== orderId,
+      );
+
+      // Recalculate earnings from remaining delivery stops
+      route.estimatedEarnings = route.stops
+        .filter((s) => s.type === StopType.DELIVERY && s.courierEarning)
+        .reduce((sum, s) => sum + (s.courierEarning || 0), 0);
+
+      // Adjust currentStopIndex based on removed stops
+      // First check if the current stop itself was removed
+      const currentStopStillExists = currentStopId
+        ? route.stops.some((s) => s._id === currentStopId)
+        : false;
+
+      if (!currentStopStillExists) {
+        // Current stop was removed - find the next valid position
+        // Subtract the stops removed before the old current position
+        route.currentStopIndex = Math.max(
+          0,
+          route.currentStopIndex - stopsBeforeCurrentToRemove,
+        );
+        // Clamp to valid range
+        if (route.currentStopIndex >= route.stops.length) {
+          route.currentStopIndex = Math.max(0, route.stops.length - 1);
+        }
+      } else {
+        // Current stop still exists - just subtract the removed stops before it
+        route.currentStopIndex = Math.max(
+          0,
+          route.currentStopIndex - stopsBeforeCurrentToRemove,
+        );
+      }
+
+      // Adjust completedStops count
+      route.completedStops = Math.max(
+        0,
+        route.completedStops - completedStopsToRemove,
+      );
+
+      this.logger.log(
+        `Removed ${originalStopCount - route.stops.length} stops for order ${orderId} from route ${route._id}. ${remainingDeliveryStops.length} deliveries remaining. Current stop index: ${route.currentStopIndex}, Completed stops: ${route.completedStops}`,
+      );
+    }
+
+    await route.save();
+    return route;
+  }
+
+  /**
    * Get route history for courier
    */
   async getRouteHistory(
@@ -653,7 +858,7 @@ export class RoutesService {
     return this.orderModel
       .find({
         status: OrderStatus.READY_FOR_DELIVERY,
-        courierId: { $exists: false },
+        $or: [{ courierId: { $exists: false } }, { courierId: null }],
         shippingSize: { $in: compatibleSizes },
         deliveryDeadline: { $gt: new Date() }, // Not overdue
       })
