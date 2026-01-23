@@ -586,8 +586,10 @@
       "pending": "მოლოდინში",
       "processing": "დამუშავებაში",
       "paid": "გადახდილი",
+      "ready_for_delivery": "მზადაა მიტანისთვის",
       "shipped": "გაგზავნილი",
       "in_transit": "გზაში",
+      "out_for_delivery": "მიტანის პროცესში",
       "delivered": "ჩაბარებული",
       "cancelled": "გაუქმებული"
     }

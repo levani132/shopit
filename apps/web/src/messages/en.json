@@ -586,8 +586,10 @@
       "pending": "Pending",
       "processing": "Processing",
       "paid": "Paid",
+      "ready_for_delivery": "Ready for Delivery",
       "shipped": "Shipped",
       "in_transit": "In Transit",
+      "out_for_delivery": "Out for Delivery",
       "delivered": "Delivered",
       "cancelled": "Cancelled"
     }

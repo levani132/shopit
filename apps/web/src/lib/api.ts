@@ -5,16 +5,78 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 export const apiUrl = `${API_URL}/api/v1`;
 
 /**
+ * Track if we're currently refreshing the token to prevent multiple refresh attempts
+ */
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+/**
+ * Attempt to refresh the access token using the refresh token
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  // If already refreshing, wait for that to complete
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${apiUrl}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
+ * Make a fetch request with automatic token refresh on 401
+ */
+async function fetchWithRefresh(
+  url: string,
+  options: RequestInit,
+  retried = false,
+): Promise<Response> {
+  const response = await fetch(url, {
+    ...options,
+    credentials: 'include',
+  });
+
+  // If we get 401 and haven't retried yet, try to refresh the token
+  if (response.status === 401 && !retried) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      // Retry the original request
+      return fetchWithRefresh(url, options, true);
+    }
+  }
+
+  return response;
+}
+
+/**
  * API helper for making authenticated requests from client components
+ * Automatically refreshes access token on 401 and retries the request
  */
 export const api = {
   /**
    * GET request with credentials
    */
   async get(path: string, options?: RequestInit): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+    return fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'GET',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -31,9 +93,8 @@ export const api = {
     body?: unknown,
     options?: RequestInit,
   ): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+    return fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -51,9 +112,8 @@ export const api = {
     body?: unknown,
     options?: RequestInit,
   ): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+    return fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'PUT',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -71,9 +131,8 @@ export const api = {
     body?: unknown,
     options?: RequestInit,
   ): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+    return fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'PATCH',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
@@ -87,9 +146,8 @@ export const api = {
    * DELETE request with credentials
    */
   async delete(path: string, options?: RequestInit): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+    return fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'DELETE',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,

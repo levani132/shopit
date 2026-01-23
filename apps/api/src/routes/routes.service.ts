@@ -986,7 +986,24 @@ export class RoutesService {
       );
     };
 
-    // Greedy algorithm: always pick the nearest valid stop
+    // Helper to check if two locations are the same store (within 50m)
+    const isSameStore = (loc1: Location, loc2: Location): boolean => {
+      const distance = this.calculateHaversineDistance(loc1, loc2);
+      return distance < 0.05; // 50 meters (0.05 km)
+    };
+
+    // Helper to get all orders from the same store
+    const getOrdersFromSameStore = (
+      targetLocation: Location,
+    ): OrderWithDistance[] => {
+      return ordersWithDistance.filter(
+        (o) =>
+          !usedOrderIds.has(o.order._id.toString()) &&
+          isSameStore(o.pickupLocation, targetLocation),
+      );
+    };
+
+    // Greedy algorithm with store grouping: pick up all orders from a store when visiting
     while (currentTime < maxAllowedTime * 0.9) {
       // 90% to leave room for remaining deliveries
       let bestStop: AlgorithmStop | null = null;
@@ -1027,7 +1044,7 @@ export class RoutesService {
           }
         }
 
-        // Check pickups
+        // Check pickups - but consider store grouping potential
         for (const orderWithDist of ordersWithDistance) {
           if (usedOrderIds.has(orderWithDist.order._id.toString())) continue;
 
@@ -1036,51 +1053,61 @@ export class RoutesService {
             orderWithDist.pickupLocation,
           );
 
-          // Calculate time needed for pickup AND subsequent delivery
-          const pickupStopTime =
-            travelTimeToPickup +
-            TIME_CONSTANTS.HANDLING_TIME +
-            TIME_CONSTANTS.REST_TIME_PER_STOP;
-
-          const travelTimeToDelivery = this.estimateTravelTime(
+          // Count how many orders we can pick up from this store
+          const ordersAtStore = getOrdersFromSameStore(
             orderWithDist.pickupLocation,
-            orderWithDist.deliveryLocation,
           );
+          const availableCapacity = maxItems - currentLoad;
+          const ordersToPickup = ordersAtStore.slice(0, availableCapacity);
 
-          const deliveryStopTime =
-            travelTimeToDelivery +
-            TIME_CONSTANTS.HANDLING_TIME +
-            TIME_CONSTANTS.REST_TIME_PER_STOP;
+          // Calculate time needed for all pickups at this store AND their deliveries
+          const totalPickupTime =
+            travelTimeToPickup +
+            ordersToPickup.length *
+              (TIME_CONSTANTS.HANDLING_TIME +
+                TIME_CONSTANTS.REST_TIME_PER_STOP);
+
+          // Estimate delivery times for all orders we'd pick up
+          let estimatedDeliveryTime = 0;
+          let lastLoc = orderWithDist.pickupLocation;
+          for (const orderToPickup of ordersToPickup) {
+            const deliveryTime = this.estimateTravelTime(
+              lastLoc,
+              orderToPickup.deliveryLocation,
+            );
+            estimatedDeliveryTime +=
+              deliveryTime +
+              TIME_CONSTANTS.HANDLING_TIME +
+              TIME_CONSTANTS.REST_TIME_PER_STOP;
+            lastLoc = orderToPickup.deliveryLocation;
+          }
 
           // Calculate time to deliver ALL orders currently in progress
-          // This ensures we don't pick up more than we can deliver within time limit
           let pendingDeliveriesTime = 0;
-          let lastLocation = orderWithDist.deliveryLocation;
           for (const inProgressOrder of ordersInProgress) {
             const deliveryTime = this.estimateTravelTime(
-              lastLocation,
+              lastLoc,
               inProgressOrder.deliveryLocation,
             );
             pendingDeliveriesTime +=
               deliveryTime +
               TIME_CONSTANTS.HANDLING_TIME +
               TIME_CONSTANTS.REST_TIME_PER_STOP;
-            lastLocation = inProgressOrder.deliveryLocation;
+            lastLoc = inProgressOrder.deliveryLocation;
           }
 
-          // Only consider this pickup if we have time for:
-          // 1. This pickup
-          // 2. This delivery
-          // 3. All pending deliveries from orders already in progress
+          // Only consider this store if we have time for everything
           const totalTimeNeeded =
-            pickupStopTime + deliveryStopTime + pendingDeliveriesTime;
+            totalPickupTime + estimatedDeliveryTime + pendingDeliveriesTime;
           if (currentTime + totalTimeNeeded > maxAllowedTime) continue;
 
-          // Slightly favor pickups to fill capacity
-          const adjustedTravelTime = travelTimeToPickup * 1.1;
+          // Favor stores with more orders (amortize travel cost)
+          // Divide travel time by number of orders to get "cost per order"
+          const effectiveTravelTime =
+            travelTimeToPickup / Math.max(1, ordersToPickup.length);
 
-          if (adjustedTravelTime < bestTravelTime) {
-            bestTravelTime = travelTimeToPickup;
+          if (effectiveTravelTime < bestTravelTime) {
+            bestTravelTime = effectiveTravelTime;
             bestOrder = orderWithDist;
             isPickup = true;
             bestStop = this.createPickupStop(orderWithDist);
@@ -1090,31 +1117,59 @@ export class RoutesService {
 
       if (!bestStop || !bestOrder) break;
 
-      // Add time for this stop
-      const stopTime =
-        bestTravelTime +
-        TIME_CONSTANTS.HANDLING_TIME +
-        TIME_CONSTANTS.REST_TIME_PER_STOP;
-
-      if (currentTime + stopTime > maxAllowedTime) break;
-
-      // Add courier earning to the stop
-      bestStop.courierEarning = calculateCourierEarning(bestOrder.order);
-
-      // Add the stop
-      stops.push(bestStop);
-      currentTime += stopTime;
-
       if (isPickup) {
-        usedOrderIds.add(bestOrder.order._id.toString());
-        ordersInProgress.push(bestOrder);
-        currentLoad += 1;
+        // STORE GROUPING: Pick up ALL orders from this store (up to capacity)
+        const ordersAtStore = getOrdersFromSameStore(bestOrder.pickupLocation);
+        const availableCapacity = maxItems - currentLoad;
+        const ordersToPickup = ordersAtStore.slice(0, availableCapacity);
+
+        // Calculate travel time to store (only once for all pickups)
+        const travelTimeToStore = this.estimateTravelTime(
+          currentLocation,
+          bestOrder.pickupLocation,
+        );
+
+        // Add all pickup stops at this store
+        for (let i = 0; i < ordersToPickup.length; i++) {
+          const orderToPickup = ordersToPickup[i];
+          const pickupStop = this.createPickupStop(orderToPickup);
+          pickupStop.courierEarning = calculateCourierEarning(
+            orderToPickup.order,
+          );
+
+          stops.push(pickupStop);
+
+          // Only add travel time for first pickup; others are at same location
+          const stopTime =
+            (i === 0 ? travelTimeToStore : 0) +
+            TIME_CONSTANTS.HANDLING_TIME +
+            TIME_CONSTANTS.REST_TIME_PER_STOP;
+
+          currentTime += stopTime;
+          usedOrderIds.add(orderToPickup.order._id.toString());
+          ordersInProgress.push(orderToPickup);
+          currentLoad += 1;
+        }
+
+        // Update current location to store
         currentLocation = {
           ...bestOrder.pickupLocation,
           address: bestOrder.order.pickupAddress || '',
           city: bestOrder.order.pickupCity || '',
         };
       } else {
+        // Delivery - same as before
+        const stopTime =
+          bestTravelTime +
+          TIME_CONSTANTS.HANDLING_TIME +
+          TIME_CONSTANTS.REST_TIME_PER_STOP;
+
+        if (currentTime + stopTime > maxAllowedTime) break;
+
+        bestStop.courierEarning = calculateCourierEarning(bestOrder.order);
+        stops.push(bestStop);
+        currentTime += stopTime;
+
         const bestOrderId = bestOrder.order._id.toString();
         const idx = ordersInProgress.findIndex(
           (o) => o.order._id.toString() === bestOrderId,
