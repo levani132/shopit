@@ -1444,6 +1444,8 @@
     "noRoutesAvailable": "No Routes Available",
     "noRoutesDescription": "There are no orders available for delivery right now. Check back later.",
     "refreshingIn": "Refreshing in {seconds}s...",
+    "refreshNow": "Refresh Now",
+    "trafficDisclaimer": "Estimated times are calculated for traffic-free roads. Actual delivery times may be longer due to traffic conditions.",
     "routePreviewTitle": "~{duration} Route Preview",
     "pickup": "Pickup",
     "delivery": "Delivery",

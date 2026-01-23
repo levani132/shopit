@@ -1320,44 +1320,66 @@ export default function RoutesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {routes.map((route) => (
-              <button
-                key={route.duration}
-                onClick={() => {
-                  setSelectedRoute(route);
-                  setView('preview');
-                }}
-                className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-gray-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors text-left"
-              >
-                <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                  ~{route.durationLabel}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
-                  ⏱️{' '}
-                  {Math.floor(route.estimatedTime / 60) > 0
-                    ? `${Math.floor(route.estimatedTime / 60)}h `
-                    : ''}
-                  {route.estimatedTime % 60}min
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                  {route.orderCount} {t('orders')}
-                </p>
-                <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                  ₾{route.estimatedEarnings.toFixed(2)}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                  {route.estimatedDistanceKm} km
-                </p>
-              </button>
-            ))}
-          </div>
+          <>
+            {/* Traffic disclaimer */}
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-4 flex items-start gap-2">
+              <span className="text-lg">⚠️</span>
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                {t('trafficDisclaimer')}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {routes.map((route) => (
+                <button
+                  key={route.duration}
+                  onClick={() => {
+                    setSelectedRoute(route);
+                    setView('preview');
+                  }}
+                  className="bg-white dark:bg-zinc-800 rounded-xl p-6 border border-gray-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors text-left"
+                >
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                    ~{route.durationLabel}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+                    ⏱️{' '}
+                    {Math.floor(route.estimatedTime / 60) > 0
+                      ? `${Math.floor(route.estimatedTime / 60)}h `
+                      : ''}
+                    {route.estimatedTime % 60}min
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    {route.orderCount} {t('orders')}
+                  </p>
+                  <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                    ₾{route.estimatedEarnings.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                    {route.estimatedDistanceKm} km
+                  </p>
+                </button>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Refresh countdown */}
-        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-          🔄 {t('refreshingIn', { seconds: refreshCountdown })}
-        </p>
+        <div className="flex items-center justify-center gap-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            🔄 {t('refreshingIn', { seconds: refreshCountdown })}
+          </p>
+          <button
+            onClick={() => {
+              generateRoutes();
+              setRefreshCountdown(30);
+            }}
+            disabled={generating}
+            className="px-3 py-1 text-sm bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
+          >
+            {t('refreshNow')}
+          </button>
+        </div>
       </div>
     );
   }

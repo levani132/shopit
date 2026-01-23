@@ -346,15 +346,19 @@ function LeafletMap({
     height,
     width: '100%',
     borderRadius: '0.75rem',
-    ...(isDarkMode && {
-      filter: 'invert(1) hue-rotate(180deg) brightness(3) contrast(0.95)',
-    }),
   };
 
   // Counter-invert style for markers in dark mode
   const markerCounterInvertStyle = isDarkMode
-    ? 'filter: invert(1) hue-rotate(180deg);'
+    ? 'filter: invert(1) hue-rotate(180deg) brightness(1.6);'
     : '';
+
+  // Container style with dark mode filter
+  const containerStyle = isDarkMode
+    ? {
+        filter: 'invert(1) hue-rotate(180deg) brightness(3) contrast(0.95)',
+      }
+    : undefined;
 
   return (
     <>
@@ -367,7 +371,10 @@ function LeafletMap({
           ${markerCounterInvertStyle}
         }
       `}</style>
-      <div className="border border-gray-200 dark:border-zinc-700 shadow-sm rounded-xl overflow-hidden">
+      <div
+        className="border border-gray-200 dark:border-zinc-700 shadow-sm rounded-xl overflow-hidden"
+        style={containerStyle}
+      >
         <MapContainer
           center={[center.lat, center.lng]}
           zoom={DEFAULT_ZOOM}
