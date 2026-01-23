@@ -788,16 +788,36 @@ export class RoutesService {
         for (const orderWithDist of ordersWithDistance) {
           if (usedOrderIds.has(orderWithDist.order._id.toString())) continue;
 
-          const travelTime = this.estimateTravelTime(
+          const travelTimeToPickup = this.estimateTravelTime(
             currentLocation,
             orderWithDist.pickupLocation,
           );
 
+          // Calculate time needed for pickup AND subsequent delivery
+          const pickupStopTime =
+            travelTimeToPickup +
+            TIME_CONSTANTS.HANDLING_TIME +
+            TIME_CONSTANTS.REST_TIME_PER_STOP;
+
+          const travelTimeToDelivery = this.estimateTravelTime(
+            orderWithDist.pickupLocation,
+            orderWithDist.deliveryLocation,
+          );
+
+          const deliveryStopTime =
+            travelTimeToDelivery +
+            TIME_CONSTANTS.HANDLING_TIME +
+            TIME_CONSTANTS.REST_TIME_PER_STOP;
+
+          // Only consider this pickup if we have time for both pickup AND delivery
+          const totalTimeNeeded = pickupStopTime + deliveryStopTime;
+          if (currentTime + totalTimeNeeded > maxAllowedTime) continue;
+
           // Slightly favor pickups to fill capacity
-          const adjustedTravelTime = travelTime * 1.1;
+          const adjustedTravelTime = travelTimeToPickup * 1.1;
 
           if (adjustedTravelTime < bestTravelTime) {
-            bestTravelTime = travelTime;
+            bestTravelTime = travelTimeToPickup;
             bestOrder = orderWithDist;
             isPickup = true;
             bestStop = this.createPickupStop(orderWithDist);
