@@ -174,6 +174,42 @@ export class RoutesService {
       }
     }
 
+    // Post-process: For routes with all orders and NO breaks,
+    // use the most efficient route's stops/distance
+    // (Routes with breaks are separate and should not be compared)
+    if (!dto.includeBreaks) {
+      let bestRouteForAllOrders: RoutePreviewDto | null = null;
+
+      // Find the most efficient route that includes all orders
+      for (const route of routes) {
+        if (route.orderCount === availableOrders.length) {
+          if (
+            !bestRouteForAllOrders ||
+            route.estimatedTime < bestRouteForAllOrders.estimatedTime
+          ) {
+            bestRouteForAllOrders = route;
+          }
+        }
+      }
+
+      // Replace inefficient routes with the best one's data
+      if (bestRouteForAllOrders) {
+        for (let i = 0; i < routes.length; i++) {
+          const route = routes[i];
+          if (
+            route.orderCount === availableOrders.length &&
+            route.estimatedTime > bestRouteForAllOrders.estimatedTime
+          ) {
+            routes[i] = {
+              ...bestRouteForAllOrders,
+              duration: route.duration,
+              durationLabel: route.durationLabel,
+            };
+          }
+        }
+      }
+    }
+
     return {
       routes,
       generatedAt: new Date(),
@@ -731,10 +767,12 @@ export class RoutesService {
     const breakTime = includeBreak ? TIME_CONSTANTS.BREAK_DURATION : 0;
     const effectiveTargetDuration = targetDuration - breakTime;
 
-    // For shorter routes (1h), be more lenient to include orders
-    // Allow up to 105% of target for 1h routes, 100% for longer routes
-    const targetThreshold = targetDuration <= 60 ? 1.05 : 1.0;
-    const maxAllowedTime = effectiveTargetDuration * targetThreshold;
+    // Account for the 15% buffer that gets applied at the end
+    // If we want finalTime (with buffer) <= targetDuration, then:
+    // currentTime * (1 + BUFFER_FACTOR) <= targetDuration
+    // currentTime <= targetDuration / (1 + BUFFER_FACTOR)
+    const maxAllowedTime =
+      effectiveTargetDuration / (1 + TIME_CONSTANTS.BUFFER_FACTOR);
 
     // Helper to calculate courier earning for an order
     const calculateCourierEarning = (order: OrderDocument): number => {
@@ -744,8 +782,8 @@ export class RoutesService {
     };
 
     // Greedy algorithm: always pick the nearest valid stop
-    while (currentTime < effectiveTargetDuration * 0.9) {
-      // 90% to leave buffer
+    while (currentTime < maxAllowedTime * 0.9) {
+      // 90% to leave room for remaining deliveries
       let bestStop: AlgorithmStop | null = null;
       let bestOrder: OrderWithDistance | null = null;
       let bestTravelTime = Infinity;
@@ -809,8 +847,28 @@ export class RoutesService {
             TIME_CONSTANTS.HANDLING_TIME +
             TIME_CONSTANTS.REST_TIME_PER_STOP;
 
-          // Only consider this pickup if we have time for both pickup AND delivery
-          const totalTimeNeeded = pickupStopTime + deliveryStopTime;
+          // Calculate time to deliver ALL orders currently in progress
+          // This ensures we don't pick up more than we can deliver within time limit
+          let pendingDeliveriesTime = 0;
+          let lastLocation = orderWithDist.deliveryLocation;
+          for (const inProgressOrder of ordersInProgress) {
+            const deliveryTime = this.estimateTravelTime(
+              lastLocation,
+              inProgressOrder.deliveryLocation,
+            );
+            pendingDeliveriesTime +=
+              deliveryTime +
+              TIME_CONSTANTS.HANDLING_TIME +
+              TIME_CONSTANTS.REST_TIME_PER_STOP;
+            lastLocation = inProgressOrder.deliveryLocation;
+          }
+
+          // Only consider this pickup if we have time for:
+          // 1. This pickup
+          // 2. This delivery
+          // 3. All pending deliveries from orders already in progress
+          const totalTimeNeeded =
+            pickupStopTime + deliveryStopTime + pendingDeliveriesTime;
           if (currentTime + totalTimeNeeded > maxAllowedTime) continue;
 
           // Slightly favor pickups to fill capacity

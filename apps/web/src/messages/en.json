@@ -16,7 +16,8 @@
     "confirm": "Confirm",
     "close": "Close",
     "expandMap": "Expand map",
-    "collapseMap": "Collapse map"
+    "collapseMap": "Collapse map",
+    "change": "Change"
   },
   "nav": {
     "home": "Home",

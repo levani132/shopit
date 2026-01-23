@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, MouseEvent } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -230,39 +230,48 @@ export default function RoutesPage() {
   }, []);
 
   // Generate routes
-  const generateRoutes = useCallback(async () => {
-    if (!startingPoint) return;
+  const generateRoutes = useCallback(
+    async (overrideIncludeBreaks?: boolean | MouseEvent<HTMLButtonElement>) => {
+      if (!startingPoint) return;
 
-    setGenerating(true);
-    setError(null);
+      setGenerating(true);
+      setError(null);
 
-    try {
-      const response = await fetch(`${API_URL}/api/v1/routes/generate`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          startingPoint,
-          includeBreaks,
-        }),
-      });
+      // Only use override if it's explicitly a boolean
+      const breaksValue =
+        typeof overrideIncludeBreaks === 'boolean'
+          ? overrideIncludeBreaks
+          : includeBreaks;
 
-      if (response.ok) {
-        const data = await response.json();
-        setRoutes(data.routes);
-        setView('selection');
-        setRefreshCountdown(30);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || t('errorGenerating'));
+      try {
+        const response = await fetch(`${API_URL}/api/v1/routes/generate`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            startingPoint,
+            includeBreaks: breaksValue,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setRoutes(data.routes);
+          setView('selection');
+          setRefreshCountdown(30);
+        } else {
+          const errorData = await response.json();
+          setError(errorData.message || t('errorGenerating'));
+        }
+      } catch (err) {
+        console.error('Error generating routes:', err);
+        setError(t('errorGenerating'));
+      } finally {
+        setGenerating(false);
       }
-    } catch (err) {
-      console.error('Error generating routes:', err);
-      setError(t('errorGenerating'));
-    } finally {
-      setGenerating(false);
-    }
-  }, [startingPoint, includeBreaks, t]);
+    },
+    [startingPoint, includeBreaks, t],
+  );
 
   // Claim route
   const claimRoute = async () => {
@@ -1206,7 +1215,7 @@ export default function RoutesPage() {
             checked={includeBreaks}
             onChange={(e) => {
               setIncludeBreaks(e.target.checked);
-              generateRoutes();
+              generateRoutes(e.target.checked);
             }}
             className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-indigo-600 focus:ring-indigo-500"
           />
