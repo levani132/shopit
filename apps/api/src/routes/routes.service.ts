@@ -266,6 +266,7 @@ export class RoutesService {
     },
     vehicleType: string,
     startingLocation: { lat: number; lng: number },
+    includeBreaks: boolean,
   ): Promise<void> {
     await this.routeCacheModel.updateOne(
       { courierId: new Types.ObjectId(courierId) },
@@ -281,6 +282,7 @@ export class RoutesService {
             availableOrderCount: routesData.availableOrderCount,
             vehicleType,
             startingLocation,
+            includeBreaks,
           },
         },
         $inc: { version: 1 },
@@ -322,6 +324,7 @@ export class RoutesService {
     }
 
     const vehicleType = dto.vehicleType || courier.vehicleType || 'car';
+    const includeBreaks = Boolean(dto.includeBreaks);
 
     // ==================== CACHE CHECK ====================
     let cache = await this.getOrCreateCacheEntry(courierId);
@@ -332,6 +335,7 @@ export class RoutesService {
       !cache.needsRevalidation &&
       cache.cachedData &&
       cache.cachedData.vehicleType === vehicleType &&
+      Boolean(cache.cachedData.includeBreaks) === includeBreaks &&
       this.locationsMatch(cache.cachedData.startingLocation, startingLocation)
     ) {
       this.logger.log(`Returning cached routes for courier ${courierId}`);
@@ -399,6 +403,7 @@ export class RoutesService {
         !updatedCache.needsRevalidation &&
         updatedCache.cachedData &&
         updatedCache.cachedData.vehicleType === vehicleType &&
+        Boolean(updatedCache.cachedData.includeBreaks) === includeBreaks &&
         this.locationsMatch(
           updatedCache.cachedData.startingLocation,
           startingLocation,
@@ -432,6 +437,7 @@ export class RoutesService {
         routesData,
         vehicleType,
         startingLocation,
+        includeBreaks,
       );
 
       return routesData;

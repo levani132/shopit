@@ -141,6 +141,10 @@ export class CachedRouteData {
 
   @Prop({ type: Object, required: true })
   startingLocation!: { lat: number; lng: number };
+
+  // Whether the generated routes include a scheduled break
+  @Prop({ default: false })
+  includeBreaks?: boolean;
 }
 
 export const CachedRouteDataSchema =
