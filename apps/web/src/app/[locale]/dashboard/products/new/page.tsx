@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 import VariantEditor from '../../../../../components/dashboard/VariantEditor';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../lib/api';
 
 interface Category {
   _id: string;
@@ -114,20 +112,13 @@ export default function NewProductPage() {
         setIsLoading(true);
         
         // Fetch categories and shipping sizes in parallel
-        const [categoriesRes, shippingRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/categories/my-store`, { credentials: 'include' }),
-          fetch(`${API_URL}/api/v1/settings/shipping-sizes`),
+        const [categoriesData, shippingData] = await Promise.all([
+          api.get<Category[]>('/api/v1/categories/my-store'),
+          api.get<{ sizes: ShippingSizes }>('/api/v1/settings/shipping-sizes'),
         ]);
-        
-        if (categoriesRes.ok) {
-          const data = await categoriesRes.json();
-          setCategories(data);
-        }
-        
-        if (shippingRes.ok) {
-          const data = await shippingRes.json();
-          setShippingSizes(data.sizes);
-        }
+
+        setCategories(categoriesData);
+        setShippingSizes(shippingData.sizes);
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -246,16 +237,7 @@ export default function NewProductPage() {
         formDataToSend.append('variantImageMapping', JSON.stringify(variantImageMapping));
       }
 
-      const res = await fetch(`${API_URL}/api/v1/products`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formDataToSend,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to create product');
-      }
+      await api.post('/api/v1/products', formDataToSend);
 
       // Success - redirect to products list
       router.push('/dashboard/products');

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 interface FaqItem {
   _id: string;
@@ -29,11 +30,14 @@ export default function FaqPage() {
       setLocale(urlLocale);
     }
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    fetch(`${API_BASE}/api/v1/content/faq`)
-      .then((res) => res.json())
-      .then((data) => setFaqs(data.filter((f: FaqItem) => f.isActive)))
-      .catch(() => setFaqs([]));
+    (async () => {
+      try {
+        const data = await api.get('/content/faq');
+        setFaqs(data.filter((f: FaqItem) => f.isActive));
+      } catch {
+        setFaqs([]);
+      }
+    })();
   }, []);
 
   const categories = [

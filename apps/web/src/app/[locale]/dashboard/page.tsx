@@ -1,25 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { hasRole, Role } from '@shopit/constants';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Role, hasRole } from '@shopit/constants';
 import { api } from '../../../lib/api';
 import SetupRequirements from '../../../components/dashboard/SetupRequirements';
 import {
-  StatCard,
-  SectionCard,
-  QuickActionCard,
-  QuickActionButton,
   AlertBanner,
   BreakdownList,
   EmptyState,
-  OverviewSkeleton,
   Icons,
+  OverviewSkeleton,
+  QuickActionButton,
+  QuickActionCard,
+  SectionCard,
+  StatCard,
 } from '../../../components/dashboard/OverviewComponents';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 // ============================================
 // Types
@@ -104,8 +101,7 @@ function AdminOverview({ stats }: { stats: AdminStats }) {
       </div>
 
       {/* Pending Approvals Alert */}
-      {(stats.pendingApprovals.stores > 0 ||
-        stats.pendingApprovals.couriers > 0) && (
+      {(stats.pendingApprovals.stores > 0 || stats.pendingApprovals.couriers > 0) && (
         <AlertBanner
           type="warning"
           message={t('pendingApprovalsAlert', {
@@ -159,10 +155,7 @@ function AdminOverview({ stats }: { stats: AdminStats }) {
               { label: t('couriers'), value: stats.users.couriers },
               {
                 label: t('regularUsers'),
-                value:
-                  stats.users.total -
-                  stats.users.sellers -
-                  stats.users.couriers,
+                value: stats.users.total - stats.users.sellers - stats.users.couriers,
               },
             ]}
           />
@@ -192,22 +185,14 @@ function AdminOverview({ stats }: { stats: AdminStats }) {
               href="/dashboard/admin/pending-stores"
               label={t('reviewStores')}
               icon={Icons.store}
-              badge={
-                stats.pendingApprovals.stores > 0
-                  ? stats.pendingApprovals.stores
-                  : undefined
-              }
+              badge={stats.pendingApprovals.stores > 0 ? stats.pendingApprovals.stores : undefined}
               color="purple"
             />
             <QuickActionCard
               href="/dashboard/admin/pending-couriers"
               label={t('reviewCouriers')}
               icon={Icons.delivery}
-              badge={
-                stats.pendingApprovals.couriers > 0
-                  ? stats.pendingApprovals.couriers
-                  : undefined
-              }
+              badge={stats.pendingApprovals.couriers > 0 ? stats.pendingApprovals.couriers : undefined}
               color="blue"
             />
             <QuickActionCard
@@ -567,142 +552,91 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const promises: Promise<void>[] = [];
-
-      // Fetch admin stats
       if (isAdmin) {
-        promises.push(
-          api.get('/admin/dashboard').then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              setAdminStats(data);
-            }
-          }),
-        );
+        const data = await api.get('/admin/dashboard');
+        setAdminStats(data);
       }
 
-      // Fetch seller stats
       if (isSeller) {
-        promises.push(
-          api.get('/stores/stats').then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              setSellerStats({
-                totalProducts: data.totalProducts || 0,
-                totalOrders: data.totalOrders || 0,
-                totalRevenue: data.totalRevenue || 0,
-                pendingOrders: data.pendingOrders || 0,
-              });
-            } else {
-              // Fallback to empty stats
-              setSellerStats({
-                totalProducts: 0,
-                totalOrders: 0,
-                totalRevenue: 0,
-                pendingOrders: 0,
-              });
-            }
-          }),
-        );
+        try {
+          const data = await api.get('/stores/stats');
+          setSellerStats({
+            totalProducts: data.totalProducts || 0,
+            totalOrders: data.totalOrders || 0,
+            totalRevenue: data.totalRevenue || 0,
+            pendingOrders: data.pendingOrders || 0,
+          });
+        } catch (err) {
+          console.error('Failed to fetch seller stats:', err);
+          setSellerStats({
+            totalProducts: 0,
+            totalOrders: 0,
+            totalRevenue: 0,
+            pendingOrders: 0,
+          });
+        }
       }
 
-      // Fetch courier stats
       if (isCourier) {
-        promises.push(
-          fetch(`${API_URL}/api/v1/deliveries/courier/stats`, {
-            credentials: 'include',
-          }).then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              setCourierStats({
-                availableDeliveries: data.availableDeliveries || 0,
-                myDeliveries: data.myDeliveries || 0,
-                totalEarnings: data.totalEarnings || 0,
-                completedToday: data.completedToday || 0,
-              });
-            } else {
-              setCourierStats({
-                availableDeliveries: 0,
-                myDeliveries: 0,
-                totalEarnings: 0,
-                completedToday: 0,
-              });
-            }
-          }),
-        );
+        try {
+          const data = await api.get('/deliveries/courier/stats');
+          setCourierStats({
+            availableDeliveries: data.availableDeliveries || 0,
+            myDeliveries: data.myDeliveries || 0,
+            totalEarnings: data.totalEarnings || 0,
+            completedToday: data.completedToday || 0,
+          });
+        } catch (err) {
+          console.error('Failed to fetch courier stats:', err);
+          setCourierStats({
+            availableDeliveries: 0,
+            myDeliveries: 0,
+            totalEarnings: 0,
+            completedToday: 0,
+          });
+        }
       }
 
-      // Fetch buyer stats (everyone is a buyer)
-      promises.push(
-        Promise.all([
-          fetch(`${API_URL}/api/v1/orders/my-orders`, {
-            credentials: 'include',
-          }).catch(() => null),
-          fetch(`${API_URL}/api/v1/wishlist`, { credentials: 'include' }).catch(
-            () => null,
-          ),
-          fetch(`${API_URL}/api/v1/users/addresses`, {
-            credentials: 'include',
-          }).catch(() => null),
-        ])
-          .then(async ([ordersRes, wishlistRes, addressesRes]) => {
-            const orders =
-              ordersRes && ordersRes.ok ? await ordersRes.json() : [];
-            const wishlist =
-              wishlistRes && wishlistRes.ok ? await wishlistRes.json() : [];
-            const addresses =
-              addressesRes && addressesRes.ok ? await addressesRes.json() : [];
+      try {
+        const [ordersRes, wishlistRes, addressesRes] = await Promise.allSettled([
+          api.get('/orders/my-orders'),
+          api.get('/wishlist'),
+          api.get('/users/addresses'),
+        ]);
 
-            const orderList = Array.isArray(orders)
-              ? orders
-              : orders.orders || [];
-            const wishlistItems = Array.isArray(wishlist)
-              ? wishlist
-              : wishlist.items || [];
-            const addressList = Array.isArray(addresses)
-              ? addresses
-              : addresses.addresses || [];
+        const orders = ordersRes.status === 'fulfilled' ? ordersRes.value : [];
+        const wishlist = wishlistRes.status === 'fulfilled' ? wishlistRes.value : [];
+        const addresses =
+          addressesRes.status === 'fulfilled' ? addressesRes.value : [];
 
-            const activeStatuses = [
-              'pending',
-              'processing',
-              'paid',
-              'shipped',
-              'in_transit',
-            ];
-            const activeOrders = orderList.filter((o: RecentOrder) =>
-              activeStatuses.includes(o.status),
-            );
+        const orderList = Array.isArray(orders) ? orders : orders.orders || [];
+        const wishlistItems = Array.isArray(wishlist)
+          ? wishlist
+          : wishlist.items || [];
+        const addressList = Array.isArray(addresses)
+          ? addresses
+          : addresses.addresses || [];
 
-            setBuyerStats({
-              totalOrders: orderList.length,
-              activeOrders: activeOrders.length,
-              wishlistItems: wishlistItems.length,
-              savedAddresses: addressList.length,
-            });
+        const activeStatuses = ['pending', 'processing', 'paid', 'shipped', 'in_transit'];
+        const activeOrders = orderList.filter((o: RecentOrder) => activeStatuses.includes(o.status));
 
-            // Get 3 most recent orders
-            const sortedOrders = orderList
-              .sort(
-                (a: RecentOrder, b: RecentOrder) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime(),
-              )
-              .slice(0, 3);
-            setRecentOrders(sortedOrders);
-          })
-          .catch(() => {
-            // Fallback to empty stats if everything fails
-            setBuyerStats({
-              totalOrders: 0,
-              activeOrders: 0,
-              wishlistItems: 0,
-              savedAddresses: 0,
-            });
-          }),
-      );
+        setBuyerStats({
+          totalOrders: orderList.length,
+          activeOrders: activeOrders.length,
+          wishlistItems: wishlistItems.length,
+          savedAddresses: addressList.length,
+        });
 
-      await Promise.allSettled(promises);
+        const sortedOrders = orderList
+          .sort(
+            (a: RecentOrder, b: RecentOrder) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+          .slice(0, 3);
+        setRecentOrders(sortedOrders);
+      } catch (err) {
+        console.error('Failed to fetch buyer data:', err);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setError(t('failedToLoadDashboard'));

@@ -9,9 +9,7 @@ import {
   detectBankFromIban,
   isValidGeorgianIban,
 } from '../../../../utils/georgian-banks';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface FormErrors {
   firstName?: string;
@@ -85,16 +83,7 @@ export default function ProfilePage() {
 
     setIsDeletingStore(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/stores/my-store`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to delete store' });
-        return;
-      }
+      await api.delete('/api/v1/stores/my-store');
 
       await refreshAuth();
       showSuccess('Store deleted successfully');
@@ -102,7 +91,8 @@ export default function ProfilePage() {
       window.location.href = '/';
     } catch (err) {
       console.error('Error deleting store:', err);
-      setErrors({ general: 'Failed to delete store' });
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to delete store';
+      setErrors({ general: message });
     } finally {
       setIsDeletingStore(false);
     }
@@ -115,23 +105,15 @@ export default function ProfilePage() {
 
     setIsDeletingCourierRole(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/courier/remove`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to remove courier role' });
-        return;
-      }
+      await api.delete('/api/v1/auth/courier/remove');
 
       await refreshAuth();
       showSuccess('Courier account removed successfully');
       window.location.href = '/';
     } catch (err) {
       console.error('Error removing courier role:', err);
-      setErrors({ general: 'Failed to remove courier role' });
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to remove courier role';
+      setErrors({ general: message });
     } finally {
       setIsDeletingCourierRole(false);
     }
@@ -218,28 +200,18 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          phoneNumber: phoneNumber || undefined,
-          identificationNumber: identificationNumber || undefined,
-        }),
+      await api.patch('/api/v1/auth/me', {
+        firstName,
+        lastName,
+        phoneNumber: phoneNumber || undefined,
+        identificationNumber: identificationNumber || undefined,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to update profile' });
-        return;
-      }
 
       await refreshAuth();
       showSuccess('Personal information updated successfully!');
-    } catch {
-      setErrors({ general: 'Failed to update profile' });
+    } catch (err) {
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to update profile';
+      setErrors({ general: message });
     } finally {
       setIsSavingPersonal(false);
     }
@@ -252,26 +224,16 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          accountNumber: accountNumber || undefined,
-          beneficiaryBankCode: beneficiaryBankCode || undefined,
-        }),
+      await api.patch('/api/v1/auth/me', {
+        accountNumber: accountNumber || undefined,
+        beneficiaryBankCode: beneficiaryBankCode || undefined,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to update banking info' });
-        return;
-      }
 
       await refreshAuth();
       showSuccess('Banking information updated successfully!');
-    } catch {
-      setErrors({ general: 'Failed to update banking info' });
+    } catch (err) {
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to update banking info';
+      setErrors({ general: message });
     } finally {
       setIsSavingBank(false);
     }
@@ -287,26 +249,16 @@ export default function ProfilePage() {
         .map((a) => a.trim())
         .filter((a) => a);
 
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          vehicleType: vehicleType || undefined,
-          workingAreas: areasArray.length > 0 ? areasArray : undefined,
-        }),
+      await api.patch('/api/v1/auth/me', {
+        vehicleType: vehicleType || undefined,
+        workingAreas: areasArray.length > 0 ? areasArray : undefined,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to save courier info' });
-        return;
-      }
 
       await refreshAuth();
       showSuccess('Courier information updated successfully!');
-    } catch {
-      setErrors({ general: 'Failed to save courier information' });
+    } catch (err) {
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to save courier information';
+      setErrors({ general: message });
     } finally {
       setIsSavingCourier(false);
     }
@@ -319,28 +271,18 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+      await api.post('/api/v1/auth/change-password', {
+        currentPassword,
+        newPassword,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to change password' });
-        return;
-      }
 
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       showSuccess('Password changed successfully!');
-    } catch {
-      setErrors({ general: 'Failed to change password' });
+    } catch (err) {
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to change password';
+      setErrors({ general: message });
     } finally {
       setIsSavingPassword(false);
     }

@@ -9,9 +9,7 @@ import {
   AddressPicker,
   type AddressResult,
 } from '../../../../components/ui/AddressPicker';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 // Tab definitions
 const TABS = [
@@ -182,13 +180,11 @@ function StoreSettingsPageContent() {
 
     setIsCheckingSubdomain(true);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/stores/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`,
-        { credentials: 'include' },
+      const data = await api.get<{ available: boolean; error?: string }>(
+        `/api/v1/stores/check-subdomain?subdomain=${encodeURIComponent(subdomain)}`,
       );
-      const data = await response.json();
       setSubdomainAvailable(data.available);
-      setSubdomainError(data.available ? null : data.error);
+      setSubdomainError(data.available ? null : data.error || null);
     } catch (err) {
       setSubdomainError('Failed to check availability');
       setSubdomainAvailable(null);
@@ -219,21 +215,10 @@ function StoreSettingsPageContent() {
     try {
       if (isFreeSubdomainChange) {
         // Free change - direct API call
-        const response = await fetch(
-          `${API_URL}/api/v1/stores/change-subdomain-free`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ newSubdomain }),
-          },
+        const data = await api.post<{ newSubdomain: string; message: string }>(
+          '/api/v1/stores/change-subdomain-free',
+          { newSubdomain },
         );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to change subdomain');
-        }
 
         // Update form data with new subdomain
         setFormData((prev) =>
@@ -256,26 +241,15 @@ function StoreSettingsPageContent() {
       } else {
         // Paid change - initiate payment flow
         const currentUrl = window.location.href.split('?')[0];
-        const response = await fetch(
-          `${API_URL}/api/v1/payments/subdomain-change`,
+        const data = await api.post<{ redirectUrl: string }>(
+          '/api/v1/payments/subdomain-change',
           {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              storeId: formData._id,
-              newSubdomain,
-              successUrl: `${currentUrl}?subdomain_changed=true&new_subdomain=${encodeURIComponent(newSubdomain)}`,
-              failUrl: `${currentUrl}?subdomain_change_failed=true`,
-            }),
+            storeId: formData._id,
+            newSubdomain,
+            successUrl: `${currentUrl}?subdomain_changed=true&new_subdomain=${encodeURIComponent(newSubdomain)}`,
+            failUrl: `${currentUrl}?subdomain_change_failed=true`,
           },
         );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to initiate payment');
-        }
 
         // Redirect to BOG payment page
         window.location.href = data.redirectUrl;
@@ -294,28 +268,17 @@ function StoreSettingsPageContent() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/stores/my-store`, {
-          credentials: 'include',
-        });
-
-        if (response.status === 404) {
-          // User doesn't have a store yet
-          setError('no-store');
-          setIsLoading(false);
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch store data');
-        }
-
-        const data = await response.json();
+        const data = await api.get<StoreData>('/api/v1/stores/my-store');
         setFormData(data);
         setLogoPreview(data.logo || null);
         setCoverPreview(data.coverImage || null);
       } catch (err) {
-        setError('Failed to load store data');
-        console.error(err);
+        if ((err as any)?.status === 404) {
+          setError('no-store');
+        } else {
+          setError('Failed to load store data');
+          console.error(err);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -540,18 +503,10 @@ function StoreSettingsPageContent() {
         submitData.append('coverFile', coverFile);
       }
 
-      const response = await fetch(`${API_URL}/api/v1/stores/my-store`, {
-        method: 'PATCH',
-        body: submitData,
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update store');
-      }
-
-      const updatedStore = await response.json();
+      const updatedStore = await api.patch<StoreData>(
+        '/api/v1/stores/my-store',
+        submitData,
+      );
       setFormData(updatedStore);
       setLogoFile(null);
       setCoverFile(null);

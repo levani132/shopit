@@ -4,9 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '../../i18n/routing';
 import Image from 'next/image';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../lib/api';
 
 interface AttributeValue {
   _id: string;
@@ -266,13 +264,8 @@ export default function VariantEditor({
     const fetchAttributes = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${API_URL}/api/v1/attributes/my-store`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setAttributes(data);
-        }
+        const data = await api.get('/attributes/my-store');
+        setAttributes(data);
       } catch (err) {
         console.error('Error fetching attributes:', err);
         setError('Failed to load attributes');

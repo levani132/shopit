@@ -6,9 +6,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useCart } from '../../../../../../../contexts/CartContext';
 import { useAuth } from '../../../../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../../../lib/api';
 
 interface VariantAttribute {
   attributeId: string;
@@ -118,20 +116,14 @@ export default function ProductDetailPage() {
         setError(null);
 
         // Get store ID first
-        const storeRes = await fetch(
-          `${API_URL}/api/v1/stores/subdomain/${subdomain}`,
-        );
-        if (!storeRes.ok) throw new Error('Store not found');
-        const store = await storeRes.json();
+        const store = await api.get(`/stores/subdomain/${subdomain}`);
         const storeId = store._id || store.id;
         setStoreInfo({ id: storeId, name: store.name });
 
         // Fetch product
-        const productRes = await fetch(
-          `${API_URL}/api/v1/products/${productId}?storeId=${storeId}`,
+        const productData = await api.get(
+          `/products/${productId}?storeId=${storeId}`,
         );
-        if (!productRes.ok) throw new Error('Product not found');
-        const productData = await productRes.json();
         setProduct(productData);
 
         // If product has variants, fetch attributes
@@ -143,38 +135,31 @@ export default function ProductDetailPage() {
             (pa: ProductAttribute) => String(pa.attributeId),
           );
 
-          const attrsRes = await fetch(
-            `${API_URL}/api/v1/attributes/store/${storeId}`,
+          const allAttrs = await api.get(`/attributes/store/${storeId}`);
+
+          // Filter to only attributes used by this product (compare as strings)
+          const productAttrs = allAttrs.filter((attr: Attribute) =>
+            attrIds.includes(String(attr._id)),
           );
-          if (attrsRes.ok) {
-            const allAttrs = await attrsRes.json();
+          setAttributes(productAttrs);
 
-            // Filter to only attributes used by this product (compare as strings)
-            const productAttrs = allAttrs.filter((attr: Attribute) =>
-              attrIds.includes(String(attr._id)),
-            );
-            setAttributes(productAttrs);
-
-            // Pre-select first variant's values if available
-            if (productData.variants?.length > 0) {
-              const firstVariant = productData.variants[0];
-              const initialSelection: Record<string, string> = {};
-              firstVariant.attributes.forEach((attr: VariantAttribute) => {
-                initialSelection[attr.attributeId] = attr.valueId;
-              });
-              setSelectedValues(initialSelection);
-            }
+          // Pre-select first variant's values if available
+          if (productData.variants?.length > 0) {
+            const firstVariant = productData.variants[0];
+            const initialSelection: Record<string, string> = {};
+            firstVariant.attributes.forEach((attr: VariantAttribute) => {
+              initialSelection[attr.attributeId] = attr.valueId;
+            });
+            setSelectedValues(initialSelection);
           }
         }
 
         // Track view
-        fetch(`${API_URL}/api/v1/products/${productId}/view`, {
-          method: 'POST',
-        }).catch(() => {
+        api.post(`/products/${productId}/view`).catch(() => {
           /* empty */
         });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load product');
+      } catch (err: any) {
+        setError(err?.message || 'Failed to load product');
       } finally {
         setIsLoading(false);
       }
@@ -191,14 +176,8 @@ export default function ProductDetailPage() {
 
     const checkWishlist = async () => {
       try {
-        const res = await fetch(
-          `${API_URL}/api/v1/wishlist/check/${productId}`,
-          { credentials: 'include' },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setIsInWishlist(data.isInWishlist);
-        }
+        const data = await api.get(`/wishlist/check/${productId}`);
+        setIsInWishlist(data.isInWishlist);
       } catch (err) {
         console.error('Error checking wishlist:', err);
       }
@@ -216,18 +195,8 @@ export default function ProductDetailPage() {
 
     setWishlistLoading(true);
     try {
-      const res = await fetch(
-        `${API_URL}/api/v1/wishlist/${productId}/toggle`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setIsInWishlist(data.added);
-      }
+      const data = await api.post(`/wishlist/${productId}/toggle`);
+      setIsInWishlist(data.added);
     } catch (err) {
       console.error('Error toggling wishlist:', err);
     } finally {

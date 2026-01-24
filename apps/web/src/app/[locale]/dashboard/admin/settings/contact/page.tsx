@@ -9,10 +9,7 @@ import {
   SectionTitle,
   ContactContent,
 } from '../../../../../../components/dashboard/admin/SettingsLayout';
-
-// Build API base URL
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = `${API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1`;
+import { api } from '../../../../../../lib/api';
 
 export default function ContactSettingsPage() {
   const t = useTranslations('admin');
@@ -35,12 +32,8 @@ export default function ContactSettingsPage() {
   useEffect(() => {
     const fetchContact = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/contact`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          setContact(await res.json());
-        }
+        const data = await api.get('/content/contact');
+        setContact(data);
       } catch (error) {
         console.error('Failed to fetch contact:', error);
       } finally {
@@ -57,19 +50,11 @@ export default function ContactSettingsPage() {
     // Save contact content
     setContactSaving(true);
     try {
-      const res = await fetch(`${API_URL}/content/admin/contact`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(contact),
-      });
-      if (res.ok) {
-        setMessage({ type: 'success', text: t('settingsSaved') });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        throw new Error('Failed to save contact');
-      }
-    } catch {
+      await api.put('/content/admin/contact', contact);
+      setMessage({ type: 'success', text: t('settingsSaved') });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Failed to save contact:', err);
       setMessage({ type: 'error', text: t('saveFailed') });
     } finally {
       setContactSaving(false);

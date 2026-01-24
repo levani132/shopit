@@ -4,9 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '../../../../i18n/routing';
 import { useAuth } from '../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface Notification {
   _id: string;
@@ -55,19 +53,10 @@ export default function NotificationsPage() {
         params.append('unreadOnly', 'true');
       }
 
-      const response = await fetch(
-        `${API_URL}/api/v1/notifications?${params}`,
-        {
-          credentials: 'include',
-        },
-      );
-
-      if (response.ok) {
-        const data: NotificationsResponse = await response.json();
-        setNotifications(data.notifications);
-        setTotalPages(data.totalPages);
-        setUnreadCount(data.unreadCount);
-      }
+      const data: NotificationsResponse = await api.get(`/api/v1/notifications?${params}`);
+      setNotifications(data.notifications);
+      setTotalPages(data.totalPages);
+      setUnreadCount(data.unreadCount);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
@@ -83,11 +72,7 @@ export default function NotificationsPage() {
     if (!isAuthenticated) return;
 
     try {
-      await fetch(`${API_URL}/api/v1/notifications/${notificationId}/read`, {
-        method: 'PATCH',
-        credentials: 'include',
-      });
-
+      await api.patch(`/api/v1/notifications/${notificationId}/read`, {});
       setNotifications((prev) =>
         prev.map((n) =>
           n._id === notificationId ? { ...n, isRead: true } : n,
@@ -103,11 +88,7 @@ export default function NotificationsPage() {
     if (!isAuthenticated) return;
 
     try {
-      await fetch(`${API_URL}/api/v1/notifications/read-all`, {
-        method: 'PATCH',
-        credentials: 'include',
-      });
-
+      await api.patch('/api/v1/notifications/read-all', {});
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
@@ -119,10 +100,7 @@ export default function NotificationsPage() {
     if (!isAuthenticated) return;
 
     try {
-      await fetch(`${API_URL}/api/v1/notifications/${notificationId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
+      await api.delete(`/api/v1/notifications/${notificationId}`);
 
       setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
     } catch (error) {

@@ -7,10 +7,7 @@ import {
   SectionTitle,
   AboutContent,
 } from '../../../../../../components/dashboard/admin/SettingsLayout';
-
-// Build API base URL
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = `${API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1`;
+import { api } from '../../../../../../lib/api';
 
 export default function AboutSettingsPage() {
   const t = useTranslations('admin');
@@ -31,12 +28,8 @@ export default function AboutSettingsPage() {
   useEffect(() => {
     const fetchAbout = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/about`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          setAbout(await res.json());
-        }
+        const data = await api.get('/content/about');
+        setAbout(data);
       } catch (error) {
         console.error('Failed to fetch about:', error);
       } finally {
@@ -49,19 +42,11 @@ export default function AboutSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${API_URL}/content/admin/about`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(about),
-      });
-      if (res.ok) {
-        setMessage({ type: 'success', text: t('settingsSaved') });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch {
+      await api.put('/content/admin/about', about);
+      setMessage({ type: 'success', text: t('settingsSaved') });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Failed to save about:', err);
       setMessage({ type: 'error', text: t('saveFailed') });
     } finally {
       setSaving(false);

@@ -4,9 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getStoreUrl, getStoreProductUrl } from '../../../../utils/subdomain';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface WishlistItem {
   _id: string;
@@ -36,19 +34,12 @@ export default function WishlistPage() {
 
   const fetchWishlist = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/wishlist`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setItems(Array.isArray(data) ? data : data.items || []);
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to load wishlist');
-      }
+      const data = await api.get('/api/v1/wishlist');
+      setItems(Array.isArray(data) ? data : data.items || []);
     } catch (err) {
       console.error('Error fetching wishlist:', err);
-      setError('Failed to load wishlist');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to load wishlist';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -66,20 +57,12 @@ export default function WishlistPage() {
   const handleRemove = async (productId: string) => {
     setRemovingId(productId);
     try {
-      const response = await fetch(`${API_URL}/api/v1/wishlist/${productId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        setItems((prev) => prev.filter((item) => item.productId !== productId));
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to remove item');
-      }
+      await api.delete(`/api/v1/wishlist/${productId}`);
+      setItems((prev) => prev.filter((item) => item.productId !== productId));
     } catch (err) {
       console.error('Error removing item:', err);
-      setError('Failed to remove item');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to remove item';
+      setError(errorMessage);
     } finally {
       setRemovingId(null);
     }

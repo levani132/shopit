@@ -7,10 +7,7 @@ import {
   SectionTitle,
   LegalContent,
 } from '../../../../../../components/dashboard/admin/SettingsLayout';
-
-// Build API base URL
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = `${API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1`;
+import { api } from '../../../../../../lib/api';
 
 export default function PrivacySettingsPage() {
   const t = useTranslations('admin');
@@ -29,12 +26,8 @@ export default function PrivacySettingsPage() {
   useEffect(() => {
     const fetchPrivacy = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/privacy`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          setPrivacy(await res.json());
-        }
+        const data = await api.get('/content/privacy');
+        setPrivacy(data);
       } catch (error) {
         console.error('Failed to fetch privacy:', error);
       } finally {
@@ -47,19 +40,11 @@ export default function PrivacySettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${API_URL}/content/admin/privacy`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(privacy),
-      });
-      if (res.ok) {
-        setMessage({ type: 'success', text: t('settingsSaved') });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        throw new Error('Failed to save');
-      }
-    } catch {
+      await api.put('/content/admin/privacy', privacy);
+      setMessage({ type: 'success', text: t('settingsSaved') });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      console.error('Failed to save privacy:', err);
       setMessage({ type: 'error', text: t('saveFailed') });
     } finally {
       setSaving(false);

@@ -6,9 +6,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { getStoreProductUrl } from '../../../../utils/subdomain';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface OrderItem {
   productId: string;
@@ -197,14 +195,8 @@ export default function DashboardOrdersPage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/orders/store-orders`, {
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data);
-        }
+        const data = await api.get<Order[]>('/api/v1/orders/store-orders');
+        setOrders(data);
       } catch (err) {
         console.error('Error fetching orders:', err);
       } finally {
@@ -218,43 +210,35 @@ export default function DashboardOrdersPage() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdating(orderId);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/${orderId}/status`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
+      await api.patch(`/api/v1/orders/${orderId}/status`, {
+        status: newStatus,
+      });
 
-      if (response.ok) {
-        setOrders(
-          orders.map((order) =>
-            order._id === orderId
-              ? {
-                  ...order,
-                  status: newStatus,
-                  isDelivered: newStatus === 'delivered',
-                  deliveredAt:
-                    newStatus === 'delivered'
-                      ? new Date().toISOString()
-                      : order.deliveredAt,
-                }
-              : order,
-          ),
-        );
-        if (selectedOrder?._id === orderId) {
-          setSelectedOrder({
-            ...selectedOrder,
-            status: newStatus,
-            isDelivered: newStatus === 'delivered',
-            deliveredAt:
-              newStatus === 'delivered'
-                ? new Date().toISOString()
-                : selectedOrder.deliveredAt,
-          });
-        }
+      setOrders(
+        orders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                status: newStatus,
+                isDelivered: newStatus === 'delivered',
+                deliveredAt:
+                  newStatus === 'delivered'
+                    ? new Date().toISOString()
+                    : order.deliveredAt,
+              }
+            : order,
+        ),
+      );
+      if (selectedOrder?._id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          status: newStatus,
+          isDelivered: newStatus === 'delivered',
+          deliveredAt:
+            newStatus === 'delivered'
+              ? new Date().toISOString()
+              : selectedOrder.deliveredAt,
+        });
       }
     } catch (err) {
       console.error('Error updating order status:', err);
@@ -266,37 +250,29 @@ export default function DashboardOrdersPage() {
   const updateShippingSize = async (orderId: string, newSize: ShippingSize) => {
     setUpdatingSize(true);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/${orderId}/shipping-size`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ shippingSize: newSize }),
-        },
-      );
+      await api.patch(`/api/v1/orders/${orderId}/shipping-size`, {
+        shippingSize: newSize,
+      });
 
-      if (response.ok) {
-        setOrders(
-          orders.map((order) =>
-            order._id === orderId
-              ? {
-                  ...order,
-                  confirmedShippingSize: newSize,
-                  shippingSize: newSize,
-                }
-              : order,
-          ),
-        );
-        if (selectedOrder?._id === orderId) {
-          setSelectedOrder({
-            ...selectedOrder,
-            confirmedShippingSize: newSize,
-            shippingSize: newSize,
-          });
-        }
-        setShowSizeEditor(false);
+      setOrders(
+        orders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                confirmedShippingSize: newSize,
+                shippingSize: newSize,
+              }
+            : order,
+        ),
+      );
+      if (selectedOrder?._id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          confirmedShippingSize: newSize,
+          shippingSize: newSize,
+        });
       }
+      setShowSizeEditor(false);
     } catch (err) {
       console.error('Error updating shipping size:', err);
     } finally {

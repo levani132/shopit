@@ -5,9 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import { RouteMap } from '../../../../../components/ui/RouteMap';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../lib/api';
 
 // ===================== Types =====================
 
@@ -133,23 +131,18 @@ export default function RouteComparisonPage() {
   // Fetch saved addresses
   const fetchAddresses = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSavedAddresses(data);
+      const data = await api.get('/auth/addresses');
+      setSavedAddresses(data);
 
-        const defaultAddr = data.find((a: SavedAddress) => a.isDefault);
-        if (defaultAddr && defaultAddr.location) {
-          setSelectedAddressId(defaultAddr._id);
-          setStartingPoint({
-            lat: defaultAddr.location.lat,
-            lng: defaultAddr.location.lng,
-            address: defaultAddr.address,
-            city: defaultAddr.city,
-          });
-        }
+      const defaultAddr = data.find((a: SavedAddress) => a.isDefault);
+      if (defaultAddr && defaultAddr.location) {
+        setSelectedAddressId(defaultAddr._id);
+        setStartingPoint({
+          lat: defaultAddr.location.lat,
+          lng: defaultAddr.location.lng,
+          address: defaultAddr.address,
+          city: defaultAddr.city,
+        });
       }
     } catch (err) {
       console.error('Failed to fetch addresses:', err);
@@ -180,24 +173,14 @@ export default function RouteComparisonPage() {
     note: string;
     orderCount: number;
   }> => {
-    const body = JSON.stringify({
-      ...baseBody,
-      algorithm, // Pass algorithm parameter to the single endpoint
-    });
-
     const start = performance.now();
-    const response = await fetch(`${API_URL}/api/v1/routes/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to generate ${algorithm} routes`);
-    }
-
-    const data = (await response.json()) as HeuristicRoutesResponse;
+    const data = (await api.post(
+      '/routes/generate',
+      {
+        ...baseBody,
+        algorithm, // Pass algorithm parameter to the single endpoint
+      },
+    )) as HeuristicRoutesResponse;
     const end = performance.now();
 
     return {

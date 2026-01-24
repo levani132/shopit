@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface BalanceData {
   balance: number;
@@ -48,16 +46,10 @@ export default function CourierBalancePage() {
     const fetchData = async () => {
       try {
         // Fetch balance info from courier endpoint
-        const balanceResponse = await fetch(
-          `${API_URL}/api/v1/balance/courier`,
-          {
-            credentials: 'include',
-          },
-        );
-        if (balanceResponse.ok) {
-          const balanceData = await balanceResponse.json();
+        try {
+          const balanceData = await api.get<BalanceData>('/api/v1/balance/courier');
           setBalance(balanceData);
-        } else {
+        } catch {
           // Fallback to user data if endpoint fails
           setBalance({
             balance: user.balance || 0,
@@ -69,15 +61,11 @@ export default function CourierBalancePage() {
         }
 
         // Fetch courier transactions
-        const response = await fetch(
-          `${API_URL}/api/v1/balance/courier/transactions`,
-          {
-            credentials: 'include',
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setTransactions(data.transactions || data);
+        try {
+          const data = await api.get<Transaction[] | { transactions: Transaction[] }>('/api/v1/balance/courier/transactions');
+          setTransactions(Array.isArray(data) ? data : data.transactions || []);
+        } catch {
+          // Ignore transaction fetch errors
         }
       } catch (err) {
         console.error('Error fetching balance:', err);
@@ -98,24 +86,14 @@ export default function CourierBalancePage() {
 
     setIsWithdrawing(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/balance/withdraw`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
-      });
-
-      if (response.ok) {
-        setWithdrawAmount('');
-        // Refresh data
-        window.location.reload();
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to process withdrawal');
-      }
+      await api.post('/api/v1/balance/withdraw', { amount });
+      setWithdrawAmount('');
+      // Refresh data
+      window.location.reload();
     } catch (err) {
       console.error('Error withdrawing:', err);
-      setError('Failed to process withdrawal');
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to process withdrawal';
+      setError(message);
     } finally {
       setIsWithdrawing(false);
     }

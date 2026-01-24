@@ -4,9 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../../lib/api';
 
 interface StoreData {
   _id: string;
@@ -55,13 +53,8 @@ export default function AboutPage() {
   useEffect(() => {
     const fetchStore = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/stores/subdomain/${subdomain}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setStore(data);
-        }
+        const data = await api.get(`/stores/subdomain/${subdomain}`);
+        setStore(data);
       } catch (error) {
         console.error('Error fetching store:', error);
       } finally {

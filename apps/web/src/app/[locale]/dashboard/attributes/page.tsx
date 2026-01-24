@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface AttributeValue {
   _id: string;
@@ -42,18 +40,9 @@ export default function AttributesPage() {
   const fetchAttributes = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(
-        `${API_URL}/api/v1/attributes/my-store?includeInactive=true`,
-        {
-          credentials: 'include',
-        },
+      const data = await api.get<Attribute[]>(
+        '/api/v1/attributes/my-store?includeInactive=true',
       );
-
-      if (!res.ok) {
-        throw new Error('Failed to fetch attributes');
-      }
-
-      const data = await res.json();
       setAttributes(data);
     } catch (err) {
       console.error('Error fetching attributes:', err);
@@ -72,14 +61,7 @@ export default function AttributesPage() {
   // Delete attribute
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/attributes/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to delete attribute');
-      }
+      await api.delete(`/api/v1/attributes/${id}`);
 
       setAttributes(attributes.filter((a) => a._id !== id));
       setDeleteConfirm(null);
@@ -442,12 +424,6 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
   const [showPalette, setShowPalette] = useState(false);
   const [showCustomColor, setShowCustomColor] = useState(false);
 
-  const API_URL_MODAL = (
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-  )
-    .replace(/\/api\/v1\/?$/, '')
-    .replace(/\/$/, '');
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -476,20 +452,10 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
         }),
       };
 
-      const url = attribute
-        ? `${API_URL_MODAL}/api/v1/attributes/${attribute._id}`
-        : `${API_URL_MODAL}/api/v1/attributes`;
-
-      const res = await fetch(url, {
-        method: attribute ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to save attribute');
+      if (attribute) {
+        await api.patch(`/api/v1/attributes/${attribute._id}`, payload);
+      } else {
+        await api.post('/api/v1/attributes', payload);
       }
 
       onSaved();

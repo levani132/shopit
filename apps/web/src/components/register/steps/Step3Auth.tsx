@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 // Build API base URL - use just the host, we'll add the prefix
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -123,23 +124,7 @@ export function Step3Auth() {
         formData.append('coverFile', data.coverFile);
       }
 
-      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies for auth
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 409) {
-          setErrors({ email: t('emailAlreadyExists') });
-        } else {
-          setErrors({ general: errorData.message || t('registrationFailed') });
-        }
-        return;
-      }
-
-      const result = await response.json();
+      const result = await api.post('/auth/register', formData);
       console.log('Registration successful:', result);
 
       // Update auth context
@@ -149,9 +134,13 @@ export function Step3Auth() {
       
       // Navigate to profile completion page
       router.push('/register/complete');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed:', error);
-      setErrors({ general: t('registrationFailed') });
+      if (error.status === 409) {
+        setErrors({ email: t('emailAlreadyExists') });
+      } else {
+        setErrors({ general: error.message || t('registrationFailed') });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -196,19 +185,7 @@ export function Step3Auth() {
       }
 
       // Call endpoint to create store for existing user
-      const response = await fetch(`${API_URL}/api/v1/auth/create-store`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies for auth
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setErrors({ general: errorData.message || t('registrationFailed') });
-        return;
-      }
-
-      const result = await response.json();
+      const result = await api.post('/auth/create-store', formData);
       console.log('Store creation successful:', result);
 
       // Update auth context
@@ -218,9 +195,9 @@ export function Step3Auth() {
       
       // Navigate to dashboard
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Store creation failed:', error);
-      setErrors({ general: t('registrationFailed') });
+      setErrors({ general: error.message || t('registrationFailed') });
     } finally {
       setIsLoading(false);
     }

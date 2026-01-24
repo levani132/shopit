@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { ShopItLogo } from '../../../../../../components/ui/ShopItLogo';
-import { getStoreBySubdomain } from '../../../../../../lib/api';
+import { api, apiUrl, getStoreBySubdomain } from '../../../../../../lib/api';
 import Link from 'next/link';
 
 import { ACCENT_COLORS, AccentColorName } from '@shopit/constants';
@@ -69,42 +69,24 @@ export default function StoreRegisterPage() {
     setIsSubmitting(true);
 
     try {
-      const apiBase =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const apiUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-
-      const response = await fetch(`${apiUrl}/api/v1/auth/register/buyer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email,
-          password,
-        }),
-        credentials: 'include',
+      await api.post('/auth/register/buyer', {
+        firstName,
+        lastName,
+        email,
+        password,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Registration failed');
-      }
 
       // Redirect back to store
       router.push('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+    } catch (err: any) {
+      setError(err?.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleGoogleSignup = () => {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const apiUrl = apiBase.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-    window.location.href = `${apiUrl}/api/v1/auth/google?role=user`;
+    window.location.href = `${apiUrl}/auth/google?role=user`;
   };
 
   // CSS variables for store colors

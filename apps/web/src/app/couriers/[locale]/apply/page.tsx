@@ -8,9 +8,7 @@ import Image from 'next/image';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import { CourierHeader } from '../../../../components/courier/CourierHeader';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface CourierStatus {
   isCourier: boolean;
@@ -52,13 +50,8 @@ export default function CourierApplyPage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/auth/courier/status`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setCourierStatus(data);
-        }
+        const data = await api.get('/auth/courier/status');
+        setCourierStatus(data);
       } catch (err) {
         console.error('Failed to check courier status:', err);
       } finally {
@@ -111,21 +104,15 @@ export default function CourierApplyPage() {
         submitData.append('profileImage', profileImage);
       }
 
-      const response = await fetch(`${API_URL}/api/v1/auth/apply-courier`, {
-        method: 'POST',
-        credentials: 'include',
+      await api.post('/auth/apply-courier', undefined, {
         body: submitData,
+        headers: {},
       });
 
-      if (response.ok) {
-        setSuccess(true);
-      } else {
-        const data = await response.json();
-        setError(data.message || t('applicationFailed'));
-      }
-    } catch (err) {
+      setSuccess(true);
+    } catch (err: any) {
       console.error('Failed to submit application:', err);
-      setError(t('applicationFailed'));
+      setError(err?.message || t('applicationFailed'));
     } finally {
       setIsSubmitting(false);
     }

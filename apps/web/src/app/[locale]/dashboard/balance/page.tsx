@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface SellerBalance {
   availableBalance: number;
@@ -71,24 +69,15 @@ export default function BalancePage() {
       }
 
       try {
-        const [balanceRes, transactionsRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/balance`, { credentials: 'include' }),
-          fetch(`${API_URL}/api/v1/balance/transactions`, {
-            credentials: 'include',
-          }),
+        const [balanceData, txData] = await Promise.all([
+          api.get<SellerBalance>('/api/v1/balance'),
+          api.get<Transaction[] | { transactions: Transaction[] }>(
+            '/api/v1/balance/transactions',
+          ),
         ]);
 
-        if (balanceRes.ok) {
-          const balanceData = await balanceRes.json();
-          setBalance(balanceData);
-        }
-        if (transactionsRes.ok) {
-          const txData = await transactionsRes.json();
-          // Handle both array response and object with transactions property
-          setTransactions(
-            Array.isArray(txData) ? txData : txData.transactions || [],
-          );
-        }
+        setBalance(balanceData);
+        setTransactions(Array.isArray(txData) ? txData : txData.transactions || []);
       } catch (err) {
         console.error('Error fetching balance data:', err);
       } finally {
@@ -118,38 +107,32 @@ export default function BalancePage() {
     setWithdrawSuccess(false);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/balance/withdraw`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount }),
+      await api.post('/api/v1/balance/withdraw', { amount });
+
+      setBalance({
+        ...balance,
+        availableBalance: balance.availableBalance - amount,
+        pendingBalance: balance.pendingBalance + amount,
       });
+      setWithdrawAmount('');
+      setWithdrawSuccess(true);
 
-      if (response.ok) {
-        await response.json(); // Consume response
-        setBalance({
-          ...balance,
-          availableBalance: balance.availableBalance - amount,
-          pendingBalance: balance.pendingBalance + amount,
-        });
-        setWithdrawAmount('');
-        setWithdrawSuccess(true);
-
-        // Refresh transactions
-        const transactionsRes = await fetch(
-          `${API_URL}/api/v1/balance/transactions`,
-          { credentials: 'include' },
+      // Refresh transactions
+      try {
+        const txData = await api.get<Transaction[] | { transactions: Transaction[] }>(
+          '/api/v1/balance/transactions',
         );
-        if (transactionsRes.ok) {
-          setTransactions(await transactionsRes.json());
-        }
-      } else {
-        const errorData = await response.json();
-        setWithdrawError(errorData.message || tBalance('withdrawFailed'));
+        setTransactions(Array.isArray(txData) ? txData : txData.transactions || []);
+      } catch (err) {
+        console.error('Error refreshing transactions:', err);
       }
     } catch (err) {
       console.error('Error withdrawing:', err);
-      setWithdrawError(tBalance('withdrawFailed'));
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : tBalance('withdrawFailed');
+      setWithdrawError(message);
     } finally {
       setWithdrawing(false);
     }

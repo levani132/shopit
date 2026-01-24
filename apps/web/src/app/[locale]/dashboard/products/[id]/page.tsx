@@ -5,9 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 import VariantEditor from '../../../../../components/dashboard/VariantEditor';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../lib/api';
 
 interface Category {
   _id: string;
@@ -123,26 +121,16 @@ export default function EditProductPage() {
         setIsLoading(true);
 
         // Fetch product, categories, and shipping sizes in parallel
-        const [productRes, categoriesRes, shippingRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/products/${productId}`, {
-            credentials: 'include',
-          }),
-          fetch(`${API_URL}/api/v1/categories/my-store`, {
-            credentials: 'include',
-          }),
-          fetch(`${API_URL}/api/v1/settings/shipping-sizes`),
+        const [product, categoriesData, shippingData] = await Promise.all([
+          api.get<any>(`/api/v1/products/${productId}`),
+          api.get<Category[]>('/api/v1/categories/my-store'),
+          api.get<{ sizes: ShippingSizes }>(
+            '/api/v1/settings/shipping-sizes',
+          ),
         ]);
-        
-        if (shippingRes.ok) {
-          const shippingData = await shippingRes.json();
-          setShippingSizes(shippingData.sizes);
-        }
 
-        if (!productRes.ok) {
-          throw new Error('Product not found');
-        }
-
-        const product = await productRes.json();
+        setShippingSizes(shippingData.sizes);
+        setCategories(categoriesData);
 
         // Populate form with product data
         setFormData({
@@ -351,16 +339,7 @@ export default function EditProductPage() {
         formDataToSend.append('variantImageMapping', JSON.stringify(variantImageMapping));
       }
 
-      const res = await fetch(`${API_URL}/api/v1/products/${productId}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        body: formDataToSend,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to update product');
-      }
+      await api.patch(`/api/v1/products/${productId}`, formDataToSend);
 
       // Success - redirect to products list
       router.push('/dashboard/products');
@@ -377,16 +356,7 @@ export default function EditProductPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/products/${productId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to delete product');
-      }
-
+      await api.delete(`/api/v1/products/${productId}`);
       router.push('/dashboard/products');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete product');

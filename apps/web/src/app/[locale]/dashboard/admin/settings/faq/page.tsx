@@ -6,10 +6,7 @@ import {
   SectionCard,
   FaqItem,
 } from '../../../../../../components/dashboard/admin/SettingsLayout';
-
-// Build API base URL
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = `${API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '')}/api/v1`;
+import { api } from '../../../../../../lib/api';
 
 export default function FaqSettingsPage() {
   const t = useTranslations('admin');
@@ -26,12 +23,8 @@ export default function FaqSettingsPage() {
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
-        const res = await fetch(`${API_URL}/content/admin/faq`, {
-          credentials: 'include',
-        });
-        if (res.ok) {
-          setFaqs(await res.json());
-        }
+        const data = await api.get('/content/admin/faq');
+        setFaqs(data);
       } catch (error) {
         console.error('Failed to fetch FAQs:', error);
       } finally {
@@ -52,27 +45,19 @@ export default function FaqSettingsPage() {
     try {
       const method = editingFaq._id ? 'PUT' : 'POST';
       const url = editingFaq._id
-        ? `${API_URL}/content/admin/faq/${editingFaq._id}`
-        : `${API_URL}/content/admin/faq`;
+        ? `/content/admin/faq/${editingFaq._id}`
+        : '/content/admin/faq';
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(editingFaq),
-      });
-
-      if (res.ok) {
-        const updated = await res.json();
-        if (editingFaq._id) {
-          setFaqs(faqs.map((f) => (f._id === updated._id ? updated : f)));
-        } else {
-          setFaqs([...faqs, updated]);
-        }
-        setEditingFaq(null);
-        showMessage('success', t('faqSaved'));
+      const updated = await api[method.toLowerCase() as 'post' | 'put'](url, editingFaq);
+      if (editingFaq._id) {
+        setFaqs(faqs.map((f) => (f._id === updated._id ? updated : f)));
+      } else {
+        setFaqs([...faqs, updated]);
       }
-    } catch {
+      setEditingFaq(null);
+      showMessage('success', t('faqSaved'));
+    } catch (err) {
+      console.error('Failed to save FAQ:', err);
       showMessage('error', t('faqSaveFailed'));
     } finally {
       setSaving(false);
@@ -82,15 +67,11 @@ export default function FaqSettingsPage() {
   const handleDeleteFaq = async (id: string) => {
     if (!confirm(t('confirmDeleteFaq'))) return;
     try {
-      const res = await fetch(`${API_URL}/content/admin/faq/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        setFaqs(faqs.filter((f) => f._id !== id));
-        showMessage('success', t('faqDeleted'));
-      }
-    } catch {
+      await api.delete(`/content/admin/faq/${id}`);
+      setFaqs(faqs.filter((f) => f._id !== id));
+      showMessage('success', t('faqDeleted'));
+    } catch (err) {
+      console.error('Failed to delete FAQ:', err);
       showMessage('error', t('faqDeleteFailed'));
     }
   };
@@ -98,18 +79,12 @@ export default function FaqSettingsPage() {
   const handleSeedFaqs = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${API_URL}/content/admin/faq/seed`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        const faRes = await fetch(`${API_URL}/content/admin/faq`, {
-          credentials: 'include',
-        });
-        if (faRes.ok) setFaqs(await faRes.json());
-        showMessage('success', t('faqsSeeded'));
-      }
-    } catch {
+      await api.post('/content/admin/faq/seed');
+      const refreshed = await api.get('/content/admin/faq');
+      setFaqs(refreshed);
+      showMessage('success', t('faqsSeeded'));
+    } catch (err) {
+      console.error('Failed to seed FAQs:', err);
       showMessage('error', t('faqSeedFailed'));
     } finally {
       setSaving(false);

@@ -2,9 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface Subcategory {
   _id: string;
@@ -60,15 +58,7 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_URL}/api/v1/categories/my-store`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-
-      const data = await response.json();
+      const data = await api.get<Category[]>('/api/v1/categories/my-store');
       setCategories(data);
     } catch (err) {
       setError('Failed to load categories');
@@ -84,25 +74,14 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/categories`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: newCategory.nameEn || newCategory.name,
-          nameLocalized: {
-            ka: newCategory.nameKa,
-            en: newCategory.nameEn || newCategory.name,
-          },
-        }),
+      const created = await api.post<Category>('/api/v1/categories', {
+        name: newCategory.nameEn || newCategory.name,
+        nameLocalized: {
+          ka: newCategory.nameKa,
+          en: newCategory.nameEn || newCategory.name,
+        },
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to create category');
-      }
-
-      const created = await response.json();
       setCategories([...categories, created]);
       setNewCategory({ name: '', nameKa: '', nameEn: '' });
       setShowNewCategoryForm(false);
@@ -118,21 +97,11 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/categories/${category._id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: category.nameLocalized?.en || category.name,
-          nameLocalized: category.nameLocalized,
-        }),
+      const updated = await api.patch<Category>(`/api/v1/categories/${category._id}`, {
+        name: category.nameLocalized?.en || category.name,
+        nameLocalized: category.nameLocalized,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to update category');
-      }
-
-      const updated = await response.json();
       setCategories(categories.map((c) => (c._id === updated._id ? updated : c)));
       setEditingCategory(null);
       setSuccess('Category updated successfully!');
@@ -147,14 +116,7 @@ export default function CategoriesPage() {
     if (!confirm('Are you sure? This will also delete all subcategories.')) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/categories/${categoryId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete category');
-      }
+      await api.delete(`/api/v1/categories/${categoryId}`);
 
       setCategories(categories.filter((c) => c._id !== categoryId));
       setSuccess('Category deleted successfully!');
@@ -170,24 +132,14 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/categories/subcategory`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: newSubcategory.nameEn || newSubcategory.name,
-          nameLocalized: {
-            ka: newSubcategory.nameKa,
-            en: newSubcategory.nameEn || newSubcategory.name,
-          },
-          categoryId,
-        }),
+      await api.post('/api/v1/categories/subcategory', {
+        name: newSubcategory.nameEn || newSubcategory.name,
+        nameLocalized: {
+          ka: newSubcategory.nameKa,
+          en: newSubcategory.nameEn || newSubcategory.name,
+        },
+        categoryId,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to create subcategory');
-      }
 
       await fetchCategories(); // Refresh to get updated structure
       setNewSubcategory({ name: '', nameKa: '', nameEn: '' });
@@ -204,19 +156,10 @@ export default function CategoriesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/categories/subcategory/${subcategory._id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: subcategory.nameLocalized?.en || subcategory.name,
-          nameLocalized: subcategory.nameLocalized,
-        }),
+      await api.patch(`/api/v1/categories/subcategory/${subcategory._id}`, {
+        name: subcategory.nameLocalized?.en || subcategory.name,
+        nameLocalized: subcategory.nameLocalized,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update subcategory');
-      }
 
       await fetchCategories();
       setEditingSubcategory(null);
@@ -232,14 +175,7 @@ export default function CategoriesPage() {
     if (!confirm('Are you sure you want to delete this subcategory?')) return;
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/categories/subcategory/${subcategoryId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete subcategory');
-      }
+      await api.delete(`/api/v1/categories/subcategory/${subcategoryId}`);
 
       await fetchCategories();
       setSuccess('Subcategory deleted successfully!');

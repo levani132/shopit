@@ -17,9 +17,7 @@ import {
   AddressPicker,
   AddressResult,
 } from '../../../../../../components/ui/AddressPicker';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../../lib/api';
 
 // Payment awaiting modal component
 function PaymentAwaitingModal({
@@ -72,28 +70,23 @@ function PaymentAwaitingModal({
     // Enhanced poll that handles window close
     const pollStatusWithRetry = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/payments/order-status/${orderId}`,
-          { credentials: 'include' },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.isPaid) {
-            setStatus('success');
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-            }
-            setTimeout(() => {
-              onPaymentComplete(true);
-            }, 2000);
-            return;
-          } else if (data.status === 'cancelled') {
-            setStatus('failed');
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-            }
-            return;
+        const data = await api.get(`/payments/order-status/${orderId}`);
+        if (data.isPaid) {
+          setStatus('success');
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
           }
+          setTimeout(() => {
+            onPaymentComplete(true);
+          }, 2000);
+          return;
+        }
+        if (data.status === 'cancelled') {
+          setStatus('failed');
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+          }
+          return;
         }
 
         // If window was closed and we've retried enough times, show closed status
@@ -395,20 +388,15 @@ export default function CheckoutPage() {
       if (!isAuthenticated || addressesLoaded) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const addresses = await response.json();
-          setSavedAddresses(addresses);
+        const addresses = await api.get('/auth/addresses');
+        setSavedAddresses(addresses);
 
-          // Auto-select default address
-          const defaultAddr = addresses.find(
-            (a: ShippingAddress) => a.isDefault,
-          );
-          if (defaultAddr && !shippingAddress) {
-            setShippingAddress(defaultAddr);
-          }
+        // Auto-select default address
+        const defaultAddr = addresses.find(
+          (a: ShippingAddress) => a.isDefault,
+        );
+        if (defaultAddr && !shippingAddress) {
+          setShippingAddress(defaultAddr);
         }
       } catch (err) {
         console.error('Error fetching addresses:', err);
@@ -424,19 +412,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchStoreInfo = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/stores/subdomain/${subdomain}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setStoreInfo({
-            id: data._id || data.id,
-            address: data.address,
-            location: data.location,
-            selfPickupEnabled: data.selfPickupEnabled,
-            courierType: data.courierType,
-          });
-        }
+        const data = await api.get(`/stores/subdomain/${subdomain}`);
+        setStoreInfo({
+          id: data._id || data.id,
+          address: data.address,
+          location: data.location,
+          selfPickupEnabled: data.selfPickupEnabled,
+          courierType: data.courierType,
+        });
       } catch (err) {
         console.error('Error fetching store info:', err);
       }
@@ -571,40 +554,22 @@ export default function CheckoutPage() {
       try {
         if (editingAddressId) {
           // Update existing address
-          const response = await fetch(
-            `${API_URL}/api/v1/auth/addresses/${editingAddressId}`,
-            {
-              method: 'PUT',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(addressForm),
-            },
+          const updatedAddress = await api.put(
+            `/auth/addresses/${editingAddressId}`,
+            addressForm,
           );
-
-          if (response.ok) {
-            const updatedAddress = await response.json();
-            setSavedAddresses(
-              savedAddresses.map((a) =>
-                a._id === editingAddressId ? updatedAddress : a,
-              ),
-            );
-            selectAddress(updatedAddress);
-            setEditingAddressId(null);
-          }
+          setSavedAddresses(
+            savedAddresses.map((a) =>
+              a._id === editingAddressId ? updatedAddress : a,
+            ),
+          );
+          selectAddress(updatedAddress);
+          setEditingAddressId(null);
         } else if (saveNewAddress) {
           // Create new address
-          const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(addressForm),
-          });
-
-          if (response.ok) {
-            const newAddress = await response.json();
-            setSavedAddresses([...savedAddresses, newAddress]);
-            selectAddress(newAddress);
-          }
+          const newAddress = await api.post('/auth/addresses', addressForm);
+          setSavedAddresses([...savedAddresses, newAddress]);
+          selectAddress(newAddress);
         } else {
           // Use address without saving
           selectAddress({ ...addressForm, _id: 'temp' });
@@ -656,34 +621,17 @@ export default function CheckoutPage() {
       }));
 
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/orders/calculate-shipping`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              storeLocation: storeInfo.location,
-              customerLocation,
-              products, // Send product IDs for DB lookup
-            }),
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setShippingEstimate({
-            fee: data.fee,
-            durationMinutes: data.durationMinutes,
-            distanceKm: data.distanceKm,
-            isLoading: false,
-          });
-        } else {
-          setShippingEstimate((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: 'Failed to calculate shipping',
-          }));
-        }
+        const data = await api.post('/orders/calculate-shipping', {
+          storeLocation: storeInfo.location,
+          customerLocation,
+          products, // Send product IDs for DB lookup
+        });
+        setShippingEstimate({
+          fee: data.fee,
+          durationMinutes: data.durationMinutes,
+          distanceKm: data.distanceKm,
+          isLoading: false,
+        });
       } catch (err) {
         console.error('Error calculating shipping:', err);
         setShippingEstimate((prev) => ({
@@ -788,19 +736,7 @@ export default function CheckoutPage() {
         guestInfo: !isAuthenticated ? guestInfo : undefined,
       };
 
-      const orderResponse = await fetch(`${API_URL}/api/v1/orders`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload),
-      });
-
-      if (!orderResponse.ok) {
-        const errorData = await orderResponse.json();
-        throw new Error(errorData.message || 'Failed to create order');
-      }
-
-      const order = await orderResponse.json();
+      const order = await api.post('/orders', orderPayload);
 
       // 2. Initiate payment
       const paymentPayload = {
@@ -828,22 +764,10 @@ export default function CheckoutPage() {
         failUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/fail`,
       };
 
-      const paymentResponse = await fetch(
-        `${API_URL}/api/v1/payments/initiate`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(paymentPayload),
-        },
+      const paymentData = await api.post(
+        '/payments/initiate',
+        paymentPayload,
       );
-
-      if (!paymentResponse.ok) {
-        const errorData = await paymentResponse.json();
-        throw new Error(errorData.message || 'Failed to initiate payment');
-      }
-
-      const paymentData = await paymentResponse.json();
 
       // 3. Open BOG payment page in popup/new tab
       if (paymentData.redirectUrl) {

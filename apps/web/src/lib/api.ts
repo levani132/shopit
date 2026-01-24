@@ -4,6 +4,12 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export const apiUrl = `${API_URL}/api/v1`;
 
+function buildUrl(path: string): string {
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/api/')) return `${API_URL}${path}`;
+  return `${apiUrl}${path}`;
+}
+
 /**
  * Track if we're currently refreshing the token to prevent multiple refresh attempts
  */
@@ -75,7 +81,7 @@ export const api = {
    * GET request with credentials
    */
   async get<T = any>(path: string, options?: RequestInit): Promise<T> {
-    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -100,13 +106,18 @@ export const api = {
     body?: unknown,
     options?: RequestInit,
   ): Promise<T> {
-    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: isFormData
+        ? {
+            ...options?.headers,
+          }
+        : {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+      body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
     });
 
@@ -126,13 +137,18 @@ export const api = {
     body?: unknown,
     options?: RequestInit,
   ): Promise<T> {
-    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: isFormData
+        ? {
+            ...options?.headers,
+          }
+        : {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+      body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
     });
 
@@ -152,13 +168,18 @@ export const api = {
     body?: unknown,
     options?: RequestInit,
   ): Promise<T> {
-    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: isFormData
+        ? {
+            ...options?.headers,
+          }
+        : {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+      body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
     });
 
@@ -174,7 +195,7 @@ export const api = {
    * DELETE request with credentials
    */
   async delete<T = any>(path: string, options?: RequestInit): Promise<T> {
-    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
