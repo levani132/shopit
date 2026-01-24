@@ -183,3 +183,157 @@ See the `courier` section for all available translation keys.
 
 - [DELIVERY.md](./DELIVERY.md) - Delivery system documentation
 - [ORDERS.md](./ORDERS.md) - Order management documentation
+
+## Time Tracking
+
+The courier system tracks detailed timestamps for route and delivery operations:
+
+### Route Time Logging
+
+Each route records comprehensive timing data:
+
+| Field         | Description                    |
+| ------------- | ------------------------------ |
+| `startedAt`   | When route navigation began    |
+| `completedAt` | When route was fully completed |
+
+For each stop in a route:
+
+| Field                 | Description                                |
+| --------------------- | ------------------------------------------ |
+| `actualArrival`       | When courier arrived at the stop           |
+| `handlingStartedAt`   | When courier started handling the delivery |
+| `completedAt`         | When stop was marked complete              |
+| `handlingTimeMinutes` | Calculated time spent at the stop          |
+
+### Order Time Tracking
+
+Orders now include pickup/delivery timestamps:
+
+| Field                  | Description                          |
+| ---------------------- | ------------------------------------ |
+| `pickedUpAt`           | When item was picked up from store   |
+| `shippedAt`            | When order status changed to shipped |
+| `deliveredAt`          | When delivery was confirmed          |
+| `pickedUpFromRouteId`  | Route ID associated with pickup      |
+| `deliveredFromRouteId` | Route ID associated with delivery    |
+
+## Courier Analytics
+
+### Analytics Dashboard
+
+The analytics page (`/dashboard/courier-analytics`) provides comprehensive performance metrics:
+
+#### Summary Cards
+
+- **Total Deliveries**: Lifetime completed deliveries
+- **Total Earnings**: Cumulative earnings
+- **Total Routes**: Number of completed routes
+- **On-Time Rate**: Percentage of on-time deliveries
+
+#### Performance Metrics
+
+- **This Week/Month**: Deliveries, earnings, and routes in current periods
+- **Average Handling Time**: Time spent per delivery stop
+- **Average Route Time**: Duration per completed route
+- **Deliveries per Route**: Average density of deliveries
+
+#### Visualizations
+
+- **Daily Earnings Chart**: Bar chart showing earnings trends
+- **Recent Routes**: List of recently completed routes with details
+
+### Analytics API
+
+```
+GET /api/v1/analytics/courier?period=week|month|year|all
+Response: {
+  totalDeliveries: number,
+  totalEarnings: number,
+  totalRoutes: number,
+  thisWeek: { deliveries, earnings, routes },
+  thisMonth: { deliveries, earnings, routes },
+  averageDeliveriesPerRoute: number,
+  averageEarningsPerDelivery: number,
+  averageHandlingTimeMinutes: number,
+  averageRouteTimeMinutes: number,
+  onTimeDeliveryRate: number,
+  dailyStats: Array<{ date, deliveries, earnings, routes }>,
+  recentRoutes: Array<{ _id, completedAt, deliveries, earnings, duration }>
+}
+```
+
+## Route Management
+
+### Route Endpoints
+
+```
+GET /api/v1/routes
+// Returns courier's routes
+
+GET /api/v1/routes/active
+// Returns active (in-progress) route
+
+GET /api/v1/routes/:id/details
+// Returns detailed route info with all time tracking data
+
+GET /api/v1/routes/analytics
+// Returns courier analytics
+
+POST /api/v1/routes
+// Creates new route from selected orders
+
+PATCH /api/v1/routes/:id/start
+// Starts route navigation, sets startedAt
+
+PATCH /api/v1/routes/:id/progress
+Body: {
+  stopIndex: number,
+  action: 'arrive' | 'start_handling' | 'complete',
+  location?: { lat, lng }
+}
+// Updates stop progress with timestamps
+// 'arrive' → sets actualArrival
+// 'start_handling' → sets handlingStartedAt
+// 'complete' → sets completedAt, calculates handlingTimeMinutes
+```
+
+### Database Schema Updates
+
+#### courier-route.schema.ts
+
+```typescript
+RouteStop {
+  ...
+  actualArrival?: Date;      // When courier arrived
+  handlingStartedAt?: Date;  // When handling began
+  completedAt?: Date;        // When stop completed
+  handlingTimeMinutes?: number; // Calculated handling duration
+}
+```
+
+#### order.schema.ts
+
+```typescript
+Order {
+  ...
+  pickedUpAt?: Date;            // When picked up from store
+  pickedUpFromRouteId?: ObjectId; // Route used for pickup
+  deliveredFromRouteId?: ObjectId; // Route used for delivery
+}
+```
+
+## Translation Keys
+
+New courier analytics translations:
+
+| Key                  | English             | Georgian                   |
+| -------------------- | ------------------- | -------------------------- |
+| `totalRoutes`        | Total Routes        | სულ მარშრუტები             |
+| `onTimeRate`         | On-Time Rate        | დროული მიტანის მაჩვენებელი |
+| `avgHandlingTime`    | Avg. Handling Time  | საშუალო მოცდის დრო         |
+| `avgRouteTime`       | Avg. Route Time     | საშუალო მარშრუტის დრო      |
+| `recentRoutes`       | Recent Routes       | ბოლო მარშრუტები            |
+| `performanceSummary` | Performance Summary | შესრულების მიმოხილვა       |
+| `pickedUpAt`         | Picked Up           | აიღო                       |
+| `deliveredAt`        | Delivered           | ჩააბარა                    |

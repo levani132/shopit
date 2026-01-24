@@ -14,7 +14,7 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
-  
+
   // Configure remote image domains for next/image
   images: {
     remotePatterns: [
@@ -37,7 +37,7 @@ const nextConfig = {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     // Remove any trailing slash and /api/v1 suffix for the destination
     const apiBase = apiUrl.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-    
+
     return [
       {
         source: '/api/:path*',

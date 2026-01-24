@@ -35,6 +35,7 @@ interface Order {
   };
   totalPrice: number;
   shippingPrice: number;
+  distanceKm?: number;
   status: string;
   createdAt: string;
   courierId?: string;
@@ -51,6 +52,12 @@ interface Order {
   courierEarning?: number;
   // Delivery completion
   deliveredAt?: string;
+  // Pickup time tracking
+  pickedUpAt?: string;
+  shippedAt?: string;
+  // Route tracking
+  pickedUpFromRouteId?: string;
+  deliveredFromRouteId?: string;
   // Shipping size
   estimatedShippingSize?: ShippingSize;
   confirmedShippingSize?: ShippingSize;
@@ -196,6 +203,25 @@ export default function DeliveriesPage() {
     orderId: string;
     hasPickedUp: boolean;
   } | null>(null);
+  const [sizeFilters, setSizeFilters] = useState<ShippingSize[]>([]);
+
+  // Shipping size filter options
+  const shippingSizeOptions: {
+    key: ShippingSize;
+    icon: string;
+    label: string;
+  }[] = [
+    { key: 'small', icon: '🚲', label: 'sizeSmall' },
+    { key: 'medium', icon: '🚗', label: 'sizeMedium' },
+    { key: 'large', icon: '🚙', label: 'sizeLarge' },
+    { key: 'extra_large', icon: '🚐', label: 'sizeExtraLarge' },
+  ];
+
+  const toggleSizeFilter = (size: ShippingSize) => {
+    setSizeFilters((prev) =>
+      prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
+    );
+  };
 
   // Get the courier's vehicle type
   const courierVehicleType =
@@ -422,12 +448,25 @@ export default function DeliveriesPage() {
     );
   }
 
-  const displayOrders =
+  const baseOrders =
     activeTab === 'available'
       ? availableOrders
       : activeTab === 'my'
         ? myOrders
         : completedOrders;
+
+  // Apply size filters
+  const displayOrders =
+    sizeFilters.length === 0
+      ? baseOrders
+      : baseOrders.filter((order) => {
+          const orderSize =
+            order.confirmedShippingSize ||
+            order.estimatedShippingSize ||
+            order.shippingSize ||
+            'small';
+          return sizeFilters.includes(orderSize);
+        });
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -470,6 +509,39 @@ export default function DeliveriesPage() {
         >
           {t('completedDeliveries')} ({completedOrders.length})
         </button>
+      </div>
+
+      {/* Size Filter */}
+      <div className="mb-6">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+          {t('filterBySize')}:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setSizeFilters([])}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              sizeFilters.length === 0
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
+            }`}
+          >
+            {t('allSizes')}
+          </button>
+          {shippingSizeOptions.map((option) => (
+            <button
+              key={option.key}
+              onClick={() => toggleSizeFilter(option.key)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                sizeFilters.includes(option.key)
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 dark:bg-zinc-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-600'
+              }`}
+            >
+              <span>{option.icon}</span>
+              <span>{t(option.label)}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Orders List */}
@@ -550,41 +622,77 @@ export default function DeliveriesPage() {
                       )}
                     </div>
 
+                    {/* Distance Indicator */}
+                    {order.distanceKm !== undefined && order.distanceKm > 0 && (
+                      <div className="text-center">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          {t('distance')}
+                        </p>
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
+                          <span>📍</span>
+                          <span className="text-xs font-medium">
+                            {order.distanceKm} {t('km')}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Delivery Deadline / Delivered Date */}
                     {activeTab === 'completed' && order.deliveredAt ? (
                       <div className="text-center">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {t('deliveredOn')}
-                        </p>
-                        {(() => {
-                          const wasLate =
-                            order.deliveryDeadline &&
-                            new Date(order.deliveredAt) >
-                              new Date(order.deliveryDeadline);
-                          return (
-                            <>
-                              <p
-                                className={`font-semibold ${
-                                  wasLate
-                                    ? 'text-orange-600 dark:text-orange-400'
-                                    : 'text-green-600 dark:text-green-400'
-                                }`}
-                              >
-                                {wasLate ? '⚠️ ' : '✓ '}
+                        <div className="space-y-2">
+                          {/* Picked Up Time */}
+                          {(order.pickedUpAt || order.shippedAt) && (
+                            <div>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {t('pickedUpAt')}
+                              </p>
+                              <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                                 {formatDateLocalized(
-                                  order.deliveredAt,
+                                  (order.pickedUpAt ||
+                                    order.shippedAt) as string,
                                   locale,
                                   true,
                                 )}
                               </p>
-                              {wasLate && (
-                                <p className="text-xs text-orange-500 dark:text-orange-400">
-                                  {t('deliveredLate')}
-                                </p>
-                              )}
-                            </>
-                          );
-                        })()}
+                            </div>
+                          )}
+                          {/* Delivered Time */}
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {t('deliveredAt')}
+                            </p>
+                            {(() => {
+                              const wasLate =
+                                order.deliveryDeadline &&
+                                new Date(order.deliveredAt) >
+                                  new Date(order.deliveryDeadline);
+                              return (
+                                <>
+                                  <p
+                                    className={`text-sm font-medium ${
+                                      wasLate
+                                        ? 'text-orange-600 dark:text-orange-400'
+                                        : 'text-green-600 dark:text-green-400'
+                                    }`}
+                                  >
+                                    {wasLate ? '⚠️ ' : '✓ '}
+                                    {formatDateLocalized(
+                                      order.deliveredAt,
+                                      locale,
+                                      true,
+                                    )}
+                                  </p>
+                                  {wasLate && (
+                                    <p className="text-xs text-orange-500 dark:text-orange-400">
+                                      {t('deliveredLate')}
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
                     ) : order.deliveryDeadline ? (
                       <div className="text-center">

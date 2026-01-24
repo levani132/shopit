@@ -51,6 +51,8 @@ interface RouteStop {
 interface RouteMapProps {
   stops: RouteStop[];
   startingPoint?: Coordinates;
+  currentLocation?: Coordinates;
+  vehicleType?: string;
   currentStopIndex?: number;
   height?: string;
   className?: string;
@@ -60,6 +62,8 @@ interface RouteMapProps {
 function LeafletMap({
   stops,
   startingPoint,
+  currentLocation,
+  vehicleType = 'car',
   currentStopIndex = 0,
   height = '320px',
 }: RouteMapProps) {
@@ -152,6 +156,9 @@ function LeafletMap({
       ...(startingPoint && isValidCoordinate(startingPoint)
         ? [startingPoint]
         : []),
+      ...(currentLocation && isValidCoordinate(currentLocation)
+        ? [currentLocation]
+        : []),
       ...validStops.map((s) => s.coordinates),
     ];
 
@@ -164,7 +171,7 @@ function LeafletMap({
       [Math.min(...lats), Math.min(...lngs)],
       [Math.max(...lats), Math.max(...lngs)],
     );
-  }, [L, validStops, startingPoint]);
+  }, [L, validStops, startingPoint, currentLocation]);
 
   // Create custom icons for different stop types
   const createIcon = useMemo(() => {
@@ -288,14 +295,15 @@ function LeafletMap({
   // Route line coordinates (only valid coordinates)
   const routeLine = useMemo(() => {
     const points: [number, number][] = [];
-    if (startingPoint && isValidCoordinate(startingPoint)) {
-      points.push([startingPoint.lat, startingPoint.lng]);
+    // Start route line from current location (not home)
+    if (currentLocation && isValidCoordinate(currentLocation)) {
+      points.push([currentLocation.lat, currentLocation.lng]);
     }
     validStops.forEach((stop) => {
       points.push([stop.coordinates.lat, stop.coordinates.lng]);
     });
     return points;
-  }, [validStops, startingPoint]);
+  }, [validStops, currentLocation]);
 
   // Map center (use first valid coordinate or default)
   const center = useMemo(() => {
@@ -402,19 +410,67 @@ function LeafletMap({
             />
           )}
 
-          {/* Starting point marker */}
-          {startingPoint && isValidCoordinate(startingPoint) && createIcon && (
-            <Marker
-              position={[startingPoint.lat, startingPoint.lng]}
-              icon={createIcon('start', false)}
-            >
-              <Popup>
-                <div className="text-center">
-                  <strong>Starting Point</strong>
-                </div>
-              </Popup>
-            </Marker>
-          )}
+          {/* Current location marker (where the courier is now) */}
+          {currentLocation &&
+            isValidCoordinate(currentLocation) &&
+            L &&
+            (() => {
+              // Vehicle icons based on courier's selected vehicle type
+              const vehicleIcons: Record<string, string> = {
+                bicycle: '🚲',
+                bike: '🚲',
+                motorcycle: '🏍️',
+                scooter: '🛵',
+                car: '🚗',
+                suv: '🚙',
+                van: '🚐',
+                truck: '🚚',
+                walking: '🚶',
+              };
+              const vehicleIcon = vehicleIcons[vehicleType] || '🚗';
+
+              // Apply counter-invert filter directly inline for dark mode
+              const filterStyle = isDarkMode
+                ? 'filter: invert(1) hue-rotate(180deg) brightness(1.6);'
+                : '';
+
+              const html = `
+              <div style="
+                width: 44px;
+                height: 44px;
+                background-color: #ef4444;
+                border: 3px solid white;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                ${filterStyle}
+              ">
+                ${vehicleIcon}
+              </div>
+            `;
+
+              return (
+                <Marker
+                  position={[currentLocation.lat, currentLocation.lng]}
+                  icon={L.divIcon({
+                    html,
+                    className: 'custom-marker',
+                    iconSize: [44, 44],
+                    iconAnchor: [22, 22],
+                    popupAnchor: [0, -22],
+                  })}
+                >
+                  <Popup>
+                    <div className="text-center">
+                      <strong>Your Location</strong>
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })()}
 
           {/* Stop markers (only valid coordinates) */}
           {validStops.map((stop, index) => {

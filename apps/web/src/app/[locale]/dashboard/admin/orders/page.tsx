@@ -144,20 +144,22 @@ function OrdersManagementContent() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
-        >
-          <option value="">{t('allStatuses')}</option>
-          <option value="pending">{t('orderPending')}</option>
-          <option value="paid">{t('orderPaid')}</option>
-          <option value="processing">{t('orderProcessing')}</option>
-          <option value="shipped">{t('orderShipped')}</option>
-          <option value="delivered">{t('orderDelivered')}</option>
-          <option value="cancelled">{t('orderCancelled')}</option>
-        </select>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)] focus:border-transparent"
+          >
+            <option value="">{t('allStatuses')}</option>
+            <option value="pending">{t('orderPending')}</option>
+            <option value="paid">{t('orderPaid')}</option>
+            <option value="processing">{t('orderProcessing')}</option>
+            <option value="shipped">{t('orderShipped')}</option>
+            <option value="delivered">{t('orderDelivered')}</option>
+            <option value="cancelled">{t('orderCancelled')}</option>
+          </select>
+        </div>
       </div>
 
       {/* Error Message */}

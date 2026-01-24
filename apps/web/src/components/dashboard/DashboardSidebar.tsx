@@ -455,11 +455,6 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'planRoute',
         icon: RouteIcon,
       },
-      {
-        href: '/dashboard/route-comparison',
-        labelKey: 'routeComparison',
-        icon: ChartBarIcon,
-      },
     ],
   },
   // Results section - sellers

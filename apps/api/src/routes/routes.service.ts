@@ -18,6 +18,8 @@ import {
   StopType,
   RouteStop,
   RouteLocation,
+  RouteCache,
+  RouteCacheDocument,
 } from '@shopit/api-database';
 import { Order, OrderDocument, OrderStatus } from '@shopit/api-database';
 import { User, UserDocument } from '@shopit/api-database';
@@ -45,6 +47,16 @@ const TIME_CONSTANTS = {
  * Target durations for route generation (in minutes)
  */
 const TARGET_DURATIONS = [60, 120, 180, 240, 300, 360, 420, 480];
+
+/**
+ * Cache constants for route caching
+ */
+const CACHE_CONSTANTS = {
+  STALE_LOCK_TIMEOUT_MS: 2 * 60 * 1000, // 2 minutes - if generation takes longer, consider lock stale
+  POLL_INTERVAL_MS: 500, // How often to check if generation completed
+  MAX_POLL_ATTEMPTS: 240, // Max 2 minutes of polling (240 * 500ms)
+  CACHE_TTL_MS: 5 * 60 * 1000, // 5 minutes cache TTL for extra safety
+};
 
 /**
  * Location with coordinates
@@ -105,6 +117,8 @@ export class RoutesService {
     private courierRouteModel: Model<CourierRouteDocument>,
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(RouteCache.name)
+    private routeCacheModel: Model<RouteCacheDocument>,
     private configService: ConfigService,
     private siteSettingsService: SiteSettingsService,
     @Inject(forwardRef(() => BalanceService))
@@ -118,8 +132,180 @@ export class RoutesService {
     }
   }
 
+  // ==================== CACHE METHODS ====================
+
+  /**
+   * Invalidate route caches for all couriers
+   * Called when orders become available, are cancelled, or are delivered
+   */
+  async invalidateAllCaches(): Promise<void> {
+    this.logger.log('Invalidating all route caches');
+    await this.routeCacheModel.updateMany(
+      {},
+      { $set: { needsRevalidation: true } },
+    );
+  }
+
+  /**
+   * Invalidate route cache for a specific courier
+   * Called when courier takes/abandons orders
+   */
+  async invalidateCourierCache(courierId: string): Promise<void> {
+    this.logger.log(`Invalidating route cache for courier ${courierId}`);
+    await this.routeCacheModel.updateOne(
+      { courierId: new Types.ObjectId(courierId) },
+      { $set: { needsRevalidation: true } },
+    );
+  }
+
+  /**
+   * Helper to check if two locations are approximately equal
+   */
+  private locationsMatch(
+    loc1?: { lat: number; lng: number },
+    loc2?: { lat: number; lng: number },
+  ): boolean {
+    if (!loc1 || !loc2) return false;
+    // Consider locations equal if within ~100 meters
+    const threshold = 0.001;
+    return (
+      Math.abs(loc1.lat - loc2.lat) < threshold &&
+      Math.abs(loc1.lng - loc2.lng) < threshold
+    );
+  }
+
+  /**
+   * Sleep helper for polling
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Get or create cache entry for a courier
+   */
+  private async getOrCreateCacheEntry(
+    courierId: string,
+  ): Promise<RouteCacheDocument> {
+    const courierObjectId = new Types.ObjectId(courierId);
+
+    let cache = await this.routeCacheModel.findOne({
+      courierId: courierObjectId,
+    });
+
+    if (!cache) {
+      cache = await this.routeCacheModel.create({
+        courierId: courierObjectId,
+        needsRevalidation: true,
+        isGenerating: false,
+        version: 0,
+      });
+    }
+
+    return cache;
+  }
+
+  /**
+   * Try to acquire the generation lock
+   * Returns true if lock acquired, false otherwise
+   */
+  private async tryAcquireLock(
+    cacheId: Types.ObjectId,
+    currentVersion: number,
+  ): Promise<boolean> {
+    const result = await this.routeCacheModel.updateOne(
+      {
+        _id: cacheId,
+        version: currentVersion,
+        isGenerating: false,
+      },
+      {
+        $set: {
+          isGenerating: true,
+          generationStartedAt: new Date(),
+        },
+        $inc: { version: 1 },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  /**
+   * Try to take over a stale lock
+   */
+  private async tryTakeoverStaleLock(
+    cacheId: Types.ObjectId,
+    currentVersion: number,
+  ): Promise<boolean> {
+    const result = await this.routeCacheModel.updateOne(
+      {
+        _id: cacheId,
+        version: currentVersion,
+      },
+      {
+        $set: {
+          isGenerating: true,
+          generationStartedAt: new Date(),
+        },
+        $inc: { version: 1 },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  /**
+   * Release the generation lock and save cache data
+   */
+  private async releaseLockAndSaveCache(
+    courierId: string,
+    routesData: {
+      routes: RoutePreviewDto[];
+      generatedAt: Date;
+      expiresAt: Date;
+      availableOrderCount: number;
+    },
+    vehicleType: string,
+    startingLocation: { lat: number; lng: number },
+  ): Promise<void> {
+    await this.routeCacheModel.updateOne(
+      { courierId: new Types.ObjectId(courierId) },
+      {
+        $set: {
+          isGenerating: false,
+          needsRevalidation: false,
+          lastGeneratedAt: new Date(),
+          cachedData: {
+            routes: routesData.routes,
+            generatedAt: routesData.generatedAt,
+            expiresAt: routesData.expiresAt,
+            availableOrderCount: routesData.availableOrderCount,
+            vehicleType,
+            startingLocation,
+          },
+        },
+        $inc: { version: 1 },
+      },
+    );
+  }
+
+  /**
+   * Release lock on error without saving data
+   */
+  private async releaseLockOnError(courierId: string): Promise<void> {
+    await this.routeCacheModel.updateOne(
+      { courierId: new Types.ObjectId(courierId) },
+      {
+        $set: { isGenerating: false },
+        $inc: { version: 1 },
+      },
+    );
+  }
+
+  // ==================== END CACHE METHODS ====================
+
   /**
    * Generate route options for different durations
+   * Uses caching to avoid regenerating routes unnecessarily
    */
   async generateRoutes(
     courierId: string,
@@ -137,6 +323,138 @@ export class RoutesService {
 
     const vehicleType = dto.vehicleType || courier.vehicleType || 'car';
 
+    // ==================== CACHE CHECK ====================
+    let cache = await this.getOrCreateCacheEntry(courierId);
+    const startingLocation = dto.startingPoint;
+
+    // Check if we have valid cached data
+    if (
+      !cache.needsRevalidation &&
+      cache.cachedData &&
+      cache.cachedData.vehicleType === vehicleType &&
+      this.locationsMatch(cache.cachedData.startingLocation, startingLocation)
+    ) {
+      this.logger.log(`Returning cached routes for courier ${courierId}`);
+      return {
+        routes: cache.cachedData.routes as RoutePreviewDto[],
+        generatedAt: cache.cachedData.generatedAt,
+        expiresAt: cache.cachedData.expiresAt,
+        availableOrderCount: cache.cachedData.availableOrderCount,
+      };
+    }
+
+    // Try to acquire generation lock
+    let pollAttempts = 0;
+    while (pollAttempts < CACHE_CONSTANTS.MAX_POLL_ATTEMPTS) {
+      // Refresh cache state
+      const refreshedCache = await this.routeCacheModel.findOne({
+        courierId: new Types.ObjectId(courierId),
+      });
+      if (!refreshedCache) {
+        // Cache was deleted, recreate it
+        cache = await this.getOrCreateCacheEntry(courierId);
+      } else {
+        cache = refreshedCache;
+      }
+
+      if (!cache.isGenerating) {
+        // Try to acquire lock
+        const acquired = await this.tryAcquireLock(
+          cache._id as Types.ObjectId,
+          cache.version,
+        );
+        if (acquired) {
+          this.logger.log(`Acquired generation lock for courier ${courierId}`);
+          break;
+        }
+      } else {
+        // Check if lock is stale
+        const lockAge = cache.generationStartedAt
+          ? Date.now() - cache.generationStartedAt.getTime()
+          : Infinity;
+
+        if (lockAge > CACHE_CONSTANTS.STALE_LOCK_TIMEOUT_MS) {
+          // Try to take over stale lock
+          const takenOver = await this.tryTakeoverStaleLock(
+            cache._id as Types.ObjectId,
+            cache.version,
+          );
+          if (takenOver) {
+            this.logger.log(`Took over stale lock for courier ${courierId}`);
+            break;
+          }
+        }
+      }
+
+      // Wait and check if generation completed
+      await this.sleep(CACHE_CONSTANTS.POLL_INTERVAL_MS);
+      pollAttempts++;
+
+      // Check if cache is now valid after waiting
+      const updatedCache = await this.routeCacheModel.findOne({
+        courierId: new Types.ObjectId(courierId),
+      });
+      if (
+        updatedCache &&
+        !updatedCache.needsRevalidation &&
+        updatedCache.cachedData &&
+        updatedCache.cachedData.vehicleType === vehicleType &&
+        this.locationsMatch(
+          updatedCache.cachedData.startingLocation,
+          startingLocation,
+        )
+      ) {
+        this.logger.log(
+          `Returning freshly generated cached routes for courier ${courierId}`,
+        );
+        return {
+          routes: updatedCache.cachedData.routes as RoutePreviewDto[],
+          generatedAt: updatedCache.cachedData.generatedAt,
+          expiresAt: updatedCache.cachedData.expiresAt,
+          availableOrderCount: updatedCache.cachedData.availableOrderCount,
+        };
+      }
+    }
+
+    // We have the lock (or timed out trying) - proceed with generation
+    this.logger.log(`Generating routes for courier ${courierId}`);
+
+    try {
+      const routesData = await this._generateRoutesInternal(
+        courierId,
+        dto,
+        vehicleType,
+      );
+
+      // Save to cache and release lock
+      await this.releaseLockAndSaveCache(
+        courierId,
+        routesData,
+        vehicleType,
+        startingLocation,
+      );
+
+      return routesData;
+    } catch (error) {
+      // Release lock on error
+      await this.releaseLockOnError(courierId);
+      throw error;
+    }
+  }
+
+  /**
+   * Internal route generation logic (previously generateRoutes body)
+   */
+  private async _generateRoutesInternal(
+    courierId: string,
+    dto: GenerateRoutesDto,
+    vehicleType: string,
+  ): Promise<{
+    routes: RoutePreviewDto[];
+    generatedAt: Date;
+    expiresAt: Date;
+    availableOrderCount: number;
+  }> {
     // Get compatible shipping sizes for this vehicle
     const vehicleKey = vehicleType as keyof typeof VEHICLE_CAPACITIES;
     const capacity =
@@ -445,6 +763,9 @@ export class RoutesService {
       },
     );
 
+    // Invalidate caches - orders are now taken
+    await this.invalidateAllCaches();
+
     return route;
   }
 
@@ -484,17 +805,30 @@ export class RoutesService {
     }
 
     const stop = route.stops[stopIndex];
+    const now = new Date();
 
     switch (action) {
       case 'arrived':
         stop.status = StopStatus.ARRIVED;
-        stop.actualArrival = new Date();
+        stop.actualArrival = now;
+        // Start handling time tracking
+        stop.handlingStartedAt = now;
         break;
 
       case 'completed':
         stop.status = StopStatus.COMPLETED;
-        stop.completedAt = new Date();
+        stop.completedAt = now;
         route.completedStops += 1;
+
+        // Calculate handling time if we have a start time
+        if (stop.handlingStartedAt) {
+          const handlingMs = now.getTime() - stop.handlingStartedAt.getTime();
+          stop.handlingTimeMinutes = Math.round(handlingMs / 60000);
+        } else if (stop.actualArrival) {
+          // Fallback: use arrival time if handlingStartedAt not set
+          const handlingMs = now.getTime() - stop.actualArrival.getTime();
+          stop.handlingTimeMinutes = Math.round(handlingMs / 60000);
+        }
 
         // If this was a delivery, update order status and process earnings
         if (stop.type === StopType.DELIVERY && stop.orderId) {
@@ -503,7 +837,8 @@ export class RoutesService {
             {
               status: OrderStatus.DELIVERED,
               isDelivered: true,
-              deliveredAt: new Date(),
+              deliveredAt: now,
+              deliveredFromRouteId: route._id,
             },
             { new: true },
           );
@@ -517,11 +852,13 @@ export class RoutesService {
           }
         }
 
-        // If this was a pickup, update order status to shipped
+        // If this was a pickup, update order status to shipped with pickup tracking
         if (stop.type === StopType.PICKUP && stop.orderId) {
           await this.orderModel.findByIdAndUpdate(stop.orderId, {
             status: OrderStatus.SHIPPED,
-            shippedAt: new Date(),
+            shippedAt: now,
+            pickedUpAt: now,
+            pickedUpFromRouteId: route._id,
           });
         }
 
@@ -547,8 +884,8 @@ export class RoutesService {
 
     if (allStopsProcessed) {
       route.status = RouteStatus.COMPLETED;
-      route.completedAt = new Date();
-      route.actualEndTime = new Date();
+      route.completedAt = now;
+      route.actualEndTime = now;
       // actualEarnings is already updated incrementally when each delivery is completed
     }
 
@@ -725,6 +1062,10 @@ export class RoutesService {
     route.actualEndTime = new Date();
 
     await route.save();
+
+    // Invalidate caches - orders are back in available pool
+    await this.invalidateAllCaches();
+
     return route;
   }
 
@@ -837,6 +1178,10 @@ export class RoutesService {
     }
 
     await route.save();
+
+    // Invalidate caches - order is back in available pool
+    await this.invalidateAllCaches();
+
     return route;
   }
 
@@ -1801,5 +2146,257 @@ export class RoutesService {
     const mins = minutes % 60;
     if (mins === 0) return `${hours}h`;
     return `${hours}h ${mins}m`;
+  }
+
+  // =================== COURIER ANALYTICS ===================
+
+  /**
+   * Get courier analytics data
+   * Returns delivery statistics, earnings, and performance metrics
+   */
+  async getCourierAnalytics(
+    courierId: string,
+    period: 'week' | 'month' | 'year' | 'all' = 'week',
+  ): Promise<{
+    totalDeliveries: number;
+    totalEarnings: number;
+    totalRoutes: number;
+    thisWeek: { deliveries: number; earnings: number; routes: number };
+    thisMonth: { deliveries: number; earnings: number; routes: number };
+    averageDeliveriesPerRoute: number;
+    averageEarningsPerDelivery: number;
+    averageHandlingTimeMinutes: number;
+    averageRouteTimeMinutes: number;
+    onTimeDeliveryRate: number;
+    dailyStats: Array<{
+      date: string;
+      deliveries: number;
+      earnings: number;
+      routes: number;
+    }>;
+    recentRoutes: Array<{
+      _id: string;
+      completedAt: Date;
+      deliveries: number;
+      earnings: number;
+      duration: number;
+    }>;
+  }> {
+    const courierObjectId = new Types.ObjectId(courierId);
+    const now = new Date();
+
+    // Calculate date ranges
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    // Determine the period start date for daily stats
+    let periodStart: Date;
+    switch (period) {
+      case 'week':
+        periodStart = startOfWeek;
+        break;
+      case 'month':
+        periodStart = startOfMonth;
+        break;
+      case 'year':
+        periodStart = startOfYear;
+        break;
+      case 'all':
+      default:
+        periodStart = new Date(0); // Beginning of time
+    }
+
+    // Get all completed routes for this courier
+    const allRoutes = await this.courierRouteModel
+      .find({
+        courierId: courierObjectId,
+        status: RouteStatus.COMPLETED,
+      })
+      .sort({ completedAt: -1 });
+
+    // Calculate totals
+    let totalDeliveries = 0;
+    let totalEarnings = 0;
+    let totalHandlingTime = 0;
+    let handlingTimeCount = 0;
+    let totalRouteTime = 0;
+    let onTimeDeliveries = 0;
+    let totalDeliveriesWithDeadline = 0;
+
+    for (const route of allRoutes) {
+      totalEarnings += route.actualEarnings || 0;
+
+      // Calculate route duration
+      if (route.actualStartTime && route.actualEndTime) {
+        const duration =
+          route.actualEndTime.getTime() - route.actualStartTime.getTime();
+        totalRouteTime += duration / 60000; // Convert to minutes
+      }
+
+      for (const stop of route.stops) {
+        if (
+          stop.type === StopType.DELIVERY &&
+          stop.status === StopStatus.COMPLETED
+        ) {
+          totalDeliveries++;
+
+          // Track handling time
+          if (stop.handlingTimeMinutes) {
+            totalHandlingTime += stop.handlingTimeMinutes;
+            handlingTimeCount++;
+          }
+
+          // Check on-time delivery
+          if (stop.deliveryDeadline && stop.completedAt) {
+            totalDeliveriesWithDeadline++;
+            if (stop.completedAt <= stop.deliveryDeadline) {
+              onTimeDeliveries++;
+            }
+          }
+        }
+      }
+    }
+
+    // Weekly stats
+    const weekRoutes = allRoutes.filter(
+      (r) => r.completedAt && r.completedAt >= startOfWeek,
+    );
+    const thisWeek = {
+      deliveries: 0,
+      earnings: 0,
+      routes: weekRoutes.length,
+    };
+    for (const route of weekRoutes) {
+      thisWeek.earnings += route.actualEarnings || 0;
+      thisWeek.deliveries += route.stops.filter(
+        (s) =>
+          s.type === StopType.DELIVERY && s.status === StopStatus.COMPLETED,
+      ).length;
+    }
+
+    // Monthly stats
+    const monthRoutes = allRoutes.filter(
+      (r) => r.completedAt && r.completedAt >= startOfMonth,
+    );
+    const thisMonth = {
+      deliveries: 0,
+      earnings: 0,
+      routes: monthRoutes.length,
+    };
+    for (const route of monthRoutes) {
+      thisMonth.earnings += route.actualEarnings || 0;
+      thisMonth.deliveries += route.stops.filter(
+        (s) =>
+          s.type === StopType.DELIVERY && s.status === StopStatus.COMPLETED,
+      ).length;
+    }
+
+    // Daily stats for the selected period
+    const periodRoutes = allRoutes.filter(
+      (r) => r.completedAt && r.completedAt >= periodStart,
+    );
+
+    const dailyStatsMap = new Map<
+      string,
+      { deliveries: number; earnings: number; routes: number }
+    >();
+
+    for (const route of periodRoutes) {
+      if (!route.completedAt) continue;
+
+      const dateKey = route.completedAt.toISOString().split('T')[0];
+      const existing = dailyStatsMap.get(dateKey) || {
+        deliveries: 0,
+        earnings: 0,
+        routes: 0,
+      };
+
+      existing.routes++;
+      existing.earnings += route.actualEarnings || 0;
+      existing.deliveries += route.stops.filter(
+        (s) =>
+          s.type === StopType.DELIVERY && s.status === StopStatus.COMPLETED,
+      ).length;
+
+      dailyStatsMap.set(dateKey, existing);
+    }
+
+    const dailyStats = Array.from(dailyStatsMap.entries())
+      .map(([date, stats]) => ({ date, ...stats }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Recent routes (last 10)
+    const recentRoutes = allRoutes.slice(0, 10).map((route) => ({
+      _id: route._id.toString(),
+      completedAt: route.completedAt!,
+      deliveries: route.stops.filter(
+        (s) =>
+          s.type === StopType.DELIVERY && s.status === StopStatus.COMPLETED,
+      ).length,
+      earnings: route.actualEarnings || 0,
+      duration:
+        route.actualStartTime && route.actualEndTime
+          ? Math.round(
+              (route.actualEndTime.getTime() -
+                route.actualStartTime.getTime()) /
+                60000,
+            )
+          : route.estimatedTotalTime || 0,
+    }));
+
+    return {
+      totalDeliveries,
+      totalEarnings: Math.round(totalEarnings * 100) / 100,
+      totalRoutes: allRoutes.length,
+      thisWeek: {
+        ...thisWeek,
+        earnings: Math.round(thisWeek.earnings * 100) / 100,
+      },
+      thisMonth: {
+        ...thisMonth,
+        earnings: Math.round(thisMonth.earnings * 100) / 100,
+      },
+      averageDeliveriesPerRoute:
+        allRoutes.length > 0
+          ? Math.round((totalDeliveries / allRoutes.length) * 10) / 10
+          : 0,
+      averageEarningsPerDelivery:
+        totalDeliveries > 0
+          ? Math.round((totalEarnings / totalDeliveries) * 100) / 100
+          : 0,
+      averageHandlingTimeMinutes:
+        handlingTimeCount > 0
+          ? Math.round((totalHandlingTime / handlingTimeCount) * 10) / 10
+          : 0,
+      averageRouteTimeMinutes:
+        allRoutes.length > 0
+          ? Math.round((totalRouteTime / allRoutes.length) * 10) / 10
+          : 0,
+      onTimeDeliveryRate:
+        totalDeliveriesWithDeadline > 0
+          ? Math.round(
+              (onTimeDeliveries / totalDeliveriesWithDeadline) * 1000,
+            ) / 10
+          : 100,
+      dailyStats,
+      recentRoutes,
+    };
+  }
+
+  /**
+   * Get detailed route with time tracking information
+   */
+  async getRouteDetails(
+    courierId: string,
+    routeId: string,
+  ): Promise<CourierRouteDocument | null> {
+    return this.courierRouteModel.findOne({
+      _id: new Types.ObjectId(routeId),
+      courierId: new Types.ObjectId(courierId),
+    });
   }
 }

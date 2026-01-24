@@ -116,7 +116,14 @@ export class RouteStop {
 
   // Time tracking
   @Prop()
-  completedAt?: Date;
+  handlingStartedAt?: Date; // When courier started handling at this stop
+
+  @Prop()
+  completedAt?: Date; // When courier finished at this stop
+
+  // Calculated handling time in minutes (completedAt - handlingStartedAt)
+  @Prop()
+  handlingTimeMinutes?: number;
 
   // Break duration (only for break stops)
   @Prop()

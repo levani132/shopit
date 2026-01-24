@@ -7,8 +7,11 @@ import {
   OrderSchema,
   User,
   UserSchema,
+  RouteCache,
+  RouteCacheSchema,
 } from '@shopit/api-database';
 import { RoutesController } from './routes.controller';
+import { AnalyticsController } from './analytics.controller';
 import { RoutesService } from './routes.service';
 import { AdminModule } from '../admin/admin.module';
 import { OrdersModule } from '../orders/orders.module';
@@ -19,11 +22,12 @@ import { OrdersModule } from '../orders/orders.module';
       { name: CourierRoute.name, schema: CourierRouteSchema },
       { name: Order.name, schema: OrderSchema },
       { name: User.name, schema: UserSchema },
+      { name: RouteCache.name, schema: RouteCacheSchema },
     ]),
     AdminModule,
     forwardRef(() => OrdersModule),
   ],
-  controllers: [RoutesController],
+  controllers: [RoutesController, AnalyticsController],
   providers: [RoutesService],
   exports: [RoutesService],
 })

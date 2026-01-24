@@ -153,4 +153,30 @@ export class RoutesController {
     );
     return { routes };
   }
+
+  /**
+   * Get courier analytics
+   * Returns delivery stats, earnings, and performance metrics
+   */
+  @Get('analytics')
+  async getCourierAnalytics(
+    @Req() req: AuthenticatedRequest,
+    @Query('period') period?: 'week' | 'month' | 'year' | 'all',
+  ) {
+    return this.routesService.getCourierAnalytics(
+      req.user._id,
+      period || 'week',
+    );
+  }
+
+  /**
+   * Get detailed route with time tracking
+   */
+  @Get(':id/details')
+  async getRouteDetails(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') routeId: string,
+  ) {
+    return this.routesService.getRouteDetails(req.user._id, routeId);
+  }
 }

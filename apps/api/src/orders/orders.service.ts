@@ -294,6 +294,7 @@ export class OrdersService {
         // - Self-delivery (seller handles): free (no extra fee, only site commission applies)
         // - ShopIt courier: based on location/distance
         let shippingPrice = 0;
+        let distanceKm: number | undefined;
         if (deliveryMethod === 'pickup') {
           // Self-pickup is always free
           shippingPrice = 0;
@@ -361,6 +362,7 @@ export class OrdersService {
                 );
 
               shippingPrice += deliveryResult.fee;
+              distanceKm = deliveryResult.distanceKm;
               this.logger.log(
                 `ShopIt delivery fee for store ${store.name}: ${deliveryResult.fee} GEL (${deliveryResult.durationMinutes} min, ${largestSize})`,
               );
@@ -397,6 +399,7 @@ export class OrdersService {
           deliveryMethod,
           itemsPrice,
           shippingPrice,
+          distanceKm,
           taxPrice,
           totalPrice,
           externalOrderId,
@@ -841,6 +844,11 @@ export class OrdersService {
 
     order.status = newStatus;
 
+    // Invalidate route caches when order becomes available for delivery
+    if (newStatus === OrderStatus.READY_FOR_DELIVERY) {
+      await this.routesService.invalidateAllCaches();
+    }
+
     if (newStatus === OrderStatus.DELIVERED) {
       order.isDelivered = true;
       order.deliveredAt = new Date();
@@ -962,14 +970,16 @@ export class OrdersService {
     }
 
     order.status = newStatus;
+    const now = new Date();
 
     if (newStatus === OrderStatus.SHIPPED) {
-      order.shippedAt = new Date();
+      order.shippedAt = now;
+      order.pickedUpAt = now; // Track pickup time
     }
 
     if (newStatus === OrderStatus.DELIVERED) {
       order.isDelivered = true;
-      order.deliveredAt = new Date();
+      order.deliveredAt = now;
 
       // Process seller earnings when order is delivered
       await order.save();
@@ -1154,6 +1164,10 @@ export class OrdersService {
 
     order.courierId = new Types.ObjectId(courierId);
     order.courierAssignedAt = new Date();
+
+    // Invalidate caches - order is now taken
+    await this.routesService.invalidateAllCaches();
+
     return order.save();
   }
 

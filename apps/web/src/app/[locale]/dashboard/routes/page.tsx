@@ -104,6 +104,9 @@ interface ActiveRoute {
     };
     estimatedArrival?: string;
     actualArrival?: string;
+    handlingStartedAt?: string;
+    completedAt?: string;
+    handlingTimeMinutes?: number;
     contactName?: string;
     contactPhone?: string;
     storeName?: string;
@@ -909,50 +912,74 @@ export default function RoutesPage() {
         )}
 
         {/* Map View */}
-        {viewMode === 'map' && (
-          <RouteMap
-            stops={[
-              // Current stop
-              ...(currentStop
-                ? [
-                    {
-                      id: currentStop._id,
-                      type: currentStop.type as 'pickup' | 'delivery' | 'break',
-                      coordinates: currentStop.location.coordinates,
-                      address: `${currentStop.location.address}, ${currentStop.location.city}`,
-                      label:
-                        currentStop.type === 'pickup'
-                          ? currentStop.storeName
-                          : currentStop.contactName,
-                      status: currentStop.status as
-                        | 'pending'
-                        | 'arrived'
-                        | 'completed'
-                        | 'skipped',
-                      isCurrentStop: true,
-                    },
-                  ]
-                : []),
-              // Upcoming stops
-              ...upcomingStops.map((stop) => ({
-                id: stop._id,
-                type: stop.type as 'pickup' | 'delivery' | 'break',
-                coordinates: stop.location.coordinates,
-                address: `${stop.location.address}, ${stop.location.city}`,
-                label:
-                  stop.type === 'pickup' ? stop.storeName : stop.contactName,
-                status: stop.status as
-                  | 'pending'
-                  | 'arrived'
-                  | 'completed'
-                  | 'skipped',
-              })),
-            ]}
-            startingPoint={activeRoute.startingPoint.coordinates}
-            currentStopIndex={0}
-            height="320px"
-          />
-        )}
+        {viewMode === 'map' &&
+          (() => {
+            // Calculate courier's current location: last completed stop or starting point
+            const completedStops = activeRoute.stops.filter(
+              (s) => s.status === 'completed',
+            );
+            const lastCompletedStop =
+              completedStops.length > 0
+                ? completedStops[completedStops.length - 1]
+                : null;
+            const courierCurrentLocation = lastCompletedStop
+              ? lastCompletedStop.location.coordinates
+              : activeRoute.startingPoint.coordinates;
+            const courierVehicleType =
+              (user as { vehicleType?: string } | null)?.vehicleType || 'car';
+
+            return (
+              <RouteMap
+                stops={[
+                  // Current stop
+                  ...(currentStop
+                    ? [
+                        {
+                          id: currentStop._id,
+                          type: currentStop.type as
+                            | 'pickup'
+                            | 'delivery'
+                            | 'break',
+                          coordinates: currentStop.location.coordinates,
+                          address: `${currentStop.location.address}, ${currentStop.location.city}`,
+                          label:
+                            currentStop.type === 'pickup'
+                              ? currentStop.storeName
+                              : currentStop.contactName,
+                          status: currentStop.status as
+                            | 'pending'
+                            | 'arrived'
+                            | 'completed'
+                            | 'skipped',
+                          isCurrentStop: true,
+                        },
+                      ]
+                    : []),
+                  // Upcoming stops
+                  ...upcomingStops.map((stop) => ({
+                    id: stop._id,
+                    type: stop.type as 'pickup' | 'delivery' | 'break',
+                    coordinates: stop.location.coordinates,
+                    address: `${stop.location.address}, ${stop.location.city}`,
+                    label:
+                      stop.type === 'pickup'
+                        ? stop.storeName
+                        : stop.contactName,
+                    status: stop.status as
+                      | 'pending'
+                      | 'arrived'
+                      | 'completed'
+                      | 'skipped',
+                  })),
+                ]}
+                startingPoint={activeRoute.startingPoint.coordinates}
+                currentLocation={courierCurrentLocation}
+                vehicleType={courierVehicleType}
+                currentStopIndex={0}
+                height="320px"
+              />
+            );
+          })()}
 
         {/* Nothing in Bag Modal */}
         {nothingInBagModal && (

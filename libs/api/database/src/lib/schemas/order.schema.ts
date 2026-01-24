@@ -217,6 +217,9 @@ export class Order {
   @Prop({ required: true, default: 0, min: 0 })
   shippingPrice!: number; // Delivery fee
 
+  @Prop({ min: 0 })
+  distanceKm?: number; // Distance between pickup and delivery in kilometers
+
   @Prop({ required: true, default: 0, min: 0 })
   taxPrice!: number; // Tax (if applicable)
 
@@ -244,6 +247,17 @@ export class Order {
 
   @Prop()
   shippedAt?: Date;
+
+  // Courier pickup timestamp (when courier picked up the order from store)
+  @Prop()
+  pickedUpAt?: Date;
+
+  // Route tracking - which route was used for pickup/delivery
+  @Prop({ type: Types.ObjectId, ref: 'CourierRoute' })
+  pickedUpFromRouteId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'CourierRoute' })
+  deliveredFromRouteId?: Types.ObjectId;
 
   @Prop()
   cancelledAt?: Date;
