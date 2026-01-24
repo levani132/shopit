@@ -43,6 +43,10 @@ export class GenerateRoutesDto {
   @IsString()
   @IsOptional()
   vehicleType?: string;
+
+  @IsEnum(['heuristic', 'optimal'])
+  @IsOptional()
+  algorithm?: 'heuristic' | 'optimal';
 }
 
 /**

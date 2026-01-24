@@ -29,15 +29,16 @@ import {
   ClaimRouteDto,
 } from './dto/routes.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { findBestOrderSubset } from './optimal-route.algorithm';
 
 /**
  * Time constants for route calculations (in minutes)
  */
 const TIME_CONSTANTS = {
   HANDLING_TIME: 5, // Time to pick up or deliver an order
-  REST_TIME_PER_STOP: 5, // Extra time between stops
+  REST_TIME_PER_STOP: 3, // Extra time between stops (parking, walking, etc.)
   BREAK_DURATION: 30, // Break duration for long routes
-  BUFFER_FACTOR: 0.15, // 15% buffer for unexpected delays
+  BUFFER_FACTOR: 0.08, // 8% buffer for unexpected delays
 };
 
 /**
@@ -166,17 +167,40 @@ export class RoutesService {
       dto.startingPoint,
     );
 
+    // Check which algorithm to use: DTO param takes precedence, then settings
+    let useOptimalAlgorithm = false;
+    if (dto.algorithm) {
+      useOptimalAlgorithm = dto.algorithm === 'optimal';
+    } else {
+      const settings = await this.siteSettingsService.getSettings();
+      useOptimalAlgorithm = settings.routeAlgorithm === 'optimal';
+    }
+
     // Generate routes for each target duration
     const routes: RoutePreviewDto[] = [];
 
     for (const targetDuration of TARGET_DURATIONS) {
-      const route = await this.buildRouteForDuration(
-        ordersWithDistance,
-        dto.startingPoint,
-        targetDuration,
-        maxItems,
-        Boolean(dto.includeBreaks && targetDuration >= 240), // Include breaks for 4h+ routes
-      );
+      let route: RoutePreviewDto | null;
+
+      if (useOptimalAlgorithm) {
+        // Use optimal algorithm (Held-Karp/Branch-and-Bound)
+        route = await this.buildOptimalRouteForDuration(
+          availableOrders,
+          ordersWithDistance,
+          dto.startingPoint,
+          targetDuration,
+          maxItems,
+        );
+      } else {
+        // Use heuristic algorithm (default)
+        route = await this.buildRouteForDuration(
+          ordersWithDistance,
+          dto.startingPoint,
+          targetDuration,
+          maxItems,
+          Boolean(dto.includeBreaks && targetDuration >= 240), // Include breaks for 4h+ routes
+        );
+      }
 
       if (route && route.stops.length > 0) {
         routes.push(route);
@@ -971,259 +995,310 @@ export class RoutesService {
     // Reserve time for break if needed
     const breakTime = includeBreak ? TIME_CONSTANTS.BREAK_DURATION : 0;
     const effectiveTargetDuration = targetDuration - breakTime;
-
-    // Account for the 15% buffer that gets applied at the end
-    // If we want finalTime (with buffer) <= targetDuration, then:
-    // currentTime * (1 + BUFFER_FACTOR) <= targetDuration
-    // currentTime <= targetDuration / (1 + BUFFER_FACTOR)
     const maxAllowedTime =
       effectiveTargetDuration / (1 + TIME_CONSTANTS.BUFFER_FACTOR);
 
-    // Helper to calculate courier earning for an order
+    // === HELPER FUNCTIONS ===
+
     const calculateCourierEarning = (order: OrderDocument): number => {
       return (
         Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100
       );
     };
 
-    // Helper to check if two locations are the same store (within 50m)
     const isSameStore = (loc1: Location, loc2: Location): boolean => {
-      const distance = this.calculateHaversineDistance(loc1, loc2);
-      return distance < 0.05; // 50 meters (0.05 km)
+      return this.calculateHaversineDistance(loc1, loc2) < 0.05; // 50m
     };
 
-    // Helper to get all orders from the same store
-    const getOrdersFromSameStore = (
-      targetLocation: Location,
+    const getUnusedOrdersAtStore = (
+      storeLoc: Location,
     ): OrderWithDistance[] => {
       return ordersWithDistance.filter(
         (o) =>
           !usedOrderIds.has(o.order._id.toString()) &&
-          isSameStore(o.pickupLocation, targetLocation),
+          isSameStore(o.pickupLocation, storeLoc),
       );
     };
 
-    // Greedy algorithm with store grouping: pick up all orders from a store when visiting
-    while (currentTime < maxAllowedTime * 0.9) {
-      // 90% to leave room for remaining deliveries
-      let bestStop: AlgorithmStop | null = null;
-      let bestOrder: OrderWithDistance | null = null;
-      let bestTravelTime = Infinity;
-      let isPickup = false;
+    // === STEP 1: GROUP ORDERS BY STORE AND RANK STORES ===
+    // Find unique stores and calculate their efficiency (earnings per minute)
 
-      // If at capacity, must deliver
-      if (currentLoad >= maxItems) {
-        // Find nearest delivery
-        for (const orderInProgress of ordersInProgress) {
-          const travelTime = this.estimateTravelTime(
-            currentLocation,
-            orderInProgress.deliveryLocation,
-          );
+    interface StoreCluster {
+      location: Location;
+      orders: OrderWithDistance[];
+      totalEarnings: number;
+      travelTimeFromStart: number;
+      avgDeliveryTime: number;
+      efficiencyScore: number; // earnings per minute
+    }
 
-          if (travelTime < bestTravelTime) {
-            bestTravelTime = travelTime;
-            bestOrder = orderInProgress;
-            isPickup = false;
-            bestStop = this.createDeliveryStop(orderInProgress);
-          }
-        }
-      } else {
-        // Consider both pickups and deliveries
-        // Check deliveries first (for orders we're carrying)
-        for (const orderInProgress of ordersInProgress) {
-          const travelTime = this.estimateTravelTime(
-            currentLocation,
-            orderInProgress.deliveryLocation,
-          );
+    const storeMap = new Map<string, StoreCluster>();
 
-          if (travelTime < bestTravelTime) {
-            bestTravelTime = travelTime;
-            bestOrder = orderInProgress;
-            isPickup = false;
-            bestStop = this.createDeliveryStop(orderInProgress);
-          }
-        }
+    for (const orderWithDist of ordersWithDistance) {
+      // Create store key based on location (rounded to ~100m precision)
+      const storeKey = `${orderWithDist.pickupLocation.lat.toFixed(3)}_${orderWithDist.pickupLocation.lng.toFixed(3)}`;
 
-        // Check pickups - but consider store grouping potential
-        for (const orderWithDist of ordersWithDistance) {
-          if (usedOrderIds.has(orderWithDist.order._id.toString())) continue;
-
-          const travelTimeToPickup = this.estimateTravelTime(
-            currentLocation,
-            orderWithDist.pickupLocation,
-          );
-
-          // Count how many orders we can pick up from this store
-          const ordersAtStore = getOrdersFromSameStore(
-            orderWithDist.pickupLocation,
-          );
-          const availableCapacity = maxItems - currentLoad;
-          const ordersToPickup = ordersAtStore.slice(0, availableCapacity);
-
-          // Calculate time needed for all pickups at this store AND their deliveries
-          const totalPickupTime =
-            travelTimeToPickup +
-            ordersToPickup.length *
-              (TIME_CONSTANTS.HANDLING_TIME +
-                TIME_CONSTANTS.REST_TIME_PER_STOP);
-
-          // Estimate delivery times for all orders we'd pick up
-          let estimatedDeliveryTime = 0;
-          let lastLoc = orderWithDist.pickupLocation;
-          for (const orderToPickup of ordersToPickup) {
-            const deliveryTime = this.estimateTravelTime(
-              lastLoc,
-              orderToPickup.deliveryLocation,
-            );
-            estimatedDeliveryTime +=
-              deliveryTime +
-              TIME_CONSTANTS.HANDLING_TIME +
-              TIME_CONSTANTS.REST_TIME_PER_STOP;
-            lastLoc = orderToPickup.deliveryLocation;
-          }
-
-          // Calculate time to deliver ALL orders currently in progress
-          let pendingDeliveriesTime = 0;
-          for (const inProgressOrder of ordersInProgress) {
-            const deliveryTime = this.estimateTravelTime(
-              lastLoc,
-              inProgressOrder.deliveryLocation,
-            );
-            pendingDeliveriesTime +=
-              deliveryTime +
-              TIME_CONSTANTS.HANDLING_TIME +
-              TIME_CONSTANTS.REST_TIME_PER_STOP;
-            lastLoc = inProgressOrder.deliveryLocation;
-          }
-
-          // Only consider this store if we have time for everything
-          const totalTimeNeeded =
-            totalPickupTime + estimatedDeliveryTime + pendingDeliveriesTime;
-          if (currentTime + totalTimeNeeded > maxAllowedTime) continue;
-
-          // Favor stores with more orders (amortize travel cost)
-          // Divide travel time by number of orders to get "cost per order"
-          const effectiveTravelTime =
-            travelTimeToPickup / Math.max(1, ordersToPickup.length);
-
-          if (effectiveTravelTime < bestTravelTime) {
-            bestTravelTime = effectiveTravelTime;
-            bestOrder = orderWithDist;
-            isPickup = true;
-            bestStop = this.createPickupStop(orderWithDist);
-          }
-        }
+      if (!storeMap.has(storeKey)) {
+        const travelTime = this.estimateTravelTime(
+          startingPoint,
+          orderWithDist.pickupLocation,
+        );
+        storeMap.set(storeKey, {
+          location: orderWithDist.pickupLocation,
+          orders: [],
+          totalEarnings: 0,
+          travelTimeFromStart: travelTime,
+          avgDeliveryTime: 0,
+          efficiencyScore: 0,
+        });
       }
 
-      if (!bestStop || !bestOrder) break;
+      const store = storeMap.get(storeKey)!;
+      const earning = calculateCourierEarning(orderWithDist.order);
+      const deliveryTime =
+        this.estimateTravelTime(
+          orderWithDist.pickupLocation,
+          orderWithDist.deliveryLocation,
+        ) +
+        TIME_CONSTANTS.HANDLING_TIME * 2 +
+        TIME_CONSTANTS.REST_TIME_PER_STOP * 2;
 
-      if (isPickup) {
-        // STORE GROUPING: Pick up ALL orders from this store (up to capacity)
-        const ordersAtStore = getOrdersFromSameStore(bestOrder.pickupLocation);
-        const availableCapacity = maxItems - currentLoad;
-        const ordersToPickup = ordersAtStore.slice(0, availableCapacity);
+      store.orders.push(orderWithDist);
+      store.totalEarnings += earning;
+      store.avgDeliveryTime += deliveryTime;
+    }
 
-        // Calculate travel time to store (only once for all pickups)
-        const travelTimeToStore = this.estimateTravelTime(
-          currentLocation,
-          bestOrder.pickupLocation,
-        );
+    // Calculate efficiency score for each store
+    // Efficiency = Total Earnings / (Time to get there + Time to handle all orders)
+    for (const store of storeMap.values()) {
+      const totalTimeForStore =
+        store.travelTimeFromStart + store.avgDeliveryTime;
+      store.efficiencyScore =
+        totalTimeForStore > 0 ? store.totalEarnings / totalTimeForStore : 0;
 
-        // Add all pickup stops at this store
-        for (let i = 0; i < ordersToPickup.length; i++) {
-          const orderToPickup = ordersToPickup[i];
-          const pickupStop = this.createPickupStop(orderToPickup);
-          pickupStop.courierEarning = calculateCourierEarning(
-            orderToPickup.order,
+      // Sort orders within store by earnings (highest first)
+      store.orders.sort(
+        (a, b) =>
+          calculateCourierEarning(b.order) - calculateCourierEarning(a.order),
+      );
+    }
+
+    // Rank stores by efficiency (highest first)
+    const rankedStores = Array.from(storeMap.values()).sort(
+      (a, b) => b.efficiencyScore - a.efficiencyScore,
+    );
+
+    // === STEP 2: BUILD ROUTE BY VISITING STORES IN EFFICIENCY ORDER ===
+    // Key insight: Visit the BEST store, pick up ALL orders (up to capacity),
+    // deliver them, then move to next best store. Don't interleave stores!
+
+    for (const store of rankedStores) {
+      // Check if we have time left
+      const estimatedRemainingTime = maxAllowedTime - currentTime;
+      if (estimatedRemainingTime <= 10) break; // Need at least 10 min
+
+      // Get orders still available at this store
+      const availableOrders = store.orders.filter(
+        (o) => !usedOrderIds.has(o.order._id.toString()),
+      );
+      if (availableOrders.length === 0) continue;
+
+      // Calculate time to travel to this store
+      const travelTimeToStore = this.estimateTravelTime(
+        currentLocation,
+        store.location,
+      );
+
+      // How many orders can we pick up? (Limited by capacity)
+      const availableCapacity = maxItems - currentLoad;
+      if (availableCapacity <= 0) {
+        // Must deliver first - find nearest delivery
+        let nearestOrder: OrderWithDistance | null = null;
+        let nearestTime = Infinity;
+        for (const o of ordersInProgress) {
+          const time = this.estimateTravelTime(
+            currentLocation,
+            o.deliveryLocation,
           );
-
-          stops.push(pickupStop);
-
-          // Only add travel time for first pickup; others are at same location
-          const stopTime =
-            (i === 0 ? travelTimeToStore : 0) +
+          if (time < nearestTime) {
+            nearestTime = time;
+            nearestOrder = o;
+          }
+        }
+        if (nearestOrder) {
+          const deliveryStop = this.createDeliveryStop(nearestOrder);
+          deliveryStop.courierEarning = calculateCourierEarning(
+            nearestOrder.order,
+          );
+          stops.push(deliveryStop);
+          currentTime +=
+            nearestTime +
             TIME_CONSTANTS.HANDLING_TIME +
             TIME_CONSTANTS.REST_TIME_PER_STOP;
+          currentLoad -= 1;
 
-          currentTime += stopTime;
-          usedOrderIds.add(orderToPickup.order._id.toString());
-          ordersInProgress.push(orderToPickup);
-          currentLoad += 1;
+          const idx = ordersInProgress.findIndex(
+            (o) =>
+              o.order._id.toString() === nearestOrder!.order._id.toString(),
+          );
+          if (idx >= 0) ordersInProgress.splice(idx, 1);
+
+          currentLocation = {
+            ...nearestOrder.deliveryLocation,
+            address: nearestOrder.order.shippingDetails.address,
+            city: nearestOrder.order.shippingDetails.city,
+          };
         }
+        continue; // Re-check this store after delivery
+      }
 
-        // Update current location to store
-        currentLocation = {
-          ...bestOrder.pickupLocation,
-          address: bestOrder.order.pickupAddress || '',
-          city: bestOrder.order.pickupCity || '',
-        };
-      } else {
-        // Delivery - same as before
+      // Pick up orders at this store (up to capacity)
+      const ordersToPickup = availableOrders.slice(0, availableCapacity);
+
+      // Estimate time for this pickup batch + deliveries
+      let batchTime = travelTimeToStore;
+      for (let i = 0; i < ordersToPickup.length; i++) {
+        batchTime +=
+          TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP;
+      }
+      // Add estimated delivery time for these orders
+      let lastLoc = store.location;
+      for (const o of ordersToPickup) {
+        batchTime +=
+          this.estimateTravelTime(lastLoc, o.deliveryLocation) +
+          TIME_CONSTANTS.HANDLING_TIME +
+          TIME_CONSTANTS.REST_TIME_PER_STOP;
+        lastLoc = o.deliveryLocation;
+      }
+
+      // Check if we have time for this batch
+      if (currentTime + batchTime > maxAllowedTime) {
+        // Try with fewer orders
+        const reducedCount = Math.max(
+          1,
+          Math.floor(ordersToPickup.length * 0.5),
+        );
+        ordersToPickup.splice(reducedCount);
+        if (ordersToPickup.length === 0) continue;
+      }
+
+      // === PICKUP ALL ORDERS AT THIS STORE ===
+      for (let i = 0; i < ordersToPickup.length; i++) {
+        const orderToPickup = ordersToPickup[i];
+        const pickupStop = this.createPickupStop(orderToPickup);
+        pickupStop.courierEarning = calculateCourierEarning(
+          orderToPickup.order,
+        );
+
+        stops.push(pickupStop);
+
+        // Only add travel time for first pickup
         const stopTime =
-          bestTravelTime +
+          (i === 0 ? travelTimeToStore : 0) +
           TIME_CONSTANTS.HANDLING_TIME +
           TIME_CONSTANTS.REST_TIME_PER_STOP;
 
-        if (currentTime + stopTime > maxAllowedTime) break;
-
-        bestStop.courierEarning = calculateCourierEarning(bestOrder.order);
-        stops.push(bestStop);
         currentTime += stopTime;
-
-        const bestOrderId = bestOrder.order._id.toString();
-        const idx = ordersInProgress.findIndex(
-          (o) => o.order._id.toString() === bestOrderId,
-        );
-        if (idx >= 0) ordersInProgress.splice(idx, 1);
-        currentLoad -= 1;
-        currentLocation = {
-          ...bestOrder.deliveryLocation,
-          address: bestOrder.order.shippingDetails.address,
-          city: bestOrder.order.shippingDetails.city,
-        };
+        usedOrderIds.add(orderToPickup.order._id.toString());
+        ordersInProgress.push(orderToPickup);
+        currentLoad += 1;
       }
-    }
 
-    // Deliver remaining orders
-    while (ordersInProgress.length > 0) {
-      let nearestOrder: OrderWithDistance | null = null;
-      let nearestTime = Infinity;
+      // Update location to store
+      currentLocation = {
+        ...store.location,
+        address: ordersToPickup[0].order.pickupAddress || '',
+        city: ordersToPickup[0].order.pickupCity || '',
+      };
 
-      for (const orderInProgress of ordersInProgress) {
-        const travelTime = this.estimateTravelTime(
-          currentLocation,
-          orderInProgress.deliveryLocation,
-        );
+      // === DELIVER ALL PICKED ORDERS (NEAREST FIRST) ===
+      // This ensures we complete one store before moving to the next
+      while (ordersInProgress.length > 0 && currentLoad > 0) {
+        // Find nearest delivery
+        let nearestOrder: OrderWithDistance | null = null;
+        let nearestTime = Infinity;
 
-        if (travelTime < nearestTime) {
-          nearestTime = travelTime;
-          nearestOrder = orderInProgress;
+        for (const o of ordersInProgress) {
+          const time = this.estimateTravelTime(
+            currentLocation,
+            o.deliveryLocation,
+          );
+          if (time < nearestTime) {
+            nearestTime = time;
+            nearestOrder = o;
+          }
         }
-      }
 
-      if (nearestOrder) {
+        if (!nearestOrder) break;
+
         const deliveryStop = this.createDeliveryStop(nearestOrder);
         deliveryStop.courierEarning = calculateCourierEarning(
           nearestOrder.order,
         );
         stops.push(deliveryStop);
+
         currentTime +=
           nearestTime +
           TIME_CONSTANTS.HANDLING_TIME +
           TIME_CONSTANTS.REST_TIME_PER_STOP;
 
-        const nearestOrderId = nearestOrder.order._id.toString();
         const idx = ordersInProgress.findIndex(
-          (o) => o.order._id.toString() === nearestOrderId,
+          (o) => o.order._id.toString() === nearestOrder!.order._id.toString(),
         );
         if (idx >= 0) ordersInProgress.splice(idx, 1);
+        currentLoad -= 1;
 
         currentLocation = {
           ...nearestOrder.deliveryLocation,
           address: nearestOrder.order.shippingDetails.address,
           city: nearestOrder.order.shippingDetails.city,
         };
+
+        // Check time
+        if (currentTime >= maxAllowedTime * 0.95) break;
       }
+
+      // Check if we should stop
+      if (currentTime >= maxAllowedTime * 0.9) break;
+    }
+
+    // Deliver any remaining orders
+    while (ordersInProgress.length > 0) {
+      let nearestOrder: OrderWithDistance | null = null;
+      let nearestTime = Infinity;
+
+      for (const o of ordersInProgress) {
+        const time = this.estimateTravelTime(
+          currentLocation,
+          o.deliveryLocation,
+        );
+        if (time < nearestTime) {
+          nearestTime = time;
+          nearestOrder = o;
+        }
+      }
+
+      if (!nearestOrder) break;
+
+      const deliveryStop = this.createDeliveryStop(nearestOrder);
+      deliveryStop.courierEarning = calculateCourierEarning(nearestOrder.order);
+      stops.push(deliveryStop);
+
+      currentTime +=
+        nearestTime +
+        TIME_CONSTANTS.HANDLING_TIME +
+        TIME_CONSTANTS.REST_TIME_PER_STOP;
+
+      const idx = ordersInProgress.findIndex(
+        (o) => o.order._id.toString() === nearestOrder!.order._id.toString(),
+      );
+      if (idx >= 0) ordersInProgress.splice(idx, 1);
+
+      currentLocation = {
+        ...nearestOrder.deliveryLocation,
+        address: nearestOrder.order.shippingDetails.address,
+        city: nearestOrder.order.shippingDetails.city,
+      };
     }
 
     if (stops.length === 0) return null;
@@ -1327,6 +1402,142 @@ export class RoutesService {
       estimatedEarnings: earnings,
       estimatedTime: finalTime,
       estimatedDistanceKm: Math.round(totalDistance * 10) / 10,
+    };
+  }
+
+  /**
+   * Build a route for a specific target duration using the OPTIMAL algorithm
+   * Returns the same RoutePreviewDto format as buildRouteForDuration for consistency
+   */
+  private async buildOptimalRouteForDuration(
+    availableOrders: OrderDocument[],
+    ordersWithDistance: OrderWithDistance[],
+    startingPoint: { lat: number; lng: number; address: string; city: string },
+    targetDuration: number,
+    maxItems: number,
+  ): Promise<RoutePreviewDto | null> {
+    const settings = await this.siteSettingsService.getSettings();
+    const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
+
+    // Prepare order data for optimal algorithm
+    const orderData = availableOrders.map((order) => ({
+      orderId: order._id.toString(),
+      pickupLocation: {
+        lat: order.pickupLocation?.lat ?? 41.7151,
+        lng: order.pickupLocation?.lng ?? 44.8271,
+      },
+      deliveryLocation: {
+        lat: order.deliveryLocation?.lat ?? 41.7151,
+        lng: order.deliveryLocation?.lng ?? 44.8271,
+      },
+      earning:
+        Math.round(order.shippingPrice * courierEarningsPercentage * 100) / 100,
+      handlingTime:
+        TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP,
+    }));
+
+    // Run optimal algorithm
+    const result = findBestOrderSubset(
+      { lat: startingPoint.lat, lng: startingPoint.lng },
+      orderData,
+      maxItems,
+      targetDuration,
+    );
+
+    if (result.stops.length === 0) return null;
+
+    // Create order lookup map for enrichment
+    const orderMap = new Map<string, OrderWithDistance>();
+    for (const owd of ordersWithDistance) {
+      orderMap.set(owd.order._id.toString(), owd);
+    }
+
+    // Convert OptimalStop[] to RouteStopPreviewDto[]
+    const now = new Date();
+    let estimatedTime = now;
+    let prevLocation = { lat: startingPoint.lat, lng: startingPoint.lng };
+
+    const previewStops: RouteStopPreviewDto[] = result.stops.map((stop) => {
+      const orderWithDist = orderMap.get(stop.orderId);
+      const order = orderWithDist?.order;
+
+      // Calculate travel time from previous location
+      const travelMinutes = this.estimateTravelTime(
+        prevLocation,
+        stop.location,
+      );
+      estimatedTime = new Date(
+        estimatedTime.getTime() + travelMinutes * 60 * 1000,
+      );
+      const arrivalTime = new Date(estimatedTime);
+
+      // Add handling time for next calculation
+      estimatedTime = new Date(
+        estimatedTime.getTime() +
+          (TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP) *
+            60 *
+            1000,
+      );
+      prevLocation = stop.location;
+
+      if (stop.type === 'pickup') {
+        return {
+          stopId: stop.id,
+          orderId: stop.orderId,
+          type: 'pickup' as const,
+          address:
+            order?.pickupAddress || order?.orderItems[0]?.storeName || '',
+          city: order?.pickupCity || '',
+          coordinates: stop.location,
+          estimatedArrival: arrivalTime.toISOString(),
+          storeName: order?.pickupStoreName,
+          contactName: order?.pickupStoreName,
+          contactPhone: order?.pickupPhoneNumber,
+          orderValue: order?.totalPrice,
+          shippingSize: this.mapShippingSize(
+            order?.shippingSize || order?.estimatedShippingSize,
+          ),
+          deliveryDeadline: order?.deliveryDeadline?.toISOString(),
+          orderItems: order?.orderItems.map((item) => ({
+            name: item.name,
+            nameEn: item.nameEn,
+            image: item.image,
+            qty: item.qty,
+            price: item.price,
+          })),
+        };
+      } else {
+        return {
+          stopId: stop.id,
+          orderId: stop.orderId,
+          type: 'delivery' as const,
+          address: order?.shippingDetails?.address || '',
+          city: order?.shippingDetails?.city || '',
+          coordinates: stop.location,
+          estimatedArrival: arrivalTime.toISOString(),
+          contactName: order?.recipientName,
+          contactPhone: order?.shippingDetails?.phoneNumber,
+          orderValue: order?.totalPrice,
+          courierEarning: stop.earning,
+          shippingSize: this.mapShippingSize(
+            order?.shippingSize || order?.estimatedShippingSize,
+          ),
+          deliveryDeadline: order?.deliveryDeadline?.toISOString(),
+        };
+      }
+    });
+
+    // Count unique orders (deliveries = order count)
+    const orderCount = result.stops.filter((s) => s.type === 'delivery').length;
+
+    return {
+      duration: targetDuration,
+      durationLabel: this.formatDuration(targetDuration),
+      stops: previewStops,
+      orderCount,
+      estimatedEarnings: result.totalEarnings,
+      estimatedTime: Math.round(result.totalTime),
+      estimatedDistanceKm: Math.round(result.totalDistance * 10) / 10,
     };
   }
 

@@ -42,6 +42,8 @@ export interface SiteSettings {
   subdomainChangePrice: number;
   // Courier
   courierEarningsPercentage: number;
+  // Routing algorithm
+  routeAlgorithm: 'heuristic' | 'optimal';
   // Withdrawal
   minimumWithdrawalAmount: number;
   withdrawalFee: number;
@@ -394,6 +396,26 @@ const TABS: Tab[] = [
     ),
   },
   {
+    id: 'routing',
+    labelKey: 'routingSettings',
+    href: '/dashboard/admin/settings/routing',
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+        />
+      </svg>
+    ),
+  },
+  {
     id: 'contact',
     labelKey: 'contactSettings',
     href: '/dashboard/admin/settings/contact',
@@ -574,6 +596,7 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
         freeSubdomainChanges: settings.freeSubdomainChanges,
         subdomainChangePrice: settings.subdomainChangePrice,
         courierEarningsPercentage: settings.courierEarningsPercentage,
+        routeAlgorithm: settings.routeAlgorithm,
         minimumWithdrawalAmount: settings.minimumWithdrawalAmount,
         withdrawalFee: settings.withdrawalFee,
         supportEmail: settings.supportEmail,
@@ -631,6 +654,7 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
   const isSettingsTab = [
     'commission',
     'shipping',
+    'routing',
     'contact',
     'features',
   ].includes(currentTab);

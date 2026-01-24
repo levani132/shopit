@@ -12,7 +12,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CourierGuard } from '../guards/courier.guard';
 import { RoutesService } from './routes.service';
 import {
   GenerateRoutesDto,
@@ -20,6 +19,9 @@ import {
   UpdateProgressDto,
   AbandonRouteDto,
 } from './dto/routes.dto';
+import { Roles } from '../decorators/roles.decorator';
+import { Role } from '@shopit/constants';
+import { RolesGuard } from '../guards/roles.guard';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -30,7 +32,8 @@ interface AuthenticatedRequest extends Request {
 }
 
 @Controller('routes')
-@UseGuards(JwtAuthGuard, CourierGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.COURIER)
 export class RoutesController {
   constructor(private readonly routesService: RoutesService) {}
 

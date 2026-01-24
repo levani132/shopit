@@ -99,14 +99,18 @@ export class UpdateSiteSettingsDto {
   @Min(0)
   freeSubdomainChanges?: number;
 
-  @ApiPropertyOptional({ description: 'Subdomain change price in GEL (after free changes)' })
+  @ApiPropertyOptional({
+    description: 'Subdomain change price in GEL (after free changes)',
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   subdomainChangePrice?: number;
 
   // Courier Settings
-  @ApiPropertyOptional({ description: 'Courier earnings as percentage of delivery fee (0.0 - 1.0)' })
+  @ApiPropertyOptional({
+    description: 'Courier earnings as percentage of delivery fee (0.0 - 1.0)',
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -162,6 +166,15 @@ export class UpdateSiteSettingsDto {
   @IsOptional()
   @IsString()
   maintenanceMessage?: string;
+
+  // Routing Algorithm
+  @ApiPropertyOptional({
+    description: 'Route generation algorithm',
+    enum: ['heuristic', 'optimal'],
+  })
+  @IsOptional()
+  @IsEnum(['heuristic', 'optimal'])
+  routeAlgorithm?: 'heuristic' | 'optimal';
 }
 
 /**
@@ -267,4 +280,3 @@ export class ListOrdersQueryDto {
   @IsString()
   storeId?: string;
 }
-
