@@ -605,6 +605,8 @@ function solveWithBranchAndBound(
  *
  * A 10-order route taking 4h earning ₾40 is WORSE than
  * a 20-order route taking 7.5h earning ₾75 for an 8h bucket.
+ *
+ * @param breakTimeMinutes - Time reserved for breaks (subtracted from available time)
  */
 export function findBestOrderSubset(
   startingPoint: { lat: number; lng: number },
@@ -617,8 +619,12 @@ export function findBestOrderSubset(
   }[],
   maxCapacity: number,
   maxTimeMinutes: number,
+  breakTimeMinutes = 0,
 ): OptimalRouteResult {
   const startTime = performance.now();
+
+  // Subtract break time from available time budget
+  const effectiveTimeMinutes = maxTimeMinutes - breakTimeMinutes;
 
   // For small sets, try all combinations - maximize TOTAL EARNINGS
   if (allOrders.length <= 10) {
@@ -626,7 +632,7 @@ export function findBestOrderSubset(
       startingPoint,
       allOrders,
       maxCapacity,
-      maxTimeMinutes,
+      effectiveTimeMinutes,
       startTime,
     );
   }
@@ -636,7 +642,7 @@ export function findBestOrderSubset(
     startingPoint,
     allOrders,
     maxCapacity,
-    maxTimeMinutes,
+    effectiveTimeMinutes,
     startTime,
   );
 }

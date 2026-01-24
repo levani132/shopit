@@ -190,6 +190,7 @@ export class RoutesService {
           dto.startingPoint,
           targetDuration,
           maxItems,
+          Boolean(dto.includeBreaks && targetDuration >= 240), // Include breaks for 4h+ routes
         );
       } else {
         // Use heuristic algorithm (default)
@@ -1006,20 +1007,6 @@ export class RoutesService {
       );
     };
 
-    const isSameStore = (loc1: Location, loc2: Location): boolean => {
-      return this.calculateHaversineDistance(loc1, loc2) < 0.05; // 50m
-    };
-
-    const getUnusedOrdersAtStore = (
-      storeLoc: Location,
-    ): OrderWithDistance[] => {
-      return ordersWithDistance.filter(
-        (o) =>
-          !usedOrderIds.has(o.order._id.toString()) &&
-          isSameStore(o.pickupLocation, storeLoc),
-      );
-    };
-
     // === STEP 1: GROUP ORDERS BY STORE AND RANK STORES ===
     // Find unique stores and calculate their efficiency (earnings per minute)
 
@@ -1415,6 +1402,7 @@ export class RoutesService {
     startingPoint: { lat: number; lng: number; address: string; city: string },
     targetDuration: number,
     maxItems: number,
+    includeBreaks: boolean,
   ): Promise<RoutePreviewDto | null> {
     const settings = await this.siteSettingsService.getSettings();
     const courierEarningsPercentage = settings.courierEarningsPercentage ?? 0.8;
@@ -1436,12 +1424,14 @@ export class RoutesService {
         TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP,
     }));
 
-    // Run optimal algorithm
+    // Run optimal algorithm with break time if enabled
+    const breakTimeMinutes = includeBreaks ? TIME_CONSTANTS.BREAK_DURATION : 0;
     const result = findBestOrderSubset(
       { lat: startingPoint.lat, lng: startingPoint.lng },
       orderData,
       maxItems,
       targetDuration,
+      breakTimeMinutes,
     );
 
     if (result.stops.length === 0) return null;
@@ -1527,8 +1517,51 @@ export class RoutesService {
       }
     });
 
+    // Insert break stop if needed (same as heuristic algorithm)
+    if (includeBreaks && previewStops.length >= 4) {
+      const midPoint = Math.floor(previewStops.length / 2);
+      const breakLocation = previewStops[midPoint - 1].coordinates;
+
+      // Calculate break arrival time (after previous stop's handling time)
+      const prevStopArrival = new Date(
+        previewStops[midPoint - 1].estimatedArrival,
+      );
+      const breakArrivalTime = new Date(
+        prevStopArrival.getTime() +
+          (TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP) *
+            60 *
+            1000,
+      );
+
+      const breakStop: RouteStopPreviewDto = {
+        stopId: uuidv4(),
+        orderId: '',
+        type: 'break' as const,
+        address: 'Break',
+        city: previewStops[midPoint - 1].city || '',
+        coordinates: breakLocation,
+        estimatedArrival: breakArrivalTime.toISOString(),
+        breakDurationMinutes: TIME_CONSTANTS.BREAK_DURATION,
+      };
+      previewStops.splice(midPoint, 0, breakStop);
+
+      // Update all stops AFTER the break to add 30 minutes
+      for (let i = midPoint + 1; i < previewStops.length; i++) {
+        const oldArrival = new Date(previewStops[i].estimatedArrival);
+        const newArrival = new Date(
+          oldArrival.getTime() + TIME_CONSTANTS.BREAK_DURATION * 60 * 1000,
+        );
+        previewStops[i].estimatedArrival = newArrival.toISOString();
+      }
+    }
+
     // Count unique orders (deliveries = order count)
     const orderCount = result.stops.filter((s) => s.type === 'delivery').length;
+
+    // Add break time to total if break was included
+    const totalTimeWithBreak = includeBreaks
+      ? result.totalTime + TIME_CONSTANTS.BREAK_DURATION
+      : result.totalTime;
 
     return {
       duration: targetDuration,
@@ -1536,7 +1569,7 @@ export class RoutesService {
       stops: previewStops,
       orderCount,
       estimatedEarnings: result.totalEarnings,
-      estimatedTime: Math.round(result.totalTime),
+      estimatedTime: Math.round(totalTimeWithBreak),
       estimatedDistanceKm: Math.round(result.totalDistance * 10) / 10,
     };
   }
