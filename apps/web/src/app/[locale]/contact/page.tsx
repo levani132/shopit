@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
 
 interface ContactInfo {
   // These come from SiteSettings (public endpoint)
@@ -72,23 +73,9 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(
-        `${API_BASE}/api/v1/content/contact/submit`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        },
-      );
-
-      if (response.ok) {
-        setSubmitStatus('success');
-        setFormData({ name: '', email: '', subject: '', message: '' });
-      } else {
-        setSubmitStatus('error');
-      }
+      await api.post('/api/v1/content/contact/submit', formData);
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', subject: '', message: '' });
     } catch {
       setSubmitStatus('error');
     } finally {
