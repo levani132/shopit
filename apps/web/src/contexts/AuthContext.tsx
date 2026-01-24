@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { Role, RoleValue, hasAnyRole } from '@shopit/constants';
+import { api } from '../lib/api';
 
 // Types
 export interface User {
@@ -60,10 +61,6 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Build API base URL - strip any existing prefix to avoid duplication
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [state, setState] = useState<AuthState>({
@@ -80,60 +77,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  // API helper
-  const apiCall = async (
-    endpoint: string,
-    options: RequestInit = {},
-  ): Promise<Response> => {
-    const url = `${API_URL}/api/v1${endpoint}`;
-    return fetch(url, {
-      ...options,
-      credentials: 'include', // Include cookies
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-  };
 
   // Check authentication status
   const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await apiCall('/auth/me');
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          setState({
-            user: data.user,
-            store: data.store,
-            isLoading: false,
-            isAuthenticated: true,
-          });
-          return true;
-        }
-      }
-
-      // Try to refresh token
-      const refreshResponse = await apiCall('/auth/refresh', {
-        method: 'POST',
-      });
-
-      if (refreshResponse.ok) {
-        // Retry getting user
-        const retryResponse = await apiCall('/auth/me');
-        if (retryResponse.ok) {
-          const data = await retryResponse.json();
-          if (data.user) {
-            setState({
-              user: data.user,
-              store: data.store,
-              isLoading: false,
-              isAuthenticated: true,
-            });
-            return true;
-          }
-        }
+      const data = await api.get('/api/v1/auth/me');
+      if (data.user) {
+        setState({
+          user: data.user,
+          store: data.store,
+          isLoading: false,
+          isAuthenticated: true,
+        });
+        return true;
       }
 
       // Not authenticated
@@ -162,17 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((prev) => ({ ...prev, isLoading: true }));
 
       try {
-        const response = await apiCall('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Login failed');
-        }
-
-        const data = await response.json();
+        const data = await api.post('/api/v1/auth/login', { email, password });
 
         setState({
           user: data.user,
@@ -192,10 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(
     async (logoutAllDevices = false): Promise<void> => {
       try {
-        await apiCall('/auth/logout', {
-          method: 'POST',
-          body: JSON.stringify({ logoutAllDevices }),
-        });
+        await api.post('/api/v1/auth/logout', { logoutAllDevices });
       } catch (error) {
         console.error('Logout error:', error);
       }

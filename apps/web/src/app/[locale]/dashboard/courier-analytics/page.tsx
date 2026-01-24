@@ -5,9 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface AnalyticsData {
   totalDeliveries: number;
@@ -124,16 +122,8 @@ export default function CourierAnalyticsPage() {
     const fetchAnalytics = async () => {
       setLoading(true);
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/analytics/courier?period=${period}`,
-          { credentials: 'include' },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setAnalytics(data);
-        } else {
-          setAnalytics(emptyAnalytics);
-        }
+        const data = await api.get(`/api/v1/analytics/courier?period=${period}`);
+        setAnalytics(data);
       } catch (err) {
         console.error('Error fetching analytics:', err);
         setAnalytics(emptyAnalytics);

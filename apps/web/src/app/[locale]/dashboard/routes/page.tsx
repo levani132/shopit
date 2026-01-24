@@ -7,9 +7,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import Image from 'next/image';
 import { RouteMap } from '../../../../components/ui/RouteMap';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 // ===================== Types =====================
 
@@ -190,24 +188,19 @@ export default function RoutesPage() {
   // Fetch saved addresses
   const fetchAddresses = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSavedAddresses(data);
+      const data = await api.get('/api/v1/auth/addresses');
+      setSavedAddresses(data);
 
-        // Auto-select default address if exists
-        const defaultAddr = data.find((a: SavedAddress) => a.isDefault);
-        if (defaultAddr && defaultAddr.location) {
-          setSelectedAddressId(defaultAddr._id);
-          setStartingPoint({
-            lat: defaultAddr.location.lat,
-            lng: defaultAddr.location.lng,
-            address: defaultAddr.address,
-            city: defaultAddr.city,
-          });
-        }
+      // Auto-select default address if exists
+      const defaultAddr = data.find((a: SavedAddress) => a.isDefault);
+      if (defaultAddr && defaultAddr.location) {
+        setSelectedAddressId(defaultAddr._id);
+        setStartingPoint({
+          lat: defaultAddr.location.lat,
+          lng: defaultAddr.location.lng,
+          address: defaultAddr.address,
+          city: defaultAddr.city,
+        });
       }
     } catch (err) {
       console.error('Error fetching addresses:', err);
@@ -217,16 +210,11 @@ export default function RoutesPage() {
   // Check for active route
   const checkActiveRoute = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/routes/active`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.route) {
-          setActiveRoute(data.route);
-          setView('active');
-          return true;
-        }
+      const data = await api.get('/api/v1/routes/active');
+      if (data.route) {
+        setActiveRoute(data.route);
+        setView('active');
+        return true;
       }
     } catch (err) {
       console.error('Error checking active route:', err);
@@ -249,28 +237,17 @@ export default function RoutesPage() {
           : includeBreaks;
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/routes/generate`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            startingPoint,
-            includeBreaks: breaksValue,
-          }),
+        const data = await api.post('/api/v1/routes/generate', {
+          startingPoint,
+          includeBreaks: breaksValue,
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          setRoutes(data.routes);
-          setView('selection');
-          setRefreshCountdown(30);
-        } else {
-          const errorData = await response.json();
-          setError(errorData.message || t('errorGenerating'));
-        }
+        setRoutes(data.routes);
+        setView('selection');
+        setRefreshCountdown(30);
       } catch (err) {
         console.error('Error generating routes:', err);
-        setError(t('errorGenerating'));
+        const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : t('errorGenerating');
+        setError(errorMessage);
       } finally {
         setGenerating(false);
       }
@@ -286,52 +263,41 @@ export default function RoutesPage() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/routes/claim`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          duration: selectedRoute.duration,
-          stops: selectedRoute.stops.map((s) => ({
-            stopId: s.stopId,
-            orderId: s.orderId,
-            type: s.type,
-            // Include location for break stops (they don't have an orderId)
-            ...(s.type === 'break' && s.coordinates
-              ? {
-                  location: {
-                    lat: s.coordinates.lat,
-                    lng: s.coordinates.lng,
-                    address: s.address,
-                    city: s.city,
-                  },
-                }
-              : {}),
-          })),
-          orderIds: selectedRoute.stops
-            .filter((s) => s.orderId)
-            .map((s) => s.orderId)
-            .filter((id, i, arr) => arr.indexOf(id) === i), // Unique
-          startingPoint,
-          includeBreaks,
-        }),
+      const route = await api.post('/api/v1/routes/claim', {
+        duration: selectedRoute.duration,
+        stops: selectedRoute.stops.map((s) => ({
+          stopId: s.stopId,
+          orderId: s.orderId,
+          type: s.type,
+          // Include location for break stops (they don't have an orderId)
+          ...(s.type === 'break' && s.coordinates
+            ? {
+                location: {
+                  lat: s.coordinates.lat,
+                  lng: s.coordinates.lng,
+                  address: s.address,
+                  city: s.city,
+                },
+              }
+            : {}),
+        })),
+        orderIds: selectedRoute.stops
+          .filter((s) => s.orderId)
+          .map((s) => s.orderId)
+          .filter((id, i, arr) => arr.indexOf(id) === i), // Unique
+        startingPoint,
+        includeBreaks,
       });
-
-      if (response.ok) {
-        const route = await response.json();
-        setActiveRoute(route);
-        setView('active');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || t('errorClaiming'));
-        // Regenerate routes if orders were taken
-        if (response.status === 400) {
-          generateRoutes();
-        }
-      }
+      setActiveRoute(route);
+      setView('active');
     } catch (err) {
       console.error('Error claiming route:', err);
-      setError(t('errorClaiming'));
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : t('errorClaiming');
+      setError(errorMessage);
+      // Regenerate routes if orders were taken
+      if (err && typeof err === 'object' && 'status' in err && err.status === 400) {
+        generateRoutes();
+      }
     } finally {
       setClaiming(false);
     }
@@ -345,25 +311,16 @@ export default function RoutesPage() {
     if (!activeRoute) return;
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/routes/${activeRoute._id}/progress`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stopIndex, action }),
-        },
+      const updatedRoute = await api.patch(
+        `/api/v1/routes/${activeRoute._id}/progress`,
+        { stopIndex, action },
       );
+      setActiveRoute(updatedRoute);
 
-      if (response.ok) {
-        const updatedRoute = await response.json();
-        setActiveRoute(updatedRoute);
-
-        // Check if route is complete
-        if (updatedRoute.status === 'completed') {
-          setView('setup');
-          setActiveRoute(null);
-        }
+      // Check if route is complete
+      if (updatedRoute.status === 'completed') {
+        setView('setup');
+        setActiveRoute(null);
       }
     } catch (err) {
       console.error('Error updating progress:', err);
@@ -375,22 +332,15 @@ export default function RoutesPage() {
     if (!activeRoute) return;
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/routes/${activeRoute._id}/cannot-carry`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
+      const data = await api.post(
+        `/api/v1/routes/${activeRoute._id}/cannot-carry`,
+        {},
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.nothingInBag) {
-          // Show modal - courier has nothing in bag
-          setNothingInBagModal(true);
-        } else {
-          setActiveRoute(data.route);
-        }
+      if (data.nothingInBag) {
+        // Show modal - courier has nothing in bag
+        setNothingInBagModal(true);
+      } else {
+        setActiveRoute(data.route);
       }
     } catch (err) {
       console.error('Error handling cannot carry:', err);
@@ -404,20 +354,12 @@ export default function RoutesPage() {
     if (!window.confirm(t('confirmAbandon'))) return;
 
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/routes/${activeRoute._id}/abandon`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({}),
-        },
+      await api.post(
+        `/api/v1/routes/${activeRoute._id}/abandon`,
+        {},
       );
-
-      if (response.ok) {
-        setActiveRoute(null);
-        setView('setup');
-      }
+      setActiveRoute(null);
+      setView('setup');
     } catch (err) {
       console.error('Error abandoning route:', err);
     }

@@ -6,9 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import Image from 'next/image';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface OrderItem {
   productId: string;
@@ -254,16 +252,8 @@ export default function DeliveriesPage() {
 
   const fetchAvailableOrders = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/courier/available`,
-        {
-          credentials: 'include',
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setAvailableOrders(data);
-      }
+      const data = await api.get('/api/v1/orders/courier/available');
+      setAvailableOrders(data);
     } catch (err) {
       console.error('Error fetching available orders:', err);
     }
@@ -271,16 +261,8 @@ export default function DeliveriesPage() {
 
   const fetchMyOrders = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/courier/my-orders`,
-        {
-          credentials: 'include',
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setMyOrders(data);
-      }
+      const data = await api.get('/api/v1/orders/courier/my-orders');
+      setMyOrders(data);
     } catch (err) {
       console.error('Error fetching my orders:', err);
     }
@@ -288,16 +270,8 @@ export default function DeliveriesPage() {
 
   const fetchCompletedOrders = useCallback(async () => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/courier/completed?limit=50`,
-        {
-          credentials: 'include',
-        },
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setCompletedOrders(data);
-      }
+      const data = await api.get('/api/v1/orders/courier/completed?limit=50');
+      setCompletedOrders(data);
     } catch (err) {
       console.error('Error fetching completed orders:', err);
     }
@@ -333,23 +307,13 @@ export default function DeliveriesPage() {
   const handleAssignOrder = async (orderId: string) => {
     setProcessingOrder(orderId);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/${orderId}/assign-courier`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-        },
-      );
-      if (response.ok) {
-        await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
-        setActiveTab('my');
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to assign order');
-      }
+      await api.patch(`/api/v1/orders/${orderId}/assign-courier`, {});
+      await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
+      setActiveTab('my');
     } catch (err) {
       console.error('Error assigning order:', err);
-      setError('Failed to assign order');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to assign order';
+      setError(errorMessage);
     } finally {
       setProcessingOrder(null);
     }
@@ -361,24 +325,15 @@ export default function DeliveriesPage() {
   ) => {
     setProcessingOrder(orderId);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/${orderId}/courier-status`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status }),
-        },
+      await api.patch(
+        `/api/v1/orders/${orderId}/courier-status`,
+        { status },
       );
-      if (response.ok) {
-        await fetchMyOrders();
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to update order status');
-      }
+      await fetchMyOrders();
     } catch (err) {
       console.error('Error updating order status:', err);
-      setError('Failed to update order status');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to update order status';
+      setError(errorMessage);
     } finally {
       setProcessingOrder(null);
     }
@@ -402,23 +357,16 @@ export default function DeliveriesPage() {
 
     setProcessingOrder(abandonModal.orderId);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/${abandonModal.orderId}/unassign-courier`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-        },
+      await api.patch(
+        `/api/v1/orders/${abandonModal.orderId}/unassign-courier`,
+        {},
       );
-      if (response.ok) {
-        await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
-        setAbandonModal(null);
-      } else {
-        const data = await response.json();
-        setError(data.message || t('abandonFailed'));
-      }
+      await Promise.all([fetchAvailableOrders(), fetchMyOrders()]);
+      setAbandonModal(null);
     } catch (err) {
       console.error('Error abandoning order:', err);
-      setError(t('abandonFailed'));
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : t('abandonFailed');
+      setError(errorMessage);
     } finally {
       setProcessingOrder(null);
     }

@@ -74,8 +74,8 @@ export const api = {
   /**
    * GET request with credentials
    */
-  async get(path: string, options?: RequestInit): Promise<Response> {
-    return fetchWithRefresh(`${apiUrl}${path}`, {
+  async get<T = any>(path: string, options?: RequestInit): Promise<T> {
+    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -83,17 +83,24 @@ export const api = {
       },
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * POST request with credentials
    */
-  async post(
+  async post<T = any>(
     path: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<Response> {
-    return fetchWithRefresh(`${apiUrl}${path}`, {
+  ): Promise<T> {
+    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -102,17 +109,24 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * PUT request with credentials
    */
-  async put(
+  async put<T = any>(
     path: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<Response> {
-    return fetchWithRefresh(`${apiUrl}${path}`, {
+  ): Promise<T> {
+    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -121,17 +135,24 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * PATCH request with credentials
    */
-  async patch(
+  async patch<T = any>(
     path: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<Response> {
-    return fetchWithRefresh(`${apiUrl}${path}`, {
+  ): Promise<T> {
+    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -140,13 +161,20 @@ export const api = {
       body: body ? JSON.stringify(body) : undefined,
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * DELETE request with credentials
    */
-  async delete(path: string, options?: RequestInit): Promise<Response> {
-    return fetchWithRefresh(`${apiUrl}${path}`, {
+  async delete<T = any>(path: string, options?: RequestInit): Promise<T> {
+    const response = await fetchWithRefresh(`${apiUrl}${path}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -154,6 +182,13 @@ export const api = {
       },
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 };
 
