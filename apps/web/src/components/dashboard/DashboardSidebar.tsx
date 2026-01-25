@@ -535,6 +535,33 @@ const NAV_SECTIONS: NavSection[] = [
       },
     ],
   },
+  // Courier Admin section - courier admin only
+  {
+    titleKey: 'sectionCourierAdmin',
+    roles: [Role.COURIER_ADMIN],
+    items: [
+      {
+        href: '/dashboard/courier-admin',
+        labelKey: 'courierAdminDashboard',
+        icon: ChartBarIcon,
+      },
+      {
+        href: '/dashboard/courier-admin/couriers',
+        labelKey: 'manageCouriers',
+        icon: UsersIcon,
+      },
+      {
+        href: '/dashboard/courier-admin/orders',
+        labelKey: 'allDeliveryOrders',
+        icon: OrdersIcon,
+      },
+      {
+        href: '/dashboard/courier-admin/pending-couriers',
+        labelKey: 'pendingCouriers',
+        icon: PendingIcon,
+      },
+    ],
+  },
 ];
 
 export function DashboardSidebar() {

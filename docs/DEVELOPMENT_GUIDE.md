@@ -9,6 +9,7 @@
 ### Why?
 
 The centralized API client provides:
+
 - ✅ **Automatic token refresh** on 401 responses
 - ✅ **Automatic JSON parsing** of responses
 - ✅ **Proper error handling** with status codes
@@ -50,7 +51,9 @@ const result = await api.post<ReturnType>('/api/v1/endpoint', { body: 'data' });
 const result = await api.put<ReturnType>('/api/v1/endpoint', { body: 'data' });
 
 // PATCH request
-const result = await api.patch<ReturnType>('/api/v1/endpoint', { body: 'data' });
+const result = await api.patch<ReturnType>('/api/v1/endpoint', {
+  body: 'data',
+});
 
 // DELETE request
 const result = await api.delete<ReturnType>('/api/v1/endpoint');
@@ -67,9 +70,10 @@ try {
   setOrder(result);
 } catch (err) {
   // Error includes status code and message
-  const errorMessage = err && typeof err === 'object' && 'message' in err 
-    ? String(err.message) 
-    : 'Request failed';
+  const errorMessage =
+    err && typeof err === 'object' && 'message' in err
+      ? String(err.message)
+      : 'Request failed';
   setError(errorMessage);
 }
 ```
@@ -110,7 +114,7 @@ async function fetchMyOrders() {
 If you find raw `fetch()` calls in the codebase:
 
 - [ ] Is this an authenticated endpoint? → **Use `api` client**
-- [ ] Does it need credentials/cookies? → **Use `api` client**  
+- [ ] Does it need credentials/cookies? → **Use `api` client**
 - [ ] Is it in a client component? → **Use `api` client**
 - [ ] Could it return 401 when token expires? → **Use `api` client**
 
@@ -138,14 +142,15 @@ useEffect(() => {
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   setIsSubmitting(true);
-  
+
   try {
     const result = await api.post('/api/v1/endpoint', formData);
     setSuccess(true);
   } catch (err) {
-    const errorMessage = err && typeof err === 'object' && 'message' in err 
-      ? String(err.message) 
-      : 'Submission failed';
+    const errorMessage =
+      err && typeof err === 'object' && 'message' in err
+        ? String(err.message)
+        : 'Submission failed';
     setError(errorMessage);
   } finally {
     setIsSubmitting(false);
@@ -170,3 +175,85 @@ const [data1, data2, data3] = await Promise.all([
 > "Should this use the centralized API client instead?"
 
 **The answer is YES 99% of the time!**
+
+## Shared Components
+
+### UserMenuDropdown
+
+A single shared user menu component used across all headers:
+
+**Location**: `apps/web/src/components/ui/UserMenuDropdown.tsx`
+
+**Used In**:
+
+- `Header.tsx` - Main site header
+- `ShopItBar.tsx` - Store subdomain header
+- `DashboardHeader.tsx` - Dashboard header
+
+**Features**:
+
+- Role-based menu sections (User, Seller, Courier, Courier Admin, Admin)
+- Color-coded role badges (cyan for courier admin, purple for seller/admin, blue for courier)
+- Impersonation support with "Return as Admin" button
+- Consistent across all pages
+
+**Props**:
+
+```typescript
+interface UserMenuDropdownProps {
+  locale: string;
+  dashboardBaseUrl?: string; // For cross-origin navigation from stores
+  showWishlist?: boolean; // Show wishlist link
+  showViewStore?: boolean; // Show "View My Store" link
+  variant?: 'default' | 'store'; // Use store accent colors
+}
+```
+
+## User Roles & Impersonation
+
+### Role Bitmask Values
+
+```typescript
+// libs/shared/constants/src/lib/roles.ts
+export enum Role {
+  USER = 1,
+  COURIER = 2,
+  SELLER = 4,
+  ADMIN = 8,
+  COURIER_ADMIN = 16,
+}
+
+// Check role with hasRole() function
+import { hasRole, Role } from '@shopit/constants';
+if (hasRole(user.role, Role.COURIER_ADMIN)) { ... }
+```
+
+### Impersonation
+
+Admins and Courier Admins can impersonate users for testing/support:
+
+```typescript
+// Frontend - AuthContext
+const { impersonateUser, stopImpersonation, isImpersonating } = useAuth();
+
+// Start impersonation (navigates and refreshes page)
+await impersonateUser(userId);
+
+// Stop impersonation (returns to admin session)
+await stopImpersonation();
+
+// Check if currently impersonating
+if (isImpersonating) {
+  // Show "Return as Admin" button
+}
+```
+
+**localStorage Keys**:
+
+- `impersonating`: Boolean flag set during impersonation
+
+**Impersonation Rules**:
+
+- `ADMIN` can impersonate any user
+- `COURIER_ADMIN` can ONLY impersonate `COURIER` users
+- JWT includes `impersonatedBy` claim for session tracking

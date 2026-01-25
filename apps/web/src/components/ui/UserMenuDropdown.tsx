@@ -107,6 +107,7 @@ export function UserMenuDropdown({
   const isSeller = hasRole(userRole, Role.SELLER);
   const isCourier = hasRole(userRole, Role.COURIER);
   const isAdmin = hasRole(userRole, Role.ADMIN);
+  const isCourierAdmin = hasRole(userRole, Role.COURIER_ADMIN);
   const hasPendingCourierApplication =
     user.courierAppliedAt && !isCourier && !user.isCourierApproved;
 
@@ -389,6 +390,11 @@ export function UserMenuDropdown({
                       {t('admin')}
                     </span>
                   )}
+                  {isCourierAdmin && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-500 text-white">
+                      {t('courierAdmin')}
+                    </span>
+                  )}
                   {isSeller && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-500)] text-white">
                       {t('seller')}
@@ -541,6 +547,39 @@ export function UserMenuDropdown({
                 onClick={handleClose}
                 icon={icons.pendingStores}
                 label={t('pendingStores')}
+              />
+            </>
+          )}
+
+          {/* Courier Admin Section */}
+          {isCourierAdmin && (
+            <>
+              <div className="border-t border-gray-100 dark:border-zinc-700 my-1" />
+              <div className="px-3 py-1">
+                <span className="text-xs font-semibold text-cyan-500 dark:text-cyan-400 uppercase tracking-wider">
+                  {t('courierAdmin')}
+                </span>
+              </div>
+              <MenuItem
+                href={`${basePath}/courier-admin`}
+                dashboardBaseUrl={dashboardBaseUrl}
+                onClick={handleClose}
+                icon={icons.dashboard}
+                label={t('courierAnalytics')}
+              />
+              <MenuItem
+                href={`${basePath}/courier-admin/couriers`}
+                dashboardBaseUrl={dashboardBaseUrl}
+                onClick={handleClose}
+                icon={icons.users}
+                label={t('manageCouriers')}
+              />
+              <MenuItem
+                href={`${basePath}/courier-admin/orders`}
+                dashboardBaseUrl={dashboardBaseUrl}
+                onClick={handleClose}
+                icon={icons.orders}
+                label={t('allDeliveryOrders')}
               />
             </>
           )}

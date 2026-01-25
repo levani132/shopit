@@ -13,6 +13,7 @@ const RoleBit = {
   COURIER: 2,
   SELLER: 4,
   ADMIN: 8,
+  COURIER_ADMIN: 16,
 } as const;
 
 interface User {
@@ -128,6 +129,7 @@ function UsersManagementContent() {
   const getRoleNames = (role: number): string[] => {
     const roles: string[] = [];
     if ((role & RoleBit.ADMIN) !== 0) roles.push('Admin');
+    if ((role & RoleBit.COURIER_ADMIN) !== 0) roles.push('Courier Admin');
     if ((role & RoleBit.SELLER) !== 0) roles.push('Seller');
     if ((role & RoleBit.COURIER) !== 0) roles.push('Courier');
     if (roles.length === 0) roles.push('User');
@@ -137,6 +139,9 @@ function UsersManagementContent() {
   const getRoleBadgeColor = (role: number) => {
     if ((role & RoleBit.ADMIN) !== 0) {
       return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+    }
+    if ((role & RoleBit.COURIER_ADMIN) !== 0) {
+      return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400';
     }
     if ((role & RoleBit.SELLER) !== 0) {
       return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
@@ -185,6 +190,7 @@ function UsersManagementContent() {
           <option value="user">{t('roleUser')}</option>
           <option value="seller">{t('roleSeller')}</option>
           <option value="courier">{t('roleCourier')}</option>
+          <option value="courier_admin">{t('roleCourierAdmin')}</option>
           <option value="admin">{t('roleAdmin')}</option>
         </select>
       </div>
@@ -401,6 +407,18 @@ function UsersManagementContent() {
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     {t('roleAdmin')}
+                  </span>
+                </label>
+                {/* Courier Admin */}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(newRole & RoleBit.COURIER_ADMIN) !== 0}
+                    onChange={() => toggleRoleBit(RoleBit.COURIER_ADMIN)}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('roleCourierAdmin')}
                   </span>
                 </label>
               </div>

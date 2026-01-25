@@ -14,6 +14,7 @@ import { OrdersModule } from '../orders/orders.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { WishlistModule } from '../wishlist/wishlist.module';
 import { AdminModule } from '../admin/admin.module';
+import { CourierAdminModule } from '../courier-admin/courier-admin.module';
 import { SettingsModule } from '../settings/settings.module';
 import { ContentModule } from '../content/content.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -47,6 +48,7 @@ import { RoutesModule } from '../routes/routes.module';
     PaymentsModule,
     WishlistModule,
     AdminModule,
+    CourierAdminModule,
     SettingsModule,
     ContentModule,
     NotificationsModule,

@@ -183,6 +183,71 @@ See the `courier` section for all available translation keys.
 
 - [DELIVERY.md](./DELIVERY.md) - Delivery system documentation
 - [ORDERS.md](./ORDERS.md) - Order management documentation
+- [DASHBOARD.md](./DASHBOARD.md) - Dashboard documentation (includes Courier Admin)
+
+## Courier Admin Management
+
+### Overview
+
+The Courier Admin role (`COURIER_ADMIN = 16`) provides fleet management capabilities without full platform admin access.
+
+### Courier Admin Dashboard
+
+Access: `/dashboard/courier-admin`
+
+| Feature             | Description                                                |
+| ------------------- | ---------------------------------------------------------- |
+| **Fleet Analytics** | Overview of all couriers (total, available, busy, offline) |
+| **Urgent Orders**   | Orders approaching or past delivery deadline               |
+| **Top Couriers**    | Performance leaderboard by on-time rate                    |
+| **Courier List**    | Full list with search, filter, and impersonation           |
+| **Courier Details** | Individual stats, delivery history, performance charts     |
+| **All Orders**      | View all delivery orders with status filters               |
+
+### Courier Admin API
+
+```
+GET /api/v1/courier-admin/analytics
+// Fleet-wide stats: total couriers, pending deliveries, urgent orders, on-time rates
+
+GET /api/v1/courier-admin/couriers?status=all&search=&page=1&limit=20
+// Paginated courier list with filters
+
+GET /api/v1/courier-admin/couriers/:id
+// Individual courier details with stats and recent deliveries
+
+GET /api/v1/courier-admin/orders?status=all&dateRange=all&urgent=false&page=1&limit=20
+// All delivery orders with filters
+```
+
+### Impersonation
+
+Courier Admins can impersonate couriers for testing/support:
+
+```
+POST /api/v1/auth/impersonate/:courierId
+// Start session as the courier (COURIER role only)
+
+POST /api/v1/auth/stop-impersonation
+// Return to Courier Admin session
+```
+
+> **Note:** Unlike full Admins, Courier Admins can ONLY impersonate users with the COURIER role.
+
+### Role Bitmask
+
+```typescript
+// In libs/shared/constants/src/lib/roles.ts
+export enum Role {
+  USER = 1,
+  COURIER = 2,
+  SELLER = 4,
+  ADMIN = 8,
+  COURIER_ADMIN = 16,
+}
+```
+
+Users can have multiple roles (bitmask): A user with role `18` has both `COURIER_ADMIN (16)` and `COURIER (2)` roles.
 
 ## Time Tracking
 

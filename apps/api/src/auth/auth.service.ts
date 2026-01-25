@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -1268,6 +1269,27 @@ export class AuthService {
     const targetUser = await this.userModel.findById(targetUserId);
     if (!targetUser) {
       throw new NotFoundException('Target user not found');
+    }
+
+    // Get requesting user for role check
+    const requestingUser = await this.userModel.findById(adminId);
+    if (!requestingUser) {
+      throw new NotFoundException('Requesting user not found');
+    }
+
+    // Check if user can impersonate
+    const isCourierAdmin = hasRole(requestingUser.role, Role.COURIER_ADMIN);
+    const isAdmin = hasRole(requestingUser.role, Role.ADMIN);
+
+    if (isCourierAdmin && !isAdmin) {
+      // COURIER_ADMIN can only impersonate COURIER users
+      if (!hasRole(targetUser.role, Role.COURIER)) {
+        throw new ForbiddenException(
+          'Courier admins can only impersonate couriers',
+        );
+      }
+    } else if (!isAdmin) {
+      throw new ForbiddenException('Only admins can impersonate users');
     }
 
     // Log impersonation for audit trail
