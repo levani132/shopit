@@ -33,8 +33,19 @@
     "admin": "ადმინი",
     "user": "მომხმარებელი",
     "goToDashboard": "მართვის პანელზე",
+    "overview": "მიმოხილვა",
     "profile": "პროფილი",
-    "myOrders": "ჩემი შეკვეთები"
+    "myOrders": "ჩემი შეკვეთები",
+    "wishlist": "ფავორიტები",
+    "products": "პროდუქტები",
+    "sellerOrders": "მაღაზიის შეკვეთები",
+    "storeSettings": "მაღაზიის პარამეტრები",
+    "myDeliveries": "ჩემი მიტანები",
+    "manageUsers": "მომხმარებლები",
+    "pendingStores": "მოლოდინში მაღაზიები",
+    "impersonating": "ნახვა როგორც",
+    "returnAsAdmin": "დაბრუნება ადმინად",
+    "loginAsUser": "შესვლა როგორც მომხმარებელი"
   },
   "hero": {
     "title": "შექმენი შენი ონლაინ მაღაზია წუთებში",
@@ -1003,7 +1014,10 @@
     "pickedUpAt": "აიღო",
     "deliveredAt": "ჩააბარა",
     "handlingTime": "მოცდის დრო",
-    "arrivalTime": "მისვლის დრო"
+    "arrivalTime": "მისვლის დრო",
+    "pickedUp": "აღებული",
+    "delivered": "მიტანილი",
+    "pickupFirstToDeliver": "ჯერ უნდა აიღოთ შეკვეთა"
   },
   "notifications": {
     "title": "შეტყობინებები",

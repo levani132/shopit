@@ -420,7 +420,8 @@ function MobileNav({
   onClose,
 }: MobileNavProps) {
   const t = useTranslations('store');
-  const { logout } = useAuth();
+  const tNav = useTranslations('nav');
+  const { logout, isImpersonating, stopImpersonation } = useAuth();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
   const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
@@ -688,6 +689,32 @@ function MobileNav({
                 </svg>
                 {t('courierPending')}
               </div>
+            )}
+
+            {/* Return as Admin (shown only when impersonating) */}
+            {isImpersonating && (
+              <button
+                onClick={async () => {
+                  onClose();
+                  await stopImpersonation();
+                }}
+                className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 12l3-3m0 0l-3-3m3 3H9a4 4 0 014 4v5"
+                  />
+                </svg>
+                {tNav('returnAsAdmin')}
+              </button>
             )}
 
             {/* Logout */}

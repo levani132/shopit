@@ -19,6 +19,7 @@ export interface JwtPayload {
   role: number; // Now a bitmask number
   type?: string;
   sessionId?: string;
+  impersonatedBy?: string; // Admin ID if this is an impersonation session
   iat: number;
   exp: number;
 }
@@ -55,7 +56,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(
     payload: JwtPayload,
-  ): Promise<UserDocument & { storeId?: string }> {
+  ): Promise<UserDocument & { storeId?: string; impersonatedBy?: string }> {
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token');
     }
@@ -77,12 +78,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
     }
 
-    // Extend the user object with storeId
-    const userWithStore = user.toObject() as UserDocument & {
+    // Extend the user object with storeId and impersonatedBy
+    const userWithExtras = user.toObject() as UserDocument & {
       storeId?: string;
+      impersonatedBy?: string;
     };
-    userWithStore.storeId = storeId;
+    userWithExtras.storeId = storeId;
+    userWithExtras.impersonatedBy = payload.impersonatedBy;
 
-    return userWithStore;
+    return userWithExtras;
   }
 }

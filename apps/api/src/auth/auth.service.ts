@@ -1254,4 +1254,130 @@ export class AuthService {
       status: 'pending',
     };
   }
+
+  /**
+   * Admin impersonation - generate tokens for another user
+   * Includes impersonation metadata in the token
+   */
+  async impersonateUser(
+    adminId: string,
+    targetUserId: string,
+    _deviceInfo?: DeviceInfo,
+  ): Promise<{ user: UserDocument; tokens: TokensDto }> {
+    // Get target user
+    const targetUser = await this.userModel.findById(targetUserId);
+    if (!targetUser) {
+      throw new NotFoundException('Target user not found');
+    }
+
+    // Log impersonation for audit trail
+    console.log(
+      `🔐 Admin ${adminId} is impersonating user ${targetUserId} (${targetUser.email})`,
+    );
+
+    // Generate tokens with impersonation metadata
+    const jti = randomUUID();
+    const sessionId = randomUUID();
+
+    const accessSecret =
+      this.configService.get('JWT_ACCESS_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-access-secret';
+    const refreshSecret =
+      this.configService.get('JWT_REFRESH_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-refresh-secret';
+    const sessionSecret =
+      this.configService.get('JWT_SESSION_SECRET') || accessSecret;
+
+    const [accessToken, refreshToken, sessionToken] = await Promise.all([
+      // Access token with impersonation flag
+      this.jwtService.signAsync(
+        {
+          sub: targetUser._id.toString(),
+          email: targetUser.email,
+          role: targetUser.role,
+          type: 'access',
+          sessionId,
+          impersonatedBy: adminId, // Mark as impersonation
+        } as TokenPayload & { impersonatedBy: string },
+        {
+          expiresIn: '1h',
+          secret: accessSecret,
+        },
+      ),
+      // Refresh token
+      this.jwtService.signAsync(
+        {
+          sub: targetUser._id.toString(),
+          email: targetUser.email,
+          role: targetUser.role,
+          type: 'refresh',
+          jti,
+          sessionId,
+          impersonatedBy: adminId,
+        } as TokenPayload & { impersonatedBy: string },
+        {
+          expiresIn: '8h', // Shorter expiry for impersonation
+          secret: refreshSecret,
+        },
+      ),
+      // Session token
+      this.jwtService.signAsync(
+        {
+          sub: targetUser._id.toString(),
+          email: targetUser.email,
+          role: targetUser.role,
+          type: 'session',
+          sessionId,
+          impersonatedBy: adminId,
+        } as TokenPayload & { impersonatedBy: string },
+        {
+          expiresIn: '8h',
+          secret: sessionSecret,
+        },
+      ),
+    ]);
+
+    return {
+      user: targetUser,
+      tokens: {
+        accessToken,
+        refreshToken,
+        sessionToken,
+      },
+    };
+  }
+
+  /**
+   * Stop impersonation and restore admin session
+   * Uses the impersonatedBy claim from the current token to identify the admin
+   */
+  async stopImpersonation(
+    adminId: string,
+    deviceInfo?: DeviceInfo,
+  ): Promise<{ user: UserDocument; tokens: TokensDto }> {
+    // Get admin user
+    const adminUser = await this.userModel.findById(adminId);
+    if (!adminUser) {
+      throw new NotFoundException('Admin user not found');
+    }
+
+    // Verify admin role
+    if (!hasRole(adminUser.role, Role.ADMIN)) {
+      throw new UnauthorizedException('Original user is not an admin');
+    }
+
+    console.log(
+      `🔐 Stopping impersonation - restoring admin session for ${adminId} (${adminUser.email})`,
+    );
+
+    // Generate new tokens for admin using standard method
+    const tokens = await this.generateTokens(adminUser, deviceInfo);
+
+    return {
+      user: adminUser,
+      tokens,
+    };
+  }
 }

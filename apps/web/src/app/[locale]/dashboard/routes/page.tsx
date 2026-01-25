@@ -246,7 +246,10 @@ export default function RoutesPage() {
         setRefreshCountdown(30);
       } catch (err) {
         console.error('Error generating routes:', err);
-        const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : t('errorGenerating');
+        const errorMessage =
+          err && typeof err === 'object' && 'message' in err
+            ? String(err.message)
+            : t('errorGenerating');
         setError(errorMessage);
       } finally {
         setGenerating(false);
@@ -292,10 +295,18 @@ export default function RoutesPage() {
       setView('active');
     } catch (err) {
       console.error('Error claiming route:', err);
-      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : t('errorClaiming');
+      const errorMessage =
+        err && typeof err === 'object' && 'message' in err
+          ? String(err.message)
+          : t('errorClaiming');
       setError(errorMessage);
       // Regenerate routes if orders were taken
-      if (err && typeof err === 'object' && 'status' in err && err.status === 400) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'status' in err &&
+        err.status === 400
+      ) {
         generateRoutes();
       }
     } finally {
@@ -354,10 +365,7 @@ export default function RoutesPage() {
     if (!window.confirm(t('confirmAbandon'))) return;
 
     try {
-      await api.post(
-        `/api/v1/routes/${activeRoute._id}/abandon`,
-        {},
-      );
+      await api.post(`/api/v1/routes/${activeRoute._id}/abandon`, {});
       setActiveRoute(null);
       setView('setup');
     } catch (err) {
@@ -827,23 +835,72 @@ export default function RoutesPage() {
                       )}
 
                       {/* Action buttons */}
-                      <div className="flex gap-2 mt-3">
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${stop.location.address} ${stop.location.city}`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
-                        >
-                          🗺️ {t('navigate')}
-                        </a>
-                        {stop.contactPhone && (
+                      <div className="space-y-2 mt-3">
+                        <div className="flex gap-2">
                           <a
-                            href={`tel:${stop.contactPhone}`}
-                            className="flex items-center justify-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${stop.location.address} ${stop.location.city}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
                           >
-                            📞 {t('call')}
+                            🗺️ {t('navigate')}
                           </a>
-                        )}
+                          {stop.contactPhone && (
+                            <a
+                              href={`tel:${stop.contactPhone}`}
+                              className="flex items-center justify-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                              📞 {t('call')}
+                            </a>
+                          )}
+                        </div>
+
+                        {/* Progress buttons for upcoming stops */}
+                        {stop.status === 'pending' &&
+                          stop.type === 'pickup' && (
+                            <button
+                              onClick={() =>
+                                updateProgress(
+                                  activeRoute.currentStopIndex + idx + 1,
+                                  'completed',
+                                )
+                              }
+                              className="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                            >
+                              ✓ {t('pickedUp')}
+                            </button>
+                          )}
+
+                        {stop.status === 'pending' &&
+                          stop.type === 'delivery' &&
+                          (() => {
+                            // Check if this order has been picked up already
+                            const pickupCompleted = activeRoute.stops.some(
+                              (s) =>
+                                s.type === 'pickup' &&
+                                s.orderId?.toString() ===
+                                  stop.orderId?.toString() &&
+                                s.status === 'completed',
+                            );
+
+                            return pickupCompleted ? (
+                              <button
+                                onClick={() =>
+                                  updateProgress(
+                                    activeRoute.currentStopIndex + idx + 1,
+                                    'completed',
+                                  )
+                                }
+                                className="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                              >
+                                ✓ {t('delivered')}
+                              </button>
+                            ) : (
+                              <div className="text-xs text-center text-gray-500 dark:text-gray-400 py-2">
+                                {t('pickupFirstToDeliver')}
+                              </div>
+                            );
+                          })()}
                       </div>
                     </div>
                   )}

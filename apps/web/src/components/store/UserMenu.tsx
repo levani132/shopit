@@ -15,7 +15,9 @@ interface UserMenuProps {
 
 export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
   const t = useTranslations('store');
-  const { user, logout, isLoading } = useAuth();
+  const tNav = useTranslations('nav');
+  const { user, logout, isLoading, isImpersonating, stopImpersonation } =
+    useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const params = useParams();
@@ -239,6 +241,32 @@ export function UserMenu({ variant = 'dark', mainSiteUrl }: UserMenuProps) {
 
             {/* Divider */}
             <div className="border-t border-gray-100 dark:border-zinc-700 my-1" />
+
+            {/* Return as Admin (shown only when impersonating) */}
+            {isImpersonating && (
+              <button
+                onClick={async () => {
+                  setIsOpen(false);
+                  await stopImpersonation();
+                }}
+                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-gray-100 dark:hover:bg-zinc-700"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 12l3-3m0 0l-3-3m3 3H9a4 4 0 014 4v5"
+                  />
+                </svg>
+                {tNav('returnAsAdmin')}
+              </button>
+            )}
 
             {/* Logout */}
             <button

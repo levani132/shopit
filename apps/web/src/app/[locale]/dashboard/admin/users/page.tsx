@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
 import { Role } from '@shopit/constants';
 import { api } from '../../../../../lib/api';
+import { useAuth } from '../../../../../contexts/AuthContext';
 
 // Role bitmask values
 const RoleBit = {
@@ -34,6 +35,8 @@ interface Pagination {
 
 function UsersManagementContent() {
   const t = useTranslations('admin');
+  const nav = useTranslations('nav');
+  const { impersonateUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -274,19 +277,28 @@ function UsersManagementContent() {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => {
-                          setRoleChangeModal({
-                            userId: user._id,
-                            userName: `${user.firstName} ${user.lastName}`,
-                            currentRole: user.role,
-                          });
-                          setNewRole(user.role);
-                        }}
-                        className="text-sm text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:underline"
-                      >
-                        {t('changeRole')}
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => impersonateUser(user._id)}
+                          className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                          title={nav('loginAsUser')}
+                        >
+                          {nav('loginAsUser')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRoleChangeModal({
+                              userId: user._id,
+                              userName: `${user.firstName} ${user.lastName}`,
+                              currentRole: user.role,
+                            });
+                            setNewRole(user.role);
+                          }}
+                          className="text-sm text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:underline"
+                        >
+                          {t('changeRole')}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

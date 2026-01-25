@@ -43,6 +43,8 @@ import { UploadService } from '../upload/upload.service';
 import { cookieConfig } from '../config/cookie.config';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { UserDocument } from '@shopit/api-database';
+import { Role } from '@shopit/api-database';
+import { hasRole } from '@shopit/constants';
 import * as crypto from 'crypto';
 import 'multer'; // Import for Express.Multer.File types
 
@@ -1028,5 +1030,133 @@ export class AuthController {
   @ApiOperation({ summary: 'Get courier application status' })
   async getCourierStatus(@CurrentUser() user: UserDocument) {
     return this.authService.getCourierStatus(user._id.toString());
+  }
+
+  /**
+   * Admin impersonation - login as another user
+   * Only accessible by admins
+   */
+  @Post('impersonate/:userId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Admin: Login as another user' })
+  async impersonateUser(
+    @CurrentUser() admin: UserDocument,
+    @Param('userId') targetUserId: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Verify admin role
+    if (!hasRole(admin.role, Role.ADMIN)) {
+      throw new UnauthorizedException('Only admins can impersonate users');
+    }
+
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+      trusted: false,
+    };
+
+    const result = await this.authService.impersonateUser(
+      admin._id.toString(),
+      targetUserId,
+      deviceInfo,
+    );
+
+    // Set HTTP-only cookies for impersonated session
+    res.cookie(
+      cookieConfig.access.name,
+      result.tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      result.tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (result.tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        result.tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
+
+    return {
+      message: 'Impersonation successful',
+      user: {
+        id: result.user._id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        role: result.user.role,
+        isProfileComplete: result.user.isProfileComplete,
+      },
+      impersonatedBy: admin._id.toString(),
+    };
+  }
+
+  /**
+   * Stop impersonation - restore admin session
+   * Requires an impersonation token with impersonatedBy claim
+   */
+  @Post('stop-impersonation')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Stop impersonation and restore admin session' })
+  async stopImpersonation(
+    @Req() req: Request & { user?: { impersonatedBy?: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Get the impersonatedBy claim from the current token
+    const impersonatedBy = req.user?.impersonatedBy;
+
+    if (!impersonatedBy) {
+      throw new UnauthorizedException('Not in impersonation mode');
+    }
+
+    const deviceInfo = {
+      fingerprint: this.generateDeviceFingerprint(req),
+      userAgent: req.headers['user-agent'] || '',
+      trusted: false,
+    };
+
+    const result = await this.authService.stopImpersonation(
+      impersonatedBy,
+      deviceInfo,
+    );
+
+    // Set HTTP-only cookies for restored admin session
+    res.cookie(
+      cookieConfig.access.name,
+      result.tokens.accessToken,
+      cookieConfig.access.options,
+    );
+    res.cookie(
+      cookieConfig.refresh.name,
+      result.tokens.refreshToken,
+      cookieConfig.refresh.options,
+    );
+    if (result.tokens.sessionToken) {
+      res.cookie(
+        cookieConfig.session.name,
+        result.tokens.sessionToken,
+        cookieConfig.session.options,
+      );
+    }
+
+    return {
+      message: 'Admin session restored',
+      user: {
+        id: result.user._id,
+        email: result.user.email,
+        firstName: result.user.firstName,
+        lastName: result.user.lastName,
+        role: result.user.role,
+        isProfileComplete: result.user.isProfileComplete,
+      },
+    };
   }
 }

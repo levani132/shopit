@@ -33,8 +33,19 @@
     "admin": "Admin",
     "user": "User",
     "goToDashboard": "Go to Dashboard",
+    "overview": "Overview",
     "profile": "Profile",
-    "myOrders": "My Orders"
+    "myOrders": "My Orders",
+    "wishlist": "Wishlist",
+    "products": "Products",
+    "sellerOrders": "Store Orders",
+    "storeSettings": "Store Settings",
+    "myDeliveries": "My Deliveries",
+    "manageUsers": "Manage Users",
+    "pendingStores": "Pending Stores",
+    "impersonating": "Viewing as",
+    "returnAsAdmin": "Return as Admin",
+    "loginAsUser": "Login as User"
   },
   "hero": {
     "title": "Create Your Online Store in Minutes",
@@ -1003,7 +1014,10 @@
     "pickedUpAt": "Picked Up",
     "deliveredAt": "Delivered",
     "handlingTime": "Handling Time",
-    "arrivalTime": "Arrival Time"
+    "arrivalTime": "Arrival Time",
+    "pickedUp": "Picked Up",
+    "delivered": "Delivered",
+    "pickupFirstToDeliver": "Must pick up order first"
   },
   "notifications": {
     "title": "Notifications",

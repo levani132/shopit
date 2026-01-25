@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { usePathname as useNextPathname } from 'next/navigation';
 import { Link, usePathname } from '../../i18n/routing';
 import { useTranslations, useLocale } from 'next-intl';
 import { ShopItLogo } from '../ui/ShopItLogo';
+import { UserMenuDropdown } from '../ui/UserMenuDropdown';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole, getPrimaryRoleName } from '@shopit/constants';
+import { Role, hasRole } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 import PublishButton from './PublishButton';
 
@@ -155,33 +156,12 @@ const NAV_ITEMS: NavItem[] = [
 
 export function DashboardHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef<HTMLDivElement>(null);
   const pathname = useNextPathname();
+  const locale = useLocale();
   const t = useTranslations('dashboard');
   const tNav = useTranslations('nav');
   const { theme, toggleTheme } = useTheme();
-  const { user, store, logout } = useAuth();
-
-  // Role checks
-  const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
-  const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
-  const hasPendingCourierApplication =
-    user?.courierAppliedAt && !isCourier && !user?.isCourierApproved;
-
-  // Close user menu when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        userMenuRef.current &&
-        !userMenuRef.current.contains(event.target as Node)
-      ) {
-        setIsUserMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const { user, store, logout, isImpersonating, stopImpersonation } = useAuth();
 
   const isActive = (href: string) => {
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '');
@@ -193,10 +173,9 @@ export function DashboardHeader() {
 
   const handleLogout = async () => {
     await logout();
-    setIsUserMenuOpen(false);
   };
 
-  // Get user initials
+  // Get user initials - still needed for mobile menu
   const getUserInitials = () => {
     if (!user) return 'U';
     const first = user.firstName?.charAt(0) || '';
@@ -211,6 +190,42 @@ export function DashboardHeader() {
 
   return (
     <>
+      {/* Impersonation Banner */}
+      {isImpersonating && (
+        <div className="bg-indigo-600 text-white px-4 py-2 text-center text-sm font-medium">
+          <div className="flex items-center justify-center gap-2">
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              />
+            </svg>
+            <span>
+              {tNav('impersonating')}: {getDisplayName()} ({user?.email})
+            </span>
+            <button
+              onClick={stopImpersonation}
+              className="ml-4 px-3 py-1 bg-white text-indigo-600 rounded-md text-xs font-semibold hover:bg-indigo-50 transition-colors"
+            >
+              {tNav('returnAsAdmin')}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header - visible on all screen sizes */}
       <header className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
@@ -290,149 +305,7 @@ export function DashboardHeader() {
             </button>
 
             {/* User menu */}
-            <div className="relative" ref={userMenuRef}>
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-medium text-sm">
-                  {getUserInitials()}
-                </div>
-                <svg
-                  className={`w-4 h-4 text-gray-500 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-
-              {/* Dropdown */}
-              {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-zinc-800 rounded-xl shadow-lg border border-gray-200 dark:border-zinc-700 py-2 z-50">
-                  {/* User Info */}
-                  <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-700">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-semibold">
-                        {getUserInitials()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {getDisplayName()}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                          {user?.email}
-                        </p>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {isSeller && (
-                            <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
-                              {tNav('seller')}
-                            </span>
-                          )}
-                          {isCourier && (
-                            <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                              {tNav('courier')}
-                            </span>
-                          )}
-                          {hasPendingCourierApplication && (
-                            <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
-                              {t('courierApplicationPending')}
-                            </span>
-                          )}
-                          {!isSeller &&
-                            !isCourier &&
-                            !hasPendingCourierApplication && (
-                              <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-[var(--accent-100)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]">
-                                {tNav(getPrimaryRoleName(user?.role ?? 0))}
-                              </span>
-                            )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Menu Items */}
-                  <div className="py-1">
-                    {/* View My Store - Only for sellers */}
-                    {store && hasRole(user?.role ?? 0, Role.SELLER) && (
-                      <a
-                        href={getStoreUrl(store.subdomain)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                          />
-                        </svg>
-                        {t('viewStore')}
-                      </a>
-                    )}
-
-                    {/* Profile */}
-                    <Link
-                      href="/dashboard/profile"
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                      {t('profile')}
-                    </Link>
-                  </div>
-
-                  {/* Logout */}
-                  <div className="border-t border-gray-100 dark:border-zinc-700 pt-1">
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    >
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                        />
-                      </svg>
-                      {tNav('logout')}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <UserMenuDropdown locale={locale} showViewStore />
           </div>
         </div>
       </header>
