@@ -68,12 +68,9 @@ function OrdersManagementContent() {
       params.append('limit', '20');
       if (statusFilter) params.append('status', statusFilter);
 
-      const response = await api.get(`/admin/orders?${params.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch orders');
-      }
-      const data = await response.json();
+      const data = await api.get<{ orders: any[]; pagination: any }>(
+        `/admin/orders?${params.toString()}`,
+      );
       setOrders(data.orders);
       setPagination(data.pagination);
     } catch (err: any) {
@@ -91,13 +88,9 @@ function OrdersManagementContent() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdatingStatus(orderId);
     try {
-      const response = await api.patch(`/admin/orders/${orderId}/status`, {
+      await api.patch(`/admin/orders/${orderId}/status`, {
         status: newStatus,
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update order status');
-      }
       // Update the local state
       setOrders((prev) =>
         prev.map((order) =>

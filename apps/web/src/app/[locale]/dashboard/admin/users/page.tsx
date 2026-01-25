@@ -62,12 +62,9 @@ function UsersManagementContent() {
       if (search) params.append('search', search);
       if (roleFilter) params.append('role', roleFilter);
 
-      const response = await api.get(`/admin/users?${params.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch users');
-      }
-      const data = await response.json();
+      const data = await api.get<{ users: any[]; pagination: any }>(
+        `/admin/users?${params.toString()}`,
+      );
       setUsers(data.users);
       setPagination(data.pagination);
     } catch (err: any) {
@@ -92,14 +89,9 @@ function UsersManagementContent() {
 
     setProcessingId(roleChangeModal.userId);
     try {
-      const response = await api.put(
-        `/admin/users/${roleChangeModal.userId}/role`,
-        { role: newRole },
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to change role');
-      }
+      await api.put(`/admin/users/${roleChangeModal.userId}/role`, {
+        role: newRole,
+      });
       setUsers(
         users.map((u) =>
           u._id === roleChangeModal.userId ? { ...u, role: newRole } : u,

@@ -557,12 +557,9 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const response = await api.get('/admin/settings');
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to fetch settings');
-        }
-        const data = await response.json();
+        const data = await api.get<{ settings: SiteSettings }>(
+          '/admin/settings',
+        );
         setSettings(data.settings);
       } catch (err: unknown) {
         console.error('Failed to fetch settings:', err);
@@ -607,11 +604,7 @@ function SettingsLayoutContent({ children }: { children: ReactNode }) {
         maintenanceMessage: settings.maintenanceMessage,
       };
 
-      const response = await api.put('/admin/settings', cleanSettings);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save settings');
-      }
+      await api.put('/admin/settings', cleanSettings);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: unknown) {

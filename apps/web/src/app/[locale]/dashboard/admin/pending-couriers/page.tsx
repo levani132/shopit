@@ -52,14 +52,9 @@ function PendingCouriersContent() {
 
   const fetchCouriers = async () => {
     try {
-      const response = await api.get('/admin/couriers/pending');
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || 'Failed to fetch pending couriers',
-        );
-      }
-      const data = await response.json();
+      const data = await api.get<{ couriers: any[] }>(
+        '/admin/couriers/pending',
+      );
       setCouriers(data.couriers);
     } catch (err: any) {
       console.error('Failed to fetch pending couriers:', err);
@@ -76,11 +71,7 @@ function PendingCouriersContent() {
   const handleApprove = async (courierId: string) => {
     setProcessingId(courierId);
     try {
-      const response = await api.post(`/admin/couriers/${courierId}/approve`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to approve courier');
-      }
+      await api.post(`/admin/couriers/${courierId}/approve`);
       setCouriers(couriers.filter((c) => c._id !== courierId));
     } catch (err: any) {
       console.error('Failed to approve courier:', err);
@@ -95,16 +86,9 @@ function PendingCouriersContent() {
 
     setProcessingId(rejectModal.courierId);
     try {
-      const response = await api.post(
-        `/admin/couriers/${rejectModal.courierId}/reject`,
-        {
-          reason: rejectReason,
-        },
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reject courier');
-      }
+      await api.post(`/admin/couriers/${rejectModal.courierId}/reject`, {
+        reason: rejectReason,
+      });
       setCouriers(couriers.filter((c) => c._id !== rejectModal.courierId));
       setRejectModal(null);
       setRejectReason('');

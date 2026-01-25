@@ -47,18 +47,9 @@ function AnalyticsContent() {
     async function fetchAnalytics() {
       setLoading(true);
       try {
-        const [revenueRes, storeRes] = await Promise.all([
-          api.get(`/admin/analytics/revenue?period=${period}`),
-          api.get('/admin/analytics/stores'),
-        ]);
-
-        if (!revenueRes.ok || !storeRes.ok) {
-          throw new Error('Failed to fetch analytics');
-        }
-
         const [revenueData, storeData] = await Promise.all([
-          revenueRes.json(),
-          storeRes.json(),
+          api.get<RevenueData>(`/admin/analytics/revenue?period=${period}`),
+          api.get<StoreAnalytics>('/admin/analytics/stores'),
         ]);
 
         setRevenueData(revenueData);
