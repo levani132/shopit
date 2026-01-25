@@ -125,7 +125,10 @@ function StoreCard({ store }: { store: Store }) {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors group-hover:text-[var(--accent-600)] dark:group-hover:text-[var(--accent-400)]">
           {store.name}
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <p
+          className="text-sm text-gray-500 dark:text-gray-400 mt-1"
+          suppressHydrationWarning
+        >
           {store.subdomain}.{getBaseDomain().baseDomain}
         </p>
 

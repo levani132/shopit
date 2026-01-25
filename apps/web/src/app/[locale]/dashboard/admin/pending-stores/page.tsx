@@ -165,7 +165,10 @@ function PendingStoresContent() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {store.name}
                   </h3>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span
+                    className="text-sm text-gray-500 dark:text-gray-400"
+                    suppressHydrationWarning
+                  >
                     ({store.subdomain}.{getBaseDomain().baseDomain})
                   </span>
                 </div>

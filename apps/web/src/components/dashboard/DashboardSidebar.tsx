@@ -528,6 +528,11 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'platformAnalytics',
         icon: ChartBarIcon,
       },
+      {
+        href: '/dashboard/admin/dev-tools',
+        labelKey: 'devTools',
+        icon: SettingsIcon,
+      },
     ],
   },
 ];
