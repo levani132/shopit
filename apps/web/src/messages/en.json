@@ -1736,5 +1736,40 @@
     "termsOfService": "Terms of Service",
     "and": "and",
     "privacyPolicy": "Privacy Policy"
+  },
+  "sellerAnalytics": {
+    "title": "Store Analytics",
+    "subtitle": "Track your store performance, sales, and customer insights",
+    "periodWeek": "Week",
+    "periodMonth": "Month",
+    "periodYear": "Year",
+    "totalRevenue": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "avgOrderValue": "Avg. Order Value",
+    "productsSold": "Products Sold",
+    "revenueOverTime": "Revenue Over Time",
+    "orders": "orders",
+    "noDataForPeriod": "No data available for this period",
+    "topProducts": "Top Products",
+    "noProductsYet": "No products sold yet",
+    "sold": "sold",
+    "orderStatus": "Order Status Breakdown",
+    "noOrdersYet": "No orders yet",
+    "customerInsights": "Customer Insights",
+    "totalCustomers": "Total Customers",
+    "repeatRate": "Repeat Rate",
+    "newCustomers": "New Customers",
+    "repeatCustomers": "Returning",
+    "recentOrders": "Recent Orders",
+    "noDataTitle": "No Analytics Data Yet",
+    "noDataDescription": "Once you start receiving orders, you'll see detailed analytics about your store's performance here.",
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    }
   }
 }
