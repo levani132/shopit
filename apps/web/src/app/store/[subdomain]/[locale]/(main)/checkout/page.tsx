@@ -392,9 +392,7 @@ export default function CheckoutPage() {
         setSavedAddresses(addresses);
 
         // Auto-select default address
-        const defaultAddr = addresses.find(
-          (a: ShippingAddress) => a.isDefault,
-        );
+        const defaultAddr = addresses.find((a: ShippingAddress) => a.isDefault);
         if (defaultAddr && !shippingAddress) {
           setShippingAddress(defaultAddr);
         }
@@ -535,6 +533,7 @@ export default function CheckoutPage() {
     if (addr.location) {
       setAddressPickerValue({
         address: addr.address,
+        city: addr.city,
         location: addr.location,
       });
       // Calculate shipping for the existing address
@@ -764,10 +763,7 @@ export default function CheckoutPage() {
         failUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/fail`,
       };
 
-      const paymentData = await api.post(
-        '/payments/initiate',
-        paymentPayload,
-      );
+      const paymentData = await api.post('/payments/initiate', paymentPayload);
 
       // 3. Open BOG payment page in popup/new tab
       if (paymentData.redirectUrl) {
