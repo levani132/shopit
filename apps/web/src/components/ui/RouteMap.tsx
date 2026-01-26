@@ -173,68 +173,6 @@ function LeafletMap({
     );
   }, [L, validStops, startingPoint, currentLocation]);
 
-  // Create custom icons for different stop types
-  const createIcon = useMemo(() => {
-    if (!L) return null;
-
-    return (
-      type: 'pickup' | 'delivery' | 'break' | 'start',
-      isCurrentStop: boolean,
-      status?: string,
-    ) => {
-      const colors = {
-        start: '#6366f1', // Indigo
-        pickup: '#f59e0b', // Amber
-        delivery: '#10b981', // Emerald
-        break: '#8b5cf6', // Violet
-      };
-
-      const icons = {
-        start: '🏠',
-        pickup: '📦',
-        delivery: '🏠',
-        break: '☕',
-      };
-
-      const bgColor =
-        status === 'completed' ? '#9ca3af' : colors[type] || '#6b7280';
-      const size = isCurrentStop ? 40 : 32;
-      const emoji = icons[type] || '📍';
-
-      const html = `
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          background-color: ${bgColor};
-          border: 3px solid white;
-          border-radius: 50%;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: ${isCurrentStop ? '18px' : '14px'};
-          ${isCurrentStop ? 'animation: pulse 2s infinite;' : ''}
-        ">
-          ${emoji}
-        </div>
-        <style>
-          @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-          }
-        </style>
-      `;
-
-      return L.divIcon({
-        html,
-        className: 'custom-marker route-map-marker',
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-        popupAnchor: [0, -size / 2],
-      });
-    };
-  }, [L]);
-
   // Create numbered icon
   const createNumberedIcon = useMemo(() => {
     if (!L) return null;
