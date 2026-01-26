@@ -8,13 +8,52 @@ import { api } from '../../../../lib/api';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
+// API response structure from courier-admin.service.ts
+interface ApiAnalyticsResponse {
+  stats: {
+    totalCouriers: number;
+    availableCouriers: number;
+    busyCouriers: number;
+    offlineCouriers: number;
+    pendingOrders: number;
+    inProgressOrders: number;
+    overdueOrders: number;
+    approachingDeadlineOrders: number;
+    onTimeRate: number;
+    avgDeliveryTime: number;
+  };
+  urgentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    deadline: string;
+    status: string;
+    isOverdue: boolean;
+    courier?: {
+      firstName: string;
+      lastName: string;
+    };
+  }>;
+  topCouriers: Array<{
+    _id: string;
+    name: string;
+    deliveries: number;
+    onTimeRate: number;
+    avgDeliveryTime: number;
+  }>;
+  statusSummary: {
+    available: number;
+    busy: number;
+    inactive: number;
+    completedToday: number;
+  };
+}
+
+// Transformed data for UI
 interface CourierAnalytics {
   totalCouriers: number;
-  activeCouriers: number;
   availableCouriers: number;
   busyCouriers: number;
   inactiveCouriers: number;
-  totalDeliveries: number;
   pendingDeliveries: number;
   inProgressDeliveries: number;
   completedToday: number;
@@ -26,19 +65,18 @@ interface CourierAnalytics {
 
 interface TopCourier {
   _id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  deliveriesCompleted: number;
+  name: string;
+  deliveries: number;
   onTimeRate: number;
-  averageDeliveryTime: number;
+  avgDeliveryTime: number;
 }
 
 interface UrgentOrder {
-  _id: string;
+  id: string;
   orderNumber: string;
   deadline: string;
   status: string;
+  isOverdue: boolean;
   courierName?: string;
 }
 
@@ -61,18 +99,40 @@ function CourierAdminDashboardContent() {
   const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const data = await api.get<{
-        analytics: CourierAnalytics;
-        topCouriers: TopCourier[];
-        urgentOrders: UrgentOrder[];
-      }>('/courier-admin/analytics');
+      const data = await api.get<ApiAnalyticsResponse>(
+        '/courier-admin/analytics',
+      );
 
-      setAnalytics(data.analytics);
+      // Transform API response to UI format
+      setAnalytics({
+        totalCouriers: data.stats.totalCouriers,
+        availableCouriers: data.stats.availableCouriers,
+        busyCouriers: data.stats.busyCouriers,
+        inactiveCouriers: data.stats.offlineCouriers,
+        pendingDeliveries: data.stats.pendingOrders,
+        inProgressDeliveries: data.stats.inProgressOrders,
+        completedToday: data.statusSummary.completedToday,
+        overdueOrders: data.stats.overdueOrders,
+        approachingDeadlineOrders: data.stats.approachingDeadlineOrders,
+        averageDeliveryTime: data.stats.avgDeliveryTime,
+        onTimeRate: data.stats.onTimeRate,
+      });
       setTopCouriers(data.topCouriers || []);
-      setUrgentOrders(data.urgentOrders || []);
-    } catch (err: any) {
+      setUrgentOrders(
+        (data.urgentOrders || []).map((order) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          deadline: order.deadline,
+          status: order.status,
+          isOverdue: order.isOverdue,
+          courierName: order.courier
+            ? `${order.courier.firstName} ${order.courier.lastName}`
+            : undefined,
+        })),
+      );
+    } catch (err: unknown) {
       console.error('Failed to fetch courier analytics:', err);
-      setError(err.message || 'Failed to load analytics');
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setLoading(false);
     }
@@ -326,7 +386,7 @@ function CourierAdminDashboardContent() {
                 };
                 return (
                   <div
-                    key={order._id || `urgent-order-${index}`}
+                    key={order.id || `urgent-order-${index}`}
                     className={`flex items-center justify-between p-3 rounded-lg ${
                       urgency === 'overdue'
                         ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
@@ -414,10 +474,10 @@ function CourierAdminDashboardContent() {
                     </span>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {courier.firstName} {courier.lastName}
+                        {courier.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {courier.deliveriesCompleted} {t('deliveries')}
+                        {courier.deliveries} {t('deliveries')}
                       </p>
                     </div>
                   </div>
@@ -426,7 +486,7 @@ function CourierAdminDashboardContent() {
                       {Math.round(courier.onTimeRate)}% {t('onTime')}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {t('avg')} {formatTime(courier.averageDeliveryTime)}
+                      {t('avg')} {formatTime(courier.avgDeliveryTime)}
                     </p>
                   </div>
                 </div>
