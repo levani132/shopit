@@ -25,6 +25,8 @@ import {
   NotificationDocument,
   CourierRoute,
   CourierRouteDocument,
+  RouteCache,
+  RouteCacheDocument,
 } from '@shopit/api-database';
 import { Role } from '@shopit/constants';
 import {
@@ -140,8 +142,9 @@ const PRODUCT_TEMPLATES = [
   { name: 'სმარტფონი', nameEn: 'Smartphone', priceMin: 400, priceMax: 1500 },
 ];
 
-// Tbilisi locations
+// Tbilisi locations - expanded for more variety
 const TBILISI_LOCATIONS = [
+  // Central Tbilisi
   {
     address: 'Rustaveli Avenue 12',
     city: 'Tbilisi',
@@ -162,9 +165,86 @@ const TBILISI_LOCATIONS = [
     lat: 41.7337,
     lng: 44.7587,
   },
+  // Saburtalo
+  { address: 'Delisi Street 15', city: 'Tbilisi', lat: 41.7328, lng: 44.7522 },
+  { address: 'Kazbegi Avenue 22', city: 'Tbilisi', lat: 41.7215, lng: 44.7593 },
+  {
+    address: 'Nutsubidze Street 8',
+    city: 'Tbilisi',
+    lat: 41.7412,
+    lng: 44.7401,
+  },
+  // Vake
+  {
+    address: 'Abashidze Street 40',
+    city: 'Tbilisi',
+    lat: 41.7108,
+    lng: 44.7678,
+  },
+  { address: 'Barnovi Street 18', city: 'Tbilisi', lat: 41.7123, lng: 44.7812 },
+  // Didube/Nadzaladevi
+  {
+    address: 'Tsereteli Avenue 90',
+    city: 'Tbilisi',
+    lat: 41.7241,
+    lng: 44.7872,
+  },
+  { address: 'Didube Street 5', city: 'Tbilisi', lat: 41.7287, lng: 44.7956 },
+  // Gldani/Temka
+  { address: 'Gldani Street 14', city: 'Tbilisi', lat: 41.7623, lng: 44.8101 },
+  { address: 'Mukhiani Street 7', city: 'Tbilisi', lat: 41.7712, lng: 44.8234 },
+  // Old Tbilisi
+  { address: 'Shardeni Street 3', city: 'Tbilisi', lat: 41.6901, lng: 44.8112 },
+  {
+    address: 'Sololaki Street 12',
+    city: 'Tbilisi',
+    lat: 41.6923,
+    lng: 44.8023,
+  },
+  {
+    address: 'Avlabari Street 25',
+    city: 'Tbilisi',
+    lat: 41.6928,
+    lng: 44.8145,
+  },
+  // Isani/Samgori
+  { address: 'Isani Street 19', city: 'Tbilisi', lat: 41.6978, lng: 44.8312 },
+  { address: 'Samgori Street 31', city: 'Tbilisi', lat: 41.6912, lng: 44.8423 },
+  {
+    address: 'Varketili Street 8',
+    city: 'Tbilisi',
+    lat: 41.6823,
+    lng: 44.8567,
+  },
+  // Ortachala/Ponichala
+  {
+    address: 'Ortachala Street 11',
+    city: 'Tbilisi',
+    lat: 41.6812,
+    lng: 44.8256,
+  },
+  {
+    address: 'Marjanishvili Street 16',
+    city: 'Tbilisi',
+    lat: 41.7081,
+    lng: 44.7964,
+  },
+  // Dighomi
+  { address: 'Dighomi Street 44', city: 'Tbilisi', lat: 41.7485, lng: 44.7312 },
+  {
+    address: 'Bochorishvili Street 22',
+    city: 'Tbilisi',
+    lat: 41.7456,
+    lng: 44.7378,
+  },
+  // Vera
+  {
+    address: 'Vera Park Street 9',
+    city: 'Tbilisi',
+    lat: 41.7145,
+    lng: 44.7789,
+  },
 ];
-
-const SHIPPING_SIZES = ['small', 'medium', 'large', 'extra_large'];
 
 @Injectable()
 export class DevToolsService {
@@ -186,6 +266,8 @@ export class DevToolsService {
     private notificationModel: Model<NotificationDocument>,
     @InjectModel(CourierRoute.name)
     private courierRouteModel: Model<CourierRouteDocument>,
+    @InjectModel(RouteCache.name)
+    private routeCacheModel: Model<RouteCacheDocument>,
   ) {}
 
   /**
@@ -202,6 +284,7 @@ export class DevToolsService {
           {},
         );
         const routesDeleted = await this.courierRouteModel.deleteMany({});
+        const routeCacheDeleted = await this.routeCacheModel.deleteMany({});
 
         // Reset user balances
         await this.userModel.updateMany(
@@ -218,6 +301,7 @@ export class DevToolsService {
           orders: ordersDeleted.deletedCount,
           balanceTransactions: balanceDeleted.deletedCount,
           courierRoutes: routesDeleted.deletedCount,
+          routeCache: routeCacheDeleted.deletedCount,
           userBalancesReset: true,
         };
         results.message = 'Level 1: Orders and balances cleared';
@@ -351,14 +435,20 @@ export class DevToolsService {
       userIndex++;
     }
 
-    // Seed couriers
+    // Seed couriers with varied locations and vehicle types
+    const vehicleTypes = ['car', 'car', 'suv', 'van']; // 50% car, 25% suv, 25% van
     for (let i = 0; i < couriers; i++) {
       const firstName = FIRST_NAMES_KA[userIndex % FIRST_NAMES_KA.length];
       const lastName = LAST_NAMES_KA[userIndex % LAST_NAMES_KA.length];
       const email = `courier${userIndex}@test.ge`;
+      // Spread couriers across different parts of the city
+      const locationIndex = Math.floor(
+        (i * TBILISI_LOCATIONS.length) / Math.max(couriers, 1),
+      );
       const location =
-        TBILISI_LOCATIONS[(userIndex + i) % TBILISI_LOCATIONS.length];
+        TBILISI_LOCATIONS[locationIndex % TBILISI_LOCATIONS.length];
       const phoneNumber = `+995 5${Math.floor(10000000 + Math.random() * 90000000)}`;
+      const vehicleType = vehicleTypes[i % vehicleTypes.length];
 
       const user = await this.userModel.create({
         email,
@@ -369,7 +459,7 @@ export class DevToolsService {
         isSeeded: true,
         isCourierApproved: true,
         courierAppliedAt: new Date(),
-        vehicleType: 'car',
+        vehicleType,
         balance: 0,
         totalWithdrawn: 0,
         phoneNumber,
@@ -407,9 +497,41 @@ export class DevToolsService {
       const firstName = FIRST_NAMES_KA[userIndex % FIRST_NAMES_KA.length];
       const lastName = LAST_NAMES_KA[userIndex % LAST_NAMES_KA.length];
       const email = `buyer${userIndex}@test.ge`;
-      const location =
-        TBILISI_LOCATIONS[(userIndex + i) % TBILISI_LOCATIONS.length];
       const phoneNumber = `+995 5${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+      // Create 2-5 random shipping addresses for each buyer
+      const numAddresses = 2 + Math.floor(Math.random() * 4); // 2-5 addresses
+      const shippingAddresses = [];
+      const usedLocationIndices = new Set<number>();
+
+      for (let j = 0; j < numAddresses; j++) {
+        // Pick a unique random location
+        let locIndex;
+        do {
+          locIndex = Math.floor(Math.random() * TBILISI_LOCATIONS.length);
+        } while (
+          usedLocationIndices.has(locIndex) &&
+          usedLocationIndices.size < TBILISI_LOCATIONS.length
+        );
+        usedLocationIndices.add(locIndex);
+
+        const loc = TBILISI_LOCATIONS[locIndex];
+        const labels = ['Home', 'Work', 'Office', 'Parents', 'Partner'];
+
+        shippingAddresses.push({
+          _id: new Types.ObjectId().toString(),
+          label: labels[j] || `Address ${j + 1}`,
+          address: loc.address,
+          city: loc.city,
+          country: 'Georgia',
+          phoneNumber:
+            j === 0
+              ? phoneNumber
+              : `+995 5${Math.floor(10000000 + Math.random() * 90000000)}`,
+          location: { lat: loc.lat, lng: loc.lng },
+          isDefault: j === 0,
+        });
+      }
 
       const user = await this.userModel.create({
         email,
@@ -420,18 +542,7 @@ export class DevToolsService {
         isSeeded: true,
         phoneNumber,
         isProfileComplete: true,
-        shippingAddresses: [
-          {
-            _id: new Types.ObjectId().toString(),
-            label: 'Home',
-            address: location.address,
-            city: location.city,
-            country: 'Georgia',
-            phoneNumber,
-            location: { lat: location.lat, lng: location.lng },
-            isDefault: true,
-          },
-        ],
+        shippingAddresses,
       });
 
       users.push({
@@ -611,9 +722,8 @@ export class DevToolsService {
           categoryId: catData.category._id,
           stock: Math.floor(Math.random() * 50) + 10,
           hasVariants: false,
-          shippingSize: SHIPPING_SIZES[
-            Math.floor(Math.random() * SHIPPING_SIZES.length)
-          ] as 'small' | 'medium' | 'large' | 'extra_large',
+          // Weight sizes: 40% small, 35% medium, 15% large, 10% extra_large
+          shippingSize: this.getWeightedShippingSize(),
         });
 
         products.push(product);
@@ -741,24 +851,44 @@ export class DevToolsService {
         shippingPrice,
         distanceKm: distance,
         shippingSize: product.shippingSize || 'medium',
+        estimatedShippingSize: product.shippingSize || 'medium',
         taxPrice: 0,
         totalPrice,
         isPaid: true,
         paidAt: createdAt,
         status: 'ready_for_delivery',
+        // Deadline should be in the FUTURE (1-4 days from now)
         deliveryDeadline: new Date(
-          createdAt.getTime() + 3 * 24 * 60 * 60 * 1000,
+          Date.now() + (1 + Math.random() * 3) * 24 * 60 * 60 * 1000,
         ),
       });
 
       orders.push(order);
     }
+    const routeCacheDeleted = await this.routeCacheModel.deleteMany({});
 
     return {
       ordersCreated: orders.length,
       productsUsed: products.length,
       storesUsed: stores.length,
+      routeCacheCleared: routeCacheDeleted.deletedCount,
     };
+  }
+
+  /**
+   * Get weighted shipping size (favoring smaller sizes for car couriers)
+   * Distribution: 40% small, 35% medium, 15% large, 10% extra_large
+   */
+  private getWeightedShippingSize():
+    | 'small'
+    | 'medium'
+    | 'large'
+    | 'extra_large' {
+    const rand = Math.random();
+    if (rand < 0.4) return 'small';
+    if (rand < 0.75) return 'medium';
+    if (rand < 0.9) return 'large';
+    return 'extra_large';
   }
 
   /**
@@ -835,6 +965,7 @@ export class DevToolsService {
       products: productsCount,
       categories: categoriesCount,
       orders: ordersCount,
+      routeCache: await this.routeCacheModel.countDocuments(),
       balanceTransactions: balanceTransactionsCount,
     };
   }

@@ -1906,9 +1906,25 @@ export class RoutesService {
     return this.orderModel
       .find({
         status: OrderStatus.READY_FOR_DELIVERY,
-        $or: [{ courierId: { $exists: false } }, { courierId: null }],
-        shippingSize: { $in: compatibleSizes },
         deliveryDeadline: { $gt: new Date() }, // Not overdue
+        $and: [
+          // No courier assigned
+          { $or: [{ courierId: { $exists: false } }, { courierId: null }] },
+          // Check both shippingSize (seller-confirmed) and estimatedShippingSize (auto-calculated)
+          {
+            $or: [
+              { shippingSize: { $in: compatibleSizes } },
+              {
+                shippingSize: { $exists: false },
+                estimatedShippingSize: { $in: compatibleSizes },
+              },
+              {
+                shippingSize: null,
+                estimatedShippingSize: { $in: compatibleSizes },
+              },
+            ],
+          },
+        ],
       })
       .limit(200) // Limit for performance
       .exec();
@@ -2102,7 +2118,8 @@ export class RoutesService {
     // Key insight: Visit the BEST store, pick up ALL orders (up to capacity),
     // deliver them, then move to next best store. Don't interleave stores!
 
-    for (const store of rankedStores) {
+    for (let storeIdx = 0; storeIdx < rankedStores.length; storeIdx++) {
+      const store = rankedStores[storeIdx];
       // Check if we have time left
       const estimatedRemainingTime = maxAllowedTime - currentTime;
       if (estimatedRemainingTime <= 10) break; // Need at least 10 min
@@ -2159,7 +2176,8 @@ export class RoutesService {
             city: nearestOrder.order.shippingDetails.city,
           };
         }
-        continue; // Re-check this store after delivery
+        storeIdx--; // Re-check this same store after delivery
+        continue;
       }
 
       // Pick up orders at this store (up to capacity)
