@@ -117,6 +117,23 @@ export class StoresController {
     return stats;
   }
 
+  @Get('analytics')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get current user's store analytics" })
+  @ApiResponse({ status: 200, description: 'Store analytics returned' })
+  @ApiResponse({ status: 404, description: 'Store not found' })
+  async getMyStoreAnalytics(
+    @CurrentUser() user: UserDocument,
+    @Query('period') period: 'week' | 'month' | 'year' = 'month',
+  ) {
+    const analytics = await this.storesService.getStoreAnalytics(
+      user._id.toString(),
+      period,
+    );
+    return analytics;
+  }
+
   @Get('subdomain-info')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -462,11 +479,13 @@ export class StoresController {
   @ApiOperation({ summary: 'Delete current user store' })
   @ApiResponse({ status: 200, description: 'Store deleted successfully' })
   async deleteMyStore(@CurrentUser() user: UserDocument) {
-    if (!user.storeId) {
+    const store = await this.storesService.findByOwnerId(user._id.toString());
+
+    if (!store) {
       throw new NotFoundException('No store found for this user');
     }
 
-    await this.storesService.deleteStore(user.storeId.toString(), user);
+    await this.storesService.deleteStore(store._id.toString(), user);
     return { message: 'Store deleted successfully' };
   }
 }

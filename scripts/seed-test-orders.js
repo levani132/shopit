@@ -9,24 +9,6 @@ const { MongoClient, ObjectId } = require('mongodb');
 const DATABASE_URL =
   'mongodb+srv://levanicomp_db_user:4tSMyMwFDaoabiFR@shopit.tqq00zv.mongodb.net/?appName=ShopIt';
 
-/**
- * Calculate distance between two points using Haversine formula
- * @returns {number} Distance in kilometers (rounded to 1 decimal)
- */
-function calculateDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // Earth's radius in kilometers
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round(R * c * 10) / 10;
-}
-
 // Tbilisi locations for testing (realistic addresses across the city)
 const TBILISI_LOCATIONS = [
   {
@@ -257,39 +239,6 @@ const PRODUCT_NAMES = [
 
 const SHIPPING_SIZES = ['small', 'medium', 'large', 'extra_large'];
 
-/**
- * Calculate distance between two points using Haversine formula
- * @returns distance in kilometers
- */
-function haversineDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-/**
- * Calculate shipping price based on distance AND size
- * Formula: basePrice + (distance × perKmRate)
- */
-function calculateShippingPrice(distance, shippingSize) {
-  const basePrices = { small: 3, medium: 5, large: 7, extra_large: 10 };
-  const perKmRates = { small: 0.8, medium: 1.0, large: 1.3, extra_large: 1.6 };
-
-  const base = basePrices[shippingSize] || 3;
-  const rate = perKmRates[shippingSize] || 0.8;
-
-  // Round to 2 decimal places
-  return Math.round((base + distance * rate) * 100) / 100;
-}
-
 async function seedOrders() {
   const client = new MongoClient(DATABASE_URL);
 
@@ -300,21 +249,13 @@ async function seedOrders() {
     // List all databases in cluster
     const adminDb = client.db().admin();
     const dbs = await adminDb.listDatabases();
-    console.log(
-      'Databases in cluster:',
-      dbs.databases
-        .map((d) => `${d.name} (${(d.sizeOnDisk / 1024 / 1024).toFixed(2)} MB)`)
-        .join(', '),
-    );
-
+    console.log('Databases in cluster:', dbs.databases.map(d => `${d.name} (${(d.sizeOnDisk / 1024 / 1024).toFixed(2)} MB)`).join(', '));
+    
     const db = client.db('test');
-
+    
     // List collections
     const collections = await db.listCollections().toArray();
-    console.log(
-      'Collections:',
-      collections.map((c) => c.name).join(', ') || 'NONE',
-    );
+    console.log('Collections:', collections.map(c => c.name).join(', ') || 'NONE');
 
     // Get existing stores (any stores, not just active)
     const stores = await db.collection('stores').find({}).limit(5).toArray();
@@ -352,48 +293,41 @@ async function seedOrders() {
       const product =
         PRODUCT_NAMES[Math.floor(Math.random() * PRODUCT_NAMES.length)];
       const qty = Math.floor(Math.random() * 3) + 1;
-      const shippingSize =
-        SHIPPING_SIZES[Math.floor(Math.random() * SHIPPING_SIZES.length)];
+      
+      // Weight sizes towards small/medium (80% of orders) so car couriers can deliver
+      const rand = Math.random();
+      let shippingSize;
+      if (rand < 0.5) {
+        shippingSize = 'small';
+      } else if (rand < 0.8) {
+        shippingSize = 'medium';
+      } else if (rand < 0.9) {
+        shippingSize = 'large';
+      } else {
+        shippingSize = 'extra_large';
+      }
 
-      // Get pickup location from store
-      const pickupLocation = store.location || { lat: 41.7151, lng: 44.8271 };
-
-      // Calculate distance between pickup and delivery
-      const distance = haversineDistance(
-        pickupLocation.lat,
-        pickupLocation.lng,
-        deliveryLocation.lat,
-        deliveryLocation.lng,
-      );
-
-      // Calculate shipping price based on DISTANCE and SIZE
-      const shippingPrice = calculateShippingPrice(distance, shippingSize);
+      // Calculate shipping price based on size
+      const shippingPrices = {
+        small: 5,
+        medium: 8,
+        large: 12,
+        extra_large: 18,
+      };
+      const shippingPrice = shippingPrices[shippingSize] || 5;
 
       const itemsPrice = product.price * qty;
       const totalPrice = itemsPrice + shippingPrice;
 
-      // Generate timestamps
-      const createdAt = new Date(
-        Date.now() - Math.random() * 24 * 60 * 60 * 1000,
-      ); // Random time in last 24h
-      const deliveryDeadline = new Date(
-        createdAt.getTime() + 3 * 24 * 60 * 60 * 1000,
-      ); // 3 days from creation
-      const stockReservationExpires = new Date(
-        createdAt.getTime() + 17 * 60 * 1000,
-      ); // 17 min from creation
-      const externalOrderId = require('crypto').randomUUID();
-
       const order = {
         user: user._id,
         isGuestOrder: false,
-        externalOrderId: externalOrderId,
         orderItems: [
           {
             productId: new ObjectId(),
             name: product.name,
             nameEn: product.nameEn,
-            image: '/images/placeholder.png',
+            image: `https://picsum.photos/seed/${i}/150/150`,
             price: product.price,
             qty: qty,
             storeId: store._id,
@@ -411,7 +345,6 @@ async function seedOrders() {
           address: deliveryLocation.address,
           city: deliveryLocation.city,
           country: 'Georgia',
-          postalCode: '0' + (100 + Math.floor(Math.random() * 50)),
           phoneNumber:
             '+995 5' + Math.floor(10000000 + Math.random() * 90000000),
         },
@@ -429,31 +362,23 @@ async function seedOrders() {
         deliveryMethod: 'delivery',
         paymentResult: {
           id: 'test_order_' + Date.now() + '_' + i,
-          status: 'COMPLETED',
-          updateTime: createdAt.toISOString(),
-          emailAddress: `test${i}@example.com`,
+          status: 'completed',
+          updateTime: new Date().toISOString(),
         },
         itemsPrice: itemsPrice,
         shippingPrice: shippingPrice,
-        distanceKm: calculateDistance(
-          store.location?.lat || 41.7151,
-          store.location?.lng || 44.8271,
-          deliveryLocation.lat,
-          deliveryLocation.lng,
-        ),
-        shippingSize: shippingSize, // Root level - required for routes query
-        estimatedShippingSize: shippingSize,
-        taxPrice: 0,
         totalPrice: totalPrice,
         isPaid: true,
-        paidAt: createdAt,
+        paidAt: new Date(),
         isDelivered: false,
         status: 'ready_for_delivery', // Ready for courier pickup
-        deliveryDeadline: deliveryDeadline, // Required for routes query
-        stockReservationExpires: stockReservationExpires,
-        createdAt: createdAt,
-        updatedAt: createdAt,
-        __v: 0,
+        // Order-level shipping size (must match for route filtering)
+        shippingSize: shippingSize,
+        estimatedShippingSize: shippingSize,
+        // Delivery deadline - random time in next 1-3 days
+        deliveryDeadline: new Date(Date.now() + (24 + Math.random() * 48) * 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       ordersToCreate.push(order);

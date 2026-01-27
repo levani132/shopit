@@ -984,7 +984,30 @@ export class OrdersService {
       // Process seller earnings when order is delivered
       await order.save();
       await this.balanceService.processOrderEarnings(order);
+
+      // Update active route if this order is part of one
+      // This handles the case where courier delivers order early via deliveries page
+      try {
+        await this.routesService.markOrderDeliveredInRoute(courierId, orderId);
+      } catch (err) {
+        // Order might not be part of a route, that's okay
+        this.logger.debug(
+          `Order ${orderId} delivery - route update skipped: ${err}`,
+        );
+      }
+
       return order;
+    }
+
+    if (newStatus === OrderStatus.SHIPPED) {
+      // Update active route if this order is part of one (mark pickup as completed)
+      try {
+        await this.routesService.markOrderPickedUpInRoute(courierId, orderId);
+      } catch (err) {
+        this.logger.debug(
+          `Order ${orderId} pickup - route update skipped: ${err}`,
+        );
+      }
     }
 
     return order.save();

@@ -812,7 +812,14 @@ export class RoutesService {
 
     const stop = route.stops[stopIndex];
     const now = new Date();
+    const isFutureStop = stopIndex > route.currentStopIndex;
 
+    // Handle FUTURE stop completion - remove from route and re-optimize
+    if (isFutureStop && action === 'completed') {
+      return this.handleFutureStopCompletion(route, stopIndex, now);
+    }
+
+    // Normal flow for current stop or arrived action
     switch (action) {
       case 'arrived':
         stop.status = StopStatus.ARRIVED;
@@ -868,17 +875,13 @@ export class RoutesService {
           });
         }
 
-        // Move to next stop
-        if (stopIndex === route.currentStopIndex) {
-          route.currentStopIndex += 1;
-        }
+        // Advance to next stop
+        route.currentStopIndex += 1;
         break;
 
       case 'skipped':
         stop.status = StopStatus.SKIPPED;
-        if (stopIndex === route.currentStopIndex) {
-          route.currentStopIndex += 1;
-        }
+        route.currentStopIndex += 1;
         break;
     }
 
@@ -892,11 +895,359 @@ export class RoutesService {
       route.status = RouteStatus.COMPLETED;
       route.completedAt = now;
       route.actualEndTime = now;
-      // actualEarnings is already updated incrementally when each delivery is completed
+    } else {
+      // Recalculate arrival times for remaining pending stops
+      await this.recalculateRemainingArrivalTimes(route);
     }
 
     await route.save();
     return route;
+  }
+
+  /**
+   * Handle completion of a future stop - moves it to completed section and re-optimizes remaining
+   * Instead of removing the stop, we keep it in the route history as completed
+   */
+  private async handleFutureStopCompletion(
+    route: CourierRouteDocument,
+    stopIndex: number,
+    now: Date,
+  ): Promise<CourierRouteDocument> {
+    const stop = route.stops[stopIndex];
+    const orderId = stop.orderId?.toString();
+
+    if (!orderId) {
+      throw new BadRequestException('Stop has no order');
+    }
+
+    // Mark the stop as completed
+    stop.status = StopStatus.COMPLETED;
+    stop.completedAt = now;
+    stop.actualArrival = stop.actualArrival || now;
+    route.completedStops += 1;
+
+    // Update order status based on stop type
+    if (stop.type === StopType.PICKUP) {
+      await this.orderModel.findByIdAndUpdate(orderId, {
+        status: OrderStatus.SHIPPED,
+        shippedAt: now,
+        pickedUpAt: now,
+        pickedUpFromRouteId: route._id,
+      });
+    } else if (stop.type === StopType.DELIVERY) {
+      const order = await this.orderModel.findByIdAndUpdate(
+        orderId,
+        {
+          status: OrderStatus.DELIVERED,
+          isDelivered: true,
+          deliveredAt: now,
+          deliveredFromRouteId: route._id,
+        },
+        { new: true },
+      );
+
+      if (order) {
+        await this.balanceService.processOrderEarnings(order);
+        route.actualEarnings += stop.courierEarning || 0;
+      }
+    }
+
+    // Find all related stops for this order (both pickup and delivery)
+    const relatedStopIndices: number[] = [];
+    for (let i = 0; i < route.stops.length; i++) {
+      if (route.stops[i].orderId?.toString() === orderId) {
+        relatedStopIndices.push(i);
+      }
+    }
+
+    // Mark all related stops as completed and collect them
+    const completedStopsForOrder: RouteStop[] = [];
+    for (const idx of relatedStopIndices) {
+      const relatedStop = route.stops[idx];
+      if (relatedStop.status !== StopStatus.COMPLETED) {
+        relatedStop.status = StopStatus.COMPLETED;
+        relatedStop.completedAt = now;
+        relatedStop.actualArrival = relatedStop.actualArrival || now;
+        route.completedStops += 1;
+
+        // Update pickup order status if not already
+        if (relatedStop.type === StopType.PICKUP) {
+          await this.orderModel.findByIdAndUpdate(orderId, {
+            status: OrderStatus.SHIPPED,
+            shippedAt: now,
+            pickedUpAt: now,
+            pickedUpFromRouteId: route._id,
+          });
+        }
+      }
+      completedStopsForOrder.push(relatedStop);
+    }
+
+    // Build new stops array:
+    // 1. Stops before currentStopIndex (already completed/passed)
+    // 2. Completed stops for this order (moved here)
+    // 3. Current stop (if not part of this order)
+    // 4. Re-optimized remaining pending stops
+
+    const stopsBeforeCurrent: RouteStop[] = [];
+    const currentStop: RouteStop | null =
+      route.stops[route.currentStopIndex] || null;
+    const pendingStopsToReoptimize: RouteStop[] = [];
+
+    for (let i = 0; i < route.stops.length; i++) {
+      const s = route.stops[i];
+      const isThisOrder = s.orderId?.toString() === orderId;
+
+      if (i < route.currentStopIndex) {
+        // Already passed stops - keep them (but skip if it's this order, we'll add them separately)
+        if (!isThisOrder) {
+          stopsBeforeCurrent.push(s);
+        }
+      } else if (i === route.currentStopIndex) {
+        // Current stop - will be added separately if not this order
+        continue;
+      } else if (isThisOrder) {
+        // This order's stops - already collected in completedStopsForOrder
+        continue;
+      } else if (s.status === StopStatus.PENDING) {
+        // Other pending stops - collect for re-optimization
+        pendingStopsToReoptimize.push(s);
+      }
+    }
+
+    // Get current location for re-optimization
+    let currentLocation: { lat: number; lng: number };
+    if (stopsBeforeCurrent.length > 0) {
+      const lastStop = stopsBeforeCurrent[stopsBeforeCurrent.length - 1];
+      currentLocation = {
+        lat: lastStop.location.coordinates.lat,
+        lng: lastStop.location.coordinates.lng,
+      };
+    } else {
+      currentLocation = {
+        lat: route.startingPoint.coordinates.lat,
+        lng: route.startingPoint.coordinates.lng,
+      };
+    }
+
+    // Re-optimize pending stops using nearest neighbor
+    let optimizedStops: RouteStop[] = [];
+    if (pendingStopsToReoptimize.length > 0) {
+      optimizedStops = await this.reoptimizePendingStops(
+        pendingStopsToReoptimize,
+        currentLocation,
+      );
+    }
+
+    // Build final stops array:
+    // [completed before] + [this order's completed stops] + [current stop if exists] + [re-optimized pending]
+    const newStops: RouteStop[] = [
+      ...stopsBeforeCurrent,
+      ...completedStopsForOrder,
+    ];
+
+    // Add current stop if it's not part of this order
+    if (currentStop && currentStop.orderId?.toString() !== orderId) {
+      newStops.push(currentStop);
+    }
+
+    // Add re-optimized pending stops
+    newStops.push(...optimizedStops);
+
+    route.stops = newStops as typeof route.stops;
+
+    // Update currentStopIndex to point to the first non-completed stop
+    let newCurrentIndex = 0;
+    for (let i = 0; i < route.stops.length; i++) {
+      if (route.stops[i].status === StopStatus.PENDING) {
+        newCurrentIndex = i;
+        break;
+      }
+      newCurrentIndex = i + 1;
+    }
+    route.currentStopIndex = newCurrentIndex;
+
+    // Check if route is complete
+    const allDone = route.stops.every(
+      (s) =>
+        s.status === StopStatus.COMPLETED || s.status === StopStatus.SKIPPED,
+    );
+    if (allDone) {
+      route.status = RouteStatus.COMPLETED;
+      route.completedAt = now;
+      route.actualEndTime = now;
+    } else {
+      // Recalculate estimated times for remaining stops
+      await this.recalculateRemainingArrivalTimes(route);
+      // Recalculate total time and distance
+      await this.recalculateRouteTotals(route);
+    }
+
+    this.logger.log(
+      `Completed order ${orderId} early in route ${route._id}. Moved ${completedStopsForOrder.length} stops to completed section, re-optimized ${optimizedStops.length} remaining stops`,
+    );
+
+    await route.save();
+    return route;
+  }
+
+  /**
+   * Re-optimize pending stops using nearest neighbor algorithm
+   */
+  private async reoptimizePendingStops(
+    stops: RouteStop[],
+    startLocation: { lat: number; lng: number },
+  ): Promise<RouteStop[]> {
+    if (stops.length <= 1) {
+      return stops;
+    }
+
+    // Group by order to maintain pickup-before-delivery constraint
+    const orderStops = new Map<
+      string,
+      { pickup?: RouteStop; delivery?: RouteStop }
+    >();
+    const breaks: RouteStop[] = [];
+
+    for (const stop of stops) {
+      if (stop.type === StopType.BREAK) {
+        breaks.push(stop);
+        continue;
+      }
+
+      const orderId = stop.orderId?.toString();
+      if (!orderId) continue;
+
+      if (!orderStops.has(orderId)) {
+        orderStops.set(orderId, {});
+      }
+
+      const entry = orderStops.get(orderId)!;
+      if (stop.type === StopType.PICKUP) {
+        entry.pickup = stop;
+      } else {
+        entry.delivery = stop;
+      }
+    }
+
+    // Track which orders have been picked up
+    const pickedUpOrders = new Set<string>();
+    const result: RouteStop[] = [];
+    let currentPos = startLocation;
+
+    // Greedy nearest-neighbor with pickup-before-delivery constraint
+    while (result.length < stops.length - breaks.length) {
+      let bestStop: RouteStop | null = null;
+      let bestDistance = Infinity;
+      let bestOrderId: string | null = null;
+      let bestType: 'pickup' | 'delivery' | null = null;
+
+      for (const [orderId, entry] of orderStops) {
+        // Check pickup (if not already done)
+        if (entry.pickup && !result.includes(entry.pickup)) {
+          const dist = this.calculateHaversineDistance(currentPos, {
+            lat: entry.pickup.location.coordinates.lat,
+            lng: entry.pickup.location.coordinates.lng,
+          });
+          if (dist < bestDistance) {
+            bestDistance = dist;
+            bestStop = entry.pickup;
+            bestOrderId = orderId;
+            bestType = 'pickup';
+          }
+        }
+
+        // Check delivery (only if pickup is done)
+        if (
+          entry.delivery &&
+          !result.includes(entry.delivery) &&
+          pickedUpOrders.has(orderId)
+        ) {
+          const dist = this.calculateHaversineDistance(currentPos, {
+            lat: entry.delivery.location.coordinates.lat,
+            lng: entry.delivery.location.coordinates.lng,
+          });
+          if (dist < bestDistance) {
+            bestDistance = dist;
+            bestStop = entry.delivery;
+            bestOrderId = orderId;
+            bestType = 'delivery';
+          }
+        }
+      }
+
+      if (!bestStop) break;
+
+      result.push(bestStop);
+      currentPos = {
+        lat: bestStop.location.coordinates.lat,
+        lng: bestStop.location.coordinates.lng,
+      };
+
+      if (bestType === 'pickup' && bestOrderId) {
+        pickedUpOrders.add(bestOrderId);
+      }
+    }
+
+    // Add breaks back at appropriate intervals
+    // For simplicity, distribute breaks evenly
+    if (breaks.length > 0 && result.length > 2) {
+      const interval = Math.floor(result.length / (breaks.length + 1));
+      for (let i = 0; i < breaks.length; i++) {
+        const insertIdx = Math.min((i + 1) * interval, result.length);
+        result.splice(insertIdx + i, 0, breaks[i]);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Recalculate route totals after modification
+   */
+  private async recalculateRouteTotals(
+    route: CourierRouteDocument,
+  ): Promise<void> {
+    let totalDistance = 0;
+    let totalTime = 0;
+
+    let currentLocation = {
+      lat: route.startingPoint.coordinates.lat,
+      lng: route.startingPoint.coordinates.lng,
+    };
+
+    for (const stop of route.stops) {
+      const stopLocation = {
+        lat: stop.location.coordinates.lat,
+        lng: stop.location.coordinates.lng,
+      };
+
+      const routing = await this.getRoutingTime(currentLocation, stopLocation);
+      totalDistance += routing.distance;
+      totalTime += routing.duration / 60; // Convert to minutes
+
+      // Add handling time
+      if (stop.type === StopType.BREAK) {
+        totalTime += TIME_CONSTANTS.BREAK_DURATION;
+      } else {
+        totalTime +=
+          TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP;
+      }
+
+      currentLocation = stopLocation;
+    }
+
+    route.estimatedDistanceKm = totalDistance;
+    route.estimatedTotalTime = Math.round(totalTime);
+
+    // Recalculate estimated earnings
+    let earnings = 0;
+    for (const stop of route.stops) {
+      if (stop.type === StopType.DELIVERY && stop.courierEarning) {
+        earnings += stop.courierEarning;
+      }
+    }
+    route.estimatedEarnings = earnings;
   }
 
   /**
@@ -1192,6 +1543,327 @@ export class RoutesService {
   }
 
   /**
+   * Mark order as picked up in an active route
+   * Called when courier marks order as shipped via deliveries page
+   * Removes the pickup stop from the route and re-optimizes remaining stops
+   */
+  async markOrderPickedUpInRoute(
+    courierId: string,
+    orderId: string,
+  ): Promise<void> {
+    const orderObjectId = new Types.ObjectId(orderId);
+    const courierObjectId = new Types.ObjectId(courierId);
+
+    const route = await this.courierRouteModel.findOne({
+      courierId: courierObjectId,
+      status: RouteStatus.ACTIVE,
+      'stops.orderId': orderObjectId,
+    });
+
+    if (!route) {
+      return; // Order not part of any active route
+    }
+
+    // Find the pickup stop
+    const pickupStopIndex = route.stops.findIndex(
+      (s) =>
+        s.orderId?.toString() === orderId &&
+        s.type === StopType.PICKUP &&
+        s.status !== StopStatus.COMPLETED,
+    );
+
+    if (pickupStopIndex === -1) {
+      return; // Pickup already completed or not found
+    }
+
+    // If it's a future stop, remove and re-optimize
+    if (pickupStopIndex > route.currentStopIndex) {
+      await this.removeAndReoptimizeStops(route, orderId, 'pickup');
+      this.logger.log(
+        `Removed pickup for order ${orderId} from route ${route._id} and re-optimized`,
+      );
+    } else if (pickupStopIndex === route.currentStopIndex) {
+      // Current stop - just mark as completed and advance
+      const stop = route.stops[pickupStopIndex];
+      stop.status = StopStatus.COMPLETED;
+      stop.completedAt = new Date();
+      stop.actualArrival = stop.actualArrival || new Date();
+      route.completedStops += 1;
+      route.currentStopIndex += 1;
+      await this.recalculateRemainingArrivalTimes(route);
+      await route.save();
+      this.logger.log(
+        `Marked pickup for order ${orderId} as completed in route ${route._id}`,
+      );
+    }
+  }
+
+  /**
+   * Mark order as delivered in an active route
+   * Called when courier marks order as delivered via deliveries page
+   * Removes both pickup and delivery stops from the route and re-optimizes
+   */
+  async markOrderDeliveredInRoute(
+    courierId: string,
+    orderId: string,
+  ): Promise<void> {
+    const orderObjectId = new Types.ObjectId(orderId);
+    const courierObjectId = new Types.ObjectId(courierId);
+
+    const route = await this.courierRouteModel.findOne({
+      courierId: courierObjectId,
+      status: RouteStatus.ACTIVE,
+      'stops.orderId': orderObjectId,
+    });
+
+    if (!route) {
+      return; // Order not part of any active route
+    }
+
+    // Get courier earning before removing
+    const deliveryStop = route.stops.find(
+      (s) => s.orderId?.toString() === orderId && s.type === StopType.DELIVERY,
+    );
+    const courierEarning = deliveryStop?.courierEarning || 0;
+
+    // Check if any stop is in the future
+    const hasFutureStop = route.stops.some(
+      (s, idx) =>
+        s.orderId?.toString() === orderId &&
+        idx > route.currentStopIndex &&
+        s.status !== StopStatus.COMPLETED,
+    );
+
+    if (hasFutureStop) {
+      // Add earnings for this delivery
+      route.actualEarnings += courierEarning;
+
+      // Remove all stops for this order and re-optimize
+      await this.removeAndReoptimizeStops(route, orderId, 'all');
+      this.logger.log(
+        `Removed order ${orderId} from route ${route._id} and re-optimized`,
+      );
+    } else {
+      // All stops are current or past - mark as completed normally
+      const now = new Date();
+
+      for (const stop of route.stops) {
+        if (stop.orderId?.toString() !== orderId) continue;
+        if (stop.status === StopStatus.COMPLETED) continue;
+
+        stop.status = StopStatus.COMPLETED;
+        stop.completedAt = now;
+        stop.actualArrival = stop.actualArrival || now;
+        route.completedStops += 1;
+
+        if (stop.type === StopType.DELIVERY) {
+          route.actualEarnings += stop.courierEarning || 0;
+        }
+      }
+
+      // Advance currentStopIndex
+      while (
+        route.currentStopIndex < route.stops.length &&
+        route.stops[route.currentStopIndex].status === StopStatus.COMPLETED
+      ) {
+        route.currentStopIndex += 1;
+      }
+
+      // Check if route is complete
+      const allDone = route.stops.every(
+        (s) =>
+          s.status === StopStatus.COMPLETED || s.status === StopStatus.SKIPPED,
+      );
+
+      if (allDone) {
+        route.status = RouteStatus.COMPLETED;
+        route.completedAt = now;
+        route.actualEndTime = now;
+      } else {
+        await this.recalculateRemainingArrivalTimes(route);
+      }
+
+      await route.save();
+      this.logger.log(
+        `Marked order ${orderId} as delivered in route ${route._id}`,
+      );
+    }
+  }
+
+  /**
+   * Remove stops for an order and re-optimize remaining route
+   */
+  private async removeAndReoptimizeStops(
+    route: CourierRouteDocument,
+    orderId: string,
+    removeType: 'pickup' | 'all',
+  ): Promise<void> {
+    // Get stops to keep and pending stops to re-optimize
+    const stopsToKeep: RouteStop[] = [];
+    const pendingStopsToReoptimize: RouteStop[] = [];
+
+    for (let i = 0; i < route.stops.length; i++) {
+      const s = route.stops[i];
+      const isThisOrder = s.orderId?.toString() === orderId;
+
+      if (i <= route.currentStopIndex && !isThisOrder) {
+        // Keep all stops up to current that aren't this order
+        stopsToKeep.push(s);
+      } else if (i === route.currentStopIndex && !isThisOrder) {
+        stopsToKeep.push(s);
+      } else if (isThisOrder) {
+        // Check if we should remove this stop
+        if (removeType === 'all') {
+          continue; // Remove both pickup and delivery
+        } else if (removeType === 'pickup' && s.type === StopType.PICKUP) {
+          continue; // Remove only pickup
+        } else if (
+          removeType === 'pickup' &&
+          s.type === StopType.DELIVERY &&
+          s.status === StopStatus.PENDING
+        ) {
+          // Keep delivery as pending to re-optimize
+          pendingStopsToReoptimize.push(s);
+        } else {
+          stopsToKeep.push(s);
+        }
+      } else if (s.status === StopStatus.PENDING) {
+        pendingStopsToReoptimize.push(s);
+      } else {
+        stopsToKeep.push(s);
+      }
+    }
+
+    // Get current location
+    let currentLocation: { lat: number; lng: number };
+    if (route.currentStopIndex > 0 && route.stops[route.currentStopIndex - 1]) {
+      const lastStop = route.stops[route.currentStopIndex - 1];
+      currentLocation = {
+        lat: lastStop.location.coordinates.lat,
+        lng: lastStop.location.coordinates.lng,
+      };
+    } else {
+      currentLocation = {
+        lat: route.startingPoint.coordinates.lat,
+        lng: route.startingPoint.coordinates.lng,
+      };
+    }
+
+    // Re-optimize pending stops if any
+    let optimizedStops: RouteStop[] = [];
+    if (pendingStopsToReoptimize.length > 0) {
+      optimizedStops = await this.reoptimizePendingStops(
+        pendingStopsToReoptimize,
+        currentLocation,
+      );
+    }
+
+    // Combine: kept stops + re-optimized pending stops
+    route.stops = [...stopsToKeep, ...optimizedStops] as typeof route.stops;
+
+    // Update order IDs
+    const uniqueOrderIds = new Set(
+      route.stops.map((s) => s.orderId?.toString()).filter(Boolean),
+    );
+    route.orderIds = Array.from(uniqueOrderIds).map(
+      (id) => new Types.ObjectId(id as string),
+    );
+
+    // Check if route is complete
+    const remainingDeliveries = route.stops.filter(
+      (s) => s.type === StopType.DELIVERY && s.status !== StopStatus.COMPLETED,
+    );
+
+    if (remainingDeliveries.length === 0) {
+      route.status = RouteStatus.COMPLETED;
+      route.completedAt = new Date();
+      route.actualEndTime = new Date();
+    } else {
+      // Recalculate everything
+      await this.recalculateRemainingArrivalTimes(route);
+      await this.recalculateRouteTotals(route);
+    }
+
+    await route.save();
+  }
+
+  /**
+   * Recalculate estimated arrival times for remaining stops
+   * Called after an order is delivered early or removed from route
+   */
+  private async recalculateRemainingArrivalTimes(
+    route: CourierRouteDocument,
+  ): Promise<void> {
+    const now = new Date();
+    let currentTime = now;
+
+    // Find the last completed stop to get current location
+    let lastCompletedIndex = -1;
+    for (let i = route.stops.length - 1; i >= 0; i--) {
+      if (route.stops[i].status === StopStatus.COMPLETED) {
+        lastCompletedIndex = i;
+        break;
+      }
+    }
+
+    // Get current location from last completed stop or starting point
+    let currentLocation: { lat: number; lng: number };
+    if (lastCompletedIndex >= 0) {
+      const lastStop = route.stops[lastCompletedIndex];
+      currentLocation = {
+        lat: lastStop.location.coordinates.lat,
+        lng: lastStop.location.coordinates.lng,
+      };
+    } else {
+      currentLocation = {
+        lat: route.startingPoint.coordinates.lat,
+        lng: route.startingPoint.coordinates.lng,
+      };
+    }
+
+    // Recalculate arrival times for remaining pending stops
+    for (let i = route.currentStopIndex; i < route.stops.length; i++) {
+      const stop = route.stops[i];
+      if (stop.status !== StopStatus.PENDING) continue;
+
+      const travelTime = await this.getRoutingTime(currentLocation, {
+        lat: stop.location.coordinates.lat,
+        lng: stop.location.coordinates.lng,
+      });
+
+      currentTime = new Date(
+        currentTime.getTime() + travelTime.duration * 1000,
+      );
+      stop.estimatedArrival = currentTime;
+
+      // Add handling time for next stop calculation
+      if (stop.type === StopType.BREAK) {
+        currentTime = new Date(
+          currentTime.getTime() + TIME_CONSTANTS.BREAK_DURATION * 60 * 1000,
+        );
+      } else {
+        currentTime = new Date(
+          currentTime.getTime() +
+            (TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP) *
+              60 *
+              1000,
+        );
+      }
+
+      currentLocation = {
+        lat: stop.location.coordinates.lat,
+        lng: stop.location.coordinates.lng,
+      };
+    }
+
+    // Update estimated end time
+    route.estimatedEndTime = currentTime;
+    route.estimatedTotalTime = Math.round(
+      (currentTime.getTime() - now.getTime()) / 60000,
+    );
+  }
+
+  /**
    * Get route history for courier
    */
   async getRouteHistory(
@@ -1234,9 +1906,25 @@ export class RoutesService {
     return this.orderModel
       .find({
         status: OrderStatus.READY_FOR_DELIVERY,
-        $or: [{ courierId: { $exists: false } }, { courierId: null }],
-        shippingSize: { $in: compatibleSizes },
         deliveryDeadline: { $gt: new Date() }, // Not overdue
+        $and: [
+          // No courier assigned
+          { $or: [{ courierId: { $exists: false } }, { courierId: null }] },
+          // Check both shippingSize (seller-confirmed) and estimatedShippingSize (auto-calculated)
+          {
+            $or: [
+              { shippingSize: { $in: compatibleSizes } },
+              {
+                shippingSize: { $exists: false },
+                estimatedShippingSize: { $in: compatibleSizes },
+              },
+              {
+                shippingSize: null,
+                estimatedShippingSize: { $in: compatibleSizes },
+              },
+            ],
+          },
+        ],
       })
       .limit(200) // Limit for performance
       .exec();
@@ -1430,7 +2118,8 @@ export class RoutesService {
     // Key insight: Visit the BEST store, pick up ALL orders (up to capacity),
     // deliver them, then move to next best store. Don't interleave stores!
 
-    for (const store of rankedStores) {
+    for (let storeIdx = 0; storeIdx < rankedStores.length; storeIdx++) {
+      const store = rankedStores[storeIdx];
       // Check if we have time left
       const estimatedRemainingTime = maxAllowedTime - currentTime;
       if (estimatedRemainingTime <= 10) break; // Need at least 10 min
@@ -1487,7 +2176,8 @@ export class RoutesService {
             city: nearestOrder.order.shippingDetails.city,
           };
         }
-        continue; // Re-check this store after delivery
+        storeIdx--; // Re-check this same store after delivery
+        continue;
       }
 
       // Pick up orders at this store (up to capacity)

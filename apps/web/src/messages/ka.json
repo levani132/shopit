@@ -43,6 +43,7 @@
     "sellerOrders": "მაღაზიის შეკვეთები",
     "storeSettings": "მაღაზიის პარამეტრები",
     "myDeliveries": "ჩემი მიტანები",
+    "deliveryOrders": "მიტანის შეკვეთები",
     "manageUsers": "მომხმარებლები",
     "pendingStores": "მოლოდინში მაღაზიები",
     "courierAdmin": "კურიერ ადმინი",
@@ -1796,5 +1797,40 @@
     "termsOfService": "მომსახურების პირობებს",
     "and": "და",
     "privacyPolicy": "კონფიდენციალობის პოლიტიკას"
+  },
+  "sellerAnalytics": {
+    "title": "მაღაზიის ანალიტიკა",
+    "subtitle": "თვალყური ადევნე მაღაზიის შესრულებას, გაყიდვებს და მომხმარებლების ინფორმაციას",
+    "periodWeek": "კვირა",
+    "periodMonth": "თვე",
+    "periodYear": "წელი",
+    "totalRevenue": "ჯამური შემოსავალი",
+    "totalOrders": "შეკვეთები",
+    "avgOrderValue": "საშ. შეკვეთის ღირებულება",
+    "productsSold": "გაყიდული პროდუქტი",
+    "revenueOverTime": "შემოსავალი დროში",
+    "orders": "შეკვეთა",
+    "noDataForPeriod": "ამ პერიოდისთვის მონაცემები არ არის",
+    "topProducts": "ტოპ პროდუქტები",
+    "noProductsYet": "ჯერ არ გაყიდულა პროდუქტი",
+    "sold": "გაყიდული",
+    "orderStatus": "შეკვეთების სტატუსი",
+    "noOrdersYet": "ჯერ შეკვეთები არ არის",
+    "customerInsights": "მომხმარებლების ანალიზი",
+    "totalCustomers": "ჯამური მომხმარებელი",
+    "repeatRate": "დაბრუნების მაჩვენებელი",
+    "newCustomers": "ახალი მომხმარებელი",
+    "repeatCustomers": "დაბრუნებული",
+    "recentOrders": "ბოლო შეკვეთები",
+    "noDataTitle": "ანალიტიკა ჯერ არ არის",
+    "noDataDescription": "როდესაც შეკვეთებს მიიღებ, აქ დეტალურ ანალიტიკას ნახავ მაღაზიის შესრულების შესახებ.",
+    "status": {
+      "pending": "მოლოდინში",
+      "paid": "გადახდილი",
+      "processing": "მზადდება",
+      "shipped": "გაგზავნილი",
+      "delivered": "მიტანილი",
+      "cancelled": "გაუქმებული"
+    }
   }
 }
