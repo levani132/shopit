@@ -516,11 +516,11 @@ export function UserMenuDropdown({
                 </span>
               </div>
               <MenuItem
-                href={`${basePath}/courier`}
+                href={`${basePath}/deliveries`}
                 dashboardBaseUrl={dashboardBaseUrl}
                 onClick={handleClose}
                 icon={icons.delivery}
-                label={t('myDeliveries')}
+                label={t('deliveryOrders')}
               />
             </>
           )}
