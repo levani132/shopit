@@ -43,6 +43,7 @@ export default function AttributesPage() {
       const data = await api.get<Attribute[]>(
         '/api/v1/attributes/my-store?includeInactive=true',
       );
+      console.log('Fetched attributes:', data);
       setAttributes(data);
     } catch (err) {
       console.error('Error fetching attributes:', err);
@@ -452,15 +453,20 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
         }),
       };
 
+      console.log('Saving attribute:', { attribute, payload });
+
       if (attribute) {
-        await api.patch(`/api/v1/attributes/${attribute._id}`, payload);
+        const result = await api.patch(`/api/v1/attributes/${attribute._id}`, payload);
+        console.log('Attribute updated:', result);
       } else {
-        await api.post('/api/v1/attributes', payload);
+        const result = await api.post('/api/v1/attributes', payload);
+        console.log('Attribute created:', result);
       }
 
       onSaved();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+    } catch (err: any) {
+      console.error('Error saving attribute:', err);
+      setError(err?.message || (err instanceof Error ? err.message : 'Failed to save'));
     } finally {
       setIsSaving(false);
     }

@@ -55,6 +55,10 @@ export default function ProfilePage() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [personalSuccess, setPersonalSuccess] = useState(false);
+  const [bankSuccess, setBankSuccess] = useState(false);
+  const [courierSuccess, setCourierSuccess] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Initialize form with user data
   useEffect(() => {
@@ -209,9 +213,12 @@ export default function ProfilePage() {
 
       await refreshAuth();
       showSuccess('Personal information updated successfully!');
+      setPersonalSuccess(true);
+      setTimeout(() => setPersonalSuccess(false), 3000);
     } catch (err) {
       const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to update profile';
       setErrors({ general: message });
+      setPersonalSuccess(false);
     } finally {
       setIsSavingPersonal(false);
     }
@@ -464,6 +471,11 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {personalSuccess && (
+            <p className="text-green-600 dark:text-green-400 text-sm mb-2">
+              {t('personalInfoSaved')}
+            </p>
+          )}
           <button
             onClick={handleSavePersonalInfo}
             disabled={isSavingPersonal}

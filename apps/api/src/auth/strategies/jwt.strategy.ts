@@ -67,14 +67,27 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    // If user is a seller, also find their store (using bitmask check)
+    // If user is a seller or admin, also find their store
+    // We check for store ownership even for admins in case they also have a store
     let storeId: string | undefined;
-    if ((user.role & Role.SELLER) !== 0) {
+    const isSeller = (user.role & Role.SELLER) !== 0;
+    const isAdmin = (user.role & Role.ADMIN) !== 0;
+    console.log('JWT validate - user role:', user.role, 'isSeller:', isSeller, 'isAdmin:', isAdmin);
+    if (isSeller || isAdmin) {
       const store = await this.storeModel.findOne({
         ownerId: new Types.ObjectId(payload.sub),
       });
+      console.log('JWT validate - found store:', store?._id?.toString());
       if (store) {
         storeId = store._id.toString();
+        // If user has a store but doesn't have SELLER role, fix it
+        if (!isSeller) {
+          console.log('JWT validate - user has store but missing SELLER role, updating...');
+          await this.userModel.updateOne(
+            { _id: user._id },
+            { $bit: { role: { or: Role.SELLER } } }
+          );
+        }
       }
     }
 

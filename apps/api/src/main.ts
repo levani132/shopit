@@ -38,6 +38,11 @@ async function bootstrap() {
         return callback(null, true);
       }
 
+      // Allow localhost subdomains for development (e.g., berso.localhost:3000)
+      if (origin.match(/^https?:\/\/[a-z0-9-]+\.localhost(:\d+)?$/)) {
+        return callback(null, true);
+      }
+
       // Check if origin is in allowed list
       if (
         corsOrigins.some(

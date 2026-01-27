@@ -567,9 +567,9 @@ export class AuthService {
 
     await store.save();
 
-    // Upgrade user role to SELLER if they were a regular USER
-    if (user.role === Role.USER) {
-      user.role = Role.SELLER;
+    // Add SELLER role if user doesn't have it yet
+    if ((user.role & Role.SELLER) === 0) {
+      user.role = user.role | Role.SELLER;
       user.isProfileComplete = false; // They need to complete seller profile
       await user.save();
     }

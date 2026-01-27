@@ -85,10 +85,10 @@ export default function CategoriesPage() {
       setCategories([...categories, created]);
       setNewCategory({ name: '', nameKa: '', nameEn: '' });
       setShowNewCategoryForm(false);
-      setSuccess('Category created successfully!');
+      setSuccess(t('categoryCreated'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create category');
+      setError(err instanceof Error ? err.message : t('failedToCreateCategory'));
     }
   };
 
@@ -104,25 +104,25 @@ export default function CategoriesPage() {
 
       setCategories(categories.map((c) => (c._id === updated._id ? updated : c)));
       setEditingCategory(null);
-      setSuccess('Category updated successfully!');
+      setSuccess(t('categoryUpdated'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to update category');
+      setError(t('failedToUpdateCategory'));
     }
   };
 
   // Delete category
   const handleDeleteCategory = async (categoryId: string) => {
-    if (!confirm('Are you sure? This will also delete all subcategories.')) return;
+    if (!confirm(t('deleteCategoryConfirm'))) return;
 
     try {
       await api.delete(`/api/v1/categories/${categoryId}`);
 
       setCategories(categories.filter((c) => c._id !== categoryId));
-      setSuccess('Category deleted successfully!');
+      setSuccess(t('categoryDeleted'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to delete category');
+      setError(t('failedToDeleteCategory'));
     }
   };
 
@@ -144,10 +144,10 @@ export default function CategoriesPage() {
       await fetchCategories(); // Refresh to get updated structure
       setNewSubcategory({ name: '', nameKa: '', nameEn: '' });
       setShowNewSubcategoryForm(null);
-      setSuccess('Subcategory created successfully!');
+      setSuccess(t('subcategoryCreated'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create subcategory');
+      setError(err instanceof Error ? err.message : t('failedToCreateSubcategory'));
     }
   };
 
@@ -163,25 +163,25 @@ export default function CategoriesPage() {
 
       await fetchCategories();
       setEditingSubcategory(null);
-      setSuccess('Subcategory updated successfully!');
+      setSuccess(t('subcategoryUpdated'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to update subcategory');
+      setError(t('failedToUpdateSubcategory'));
     }
   };
 
   // Delete subcategory
   const handleDeleteSubcategory = async (subcategoryId: string) => {
-    if (!confirm('Are you sure you want to delete this subcategory?')) return;
+    if (!confirm(t('deleteSubcategoryConfirm'))) return;
 
     try {
       await api.delete(`/api/v1/categories/subcategory/${subcategoryId}`);
 
       await fetchCategories();
-      setSuccess('Subcategory deleted successfully!');
+      setSuccess(t('subcategoryDeleted'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError('Failed to delete subcategory');
+      setError(t('failedToDeleteSubcategory'));
     }
   };
 
@@ -205,7 +205,7 @@ export default function CategoriesPage() {
             {t('categories')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage your store categories and subcategories
+            {t('categoriesDescription')}
           </p>
         </div>
         <button
@@ -216,7 +216,7 @@ export default function CategoriesPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Category
+          {t('addCategory')}
         </button>
       </div>
 
@@ -236,31 +236,31 @@ export default function CategoriesPage() {
       {showNewCategoryForm && (
         <div className="mb-6 bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            New Category
+            {t('newCategory')}
           </h3>
           <form onSubmit={handleCreateCategory} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name (Georgian)
+                  {t('nameGeorgian')}
                 </label>
                 <input
                   type="text"
                   value={newCategory.nameKa}
                   onChange={(e) => setNewCategory({ ...newCategory, nameKa: e.target.value })}
-                  placeholder="კატეგორიის სახელი"
+                  placeholder={t('categoryPlaceholderKa')}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name (English) *
+                  {t('nameEnglish')} *
                 </label>
                 <input
                   type="text"
                   value={newCategory.nameEn}
                   onChange={(e) => setNewCategory({ ...newCategory, nameEn: e.target.value })}
-                  placeholder="Category name"
+                  placeholder={t('categoryPlaceholderEn')}
                   required
                   className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                 />
@@ -275,14 +275,14 @@ export default function CategoriesPage() {
                 }}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded-lg transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 text-white rounded-lg transition-colors"
                 style={{ backgroundColor: 'var(--accent-500)' }}
               >
-                Create Category
+                {t('createCategory')}
               </button>
             </div>
           </form>
@@ -298,17 +298,17 @@ export default function CategoriesPage() {
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-            No categories yet
+            {t('noCategoriesYet')}
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Create categories to organize your products
+            {t('createCategoriesToOrganize')}
           </p>
           <button
             onClick={() => setShowNewCategoryForm(true)}
             className="px-4 py-2 text-white rounded-lg transition-colors"
             style={{ backgroundColor: 'var(--accent-500)' }}
           >
-            Add Your First Category
+            {t('addYourFirstCategory')}
           </button>
         </div>
       ) : (
@@ -331,7 +331,7 @@ export default function CategoriesPage() {
                           nameLocalized: { ...editingCategory.nameLocalized, ka: e.target.value },
                         })
                       }
-                      placeholder="Georgian name"
+                      placeholder={t('georgianName')}
                       className="px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                     />
                     <input
@@ -344,7 +344,7 @@ export default function CategoriesPage() {
                           nameLocalized: { ...editingCategory.nameLocalized, en: e.target.value },
                         })
                       }
-                      placeholder="English name"
+                      placeholder={t('englishName')}
                       className="px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                     />
                   </div>
@@ -367,7 +367,7 @@ export default function CategoriesPage() {
                       )}
                     </div>
                     <span className="ml-2 text-xs text-gray-400 bg-gray-100 dark:bg-zinc-700 px-2 py-1 rounded">
-                      {category.subcategories.length} subcategories
+                      {category.subcategories.length} {t('subcategories')}
                     </span>
                   </div>
                 )}
@@ -435,14 +435,14 @@ export default function CategoriesPage() {
                         type="text"
                         value={newSubcategory.nameKa}
                         onChange={(e) => setNewSubcategory({ ...newSubcategory, nameKa: e.target.value })}
-                        placeholder="Subcategory (Georgian)"
+                        placeholder={t('subcategoryGeorgian')}
                         className="px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       />
                       <input
                         type="text"
                         value={newSubcategory.nameEn}
                         onChange={(e) => setNewSubcategory({ ...newSubcategory, nameEn: e.target.value })}
-                        placeholder="Subcategory (English) *"
+                        placeholder={t('subcategoryEnglish')}
                         required
                         className="px-3 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                       />
@@ -456,14 +456,14 @@ export default function CategoriesPage() {
                         }}
                         className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-700 rounded"
                       >
-                        Cancel
+                        {t('cancel')}
                       </button>
                       <button
                         type="submit"
                         className="px-3 py-1.5 text-sm text-white rounded"
                         style={{ backgroundColor: 'var(--accent-500)' }}
                       >
-                        Add Subcategory
+                        {t('addSubcategory')}
                       </button>
                     </div>
                   </form>
@@ -491,7 +491,7 @@ export default function CategoriesPage() {
                                   nameLocalized: { ...editingSubcategory.nameLocalized, ka: e.target.value },
                                 })
                               }
-                              placeholder="Georgian"
+                              placeholder={t('georgianName')}
                               className="px-2 py-1 text-sm border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                             />
                             <input
@@ -504,7 +504,7 @@ export default function CategoriesPage() {
                                   nameLocalized: { ...editingSubcategory.nameLocalized, en: e.target.value },
                                 })
                               }
-                              placeholder="English"
+                              placeholder={t('englishName')}
                               className="px-2 py-1 text-sm border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
                             />
                           </div>
