@@ -1192,6 +1192,218 @@ export class RoutesService {
   }
 
   /**
+   * Mark order as picked up in an active route
+   * Called when courier marks order as shipped via deliveries page
+   */
+  async markOrderPickedUpInRoute(
+    courierId: string,
+    orderId: string,
+  ): Promise<void> {
+    const orderObjectId = new Types.ObjectId(orderId);
+    const courierObjectId = new Types.ObjectId(courierId);
+
+    const route = await this.courierRouteModel.findOne({
+      courierId: courierObjectId,
+      status: RouteStatus.ACTIVE,
+      'stops.orderId': orderObjectId,
+    });
+
+    if (!route) {
+      return; // Order not part of any active route
+    }
+
+    const now = new Date();
+    let updated = false;
+
+    // Find and mark pickup stop as completed
+    for (const stop of route.stops) {
+      if (
+        stop.orderId?.toString() === orderId &&
+        stop.type === StopType.PICKUP &&
+        stop.status !== StopStatus.COMPLETED
+      ) {
+        stop.status = StopStatus.COMPLETED;
+        stop.completedAt = now;
+        stop.actualArrival = stop.actualArrival || now;
+        route.completedStops += 1;
+        updated = true;
+        break;
+      }
+    }
+
+    if (updated) {
+      // Recalculate remaining arrival times
+      await this.recalculateRemainingArrivalTimes(route);
+      await route.save();
+      this.logger.log(
+        `Marked pickup for order ${orderId} as completed in route ${route._id}`,
+      );
+    }
+  }
+
+  /**
+   * Mark order as delivered in an active route
+   * Called when courier marks order as delivered via deliveries page
+   */
+  async markOrderDeliveredInRoute(
+    courierId: string,
+    orderId: string,
+  ): Promise<void> {
+    const orderObjectId = new Types.ObjectId(orderId);
+    const courierObjectId = new Types.ObjectId(courierId);
+
+    const route = await this.courierRouteModel.findOne({
+      courierId: courierObjectId,
+      status: RouteStatus.ACTIVE,
+      'stops.orderId': orderObjectId,
+    });
+
+    if (!route) {
+      return; // Order not part of any active route
+    }
+
+    const now = new Date();
+    let pickupCompleted = false;
+    let deliveryCompleted = false;
+
+    // Mark both pickup and delivery stops as completed
+    for (const stop of route.stops) {
+      if (stop.orderId?.toString() !== orderId) continue;
+
+      if (
+        stop.type === StopType.PICKUP &&
+        stop.status !== StopStatus.COMPLETED
+      ) {
+        stop.status = StopStatus.COMPLETED;
+        stop.completedAt = now;
+        stop.actualArrival = stop.actualArrival || now;
+        route.completedStops += 1;
+        pickupCompleted = true;
+      }
+
+      if (
+        stop.type === StopType.DELIVERY &&
+        stop.status !== StopStatus.COMPLETED
+      ) {
+        stop.status = StopStatus.COMPLETED;
+        stop.completedAt = now;
+        stop.actualArrival = stop.actualArrival || now;
+        route.completedStops += 1;
+
+        // Add courier earning for this delivery
+        route.actualEarnings += stop.courierEarning || 0;
+        deliveryCompleted = true;
+      }
+    }
+
+    if (pickupCompleted || deliveryCompleted) {
+      // Update currentStopIndex to skip completed stops
+      while (
+        route.currentStopIndex < route.stops.length &&
+        route.stops[route.currentStopIndex].status === StopStatus.COMPLETED
+      ) {
+        route.currentStopIndex += 1;
+      }
+
+      // Check if route is complete
+      const allStopsProcessed = route.stops.every(
+        (s) =>
+          s.status === StopStatus.COMPLETED || s.status === StopStatus.SKIPPED,
+      );
+
+      if (allStopsProcessed) {
+        route.status = RouteStatus.COMPLETED;
+        route.completedAt = now;
+        route.actualEndTime = now;
+      } else {
+        // Recalculate remaining arrival times
+        await this.recalculateRemainingArrivalTimes(route);
+      }
+
+      await route.save();
+      this.logger.log(
+        `Marked order ${orderId} as delivered in route ${route._id}. Pickup: ${pickupCompleted}, Delivery: ${deliveryCompleted}`,
+      );
+    }
+  }
+
+  /**
+   * Recalculate estimated arrival times for remaining stops
+   * Called after an order is delivered early or removed from route
+   */
+  private async recalculateRemainingArrivalTimes(
+    route: CourierRouteDocument,
+  ): Promise<void> {
+    const now = new Date();
+    let currentTime = now;
+
+    // Find the last completed stop to get current location
+    let lastCompletedIndex = -1;
+    for (let i = route.stops.length - 1; i >= 0; i--) {
+      if (route.stops[i].status === StopStatus.COMPLETED) {
+        lastCompletedIndex = i;
+        break;
+      }
+    }
+
+    // Get current location from last completed stop or starting point
+    let currentLocation: { lat: number; lng: number };
+    if (lastCompletedIndex >= 0) {
+      const lastStop = route.stops[lastCompletedIndex];
+      currentLocation = {
+        lat: lastStop.location.coordinates.lat,
+        lng: lastStop.location.coordinates.lng,
+      };
+    } else {
+      currentLocation = {
+        lat: route.startingPoint.coordinates.lat,
+        lng: route.startingPoint.coordinates.lng,
+      };
+    }
+
+    // Recalculate arrival times for remaining pending stops
+    for (let i = route.currentStopIndex; i < route.stops.length; i++) {
+      const stop = route.stops[i];
+      if (stop.status !== StopStatus.PENDING) continue;
+
+      const travelTime = await this.getRoutingTime(currentLocation, {
+        lat: stop.location.coordinates.lat,
+        lng: stop.location.coordinates.lng,
+      });
+
+      currentTime = new Date(
+        currentTime.getTime() + travelTime.duration * 1000,
+      );
+      stop.estimatedArrival = currentTime;
+
+      // Add handling time for next stop calculation
+      if (stop.type === StopType.BREAK) {
+        currentTime = new Date(
+          currentTime.getTime() + TIME_CONSTANTS.BREAK_DURATION * 60 * 1000,
+        );
+      } else {
+        currentTime = new Date(
+          currentTime.getTime() +
+            (TIME_CONSTANTS.HANDLING_TIME + TIME_CONSTANTS.REST_TIME_PER_STOP) *
+              60 *
+              1000,
+        );
+      }
+
+      currentLocation = {
+        lat: stop.location.coordinates.lat,
+        lng: stop.location.coordinates.lng,
+      };
+    }
+
+    // Update estimated end time
+    route.estimatedEndTime = currentTime;
+    route.estimatedTotalTime = Math.round(
+      (currentTime.getTime() - now.getTime()) / 60000,
+    );
+  }
+
+  /**
    * Get route history for courier
    */
   async getRouteHistory(
