@@ -75,37 +75,37 @@ interface StoreData {
   selfPickupEnabled?: boolean;
 }
 
-const PRODUCT_ORDER_OPTIONS = [
+const getProductOrderOptions = (t: (key: string) => string) => [
   {
     value: 'popular',
-    label: 'Most Popular (with variety)',
-    description:
-      'Shows most viewed products with slight randomness for variety',
+    label: t('productOrderPopular'),
+    description: t('productOrderPopularDesc'),
   },
   {
     value: 'newest',
-    label: 'Newest First',
-    description: 'Shows your most recently added products',
+    label: t('productOrderNewest'),
+    description: t('productOrderNewestDesc'),
   },
   {
     value: 'price_asc',
-    label: 'Price: Low to High',
-    description: 'Shows cheapest products first',
+    label: t('productOrderPriceAsc'),
+    description: t('productOrderPriceAscDesc'),
   },
   {
     value: 'price_desc',
-    label: 'Price: High to Low',
-    description: 'Shows most expensive products first',
+    label: t('productOrderPriceDesc'),
+    description: t('productOrderPriceDescDesc'),
   },
   {
     value: 'random',
-    label: 'Random',
-    description: 'Shows random products each time',
+    label: t('productOrderRandom'),
+    description: t('productOrderRandomDesc'),
   },
 ];
 
 function StoreSettingsPageContent() {
   const t = useTranslations('dashboard');
+  const productOrderOptions = getProductOrderOptions(t);
   const { refreshAuth } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -510,7 +510,7 @@ function StoreSettingsPageContent() {
       setFormData(updatedStore);
       setLogoFile(null);
       setCoverFile(null);
-      setSuccess('Store settings saved successfully!');
+      setSuccess(t('settingsSavedSuccess'));
 
       // Refresh auth to update store in context
       await refreshAuth();
@@ -684,7 +684,7 @@ function StoreSettingsPageContent() {
           {t('storeSettings')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Manage your store branding, description, and settings.
+          {t('storeSettingsDescription')}
         </p>
       </div>
 
@@ -709,15 +709,10 @@ function StoreSettingsPageContent() {
         </nav>
       </div>
 
-      {/* Messages */}
+      {/* Error Message */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
           <p className="text-red-600 dark:text-red-400">{error}</p>
-        </div>
-      )}
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-          <p className="text-green-600 dark:text-green-400">{success}</p>
         </div>
       )}
 
@@ -728,14 +723,14 @@ function StoreSettingsPageContent() {
             {/* Logo & Cover Section */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                Branding
+                {t('branding')}
               </h2>
 
               <div className="grid md:grid-cols-2 gap-8">
                 {/* Logo */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Store Logo
+                    {t('storeLogo')}
                   </label>
                   <div className="flex items-start gap-4">
                     <div className="relative">
@@ -776,10 +771,10 @@ function StoreSettingsPageContent() {
                         htmlFor="logo-upload"
                         className="inline-block px-4 py-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition text-sm font-medium"
                       >
-                        Upload Logo
+                        {t('uploadLogo')}
                       </label>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        JPG, PNG, SVG, or WebP. Max 2MB.
+                        {t('logoFormatHint')}
                       </p>
                       <label className="flex items-center gap-2 mt-3 cursor-pointer">
                         <input
@@ -792,7 +787,7 @@ function StoreSettingsPageContent() {
                           style={{ accentColor: 'var(--accent-500)' }}
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-200">
-                          Use initial as logo
+                          {t('useInitialAsLogo')}
                         </span>
                       </label>
                     </div>
@@ -802,7 +797,7 @@ function StoreSettingsPageContent() {
                 {/* Cover Image */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Cover Image
+                    {t('coverImage')}
                   </label>
                   <div className="relative">
                     {coverPreview && !formData.useDefaultCover ? (
@@ -842,7 +837,7 @@ function StoreSettingsPageContent() {
                       htmlFor="cover-upload"
                       className="inline-block px-4 py-2 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition text-sm font-medium"
                     >
-                      Upload Cover
+                      {t('uploadCover')}
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -855,12 +850,12 @@ function StoreSettingsPageContent() {
                         style={{ accentColor: 'var(--accent-500)' }}
                       />
                       <span className="text-sm text-gray-700 dark:text-gray-200">
-                        Use colored background
+                        {t('useColoredBackground')}
                       </span>
                     </label>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    JPG, PNG, or WebP. Recommended: 1200×400px. Max 10MB.
+                    {t('coverFormatHint')}
                   </p>
                 </div>
               </div>
@@ -868,7 +863,7 @@ function StoreSettingsPageContent() {
               {/* Brand Color */}
               <div className="mt-8">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Brand Color
+                  {t('brandColor')}
                 </label>
                 <div className="flex flex-wrap gap-3">
                   {BRAND_COLORS.map((color) => (
@@ -897,13 +892,13 @@ function StoreSettingsPageContent() {
             {/* Bilingual Store Information */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                Store Information
+                {t('storeInformation')}
               </h2>
 
               {/* Store Name */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Store Name
+                  {t('storeName')}
                 </label>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -950,7 +945,7 @@ function StoreSettingsPageContent() {
               {/* Store Description */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Description
+                  {t('description')}
                 </label>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -1001,9 +996,9 @@ function StoreSettingsPageContent() {
               {/* About Us */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  About Us
+                  {t('aboutUs')}
                   <span className="text-xs text-gray-400 dark:text-gray-500 ml-2 font-normal">
-                    (Shown on your About page)
+                    {t('aboutUsHint')}
                   </span>
                 </label>
                 <div className="grid md:grid-cols-2 gap-4">
@@ -1049,15 +1044,14 @@ function StoreSettingsPageContent() {
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                  Tell your customers more about your brand, story, mission, and
-                  what makes you unique.
+                  {t('aboutUsDescription')}
                 </p>
               </div>
 
               {/* Author Name */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Author / Owner Name
+                  {t('authorOwnerName')}
                 </label>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -1087,11 +1081,7 @@ function StoreSettingsPageContent() {
                     </div>
                     <input
                       type="text"
-                      value={
-                        formData.authorNameLocalized?.en ||
-                        formData.authorName ||
-                        ''
-                      }
+                      value={formData.authorNameLocalized?.en ?? ''}
                       onChange={(e) =>
                         updateField('authorNameLocalized', {
                           ...formData.authorNameLocalized,
@@ -1114,7 +1104,7 @@ function StoreSettingsPageContent() {
                     style={{ accentColor: 'var(--accent-500)' }}
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-200">
-                    Show author name on store homepage
+                    {t('showAuthorOnHomepage')}
                   </span>
                 </label>
               </div>
@@ -1128,17 +1118,16 @@ function StoreSettingsPageContent() {
             {/* Contact Information */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Contact Information
+                {t('contactInformation')}
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-                This information will be visible to your customers on your store
-                page.
+                {t('contactInformationHint')}
               </p>
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Phone Number
+                    {t('phoneNumber')}
                   </label>
                   <input
                     type="tel"
@@ -1150,7 +1139,7 @@ function StoreSettingsPageContent() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email Address
+                    {t('emailAddress')}
                   </label>
                   <input
                     type="email"
@@ -1560,7 +1549,7 @@ function StoreSettingsPageContent() {
         {activeTab === 'contact' && (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-              Social Media Links
+              {t('socialMediaLinks')}
             </h2>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -1628,15 +1617,14 @@ function StoreSettingsPageContent() {
         {activeTab === 'appearance' && (
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Homepage Product Display
+              {t('homepageProductDisplay')}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Choose how products appear on your store&apos;s homepage (up to 6
-              products will be shown)
+              {t('homepageProductDisplayHint')}
             </p>
 
             <div className="space-y-3">
-              {PRODUCT_ORDER_OPTIONS.map((option) => {
+              {productOrderOptions.map((option) => {
                 const isSelected =
                   formData.homepageProductOrder === option.value;
                 return (
@@ -1684,7 +1672,7 @@ function StoreSettingsPageContent() {
             {/* Store URL & Subdomain Change */}
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-                Store URL
+                {t('storeUrl')}
               </h2>
 
               {/* Current URL */}
@@ -1706,12 +1694,12 @@ function StoreSettingsPageContent() {
                     navigator.clipboard.writeText(
                       `https://${formData.subdomain}.shopit.ge`,
                     );
-                    setSuccess('Store URL copied to clipboard!');
+                    setSuccess(t('urlCopied'));
                     setTimeout(() => setSuccess(null), 3000);
                   }}
                   className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition font-medium"
                 >
-                  Copy
+                  {t('copy')}
                 </button>
               </div>
 
@@ -1720,16 +1708,16 @@ function StoreSettingsPageContent() {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                      Change Subdomain
+                      {t('changeSubdomain')}
                     </h3>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       {isFreeSubdomainChange ? (
                         <span className="text-green-600 dark:text-green-400 font-medium">
-                          ✨ Your first change is free!
+                          {t('firstChangeFree')}
                         </span>
                       ) : (
                         <span>
-                          Changing your subdomain costs{' '}
+                          {t('subdomainChangeCost')}{' '}
                           <span className="font-semibold text-gray-900 dark:text-white">
                             ₾{subdomainChangeCost}
                           </span>
@@ -1739,8 +1727,9 @@ function StoreSettingsPageContent() {
                   </div>
                   {(formData.subdomainChangeCount || 0) > 0 && (
                     <span className="text-xs text-gray-400 dark:text-gray-500">
-                      Changed {formData.subdomainChangeCount} time
-                      {(formData.subdomainChangeCount || 0) > 1 ? 's' : ''}
+                      {(formData.subdomainChangeCount || 0) > 1
+                        ? t('changedTimesPlural', { count: formData.subdomainChangeCount })
+                        : t('changedTimes', { count: formData.subdomainChangeCount })}
                     </span>
                   )}
                 </div>
@@ -1790,7 +1779,7 @@ function StoreSettingsPageContent() {
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                             />
                           </svg>
-                          Checking availability...
+                          {t('checkingAvailability')}
                         </p>
                       )}
                       {!isCheckingSubdomain && subdomainError && (
@@ -1800,7 +1789,7 @@ function StoreSettingsPageContent() {
                       )}
                       {!isCheckingSubdomain && subdomainAvailable && (
                         <p className="text-xs text-green-600 dark:text-green-400">
-                          ✓ This subdomain is available!
+                          ✓ {t('subdomainAvailable')}
                         </p>
                       )}
                     </div>
@@ -1817,7 +1806,7 @@ function StoreSettingsPageContent() {
                         : undefined,
                     }}
                   >
-                    Change
+                    {t('change')}
                   </button>
                 </div>
               </div>
@@ -1830,13 +1819,13 @@ function StoreSettingsPageContent() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-zinc-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Confirm Subdomain Change
+                {t('confirmSubdomainChange')}
               </h3>
 
               <div className="space-y-4 mb-6">
                 <div className="flex items-center justify-between py-3 px-4 bg-gray-50 dark:bg-zinc-800 rounded-lg">
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Current
+                    {t('current')}
                   </span>
                   <span className="font-medium text-gray-900 dark:text-white">
                     {formData.subdomain}.shopit.ge
@@ -1859,7 +1848,7 @@ function StoreSettingsPageContent() {
                 </div>
                 <div className="flex items-center justify-between py-3 px-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
                   <span className="text-sm text-indigo-600 dark:text-indigo-400">
-                    New
+                    {t('new')}
                   </span>
                   <span className="font-medium text-indigo-700 dark:text-indigo-300">
                     {newSubdomain}.shopit.ge
@@ -1869,7 +1858,7 @@ function StoreSettingsPageContent() {
                 {!isFreeSubdomainChange && (
                   <div className="flex items-center justify-between py-3 px-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                     <span className="text-sm text-amber-700 dark:text-amber-400">
-                      Cost
+                      {t('cost')}
                     </span>
                     <span className="font-semibold text-amber-700 dark:text-amber-300">
                       ₾{subdomainChangeCost}
@@ -1880,7 +1869,7 @@ function StoreSettingsPageContent() {
                 {isFreeSubdomainChange && (
                   <div className="text-center py-2 px-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                     <span className="text-sm text-green-700 dark:text-green-400 font-medium">
-                      ✨ This change is free! Future changes will cost ₾10.
+                      {t('freeChangeNote')}
                     </span>
                   </div>
                 )}
@@ -1888,12 +1877,12 @@ function StoreSettingsPageContent() {
 
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-6">
                 <p className="mb-1">
-                  ⚠️ <strong>Important:</strong>
+                  {t('subdomainWarningTitle')}
                 </p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>Your old URL will stop working immediately</li>
-                  <li>Existing links and bookmarks will break</li>
-                  <li>This action cannot be undone</li>
+                  <li>{t('subdomainWarning1')}</li>
+                  <li>{t('subdomainWarning2')}</li>
+                  <li>{t('subdomainWarning3')}</li>
                 </ul>
               </div>
 
@@ -1903,7 +1892,7 @@ function StoreSettingsPageContent() {
                   onClick={() => setShowSubdomainConfirm(false)}
                   className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 font-medium rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-700 transition"
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button
                   type="button"
@@ -1913,10 +1902,10 @@ function StoreSettingsPageContent() {
                   style={{ backgroundColor: accentColor }}
                 >
                   {isChangingSubdomain
-                    ? 'Changing...'
+                    ? t('changing')
                     : isFreeSubdomainChange
-                      ? 'Confirm Change'
-                      : `Pay ₾${subdomainChangeCost} & Change`}
+                      ? t('confirmChange')
+                      : t('payAndChange', { cost: subdomainChangeCost })}
                 </button>
               </div>
             </div>
@@ -1924,14 +1913,19 @@ function StoreSettingsPageContent() {
         )}
 
         {/* Submit Button */}
-        <div className="flex justify-end gap-4">
+        <div className="flex flex-col items-end gap-4">
+          {success && (
+            <div className="w-full p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+              <p className="text-green-600 dark:text-green-400">{success}</p>
+            </div>
+          )}
           <button
             type="submit"
             disabled={isSaving}
             className="px-8 py-3 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: accentColor }}
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? t('saving') : t('saveChanges')}
           </button>
         </div>
       </form>
