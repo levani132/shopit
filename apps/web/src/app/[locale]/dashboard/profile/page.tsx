@@ -95,7 +95,10 @@ export default function ProfilePage() {
       window.location.href = '/';
     } catch (err) {
       console.error('Error deleting store:', err);
-      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to delete store';
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to delete store';
       setErrors({ general: message });
     } finally {
       setIsDeletingStore(false);
@@ -116,7 +119,10 @@ export default function ProfilePage() {
       window.location.href = '/';
     } catch (err) {
       console.error('Error removing courier role:', err);
-      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to remove courier role';
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to remove courier role';
       setErrors({ general: message });
     } finally {
       setIsDeletingCourierRole(false);
@@ -216,7 +222,10 @@ export default function ProfilePage() {
       setPersonalSuccess(true);
       setTimeout(() => setPersonalSuccess(false), 3000);
     } catch (err) {
-      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to update profile';
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to update profile';
       setErrors({ general: message });
       setPersonalSuccess(false);
     } finally {
@@ -239,7 +248,10 @@ export default function ProfilePage() {
       await refreshAuth();
       showSuccess('Banking information updated successfully!');
     } catch (err) {
-      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to update banking info';
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to update banking info';
       setErrors({ general: message });
     } finally {
       setIsSavingBank(false);
@@ -264,7 +276,10 @@ export default function ProfilePage() {
       await refreshAuth();
       showSuccess('Courier information updated successfully!');
     } catch (err) {
-      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to save courier information';
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to save courier information';
       setErrors({ general: message });
     } finally {
       setIsSavingCourier(false);
@@ -288,7 +303,10 @@ export default function ProfilePage() {
       setConfirmPassword('');
       showSuccess('Password changed successfully!');
     } catch (err) {
-      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to change password';
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to change password';
       setErrors({ general: message });
     } finally {
       setIsSavingPassword(false);
@@ -296,7 +314,7 @@ export default function ProfilePage() {
   };
 
   const isGoogleUser = user?.authProvider === 'GOOGLE';
-  
+
   // Show navigation buttons only when profile is incomplete (onboarding)
   const isProfileIncomplete = !user?.isProfileComplete;
 
@@ -317,8 +335,18 @@ export default function ProfilePage() {
               href="/dashboard"
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               {t('backToOverview')}
             </a>
@@ -328,8 +356,18 @@ export default function ProfilePage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--accent-500)] hover:bg-[var(--accent-600)] rounded-lg transition-colors"
               >
                 {t('nextStoreSettings')}
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
                 </svg>
               </a>
             )}

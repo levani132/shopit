@@ -50,6 +50,9 @@
   ],
   "references": [
     {
+      "path": "../../libs/ui/components"
+    },
+    {
       "path": "../../libs/shared/constants"
     }
   ]
