@@ -219,8 +219,8 @@ export function EditableText({
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={maxLength}
-            className={`flex-1 bg-white dark:bg-zinc-800 border border-blue-500 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white resize-none ${className}`}
-            style={{ ...style, minHeight: '80px' }}
+            className="flex-1 bg-white dark:bg-zinc-800 border border-blue-500 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white resize-none text-base font-normal"
+            style={{ minHeight: '80px' }}
             disabled={isSaving}
           />
         ) : (
@@ -231,8 +231,7 @@ export function EditableText({
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={maxLength}
-            className={`flex-1 bg-white dark:bg-zinc-800 border border-blue-500 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white ${className}`}
-            style={style}
+            className="flex-1 bg-white dark:bg-zinc-800 border border-blue-500 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white text-base font-normal"
             disabled={isSaving}
           />
         )}
