@@ -57,8 +57,8 @@ export default function ProfilePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [personalSuccess, setPersonalSuccess] = useState(false);
   const [_bankSuccess, _setBankSuccess] = useState(false);
-  const [courierSuccess, setCourierSuccess] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  // const [courierSuccess, setCourierSuccess] = useState(false);
+  // const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Initialize form with user data
   useEffect(() => {
