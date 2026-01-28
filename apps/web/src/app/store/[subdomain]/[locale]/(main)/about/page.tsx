@@ -124,7 +124,6 @@ export default function AboutPage() {
   );
   const hasSocialLinks =
     store.socialLinks && Object.values(store.socialLinks).some((v) => v);
-  const hasContactInfo = store.phone || store.email || store.address;
   // Use aboutUs if available, fall back to description for backward compatibility
   const aboutContent = aboutUs || description;
 
