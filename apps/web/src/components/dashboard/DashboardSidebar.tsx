@@ -7,14 +7,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Role, RoleValue, hasRole, hasAnyRole } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 
-interface NavItem {
+export interface NavItem {
   href: string;
   labelKey: string;
   icon: React.ReactNode;
   roles?: RoleValue[]; // If undefined, shown to all roles
 }
 
-interface NavSection {
+export interface NavSection {
   titleKey?: string;
   items: NavItem[];
   roles?: RoleValue[]; // If undefined, shown to all roles
@@ -371,7 +371,7 @@ const NotificationsIcon = (
 );
 
 // Navigation sections - role-based (using bitmask)
-const NAV_SECTIONS: NavSection[] = [
+export const NAV_SECTIONS: NavSection[] = [
   // Overview and Notifications - for all roles
   {
     items: [

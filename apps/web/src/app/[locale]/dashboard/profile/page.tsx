@@ -296,16 +296,45 @@ export default function ProfilePage() {
   };
 
   const isGoogleUser = user?.authProvider === 'GOOGLE';
+  
+  // Show navigation buttons only when profile is incomplete (onboarding)
+  const isProfileIncomplete = !user?.isProfileComplete;
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-          {t('profile')}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {t('profileDescription')}
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+            {t('profile')}
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {t('profileDescription')}
+          </p>
+        </div>
+        {isProfileIncomplete && (
+          <div className="flex gap-3">
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              {t('backToOverview')}
+            </a>
+            {isSeller && (
+              <a
+                href="/dashboard/store"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--accent-500)] hover:bg-[var(--accent-600)] rounded-lg transition-colors"
+              >
+                {t('nextStoreSettings')}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Success Message */}

@@ -10,6 +10,7 @@ import {
   type AddressResult,
 } from '../../../../components/ui/AddressPicker';
 import { api } from '../../../../lib/api';
+import SetupRequirements from '../../../../components/dashboard/SetupRequirements';
 
 // Tab definitions
 const TABS = [
@@ -122,6 +123,32 @@ function StoreSettingsPageContent() {
 
   // Form state
   const [formData, setFormData] = useState<StoreData | null>(null);
+
+  // Check if a tab is complete based on required fields
+  const isTabComplete = (tabId: TabId): boolean => {
+    if (!formData) return false;
+    switch (tabId) {
+      case 'general':
+        return !!(
+          formData.nameLocalized?.ka &&
+          formData.nameLocalized?.en &&
+          formData.descriptionLocalized?.ka
+        );
+      case 'appearance':
+        return !!(
+          (formData.logo || formData.useInitialAsLogo) &&
+          (formData.coverImage || formData.useDefaultCover)
+        );
+      case 'contact':
+        return !!(formData.phone && formData.address && formData.location);
+      case 'shipping':
+        return !!formData.courierType;
+      case 'url':
+        return !!formData.subdomain;
+      default:
+        return false;
+    }
+  };
 
   // Update tab when URL changes
   useEffect(() => {
@@ -688,24 +715,38 @@ function StoreSettingsPageContent() {
         </p>
       </div>
 
+      {/* Setup Requirements Banner */}
+      <SetupRequirements />
+
       {/* Tab Navigation */}
       <div className="mb-6 border-b border-gray-200 dark:border-zinc-700">
         <nav className="-mb-px flex gap-1 overflow-x-auto scrollbar-hide">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'border-[var(--accent-500)] text-[var(--accent-600)] dark:text-[var(--accent-400)]'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-zinc-600'
-              }`}
-            >
-              <TabIcon icon={tab.icon} />
-              {t(tab.labelKey)}
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const complete = isTabComplete(tab.id);
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'border-[var(--accent-500)] text-[var(--accent-600)] dark:text-[var(--accent-400)]'
+                    : complete
+                      ? 'border-transparent text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:border-green-300 dark:hover:border-green-600'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-zinc-600'
+                }`}
+              >
+                {complete ? (
+                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <TabIcon icon={tab.icon} />
+                )}
+                {t(tab.labelKey)}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
@@ -1728,8 +1769,8 @@ function StoreSettingsPageContent() {
                   {(formData.subdomainChangeCount || 0) > 0 && (
                     <span className="text-xs text-gray-400 dark:text-gray-500">
                       {(formData.subdomainChangeCount || 0) > 1
-                        ? t('changedTimesPlural', { count: formData.subdomainChangeCount })
-                        : t('changedTimes', { count: formData.subdomainChangeCount })}
+                        ? t('changedTimesPlural', { count: formData.subdomainChangeCount ?? 0 })
+                        : t('changedTimes', { count: formData.subdomainChangeCount ?? 0 })}
                     </span>
                   )}
                 </div>

@@ -53,6 +53,14 @@ export default function PublishButton() {
     fetchStatus();
   }, [fetchStatus, pathname]);
 
+  // Poll for updates every 5 seconds to catch changes after saving
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStatus();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchStatus]);
+
   // Also refetch when page becomes visible (user comes back to tab)
   useEffect(() => {
     const handleVisibilityChange = () => {

@@ -8,151 +8,10 @@ import { ShopItLogo } from '../ui/ShopItLogo';
 import { UserMenuDropdown } from '../ui/UserMenuDropdown';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, hasRole } from '@shopit/constants';
+import { Role, RoleValue, hasRole, hasAnyRole, getAccentColorCssVars, AccentColorName } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 import PublishButton from './PublishButton';
-
-interface NavItem {
-  href: string;
-  labelKey: string;
-  icon: React.ReactNode;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  {
-    href: '/dashboard',
-    labelKey: 'overview',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/store',
-    labelKey: 'storeSettings',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/products',
-    labelKey: 'products',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/attributes',
-    labelKey: 'attributes',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/orders',
-    labelKey: 'orders',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/analytics',
-    labelKey: 'analytics',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard/profile',
-    labelKey: 'profile',
-    icon: (
-      <svg
-        className="w-5 h-5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-    ),
-  },
-];
+import { NAV_SECTIONS } from './DashboardSidebar';
 
 export function DashboardHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -163,12 +22,46 @@ export function DashboardHeader() {
   const { theme, toggleTheme } = useTheme();
   const { user, store, logout, isImpersonating, stopImpersonation } = useAuth();
 
+  // Get accent colors for mobile menu (to ensure they work in fixed position)
+  const brandColor = (store?.brandColor || 'indigo') as AccentColorName;
+  const accentColors = getAccentColorCssVars(brandColor, '--accent');
+  
+  // Debug log
+  console.log('[DashboardHeader] brandColor:', brandColor, 'accentColors:', accentColors);
+
+  // Get user role, default to 'user' if not set
+  const userRole = (user?.role as RoleValue) || Role.USER;
+
+  // Check if a section/item should be shown for the current user role (bitmask)
+  const shouldShowForRole = (roles?: RoleValue[]) => {
+    if (!roles || roles.length === 0) return true; // No role restriction
+    return hasAnyRole(userRole, roles);
+  };
+
+  // Filter sections and items based on role
+  const filteredSections = NAV_SECTIONS.filter((section) =>
+    shouldShowForRole(section.roles),
+  )
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => shouldShowForRole(item.roles)),
+    }))
+    .filter((section) => section.items.length > 0);
+
   const isActive = (href: string) => {
-    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '');
-    if (href === '/dashboard') {
-      return pathWithoutLocale === '/dashboard';
+    // pathname may or may not have locale prefix, handle both cases
+    // Locale format: /ka/... or /en/... (2-letter code)
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '');
+    const result = href === '/dashboard' 
+      ? pathWithoutLocale === '/dashboard'
+      : pathWithoutLocale.startsWith(href);
+    
+    // Debug log
+    if (isMenuOpen) {
+      console.log('[isActive]', { href, pathname, pathWithoutLocale, result });
     }
-    return pathWithoutLocale.startsWith(href);
+    
+    return result;
   };
 
   const handleLogout = async () => {
@@ -312,7 +205,10 @@ export function DashboardHeader() {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div 
+          className="fixed inset-0 z-50 lg:hidden"
+          style={accentColors as React.CSSProperties}
+        >
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50"
@@ -320,9 +216,9 @@ export function DashboardHeader() {
           />
 
           {/* Sidebar */}
-          <div className="fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-zinc-900 shadow-xl overflow-y-auto">
+          <div className="fixed top-0 left-0 bottom-0 w-72 bg-white dark:bg-zinc-900 shadow-xl flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-zinc-800">
+            <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200 dark:border-zinc-800">
               <Link href="/" onClick={() => setIsMenuOpen(false)}>
                 <ShopItLogo size="md" />
               </Link>
@@ -347,27 +243,52 @@ export function DashboardHeader() {
             </div>
 
             {/* Navigation */}
-            <nav className="p-4 space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive(item.href)
-                      ? 'bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/30 text-[var(--accent-700)] dark:text-[var(--accent-300)]'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800'
-                  }`}
-                >
-                  {item.icon}
-                  <span className="font-medium">{t(item.labelKey)}</span>
-                </Link>
+            <nav className="flex-1 overflow-y-auto p-4 space-y-4">
+              {filteredSections.map((section, sectionIndex) => (
+                <div key={sectionIndex}>
+                  {/* Section title */}
+                  {section.titleKey && (
+                    <h3 className="px-4 mb-2 text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      {t(section.titleKey)}
+                    </h3>
+                  )}
+                  {/* Section items */}
+                  <div className="space-y-1">
+                    {section.items.map((item) => {
+                      const isItemActive = isActive(item.href);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors border-l-2 ${
+                            isItemActive
+                              ? ''
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 border-transparent'
+                          }`}
+                          style={
+                            isItemActive
+                              ? {
+                                  backgroundColor: accentColors['--accent-100'],
+                                  color: accentColors['--accent-700'],
+                                  borderLeftColor: accentColors['--accent-500'],
+                                }
+                              : undefined
+                          }
+                        >
+                          {item.icon}
+                          <span className="font-medium">{t(item.labelKey)}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               ))}
             </nav>
 
             {/* View Store Link - Only for sellers */}
             {store && hasRole(user?.role ?? 0, Role.SELLER) && (
-              <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
+              <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-zinc-800">
                 <a
                   href={getStoreUrl(store.subdomain)}
                   target="_blank"
@@ -394,7 +315,7 @@ export function DashboardHeader() {
             )}
 
             {/* User info and logout */}
-            <div className="p-4 border-t border-gray-200 dark:border-zinc-800">
+            <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-zinc-800">
               {/* User Info */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <div className="w-10 h-10 rounded-full bg-[var(--accent-500)] flex items-center justify-center text-white font-semibold">

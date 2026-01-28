@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -55,20 +55,10 @@ export function Step3Auth() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Animate unblurring header + hero when entering this step (desktop only)
-  // On mobile, keep everything blurred since user already saw the preview
-  useEffect(() => {
-    if (isMobile) {
-      // On mobile, blur everything
-      setUnblurredSections([]);
-      return;
-    }
-    // On desktop, unblur header + hero
-    const timer = setTimeout(() => {
-      setUnblurredSections(['header', 'hero']);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [setUnblurredSections, isMobile]);
+  // Keep background blurred when entering step 3
+  useLayoutEffect(() => {
+    setUnblurredSections([]);
+  }, [setUnblurredSections]);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -217,8 +207,8 @@ export function Step3Auth() {
 
   return (
     <div
-      className={`relative z-10 min-h-screen flex flex-col items-center px-4 ${
-        isMobile ? 'justify-center' : 'justify-end pb-6'
+      className={`relative z-10 min-h-screen flex flex-col items-center justify-center px-4 ${
+        isMobile ? '' : 'py-6'
       }`}
     >
       {/* Step indicator */}
@@ -248,7 +238,7 @@ export function Step3Auth() {
       </div>
 
       {/* Main Form Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-5 w-full max-w-3xl">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-5 w-[calc(100%-2rem)] max-w-3xl mx-auto">
         {/* General error message */}
         {errors.general && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">

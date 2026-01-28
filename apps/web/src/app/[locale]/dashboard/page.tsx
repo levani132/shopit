@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { hasRole, Role } from '@shopit/constants';
 import { useAuth } from '../../../contexts/AuthContext';
 import { api } from '../../../lib/api';
-import SetupRequirements from '../../../components/dashboard/SetupRequirements';
+import OnboardingWizard from '../../../components/dashboard/OnboardingWizard';
 import {
   AlertBanner,
   BreakdownList,
@@ -314,8 +314,8 @@ function SellerOverview({
 
       {isOpen && (
         <>
-          {/* Setup Requirements */}
-          <SetupRequirements />
+          {/* Onboarding Wizard */}
+          <OnboardingWizard />
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
