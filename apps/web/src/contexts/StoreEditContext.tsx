@@ -24,9 +24,9 @@ interface StoreEditContextType {
   uploadStoreFile: (file: File, type: 'logo' | 'cover') => Promise<string>;
   // Is currently saving?
   isSaving: boolean;
-  // Refresh store data callback
-  onStoreUpdated?: () => void;
-  setOnStoreUpdated: (callback: () => void) => void;
+  // Refresh store data callback (async to support revalidation)
+  onStoreUpdated?: () => void | Promise<void>;
+  setOnStoreUpdated: (callback: () => void | Promise<void>) => void;
 }
 
 const StoreEditContext = createContext<StoreEditContextType | null>(null);
@@ -37,7 +37,7 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
   const [viewingStoreId, setViewingStoreId] = useState<string | null>(null);
   const [viewingSubdomain, setViewingSubdomain] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [onStoreUpdatedCallback, setOnStoreUpdatedCallback] = useState<(() => void) | undefined>();
+  const [onStoreUpdatedCallback, setOnStoreUpdatedCallback] = useState<(() => void | Promise<void>) | undefined>();
 
   // Check if user is a seller and owns this store
   const isStoreOwner = useMemo(() => {
@@ -87,9 +87,9 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
       }
       
       await api.patch('/stores/my-store', formData);
-      // Call the refresh callback if set
+      // Call the refresh callback if set (await to ensure revalidation completes)
       if (onStoreUpdatedCallback) {
-        onStoreUpdatedCallback();
+        await onStoreUpdatedCallback();
       }
     } catch (error) {
       console.error('Failed to update store field:', error);
@@ -109,9 +109,9 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
       
       const response = await api.patch('/stores/my-store', formData);
       
-      // Call the refresh callback if set
+      // Call the refresh callback if set (await to ensure revalidation completes)
       if (onStoreUpdatedCallback) {
-        onStoreUpdatedCallback();
+        await onStoreUpdatedCallback();
       }
       
       // Return the new URL
@@ -124,7 +124,7 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
     }
   }, [viewingStoreId, isStoreOwner, onStoreUpdatedCallback]);
 
-  const setOnStoreUpdated = useCallback((callback: () => void) => {
+  const setOnStoreUpdated = useCallback((callback: () => void | Promise<void>) => {
     setOnStoreUpdatedCallback(() => callback);
   }, []);
 
