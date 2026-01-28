@@ -174,8 +174,8 @@ export function StoreHero({ store, locale }: StoreHeroProps) {
             </div>
           )}
 
-          {/* Owner */}
-          {(showAuthor || isEditing) && (
+          {/* Owner - only show if owner or has author name */}
+          {(showAuthor && (isEditing || store.authorName)) && (
             <div className="flex items-center justify-center gap-2 text-white/80">
               <span>{t('by')}</span>
               <div
