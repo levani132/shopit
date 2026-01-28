@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { HomepageProduct } from '../../lib/api';
 import { ProductCard } from './ProductCard';
 import { useStoreEditOptional } from '../../contexts/StoreEditContext';
+import { getMainSiteUrl } from '../../utils/subdomain';
 
 interface HomepageProductsProps {
   products: HomepageProduct[];
@@ -42,8 +43,8 @@ export function HomepageProducts({
           </h2>
           {/* Add Product button for store owner */}
           {isStoreOwner && (
-            <Link
-              href={`/${locale}/dashboard/products/new`}
+            <a
+              href={`${getMainSiteUrl()}/${locale}/dashboard/products/new`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all hover:opacity-90"
               style={{ backgroundColor: 'var(--store-accent-600)' }}
             >
@@ -51,7 +52,7 @@ export function HomepageProducts({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               {t('addProduct') || 'Add Product'}
-            </Link>
+            </a>
           )}
         </div>
 
