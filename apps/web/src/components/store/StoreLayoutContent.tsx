@@ -6,6 +6,7 @@ import { StoreHeader } from './StoreHeader';
 import { StoreFooter } from './StoreFooter';
 import { useStoreEditOptional } from '../../contexts/StoreEditContext';
 import { StoreEditModeToggle } from './StoreEditModeToggle';
+import { revalidateStorePage } from '../../lib/actions';
 
 // Routes that should NOT show header/footer (auth pages)
 const AUTH_ROUTES = ['/login', '/register'];
@@ -63,9 +64,12 @@ export function StoreLayoutContent({
   const storeEdit = useStoreEditOptional();
 
   // Callback to refresh the page when store data is updated
-  const handleStoreUpdated = useCallback(() => {
+  const handleStoreUpdated = useCallback(async () => {
+    // Revalidate the server cache for this store page
+    await revalidateStorePage(store.subdomain, locale);
+    // Then refresh the client
     router.refresh();
-  }, [router]);
+  }, [router, store.subdomain, locale]);
 
   // Set the viewing store for edit context
   useEffect(() => {
