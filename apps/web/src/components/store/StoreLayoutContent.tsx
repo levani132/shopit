@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useCallback } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { StoreHeader } from './StoreHeader';
 import { StoreFooter } from './StoreFooter';
 import { useStoreEditOptional } from '../../contexts/StoreEditContext';
@@ -59,19 +59,26 @@ export function StoreLayoutContent({
   locale,
 }: StoreLayoutContentProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const storeEdit = useStoreEditOptional();
+
+  // Callback to refresh the page when store data is updated
+  const handleStoreUpdated = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
   // Set the viewing store for edit context
   useEffect(() => {
     if (storeEdit && store.id) {
       storeEdit.setViewingStore(store.id, store.subdomain);
+      storeEdit.setOnStoreUpdated(handleStoreUpdated);
     }
     return () => {
       if (storeEdit) {
         storeEdit.setViewingStore(null, null);
       }
     };
-  }, [storeEdit, store.id, store.subdomain]);
+  }, [storeEdit, store.id, store.subdomain, handleStoreUpdated]);
 
   // Check if current path is an auth route
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname?.endsWith(route));
