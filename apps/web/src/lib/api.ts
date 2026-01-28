@@ -169,18 +169,20 @@ export const api = {
     options?: RequestInit,
   ): Promise<T> {
     const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    
+    // For FormData, we must NOT set Content-Type - browser will set it with boundary
+    const headers = isFormData ? undefined : {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    };
+    
     const response = await fetchWithRefresh(buildUrl(path), {
       method: 'PATCH',
-      headers: isFormData
-        ? {
-            ...options?.headers,
-          }
-        : {
-            'Content-Type': 'application/json',
-            ...options?.headers,
-          },
+      headers,
       body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
+      // Ensure headers from options don't override for FormData
+      ...(isFormData ? { headers: undefined } : {}),
     });
 
     if (!response.ok) {
