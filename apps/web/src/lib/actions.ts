@@ -1,14 +1,11 @@
 'use server';
 
-import { revalidatePath, revalidateTag } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 
 /**
  * Server action to revalidate store pages after updates
  */
 export async function revalidateStorePage(subdomain: string, locale?: string) {
-  // Revalidate by tag first (most effective)
-  revalidateTag(`store-${subdomain}`);
-  
   // Revalidate all paths for this store
   revalidatePath(`/store/${subdomain}`, 'layout');
   
