@@ -814,6 +814,8 @@
     "admin": "Admin",
     "createShop": "Create Your Shop",
     "seeAll": "See All",
+    "addProduct": "Add Product",
+    "noProducts": "No products yet",
     "sale": "Sale",
     "home": "Home",
     "inStock": "In Stock",

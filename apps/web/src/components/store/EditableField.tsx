@@ -344,6 +344,9 @@ export function EditableImage({
     );
   }
 
+  // Check if this is a logo (round) based on className containing 'rounded-full'
+  const isRounded = className.includes('rounded-full') || imageClassName.includes('rounded-full');
+
   return (
     <div className={`group relative ${className}`}>
       {value ? (
@@ -353,10 +356,11 @@ export function EditableImage({
       )}
 
       {/* Edit overlay - always visible in edit mode, otherwise on hover */}
+      {/* Use rounded-full for logo images to match the circular shape */}
       <button
         onClick={handleClick}
         disabled={isUploading}
-        className={`absolute inset-0 flex items-center justify-center ${storeEdit?.isEditMode ? 'bg-black/20' : 'bg-black/0 group-hover:bg-black/40'} transition-colors cursor-pointer`}
+        className={`absolute inset-0 flex items-center justify-center ${isRounded ? 'rounded-full' : ''} ${storeEdit?.isEditMode ? 'bg-black/20' : 'bg-black/0 group-hover:bg-black/40'} transition-colors cursor-pointer`}
       >
         <div className={`${storeEdit?.isEditMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} p-3 bg-white/90 dark:bg-zinc-800/90 rounded-full shadow-lg transition-all`}>
           {isUploading ? (
