@@ -310,7 +310,7 @@ export default function DashboardOrdersPage() {
           {t('orders')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Manage your incoming orders and update their status.
+          {t('ordersDescription')}
         </p>
       </div>
 
@@ -324,7 +324,7 @@ export default function DashboardOrdersPage() {
               : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
           }`}
         >
-          All ({orders.length})
+          {t('allFilter')} ({orders.length})
         </button>
         {statusOrder.map((status) => {
           const count = orders.filter((o) => o.status === status).length;
@@ -363,11 +363,10 @@ export default function DashboardOrdersPage() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No Orders Yet
+              {t('noOrdersYet')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-              When customers place orders, they&apos;ll appear here. Share your
-              store to start receiving orders!
+              {t('noOrdersYetDescription')}
             </p>
           </div>
         </div>
@@ -426,7 +425,7 @@ export default function DashboardOrdersPage() {
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {order.orderItems.reduce((sum, item) => sum + item.qty, 0)}{' '}
-                    items
+                    {t('items')}
                   </p>
                   <p className="font-semibold text-gray-900 dark:text-white">
                     ₾{order.totalPrice.toFixed(2)}
@@ -441,13 +440,13 @@ export default function DashboardOrdersPage() {
             {selectedOrder ? (
               <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700 p-6 sticky top-24">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Order Details
+                  {t('orderDetails')}
                 </h3>
 
                 <div className="space-y-4 mb-6">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Order ID
+                      {t('orderId')}
                     </p>
                     <p className="font-mono text-sm text-gray-900 dark:text-white">
                       {selectedOrder._id}
@@ -456,7 +455,7 @@ export default function DashboardOrdersPage() {
 
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Customer
+                      {t('customer')}
                     </p>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {selectedOrder.isGuestOrder
@@ -472,7 +471,7 @@ export default function DashboardOrdersPage() {
 
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Shipping Address
+                      {t('shippingAddress')}
                     </p>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {selectedOrder.shippingDetails.address}
@@ -622,7 +621,7 @@ export default function DashboardOrdersPage() {
                 {/* Items */}
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 mb-6">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Items
+                    {t('orderItems')}
                   </p>
                   <div className="space-y-3">
                     {selectedOrder.orderItems.map((item, idx) => {
@@ -687,7 +686,7 @@ export default function DashboardOrdersPage() {
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 mb-6 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      Subtotal
+                      {t('subtotal')}
                     </span>
                     <span className="text-gray-900 dark:text-white">
                       ₾
@@ -697,14 +696,14 @@ export default function DashboardOrdersPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      Shipping
+                      {t('shipping')}
                     </span>
                     <span className="text-gray-900 dark:text-white">
                       ₾{selectedOrder.shippingPrice?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                   <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-200 dark:border-zinc-700">
-                    <span className="text-gray-900 dark:text-white">Total</span>
+                    <span className="text-gray-900 dark:text-white">{t('total')}</span>
                     <span className="text-gray-900 dark:text-white">
                       ₾{selectedOrder.totalPrice.toFixed(2)}
                     </span>
@@ -748,7 +747,7 @@ export default function DashboardOrdersPage() {
             ) : (
               <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700 p-6 text-center">
                 <p className="text-gray-500 dark:text-gray-400">
-                  Select an order to view details
+                  {t('selectOrderToView')}
                 </p>
               </div>
             )}
