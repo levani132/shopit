@@ -404,7 +404,7 @@ export default function EditProductPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/products"
@@ -438,7 +438,7 @@ export default function EditProductPage() {
         <button
           type="button"
           onClick={() => setShowDeleteConfirm(true)}
-          className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
+          className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg
             className="w-5 h-5"

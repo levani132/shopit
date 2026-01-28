@@ -151,10 +151,12 @@ export function DashboardHeader() {
           </div>
 
           {/* Right: Publish button + Language switcher + Theme toggle + User menu */}
-          <div className="flex items-center gap-2">
-            {/* Publish Button - Only for sellers */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* Publish Button - Only for sellers, hidden on mobile (shown in sub-header) */}
             {hasRole(user?.role ?? 0, Role.SELLER) && store && (
-              <PublishButton />
+              <div className="hidden sm:block">
+                <PublishButton />
+              </div>
             )}
 
             {/* Language Switcher */}
@@ -163,7 +165,7 @@ export function DashboardHeader() {
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? (
@@ -202,6 +204,13 @@ export function DashboardHeader() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Sub-header - shows PublishButton on small screens */}
+      {hasRole(user?.role ?? 0, Role.SELLER) && store && (
+        <div className="sm:hidden sticky top-16 z-30 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-4 py-2">
+          <PublishButton />
+        </div>
+      )}
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
@@ -368,28 +377,30 @@ function LanguageSwitcher() {
   const locale = useLocale();
 
   return (
-    <div className="flex items-center gap-1 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg p-1">
+    <div className="flex items-center gap-0.5 sm:gap-1 text-sm bg-gray-100 dark:bg-zinc-800 rounded-lg p-0.5 sm:p-1">
       <Link
         href={pathname}
         locale="ka"
-        className={`px-2.5 py-1.5 rounded-md transition-all font-medium text-xs ${
+        className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md transition-all font-medium text-xs ${
           locale === 'ka'
             ? 'bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white shadow-sm'
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
       >
-        {t('georgian')}
+        <span className="sm:hidden">KA</span>
+        <span className="hidden sm:inline">{t('georgian')}</span>
       </Link>
       <Link
         href={pathname}
         locale="en"
-        className={`px-2.5 py-1.5 rounded-md transition-all font-medium text-xs ${
+        className={`px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md transition-all font-medium text-xs ${
           locale === 'en'
             ? 'bg-[var(--accent-600)] dark:bg-[var(--accent-500)] text-white shadow-sm'
             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
         }`}
       >
-        {t('english')}
+        <span className="sm:hidden">EN</span>
+        <span className="hidden sm:inline">{t('english')}</span>
       </Link>
     </div>
   );

@@ -120,7 +120,7 @@ export default function AttributesPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
             {t('attributes')}
@@ -131,7 +131,7 @@ export default function AttributesPage() {
         </div>
         <button
           onClick={handleCreate}
-          className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg
             className="w-5 h-5"
