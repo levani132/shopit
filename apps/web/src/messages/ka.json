@@ -19,7 +19,10 @@
     "collapseMap": "რუკის დაპატარავება",
     "change": "შეცვლა",
     "previous": "წინა",
-    "next": "შემდეგი"
+    "next": "შემდეგი",
+    "edit": "რედაქტირება",
+    "saveFailed": "შენახვა ვერ მოხერხდა",
+    "changeColor": "ფერის შეცვლა"
   },
   "nav": {
     "home": "მთავარი",
@@ -833,7 +836,12 @@
     "goToShopIt": "გაიგეთ მეტი ShopIt-ზე",
     "createYourStore": "გსურთ საკუთარი ონლაინ მაღაზიის შექმნა?",
     "startForFree": "უფასოდ დაიწყეთ",
-    "backToHome": "მთავარ გვერდზე დაბრუნება"
+    "backToHome": "მთავარ გვერდზე დაბრუნება",
+    "storeName": "მაღაზიის სახელი",
+    "addDescription": "მაღაზიის აღწერა...",
+    "editStore": "რედაქტირება",
+    "enterEditMode": "რედაქტირების რეჟიმი",
+    "exitEditMode": "ნახვის რეჟიმი"
   },
   "cart": {
     "title": "კალათა",

@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from '../../../../components/theme/ThemeProvider';
 import { AuthProvider } from '../../../../contexts/AuthContext';
+import { StoreEditProvider } from '../../../../contexts/StoreEditContext';
 import { CartProvider } from '../../../../contexts/CartContext';
 import { CheckoutProvider } from '../../../../contexts/CheckoutContext';
 import { routing } from '../../../../i18n/routing';
@@ -64,9 +65,11 @@ export default async function StoreLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>
             <AuthProvider>
-              <CartProvider>
-                <CheckoutProvider>{children}</CheckoutProvider>
-              </CartProvider>
+              <StoreEditProvider>
+                <CartProvider>
+                  <CheckoutProvider>{children}</CheckoutProvider>
+                </CartProvider>
+              </StoreEditProvider>
             </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>

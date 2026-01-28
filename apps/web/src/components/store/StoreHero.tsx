@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { getLatinInitial } from '../../lib/utils';
+import { useStoreEditOptional } from '../../contexts/StoreEditContext';
+import { EditableText } from './EditableField';
 
 interface StoreHeroProps {
   store: {
@@ -22,6 +24,9 @@ interface StoreHeroProps {
 
 export function StoreHero({ store, locale }: StoreHeroProps) {
   const t = useTranslations('store');
+  const storeEdit = useStoreEditOptional();
+  const isEditing = storeEdit?.isStoreOwner ?? false;
+  
   const authorName = store.authorName || t('storeOwner');
   const showAuthor = store.showAuthorName !== false;
   const hasCoverImage = store.coverImage && !store.useDefaultCover;
@@ -86,15 +91,32 @@ export function StoreHero({ store, locale }: StoreHeroProps) {
           </div>
 
           {/* Store Name */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 drop-shadow-lg">
-            {store.name}
-          </h1>
+          <div className="mb-4">
+            <EditableText
+              field="name"
+              value={store.name}
+              localized
+              locale={locale}
+              placeholder={t('storeName')}
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-lg"
+              as="h1"
+            />
+          </div>
 
           {/* Description */}
-          {store.description && (
-            <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-8 drop-shadow">
-              {store.description}
-            </p>
+          {(store.description || isEditing) && (
+            <div className="max-w-2xl mx-auto mb-8">
+              <EditableText
+                field="description"
+                value={store.description || ''}
+                localized
+                locale={locale}
+                placeholder={t('addDescription') || 'Add store description...'}
+                multiline
+                className="text-lg md:text-xl text-white/90 drop-shadow"
+                as="p"
+              />
+            </div>
           )}
 
           {/* Owner */}

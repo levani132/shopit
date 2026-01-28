@@ -141,6 +141,7 @@ export default async function MainStoreLayout({
 
   // Store data for header/footer
   const storeForComponents = {
+    id: store.id,
     name: store.name,
     subdomain: store.subdomain,
     description: store.description,

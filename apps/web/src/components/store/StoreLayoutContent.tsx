@@ -1,8 +1,11 @@
 'use client';
 
+import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { StoreHeader } from './StoreHeader';
 import { StoreFooter } from './StoreFooter';
+import { useStoreEditOptional } from '../../contexts/StoreEditContext';
+import { StoreEditModeToggle } from './StoreEditModeToggle';
 
 // Routes that should NOT show header/footer (auth pages)
 const AUTH_ROUTES = ['/login', '/register'];
@@ -25,6 +28,7 @@ interface CategoryData {
 interface StoreLayoutContentProps {
   children: React.ReactNode;
   store: {
+    id?: string; // Store ID for edit context
     name: string;
     subdomain: string;
     description?: string;
@@ -55,6 +59,19 @@ export function StoreLayoutContent({
   locale,
 }: StoreLayoutContentProps) {
   const pathname = usePathname();
+  const storeEdit = useStoreEditOptional();
+
+  // Set the viewing store for edit context
+  useEffect(() => {
+    if (storeEdit && store.id) {
+      storeEdit.setViewingStore(store.id, store.subdomain);
+    }
+    return () => {
+      if (storeEdit) {
+        storeEdit.setViewingStore(null, null);
+      }
+    };
+  }, [storeEdit, store.id, store.subdomain]);
 
   // Check if current path is an auth route
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname?.endsWith(route));
@@ -67,6 +84,9 @@ export function StoreLayoutContent({
       {!isAuthRoute && <StoreHeader store={store} />}
       <main className="flex-1">{children}</main>
       {!isAuthRoute && <StoreFooter store={store} locale={locale} />}
+      
+      {/* Edit mode toggle for store owner */}
+      <StoreEditModeToggle />
     </div>
   );
 }

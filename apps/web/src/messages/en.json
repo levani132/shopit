@@ -19,7 +19,10 @@
     "collapseMap": "Collapse map",
     "change": "Change",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "edit": "Edit",
+    "saveFailed": "Failed to save",
+    "changeColor": "Change color"
   },
   "nav": {
     "home": "Home",
@@ -833,7 +836,12 @@
     "goToShopIt": "Explore ShopIt",
     "createYourStore": "Want to create your own online store?",
     "startForFree": "Start for Free",
-    "backToHome": "Back to Home"
+    "backToHome": "Back to Home",
+    "storeName": "Store Name",
+    "addDescription": "Add store description...",
+    "editStore": "Edit Store",
+    "enterEditMode": "Enter Edit Mode",
+    "exitEditMode": "Exit Edit Mode"
   },
   "cart": {
     "title": "Shopping Cart",
