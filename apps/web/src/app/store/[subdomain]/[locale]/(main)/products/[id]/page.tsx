@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useCart } from '../../../../../../../contexts/CartContext';
 import { useAuth } from '../../../../../../../contexts/AuthContext';
 import { api } from '../../../../../../../lib/api';
+import { EditButton } from '../../../../../../../components/store/EditButton';
 
 interface VariantAttribute {
   attributeId: string;
@@ -518,9 +519,17 @@ export default function ProductDetailPage() {
         {/* Product Info */}
         <div className="space-y-6">
           {/* Title */}
-          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-            {getLocalizedText(product.nameLocalized, product.name)}
-          </h1>
+          <div className="flex items-start gap-3">
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white flex-1">
+              {getLocalizedText(product.nameLocalized, product.name)}
+            </h1>
+            <EditButton
+              href={`/${locale}/dashboard/products/${product._id}`}
+              title={t('editProduct') || 'Edit Product'}
+              size="md"
+              variant="icon-only"
+            />
+          </div>
 
           {/* Price */}
           <div className="flex items-baseline gap-3">

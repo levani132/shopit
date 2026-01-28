@@ -7,6 +7,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { CartButton } from './CartButton';
+import { EditButton } from './EditButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import { getLatinInitial } from '../../lib/utils';
@@ -217,6 +218,16 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                             )}
                           </div>
                         ))}
+                        {/* Edit Categories Link */}
+                        <EditButton
+                          href={`/${locale}/dashboard/categories`}
+                          title={t('editCategories') || 'Edit Categories'}
+                          variant="inline"
+                          size="sm"
+                          className="mx-4 my-2 w-[calc(100%-2rem)]"
+                        >
+                          {t('editCategories') || 'Edit Categories'}
+                        </EditButton>
                       </div>
                     </div>
                   )}
@@ -230,7 +241,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               </a>
 
               <a
-                href="#about"
+                href={`/${locale}/about`}
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 {t('aboutUs')}
@@ -531,7 +542,7 @@ function MobileNav({
         )}
 
         <a
-          href="#about"
+          href={`/${locale}/about`}
           className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           onClick={onClose}
         >

@@ -20,6 +20,8 @@ interface StoreEditContextType {
   viewingSubdomain: string | null;
   // Update store field
   updateStoreField: <T>(field: string, value: T) => Promise<void>;
+  // Upload file (logo or cover)
+  uploadStoreFile: (file: File, type: 'logo' | 'cover') => Promise<string>;
   // Is currently saving?
   isSaving: boolean;
   // Refresh store data callback
@@ -64,10 +66,29 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
     
     setIsSaving(true);
     try {
-      // Handle nested fields like "nameLocalized.ka"
-      const data = field.includes('.') 
-        ? field.split('.').reduceRight((acc, key) => ({ [key]: acc }), value as unknown)
-        : { [field]: value };
+      // Prepare data for the API
+      let data: Record<string, unknown>;
+      
+      // Handle localized fields - convert to backend format (nameKa, nameEn, etc.)
+      if (field.includes('Localized.')) {
+        // e.g., "nameLocalized.ka" -> "nameKa"
+        const [baseField, locale] = field.replace('Localized', '').split('.');
+        const fieldName = `${baseField}${locale.charAt(0).toUpperCase()}${locale.slice(1)}`;
+        data = { [fieldName]: value };
+      }
+      // Handle socialLinks - backend expects JSON string
+      else if (field.startsWith('socialLinks.')) {
+        const socialField = field.replace('socialLinks.', '');
+        data = { socialLinks: JSON.stringify({ [socialField]: value }) };
+      }
+      // Handle simple nested fields
+      else if (field.includes('.')) {
+        data = field.split('.').reduceRight((acc, key) => ({ [key]: acc }), value as unknown) as Record<string, unknown>;
+      }
+      // Simple fields
+      else {
+        data = { [field]: value };
+      }
       
       await api.patch('/stores/my-store', data);
       // Call the refresh callback if set
@@ -76,6 +97,35 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Failed to update store field:', error);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [viewingStoreId, isStoreOwner, onStoreUpdatedCallback]);
+
+  const uploadStoreFile = useCallback(async (file: File, type: 'logo' | 'cover'): Promise<string> => {
+    if (!viewingStoreId || !isStoreOwner) throw new Error('Not authorized');
+    
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append(type === 'logo' ? 'logoFile' : 'coverFile', file);
+      
+      const response = await api.patch('/stores/my-store', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      // Call the refresh callback if set
+      if (onStoreUpdatedCallback) {
+        onStoreUpdatedCallback();
+      }
+      
+      // Return the new URL
+      return type === 'logo' ? response.data.logo : response.data.coverImage;
+    } catch (error) {
+      console.error(`Failed to upload ${type}:`, error);
       throw error;
     } finally {
       setIsSaving(false);
@@ -94,6 +144,7 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
     setViewingStore,
     viewingSubdomain,
     updateStoreField,
+    uploadStoreFile,
     isSaving,
     onStoreUpdated: onStoreUpdatedCallback,
     setOnStoreUpdated,
@@ -105,6 +156,7 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
     setViewingStore,
     viewingSubdomain,
     updateStoreField,
+    uploadStoreFile,
     isSaving,
     onStoreUpdatedCallback,
     setOnStoreUpdated,

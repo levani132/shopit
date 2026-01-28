@@ -287,7 +287,7 @@ export function EditableText({
 
 // Image editing component
 interface EditableImageProps {
-  field: string;
+  field: 'logo' | 'cover';
   value?: string;
   placeholder?: React.ReactNode;
   className?: string;
@@ -316,20 +316,12 @@ export function EditableImage({
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !storeEdit?.isStoreOwner) return;
+    if (!file || !storeEdit?.isStoreOwner || !storeEdit?.uploadStoreFile) return;
 
     setIsUploading(true);
     try {
-      // Upload the file
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // TODO: Implement file upload API
-      // const response = await api.uploadFile(formData);
-      // await storeEdit.updateStoreField(field, response.url);
-      // onSaved?.(response.url);
-      
-      console.log('File upload not yet implemented');
+      const newUrl = await storeEdit.uploadStoreFile(file, field);
+      onSaved?.(newUrl);
     } catch (error) {
       console.error('Failed to upload image:', error);
     } finally {

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { api } from '../../../../../../lib/api';
+import { EditButton } from '../../../../../../components/store/EditButton';
 
 interface StoreData {
   _id: string;
@@ -123,7 +124,17 @@ export default function AboutPage() {
     <div className="bg-white dark:bg-zinc-900 min-h-[60vh]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
+          <div className="absolute top-0 right-0">
+            <EditButton
+              href={`/${locale}/dashboard/store`}
+              title={t('editAboutUs') || 'Edit About Us'}
+              size="md"
+              variant="inline"
+            >
+              {t('edit') || 'Edit'}
+            </EditButton>
+          </div>
           {store.logo && (
             <img
               src={store.logo}

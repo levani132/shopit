@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { api } from '../../lib/api';
+import { EditButton } from './EditButton';
 
 export interface ProductCardData {
   _id: string;
@@ -180,6 +181,15 @@ export function ProductCard({
       {/* Product Image - Clickable */}
       <Link href={`/${locale}/products/${product._id}`} className="block">
         <div className="aspect-square relative bg-gray-100 dark:bg-zinc-700 overflow-hidden">
+          {/* Edit Button - Always visible in edit mode */}
+          <EditButton
+            href={`/${locale}/dashboard/products/${product._id}`}
+            title={t('editProduct') || 'Edit Product'}
+            size="sm"
+            variant="icon-only"
+            className="absolute top-2 left-2 z-10"
+          />
+
           {/* Wishlist Button */}
           <button
             onClick={handleToggleWishlist}
