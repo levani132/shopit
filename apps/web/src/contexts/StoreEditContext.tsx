@@ -107,15 +107,15 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
       const formData = new FormData();
       formData.append(type === 'logo' ? 'logoFile' : 'coverFile', file);
       
-      const response = await api.patch('/stores/my-store', formData);
+      const response = await api.patch<{ logo?: string; coverImage?: string }>('/stores/my-store', formData);
       
       // Call the refresh callback if set (await to ensure revalidation completes)
       if (onStoreUpdatedCallback) {
         await onStoreUpdatedCallback();
       }
       
-      // Return the new URL
-      return type === 'logo' ? response.data.logo : response.data.coverImage;
+      // Return the new URL (response is the store object directly, not wrapped in data)
+      return type === 'logo' ? response.logo || '' : response.coverImage || '';
     } catch (error) {
       console.error(`Failed to upload ${type}:`, error);
       throw error;
