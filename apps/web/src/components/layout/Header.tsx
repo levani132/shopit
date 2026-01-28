@@ -29,7 +29,7 @@ export function Header() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8">
             <Link
               href="/"
               className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
@@ -51,7 +51,7 @@ export function Header() {
           </div>
 
           {/* Right side - Language switcher and CTA */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-4">
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -139,7 +139,7 @@ export function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+            className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           >
             <svg
               className="w-6 h-6"
@@ -168,7 +168,7 @@ export function Header() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-100 dark:border-zinc-800">
+          <div className="lg:hidden py-4 border-t border-gray-100 dark:border-zinc-800">
             <div className="flex flex-col gap-4">
               <Link
                 href="/"
