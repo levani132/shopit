@@ -8,7 +8,14 @@ import { ShopItLogo } from '../ui/ShopItLogo';
 import { UserMenuDropdown } from '../ui/UserMenuDropdown';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../../contexts/AuthContext';
-import { Role, RoleValue, hasRole, hasAnyRole, getAccentColorCssVars, AccentColorName } from '@shopit/constants';
+import {
+  Role,
+  RoleValue,
+  hasRole,
+  hasAnyRole,
+  getAccentColorCssVars,
+  AccentColorName,
+} from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 import PublishButton from './PublishButton';
 import { NAV_SECTIONS } from './DashboardSidebar';
@@ -20,14 +27,19 @@ export function DashboardHeader() {
   const t = useTranslations('dashboard');
   const tNav = useTranslations('nav');
   const { theme, toggleTheme } = useTheme();
-  const { user, store, logout, isImpersonating, stopImpersonation } = useAuth();
+  const { user, store, logout } = useAuth();
 
   // Get accent colors for mobile menu (to ensure they work in fixed position)
   const brandColor = (store?.brandColor || 'indigo') as AccentColorName;
   const accentColors = getAccentColorCssVars(brandColor, '--accent');
-  
+
   // Debug log
-  console.log('[DashboardHeader] brandColor:', brandColor, 'accentColors:', accentColors);
+  console.log(
+    '[DashboardHeader] brandColor:',
+    brandColor,
+    'accentColors:',
+    accentColors,
+  );
 
   // Get user role, default to 'user' if not set
   const userRole = (user?.role as RoleValue) || Role.USER;
@@ -52,15 +64,16 @@ export function DashboardHeader() {
     // pathname may or may not have locale prefix, handle both cases
     // Locale format: /ka/... or /en/... (2-letter code)
     const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '');
-    const result = href === '/dashboard' 
-      ? pathWithoutLocale === '/dashboard'
-      : pathWithoutLocale.startsWith(href);
-    
+    const result =
+      href === '/dashboard'
+        ? pathWithoutLocale === '/dashboard'
+        : pathWithoutLocale.startsWith(href);
+
     // Debug log
     if (isMenuOpen) {
       console.log('[isActive]', { href, pathname, pathWithoutLocale, result });
     }
-    
+
     return result;
   };
 
@@ -83,42 +96,6 @@ export function DashboardHeader() {
 
   return (
     <>
-      {/* Impersonation Banner */}
-      {isImpersonating && (
-        <div className="bg-indigo-600 text-white px-4 py-2 text-center text-sm font-medium">
-          <div className="flex items-center justify-center gap-2">
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-              />
-            </svg>
-            <span>
-              {tNav('impersonating')}: {getDisplayName()} ({user?.email})
-            </span>
-            <button
-              onClick={stopImpersonation}
-              className="ml-4 px-3 py-1 bg-white text-indigo-600 rounded-md text-xs font-semibold hover:bg-indigo-50 transition-colors"
-            >
-              {tNav('returnAsAdmin')}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Header - visible on all screen sizes */}
       <header className="sticky top-0 z-40 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800">
         <div className="flex items-center justify-between h-16 px-4 lg:px-6">
@@ -214,7 +191,7 @@ export function DashboardHeader() {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-50 lg:hidden"
           style={accentColors as React.CSSProperties}
         >
@@ -286,7 +263,9 @@ export function DashboardHeader() {
                           }
                         >
                           {item.icon}
-                          <span className="font-medium">{t(item.labelKey)}</span>
+                          <span className="font-medium">
+                            {t(item.labelKey)}
+                          </span>
                         </Link>
                       );
                     })}
