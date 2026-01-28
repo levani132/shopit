@@ -66,31 +66,31 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
     
     setIsSaving(true);
     try {
-      // Prepare data for the API
-      let data: Record<string, unknown>;
+      // Backend expects multipart/form-data format
+      const formData = new FormData();
       
       // Handle localized fields - convert to backend format (nameKa, nameEn, etc.)
       if (field.includes('Localized.')) {
         // e.g., "nameLocalized.ka" -> "nameKa"
         const [baseField, locale] = field.replace('Localized', '').split('.');
         const fieldName = `${baseField}${locale.charAt(0).toUpperCase()}${locale.slice(1)}`;
-        data = { [fieldName]: value };
+        formData.append(fieldName, String(value));
       }
       // Handle socialLinks - backend expects JSON string
       else if (field.startsWith('socialLinks.')) {
         const socialField = field.replace('socialLinks.', '');
-        data = { socialLinks: JSON.stringify({ [socialField]: value }) };
-      }
-      // Handle simple nested fields
-      else if (field.includes('.')) {
-        data = field.split('.').reduceRight((acc, key) => ({ [key]: acc }), value as unknown) as Record<string, unknown>;
+        formData.append('socialLinks', JSON.stringify({ [socialField]: value }));
       }
       // Simple fields
       else {
-        data = { [field]: value };
+        formData.append(field, String(value));
       }
       
-      await api.patch('/stores/my-store', data);
+      await api.patch('/stores/my-store', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       // Call the refresh callback if set
       if (onStoreUpdatedCallback) {
         onStoreUpdatedCallback();
