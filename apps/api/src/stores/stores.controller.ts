@@ -232,6 +232,9 @@ export class StoresController {
             'image/png',
             'image/svg+xml',
             'image/webp',
+            'image/avif',
+            'image/heic',
+            'image/heif',
           ],
         },
       );
@@ -245,7 +248,14 @@ export class StoresController {
         {
           folder: 'covers',
           maxSizeBytes: 10 * 1024 * 1024,
-          allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          allowedMimeTypes: [
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'image/avif',
+            'image/heic',
+            'image/heif',
+          ],
         },
       );
       coverUrl = uploadResult.url;

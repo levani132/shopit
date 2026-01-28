@@ -45,8 +45,11 @@ export function StoreHero({ store, locale }: StoreHeroProps) {
     setIsUploadingCover(true);
     try {
       await storeEdit.uploadStoreFile(file, 'cover');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to upload cover:', error);
+      // Show error message to user
+      const message = error?.message || t('uploadFailed') || 'Upload failed';
+      alert(message);
     } finally {
       setIsUploadingCover(false);
       if (coverInputRef.current) {

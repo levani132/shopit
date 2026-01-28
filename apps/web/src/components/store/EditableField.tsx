@@ -322,8 +322,11 @@ export function EditableImage({
     try {
       const newUrl = await storeEdit.uploadStoreFile(file, field);
       onSaved?.(newUrl);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to upload image:', error);
+      // Show error to user
+      const message = error?.message || 'Upload failed';
+      alert(message);
     } finally {
       setIsUploading(false);
       // Reset input
