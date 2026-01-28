@@ -298,7 +298,10 @@ export async function getStoreBySubdomain(
 ): Promise<StoreData | null> {
   try {
     const response = await fetch(`${apiUrl}/stores/subdomain/${subdomain}`, {
-      next: { revalidate: 60 }, // Cache for 60 seconds
+      next: { 
+        revalidate: 60, // Cache for 60 seconds
+        tags: [`store-${subdomain}`], // Tag for targeted revalidation
+      },
     });
 
     if (!response.ok) {
@@ -325,7 +328,10 @@ export async function getStoreWithProducts(
     const response = await fetch(
       `${apiUrl}/stores/subdomain/${subdomain}/full`,
       {
-        next: { revalidate: 60 }, // Cache for 60 seconds
+        next: { 
+          revalidate: 60, // Cache for 60 seconds
+          tags: [`store-${subdomain}`], // Tag for targeted revalidation
+        },
       },
     );
 
