@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { HomepageProduct } from '../../lib/api';
 import { ProductCard } from './ProductCard';
 import { useStoreEditOptional } from '../../contexts/StoreEditContext';
-import { getMainSiteUrl } from '../../utils/subdomain';
+import { getMainSiteUrl, getStoreUrl } from '../../utils/subdomain';
 
 interface HomepageProductsProps {
   products: HomepageProduct[];
@@ -44,7 +44,7 @@ export function HomepageProducts({
           {/* Add Product button for store owner */}
           {isStoreOwner && (
             <a
-              href={`${getMainSiteUrl()}/${locale}/dashboard/products/new`}
+              href={`${getMainSiteUrl()}/${locale}/dashboard/products/new?returnUrl=${encodeURIComponent(getStoreUrl(subdomain) + '/' + locale)}`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all hover:opacity-90"
               style={{ backgroundColor: 'var(--store-accent-600)' }}
             >

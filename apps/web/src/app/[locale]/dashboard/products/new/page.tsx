@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 import VariantEditor from '../../../../../components/dashboard/VariantEditor';
@@ -54,6 +54,8 @@ interface ProductFormData {
 export default function NewProductPage() {
   const t = useTranslations('dashboard');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -239,8 +241,12 @@ export default function NewProductPage() {
 
       await api.post('/api/v1/products', formDataToSend);
 
-      // Success - redirect to products list
-      router.push('/dashboard/products');
+      // Success - redirect to returnUrl or products list
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        router.push('/dashboard/products');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create product');
     } finally {
