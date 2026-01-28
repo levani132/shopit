@@ -162,19 +162,21 @@ export default function AboutPage() {
             />
           </h1>
           
-          {/* Author Name - Editable */}
-          <div className="text-gray-600 dark:text-gray-400">
-            {t('by')}{' '}
-            <EditableText
-              field="authorName"
-              value={authorName}
-              localized
-              locale={locale}
-              placeholder={t('addAuthorName') || 'Add author name'}
-              className="font-medium text-gray-600 dark:text-gray-400"
-              onSaved={handleFieldSaved}
-            />
-          </div>
+          {/* Author Name - Editable (only show if owner or has value) */}
+          {(isEditing || authorName) && (
+            <div className="text-gray-600 dark:text-gray-400">
+              {t('by')}{' '}
+              <EditableText
+                field="authorName"
+                value={authorName}
+                localized
+                locale={locale}
+                placeholder={t('addAuthorName') || 'Add author name'}
+                className="font-medium text-gray-600 dark:text-gray-400"
+                onSaved={handleFieldSaved}
+              />
+            </div>
+          )}
         </div>
 
         {/* About Us Content - Editable */}
