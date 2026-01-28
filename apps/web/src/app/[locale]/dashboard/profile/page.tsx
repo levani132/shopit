@@ -56,7 +56,7 @@ export default function ProfilePage() {
   const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [personalSuccess, setPersonalSuccess] = useState(false);
-  const [bankSuccess, setBankSuccess] = useState(false);
+  const [_bankSuccess, setBankSuccess] = useState(false);
   const [courierSuccess, setCourierSuccess] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
