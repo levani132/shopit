@@ -249,13 +249,21 @@ async function seedOrders() {
     // List all databases in cluster
     const adminDb = client.db().admin();
     const dbs = await adminDb.listDatabases();
-    console.log('Databases in cluster:', dbs.databases.map(d => `${d.name} (${(d.sizeOnDisk / 1024 / 1024).toFixed(2)} MB)`).join(', '));
-    
+    console.log(
+      'Databases in cluster:',
+      dbs.databases
+        .map((d) => `${d.name} (${(d.sizeOnDisk / 1024 / 1024).toFixed(2)} MB)`)
+        .join(', '),
+    );
+
     const db = client.db('test');
-    
+
     // List collections
     const collections = await db.listCollections().toArray();
-    console.log('Collections:', collections.map(c => c.name).join(', ') || 'NONE');
+    console.log(
+      'Collections:',
+      collections.map((c) => c.name).join(', ') || 'NONE',
+    );
 
     // Get existing stores (any stores, not just active)
     const stores = await db.collection('stores').find({}).limit(5).toArray();
@@ -293,7 +301,7 @@ async function seedOrders() {
       const product =
         PRODUCT_NAMES[Math.floor(Math.random() * PRODUCT_NAMES.length)];
       const qty = Math.floor(Math.random() * 3) + 1;
-      
+
       // Weight sizes towards small/medium (80% of orders) so car couriers can deliver
       const rand = Math.random();
       let shippingSize;
@@ -376,7 +384,9 @@ async function seedOrders() {
         shippingSize: shippingSize,
         estimatedShippingSize: shippingSize,
         // Delivery deadline - random time in next 1-3 days
-        deliveryDeadline: new Date(Date.now() + (24 + Math.random() * 48) * 60 * 60 * 1000),
+        deliveryDeadline: new Date(
+          Date.now() + (24 + Math.random() * 48) * 60 * 60 * 1000,
+        ),
         createdAt: new Date(),
         updatedAt: new Date(),
       };
