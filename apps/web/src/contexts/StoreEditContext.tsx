@@ -86,11 +86,7 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
         formData.append(field, String(value));
       }
       
-      await api.patch('/stores/my-store', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await api.patch('/stores/my-store', formData);
       // Call the refresh callback if set
       if (onStoreUpdatedCallback) {
         onStoreUpdatedCallback();
@@ -111,11 +107,7 @@ export function StoreEditProvider({ children }: { children: React.ReactNode }) {
       const formData = new FormData();
       formData.append(type === 'logo' ? 'logoFile' : 'coverFile', file);
       
-      const response = await api.patch('/stores/my-store', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await api.patch('/stores/my-store', formData);
       
       // Call the refresh callback if set
       if (onStoreUpdatedCallback) {
