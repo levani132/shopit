@@ -273,10 +273,10 @@ export function EditableText({
         {value || <span className="opacity-50 italic">{placeholder}</span>}
       </Component>
       
-      {/* Edit button - visible on hover */}
+      {/* Edit button - always visible in edit mode, otherwise on hover */}
       <button
         onClick={handleStartEdit}
-        className="opacity-0 group-hover:opacity-100 p-1.5 bg-white/90 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-300 rounded-lg shadow-lg transition-all border border-gray-200 dark:border-zinc-600"
+        className={`${storeEdit?.isEditMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} p-1.5 bg-white/90 dark:bg-zinc-800/90 hover:bg-white dark:hover:bg-zinc-700 text-gray-600 dark:text-gray-300 rounded-lg shadow-lg transition-all border border-gray-200 dark:border-zinc-600`}
         title={t('edit') || 'Edit'}
       >
         <PencilIcon className="w-3.5 h-3.5" />
@@ -357,13 +357,13 @@ export function EditableImage({
         placeholder
       )}
 
-      {/* Edit overlay */}
+      {/* Edit overlay - always visible in edit mode, otherwise on hover */}
       <button
         onClick={handleClick}
         disabled={isUploading}
-        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/40 transition-colors cursor-pointer"
+        className={`absolute inset-0 flex items-center justify-center ${storeEdit?.isEditMode ? 'bg-black/20' : 'bg-black/0 group-hover:bg-black/40'} transition-colors cursor-pointer`}
       >
-        <div className="opacity-0 group-hover:opacity-100 p-3 bg-white/90 dark:bg-zinc-800/90 rounded-full shadow-lg transition-all">
+        <div className={`${storeEdit?.isEditMode ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} p-3 bg-white/90 dark:bg-zinc-800/90 rounded-full shadow-lg transition-all`}>
           {isUploading ? (
             <SpinnerIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           ) : (
