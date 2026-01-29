@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import {
   Faq,
@@ -15,6 +16,7 @@ import {
   PrivacyContent,
   PrivacyContentDocument,
 } from '@shopit/api-database';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class ContentService {
@@ -32,6 +34,8 @@ export class ContentService {
     private termsModel: Model<TermsContentDocument>,
     @InjectModel(PrivacyContent.name)
     private privacyModel: Model<PrivacyContentDocument>,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   // ===== FAQ Methods =====
@@ -108,7 +112,30 @@ export class ContentService {
     message: string;
   }): Promise<ContactSubmissionDocument> {
     const submission = new this.submissionModel(data);
-    return submission.save();
+    await submission.save();
+
+    // Send email notification to admin
+    try {
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmail) {
+        await this.emailService.sendContactFormEmail(
+          adminEmail,
+          data.name,
+          data.email,
+          data.subject,
+          data.message,
+        );
+        this.logger.log(
+          `Contact form email sent to admin for submission from ${data.email}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send contact form email: ${(error as Error).message}`,
+      );
+    }
+
+    return submission;
   }
 
   async getSubmissions(status?: string): Promise<ContactSubmissionDocument[]> {

@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import {
   User,
@@ -15,6 +16,7 @@ import {
   TransactionType,
 } from '@shopit/api-database';
 import { SiteSettingsService } from '../admin/site-settings.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class BalanceService {
@@ -28,6 +30,8 @@ export class BalanceService {
     @InjectModel(BalanceTransaction.name)
     private transactionModel: Model<BalanceTransactionDocument>,
     private readonly siteSettingsService: SiteSettingsService,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -585,6 +589,36 @@ export class BalanceService {
       `Withdrawal request created: ${amount} GEL for seller ${sellerId}`,
     );
 
+    // Send email notifications
+    try {
+      const sellerName =
+        `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+
+      // Notify seller that their request was received
+      await this.emailService.sendWithdrawalPendingNotification(
+        user.email,
+        sellerName,
+        amount,
+        transaction._id.toString(),
+      );
+
+      // Notify admin about new withdrawal request
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmail) {
+        await this.emailService.sendWithdrawalRequestAdminNotification(
+          adminEmail,
+          sellerName,
+          user.email,
+          amount,
+          store.bankAccountNumber,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send withdrawal notification emails: ${(error as Error).message}`,
+      );
+    }
+
     return {
       success: true,
       message:
@@ -621,6 +655,24 @@ export class BalanceService {
     await transaction.save();
 
     this.logger.log(`Withdrawal completed: ${transactionId}`);
+
+    // Send completion email to seller
+    try {
+      const user = await this.userModel.findById(transaction.sellerId);
+      if (user) {
+        const sellerName =
+          `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        await this.emailService.sendWithdrawalCompletedNotification(
+          user.email,
+          sellerName,
+          amount,
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send withdrawal completed email: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -655,5 +707,24 @@ export class BalanceService {
     await transaction.save();
 
     this.logger.log(`Withdrawal rejected: ${transactionId}`);
+
+    // Send rejection email to seller
+    try {
+      const user = await this.userModel.findById(transaction.sellerId);
+      if (user) {
+        const sellerName =
+          `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        await this.emailService.sendWithdrawalRejectedNotification(
+          user.email,
+          sellerName,
+          amount,
+          reason || 'მიზეზი არ არის მითითებული',
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send withdrawal rejected email: ${(error as Error).message}`,
+      );
+    }
   }
 }

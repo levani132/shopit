@@ -722,7 +722,9 @@ export class OrdersService {
 
     // Send order notification emails (async, don't block order completion)
     this.sendOrderNotificationEmails(savedOrder).catch((error) => {
-      this.logger.error(`Failed to send order notification emails: ${error.message}`);
+      this.logger.error(
+        `Failed to send order notification emails: ${error.message}`,
+      );
     });
 
     return savedOrder;
@@ -731,7 +733,9 @@ export class OrdersService {
   /**
    * Send order notification emails to buyer, seller(s), and admin
    */
-  private async sendOrderNotificationEmails(order: OrderDocument): Promise<void> {
+  private async sendOrderNotificationEmails(
+    order: OrderDocument,
+  ): Promise<void> {
     try {
       // 1. Send email to buyer
       let buyerEmail: string | undefined;
@@ -741,7 +745,9 @@ export class OrdersService {
         const user = await this.userModel.findById(order.user);
         if (user) {
           buyerEmail = user.email;
-          buyerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+          buyerName =
+            `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+            user.email;
         }
       } else if (order.guestInfo) {
         buyerEmail = order.guestInfo.email;
@@ -749,20 +755,32 @@ export class OrdersService {
       }
 
       if (buyerEmail) {
-        await this.emailService.sendBuyerOrderConfirmation(order, buyerEmail, buyerName || 'მომხმარებელი');
+        await this.emailService.sendBuyerOrderConfirmation(
+          order,
+          buyerEmail,
+          buyerName || 'მომხმარებელი',
+        );
         this.logger.log(`Buyer order confirmation email sent to ${buyerEmail}`);
       }
 
       // 2. Send email to each store seller
-      const storeIds = [...new Set(order.orderItems.map(item => item.storeId.toString()))];
-      
+      const storeIds = [
+        ...new Set(order.orderItems.map((item) => item.storeId.toString())),
+      ];
+
       for (const storeId of storeIds) {
         const store = await this.storeModel.findById(storeId).populate('owner');
         if (store && store.owner) {
           const owner = store.owner as unknown as UserDocument;
           if (owner.email) {
-            await this.emailService.sendSellerNewOrderNotification(order, store, owner.email);
-            this.logger.log(`Seller order notification email sent to ${owner.email} for store ${store.name}`);
+            await this.emailService.sendSellerNewOrderNotification(
+              order,
+              store,
+              owner.email,
+            );
+            this.logger.log(
+              `Seller order notification email sent to ${owner.email} for store ${store.name}`,
+            );
           }
         }
       }
@@ -774,7 +792,9 @@ export class OrdersService {
         this.logger.log(`Admin order notification email sent to ${adminEmail}`);
       }
     } catch (error: any) {
-      this.logger.error(`Error sending order notification emails: ${error.message}`);
+      this.logger.error(
+        `Error sending order notification emails: ${error.message}`,
+      );
       // Don't throw - we don't want to fail the order because of email issues
     }
   }
@@ -918,10 +938,52 @@ export class OrdersService {
       // Process seller earnings when order is delivered
       await order.save();
       await this.balanceService.processOrderEarnings(order);
+
+      // Send delivery confirmation email to buyer
+      await this.sendDeliveryConfirmationEmail(order);
+
       return order;
     }
 
     return order.save();
+  }
+
+  /**
+   * Send delivery confirmation email to buyer
+   */
+  private async sendDeliveryConfirmationEmail(
+    order: OrderDocument,
+  ): Promise<void> {
+    try {
+      let buyerEmail: string | undefined;
+      let buyerName: string | undefined;
+
+      if (order.userId) {
+        const user = await this.userModel.findById(order.userId).exec();
+        if (user) {
+          buyerEmail = user.email;
+          buyerName =
+            `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+            user.email;
+        }
+      } else if (order.guestInfo?.email) {
+        buyerEmail = order.guestInfo.email;
+        buyerName = order.guestInfo.name || 'მომხმარებელი';
+      }
+
+      if (buyerEmail) {
+        await this.emailService.sendDeliveryConfirmation(
+          order,
+          buyerEmail,
+          buyerName || 'მომხმარებელი',
+        );
+        this.logger.log(`Delivery confirmation email sent to ${buyerEmail}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send delivery confirmation email: ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -1057,6 +1119,9 @@ export class OrdersService {
           `Order ${orderId} delivery - route update skipped: ${err}`,
         );
       }
+
+      // Send delivery confirmation email to buyer
+      await this.sendDeliveryConfirmationEmail(order);
 
       return order;
     }

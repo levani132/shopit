@@ -783,7 +783,7 @@ export class AuthController {
   ) {
     try {
       const frontendUrl =
-        this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+        this.configService.get('CORS_ORIGIN') || 'http://localhost:3000';
 
       const deviceInfo = {
         fingerprint: this.generateDeviceFingerprint(req),
@@ -834,7 +834,7 @@ export class AuthController {
     } catch (error) {
       console.error('Google auth callback error:', error);
       const frontendUrl =
-        this.configService.get('FRONTEND_URL') || 'http://localhost:3000';
+        this.configService.get('CORS_ORIGIN') || 'http://localhost:3000';
       res.redirect(`${frontendUrl}/register?error=auth_failed`);
     }
   }

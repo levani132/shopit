@@ -12,8 +12,13 @@
     /* Prevent zoom on touch devices */
     touch-action: manipulation;
     /* Apply fonts - Georgian font for Georgian text, Inter for Latin */
-    font-family: var(--font-georgian), var(--font-inter), system-ui, -apple-system, sans-serif;
-    
+    font-family:
+      var(--font-georgian),
+      var(--font-inter),
+      system-ui,
+      -apple-system,
+      sans-serif;
+
     /* Default accent color (indigo) - will be overridden by AccentColorProvider */
     --accent-50: #eef2ff;
     --accent-100: #e0e7ff;
@@ -32,7 +37,10 @@
     /* Prevent zoom on touch devices */
     touch-action: manipulation;
     /* Consistent font across all pages */
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+      Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+      'Segoe UI Symbol', 'Noto Color Emoji';
   }
 
   /* Prevent iOS zoom on input focus by ensuring minimum 16px font size */
@@ -51,72 +59,76 @@
     @apply px-6 py-3 text-white rounded-xl transition-all font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5;
     background-color: var(--accent-600);
   }
-  
+
   .btn-primary:hover {
     background-color: var(--accent-700);
   }
-  
+
   .dark .btn-primary {
     background-color: var(--accent-500);
   }
-  
+
   .dark .btn-primary:hover {
     background-color: var(--accent-600);
   }
-  
+
   .btn-primary {
-    box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent),
-                0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent);
+    box-shadow:
+      0 10px 15px -3px color-mix(in srgb, var(--accent-200) 40%, transparent),
+      0 4px 6px -4px color-mix(in srgb, var(--accent-200) 40%, transparent);
   }
-  
+
   .btn-primary:hover {
-    box-shadow: 0 20px 25px -5px color-mix(in srgb, var(--accent-300) 40%, transparent),
-                0 8px 10px -6px color-mix(in srgb, var(--accent-300) 40%, transparent);
+    box-shadow:
+      0 20px 25px -5px color-mix(in srgb, var(--accent-300) 40%, transparent),
+      0 8px 10px -6px color-mix(in srgb, var(--accent-300) 40%, transparent);
   }
-  
+
   .dark .btn-primary {
-    box-shadow: 0 10px 15px -3px color-mix(in srgb, var(--accent-900) 50%, transparent),
-                0 4px 6px -4px color-mix(in srgb, var(--accent-900) 50%, transparent);
+    box-shadow:
+      0 10px 15px -3px color-mix(in srgb, var(--accent-900) 50%, transparent),
+      0 4px 6px -4px color-mix(in srgb, var(--accent-900) 50%, transparent);
   }
-  
+
   .dark .btn-primary:hover {
-    box-shadow: 0 20px 25px -5px color-mix(in srgb, var(--accent-800) 50%, transparent),
-                0 8px 10px -6px color-mix(in srgb, var(--accent-800) 50%, transparent);
+    box-shadow:
+      0 20px 25px -5px color-mix(in srgb, var(--accent-800) 50%, transparent),
+      0 8px 10px -6px color-mix(in srgb, var(--accent-800) 50%, transparent);
   }
 
   .btn-secondary {
     @apply px-6 py-3 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all font-semibold border border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600;
   }
-  
+
   /* Accent color utility classes */
   .accent-bg {
     background-color: var(--accent-600);
   }
-  
+
   .dark .accent-bg {
     background-color: var(--accent-500);
   }
-  
+
   .accent-bg-hover:hover {
     background-color: var(--accent-700);
   }
-  
+
   .dark .accent-bg-hover:hover {
     background-color: var(--accent-600);
   }
-  
+
   .accent-text {
     color: var(--accent-600);
   }
-  
+
   .dark .accent-text {
     color: var(--accent-400);
   }
-  
+
   .accent-border {
     border-color: var(--accent-300);
   }
-  
+
   .dark .accent-border {
     border-color: var(--accent-600);
   }
@@ -133,21 +145,22 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   /* Floating animation for payment logos */
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0px);
     }
     50% {
       transform: translateY(-10px);
     }
   }
-  
+
   .animate-float {
     animation: float 3s ease-in-out infinite;
   }
-  
+
   /* Fly to header animation for registration preview */
   @keyframes fly-to-header {
     0% {
@@ -161,7 +174,7 @@
       transform: scale(1);
     }
   }
-  
+
   .animate-fly-to-header {
     animation: fly-to-header 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
