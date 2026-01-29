@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { OrderDocument, StoreDocument, UserDocument } from '@shopit/api-database';
+import { OrderDocument, StoreDocument } from '@shopit/api-database';
 
 export interface EmailOptions {
   to: string;
@@ -61,8 +61,8 @@ export class EmailService {
 
       this.logger.log(`Email sent to ${options.to}: ${options.subject}`);
       return true;
-    } catch (error: any) {
-      this.logger.error(`Failed to send email to ${options.to}: ${error.message}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${options.to}: ${(error as Error).message}`);
       return false;
     }
   }
@@ -222,8 +222,8 @@ export class EmailService {
     } else {
       shippingInfo = `
         <p><strong>მიტანის მისამართი:</strong></p>
-        <p>${order.shippingDetails?.fullName || order.recipientName || ''}<br/>
-        ${order.shippingDetails?.phone || ''}<br/>
+        <p>${order.recipientName || ''}<br/>
+        ${order.shippingDetails?.phoneNumber || ''}<br/>
         ${order.shippingDetails?.address || ''}, ${order.shippingDetails?.city || ''}</p>
       `;
     }
@@ -330,7 +330,7 @@ export class EmailService {
           ${order.shippingDetails ? `
           <div style="background-color: #f9fafb; border-radius: 8px; padding: 15px; margin: 15px 0;">
             <p style="margin: 0;"><strong>მისამართი:</strong> ${order.shippingDetails.address}, ${order.shippingDetails.city}</p>
-            <p style="margin: 5px 0;"><strong>ტელეფონი:</strong> ${order.shippingDetails.phone}</p>
+            <p style="margin: 5px 0;"><strong>ტელეფონი:</strong> ${order.shippingDetails.phoneNumber || ''}</p>
           </div>
           ` : ''}
           
