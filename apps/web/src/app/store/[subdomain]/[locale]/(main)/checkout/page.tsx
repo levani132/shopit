@@ -439,13 +439,12 @@ export default function CheckoutPage() {
 
     if (isAuthenticated) {
       if (!addressesLoaded) return;
-      // If self-pickup is available, go to delivery method selection first
-      if (selfPickupAvailable && currentStep === 'auth') {
-        setCurrentStep('delivery');
-      } else if (deliveryMethod === 'pickup') {
-        // For self-pickup, skip shipping address and go to review
+      // Skip delivery step - it's now inline on review page
+      if (deliveryMethod === 'pickup') {
+        // For self-pickup, go directly to review
         setCurrentStep('review');
       } else if (!shippingAddress) {
+        // Need address for delivery
         setCurrentStep('shipping');
       } else {
         setCurrentStep('review');
@@ -453,8 +452,6 @@ export default function CheckoutPage() {
     } else if (isGuestCheckout) {
       if (!guestInfo) {
         setCurrentStep('guest');
-      } else if (selfPickupAvailable && currentStep === 'guest') {
-        setCurrentStep('delivery');
       } else if (deliveryMethod === 'pickup') {
         setCurrentStep('review');
       } else if (!shippingAddress) {
@@ -472,7 +469,6 @@ export default function CheckoutPage() {
     guestInfo,
     shippingAddress,
     addressesLoaded,
-    selfPickupAvailable,
     deliveryMethod,
     currentStep,
     isEditingAddress,
@@ -482,12 +478,8 @@ export default function CheckoutPage() {
   const handleGuestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setGuestInfo(guestForm);
-    // If self-pickup is available, go to delivery method selection
-    if (selfPickupAvailable) {
-      setCurrentStep('delivery');
-    } else {
-      setCurrentStep('shipping');
-    }
+    // Go to shipping address selection (delivery method is now inline on review)
+    setCurrentStep('shipping');
   };
 
   // Handle delivery method selection
@@ -996,7 +988,7 @@ export default function CheckoutPage() {
                   onClick={() => handleDeliveryMethodSelect('delivery')}
                   className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
                     deliveryMethod === 'delivery'
-                      ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/20'
+                      ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50'
                       : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                   }`}
                 >
@@ -1032,7 +1024,7 @@ export default function CheckoutPage() {
                   onClick={() => handleDeliveryMethodSelect('pickup')}
                   className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
                     deliveryMethod === 'pickup'
-                      ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/20'
+                      ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50'
                       : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                   }`}
                 >
@@ -1102,7 +1094,7 @@ export default function CheckoutPage() {
                       key={addr._id}
                       className={`w-full p-4 rounded-lg border-2 transition-colors ${
                         shippingAddress?._id === addr._id
-                          ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]'
+                          ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50'
                           : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                       }`}
                     >
@@ -1338,38 +1330,54 @@ export default function CheckoutPage() {
                 {t('reviewOrder')}
               </h2>
 
-              {/* Delivery method summary */}
-              {deliveryMethod === 'pickup' ? (
-                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="font-medium text-green-800 dark:text-green-300">
-                          {tDashboard('selfPickupOption')}
-                        </p>
-                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-                          {tDashboard('selfPickupFree')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-green-700 dark:text-green-400">
-                        {tDashboard('selfPickupAddress')}:
-                      </p>
-                      <p className="text-sm text-green-600 dark:text-green-500">
-                        {storeInfo?.address}
-                      </p>
-                    </div>
-                    {selfPickupAvailable && (
-                      <button
-                        onClick={() => {
-                          setIsEditingAddress(true);
-                          setCurrentStep('delivery');
-                        }}
-                        className="text-sm text-green-600 dark:text-green-400 hover:underline"
-                      >
-                        {t('change')}
-                      </button>
-                    )}
+              {/* Delivery Method Selection - inline toggle when pickup is available */}
+              {selfPickupAvailable && (
+                <div className="mb-6">
+                  <p className="font-medium text-gray-900 dark:text-white mb-3">
+                    {t('deliveryMethod')}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setDeliveryMethod('delivery');
+                        if (!shippingAddress) {
+                          setCurrentStep('shipping');
+                        }
+                      }}
+                      className={`flex-1 py-3 px-4 rounded-lg border-2 transition-colors text-sm font-medium ${
+                        deliveryMethod === 'delivery'
+                          ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {t('homeDelivery')}
+                    </button>
+                    <button
+                      onClick={() => setDeliveryMethod('pickup')}
+                      className={`flex-1 py-3 px-4 rounded-lg border-2 transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
+                        deliveryMethod === 'pickup'
+                          ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {tDashboard('selfPickupOption')}
+                      <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                        {tDashboard('selfPickupFree')}
+                      </span>
+                    </button>
                   </div>
+                </div>
+              )}
+
+              {/* Delivery address or Pickup location */}
+              {deliveryMethod === 'pickup' ? (
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {tDashboard('selfPickupAddress')}:
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {storeInfo?.address}
+                  </p>
                 </div>
               ) : shippingAddress ? (
                 <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
@@ -1411,11 +1419,9 @@ export default function CheckoutPage() {
                     <button
                       onClick={() => {
                         setIsEditingAddress(true);
-                        setCurrentStep(
-                          selfPickupAvailable ? 'delivery' : 'shipping',
-                        );
+                        setCurrentStep('shipping');
                       }}
-                      className="text-sm text-[var(--store-accent-600)] hover:underline"
+                      className="text-sm text-[var(--store-accent-600)] dark:text-[var(--store-accent-400)] hover:underline"
                     >
                       {t('change')}
                     </button>
