@@ -27,6 +27,21 @@ function isInGeorgia(location: { lat: number; lng: number }): boolean {
   );
 }
 
+// Calculate distance between two points using Haversine formula (in km)
+function getDistanceFromTbilisi(lat: number, lng: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat - TBILISI_CENTER.lat) * Math.PI) / 180;
+  const dLng = ((lng - TBILISI_CENTER.lng) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((TBILISI_CENTER.lat * Math.PI) / 180) *
+      Math.cos((lat * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 // CartoDB Voyager tiles - we'll use CSS filters for dark mode
 const TILE_URL =
   'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
@@ -226,10 +241,25 @@ function AddressPickerMap({
     try {
       // Bias results towards Georgia
       const response = await fetch(
-        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=5&lang=en`,
+        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=10&lang=en`,
       );
       const data = await response.json();
-      setSearchResults(data.features || []);
+      const features: PhotonFeature[] = data.features || [];
+
+      // Sort results by distance from Tbilisi center (closest first)
+      const sortedFeatures = features
+        .map((feature) => {
+          const [lng, lat] = feature.geometry.coordinates;
+          return {
+            feature,
+            distance: getDistanceFromTbilisi(lat, lng),
+          };
+        })
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5)
+        .map(({ feature }) => feature);
+
+      setSearchResults(sortedFeatures);
       setShowResults(true);
     } catch (err) {
       console.error('Address search error:', err);
