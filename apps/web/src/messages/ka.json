@@ -24,7 +24,7 @@
     "saveFailed": "შენახვა ვერ მოხერხდა",
     "changeColor": "ფერის შეცვლა"
   },
-  
+
   "nav": {
     "home": "მთავარი",
     "features": "ფუნქციები",
@@ -991,6 +991,8 @@
     "homeDeliveryDescription": "თქვენს მისამართზე მოგიტანთ შეკვეთას",
     "selfPickupDescription": "წაიღეთ შეკვეთა მაღაზიიდან",
     "shippingTo": "მიტანა",
+    "noAddressSelected": "გთხოვთ დაამატოთ მიტანის მისამართი",
+    "addAddress": "მისამართის დამატება",
     "change": "შეცვლა",
     "paymentMethod": "გადახდის მეთოდი",
     "bankOfGeorgia": "საქართველოს ბანკი",

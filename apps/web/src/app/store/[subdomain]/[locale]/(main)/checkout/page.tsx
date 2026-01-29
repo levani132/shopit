@@ -439,13 +439,17 @@ export default function CheckoutPage() {
 
     if (isAuthenticated) {
       if (!addressesLoaded) return;
-      // Skip delivery step - it's now inline on review page
+      // For self-pickup, go directly to review (no address needed)
       if (deliveryMethod === 'pickup') {
-        // For self-pickup, go directly to review
         setCurrentStep('review');
       } else if (!shippingAddress) {
-        // Need address for delivery
-        setCurrentStep('shipping');
+        // Need address for delivery, but if pickup is available, go to review first
+        // so user can choose pickup option
+        if (selfPickupAvailable) {
+          setCurrentStep('review');
+        } else {
+          setCurrentStep('shipping');
+        }
       } else {
         setCurrentStep('review');
       }
@@ -455,7 +459,12 @@ export default function CheckoutPage() {
       } else if (deliveryMethod === 'pickup') {
         setCurrentStep('review');
       } else if (!shippingAddress) {
-        setCurrentStep('shipping');
+        // If pickup available, go to review so user can choose
+        if (selfPickupAvailable) {
+          setCurrentStep('review');
+        } else {
+          setCurrentStep('shipping');
+        }
       } else {
         setCurrentStep('review');
       }
@@ -472,14 +481,19 @@ export default function CheckoutPage() {
     deliveryMethod,
     currentStep,
     isEditingAddress,
+    selfPickupAvailable,
   ]);
 
   // Handle guest info submit
   const handleGuestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setGuestInfo(guestForm);
-    // Go to shipping address selection (delivery method is now inline on review)
-    setCurrentStep('shipping');
+    // If pickup available, go to review so user can choose; otherwise need address
+    if (selfPickupAvailable) {
+      setCurrentStep('review');
+    } else {
+      setCurrentStep('shipping');
+    }
   };
 
   // Handle delivery method selection
@@ -1424,6 +1438,24 @@ export default function CheckoutPage() {
                       className="text-sm text-[var(--store-accent-600)] dark:text-[var(--store-accent-400)] hover:underline"
                     >
                       {t('change')}
+                    </button>
+                  </div>
+                </div>
+              ) : deliveryMethod === 'delivery' ? (
+                // No address selected for delivery - prompt to add
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      {t('noAddressSelected')}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setIsEditingAddress(true);
+                        setCurrentStep('shipping');
+                      }}
+                      className="px-4 py-2 text-sm font-medium bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
+                    >
+                      {t('addAddress')}
                     </button>
                   </div>
                 </div>
