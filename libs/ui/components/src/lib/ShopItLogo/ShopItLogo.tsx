@@ -109,7 +109,7 @@ export function ShopItLogo({
               <stop offset="0%" stopColor={`var(${accentVar}, #6366f1)`} />
               <stop
                 offset="100%"
-                stopColor={`var(${accentVarDark}, #9333ea)`}
+                stopColor={`var(${accentVarDark}, #4338ca)`}
               />
             </linearGradient>
           </defs>
@@ -124,7 +124,7 @@ export function ShopItLogo({
             bottom: 0,
             left: '50%',
             transform: 'translateX(-50%)',
-            background: `linear-gradient(to bottom right, var(${accentVar}, #6366f1), var(${accentVarDark}, #9333ea))`,
+            background: `linear-gradient(to bottom right, var(${accentVar}, #6366f1), var(${accentVarDark}, #4338ca))`,
           }}
         >
           <span
@@ -154,10 +154,7 @@ export interface ShopItIconProps {
 /**
  * Icon-only version of the ShopIt logo for compact spaces.
  */
-export function ShopItIcon({
-  size = 32,
-  className = '',
-}: ShopItIconProps) {
+export function ShopItIcon({ size = 32, className = '' }: ShopItIconProps) {
   const handleHeight = size * 0.25;
   const handleWidth = size * 0.5;
   const bagSize = size * 0.85;
@@ -197,7 +194,7 @@ export function ShopItIcon({
             y2="100%"
           >
             <stop offset="0%" stopColor="var(--accent-500, #6366f1)" />
-            <stop offset="100%" stopColor="#9333ea" />
+            <stop offset="100%" stopColor="var(--accent-700, #4338ca)" />
           </linearGradient>
         </defs>
       </svg>
@@ -212,7 +209,7 @@ export function ShopItIcon({
           left: '50%',
           transform: 'translateX(-50%)',
           background:
-            'linear-gradient(to bottom right, var(--accent-500, #6366f1), #9333ea)',
+            'linear-gradient(to bottom right, var(--accent-500, #6366f1), var(--accent-700, #4338ca))',
         }}
       >
         <span
