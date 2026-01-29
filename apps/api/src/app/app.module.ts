@@ -19,6 +19,7 @@ import { SettingsModule } from '../settings/settings.module';
 import { ContentModule } from '../content/content.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RoutesModule } from '../routes/routes.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { RoutesModule } from '../routes/routes.module';
     ContentModule,
     NotificationsModule,
     RoutesModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

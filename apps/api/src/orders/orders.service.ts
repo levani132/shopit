@@ -26,6 +26,8 @@ import { BalanceService } from './balance.service';
 import { SiteSettingsService } from '../admin/site-settings.service';
 import { DeliveryFeeService, ShippingSize } from './delivery-fee.service';
 import { RoutesService } from '../routes/routes.service';
+import { EmailService } from '../email/email.service';
+import { ConfigService } from '@nestjs/config';
 import {
   VehicleType,
   VEHICLE_CAPACITIES,
@@ -49,6 +51,8 @@ export class OrdersService {
     private deliveryFeeService: DeliveryFeeService,
     @Inject(forwardRef(() => RoutesService))
     private routesService: RoutesService,
+    private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -714,7 +718,65 @@ export class OrdersService {
     // Calculate delivery deadline based on store's prep and delivery times
     order.deliveryDeadline = this.calculateDeliveryDeadline(order);
 
-    return order.save();
+    const savedOrder = await order.save();
+
+    // Send order notification emails (async, don't block order completion)
+    this.sendOrderNotificationEmails(savedOrder).catch((error) => {
+      this.logger.error(`Failed to send order notification emails: ${error.message}`);
+    });
+
+    return savedOrder;
+  }
+
+  /**
+   * Send order notification emails to buyer, seller(s), and admin
+   */
+  private async sendOrderNotificationEmails(order: OrderDocument): Promise<void> {
+    try {
+      // 1. Send email to buyer
+      let buyerEmail: string | undefined;
+      let buyerName: string | undefined;
+
+      if (order.user) {
+        const user = await this.userModel.findById(order.user);
+        if (user) {
+          buyerEmail = user.email;
+          buyerName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        }
+      } else if (order.guestInfo) {
+        buyerEmail = order.guestInfo.email;
+        buyerName = order.guestInfo.fullName || 'მომხმარებელი';
+      }
+
+      if (buyerEmail) {
+        await this.emailService.sendBuyerOrderConfirmation(order, buyerEmail, buyerName || 'მომხმარებელი');
+        this.logger.log(`Buyer order confirmation email sent to ${buyerEmail}`);
+      }
+
+      // 2. Send email to each store seller
+      const storeIds = [...new Set(order.orderItems.map(item => item.storeId.toString()))];
+      
+      for (const storeId of storeIds) {
+        const store = await this.storeModel.findById(storeId).populate('owner');
+        if (store && store.owner) {
+          const owner = store.owner as unknown as UserDocument;
+          if (owner.email) {
+            await this.emailService.sendSellerNewOrderNotification(order, store, owner.email);
+            this.logger.log(`Seller order notification email sent to ${owner.email} for store ${store.name}`);
+          }
+        }
+      }
+
+      // 3. Send email to admin
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmail) {
+        await this.emailService.sendAdminOrderNotification(order, adminEmail);
+        this.logger.log(`Admin order notification email sent to ${adminEmail}`);
+      }
+    } catch (error: any) {
+      this.logger.error(`Error sending order notification emails: ${error.message}`);
+      // Don't throw - we don't want to fail the order because of email issues
+    }
   }
 
   /**
