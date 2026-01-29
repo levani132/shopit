@@ -720,8 +720,8 @@ export default function CheckoutPage() {
         shippingDetails:
           deliveryMethod === 'pickup'
             ? {
-                address: storeInfo?.address || 'Self Pickup',
-                city: 'Self Pickup',
+                address: storeInfo?.address || t('selfPickup'),
+                city: t('selfPickup'),
                 postalCode: '',
                 country: 'Georgia',
                 phoneNumber: guestInfo?.phoneNumber || user?.phoneNumber || '',

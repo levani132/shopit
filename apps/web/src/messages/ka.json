@@ -721,6 +721,7 @@
     "selfPickupEnabled": "თვითგატანის ნებართვა",
     "selfPickupDescription": "მომხმარებლებს შეუძლიათ შეკვეთის მაღაზიიდან წაღება. თვითგატანისას მიწოდება უფასოა. დარწმუნდით, რომ მაღაზიის მისამართი სწორად არის მითითებული.",
     "selfPickupOption": "მაღაზიიდან წაღება",
+    "selfPickup": "თვითგატანა",
     "selfPickupFree": "უფასო",
     "selfPickupAddress": "წაღების მისამართი",
     "contentManagement": "კონტენტი",

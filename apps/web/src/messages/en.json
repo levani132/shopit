@@ -720,6 +720,7 @@
     "selfPickupEnabled": "Allow self-pickup",
     "selfPickupDescription": "Let customers pick up orders from your store. Shipping is free for self-pickup orders. Make sure your store address is set correctly.",
     "selfPickupOption": "Pick up from store",
+    "selfPickup": "Self Pickup",
     "selfPickupFree": "Free",
     "selfPickupAddress": "Pickup address",
     "contentManagement": "Content",
