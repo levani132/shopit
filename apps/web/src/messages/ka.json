@@ -1020,7 +1020,9 @@
     "paymentWindowClosed": "გადახდის ფანჯარა დაიხურა",
     "paymentWindowClosedDescription": "გადახდის ფანჯარა დაიხურა. შეგიძლიათ სცადოთ თავიდან შეკვეთების გვერდიდან.",
     "cancelPayment": "გადახდის გაუქმება",
-    "close": "დახურვა"
+    "close": "დახურვა",
+    "selectAddressToCalculate": "აირჩიეთ მისამართი ფასის გამოსათვლელად",
+    "calculating": "გამოთვლა..."
   },
   "courier": {
     "goToDashboard": "დაფაზე გადასვლა",

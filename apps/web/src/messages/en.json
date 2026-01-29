@@ -1019,7 +1019,9 @@
     "paymentWindowClosed": "Payment Window Closed",
     "paymentWindowClosedDescription": "The payment window was closed. You can try again from your orders page.",
     "cancelPayment": "Cancel Payment",
-    "close": "Close"
+    "close": "Close",
+    "selectAddressToCalculate": "Select address to calculate",
+    "calculating": "Calculating..."
   },
   "courier": {
     "goToDashboard": "Go to Dashboard",
