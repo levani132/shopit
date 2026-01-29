@@ -602,16 +602,22 @@ export class BalanceService {
         transaction._id.toString(),
       );
 
-      // Notify admin about new withdrawal request
-      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-      if (adminEmail) {
-        await this.emailService.sendWithdrawalRequestAdminNotification(
-          adminEmail,
-          sellerName,
-          user.email,
-          amount,
-          store.bankAccountNumber,
-        );
+      // Notify admin(s) about new withdrawal request - supports comma-separated emails
+      const adminEmails = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmails) {
+        const emails = adminEmails
+          .split(',')
+          .map((e) => e.trim())
+          .filter(Boolean);
+        for (const email of emails) {
+          await this.emailService.sendWithdrawalAdminNotification(
+            email,
+            sellerName,
+            user.email,
+            amount,
+            store.bankAccountNumber,
+          );
+        }
       }
     } catch (error) {
       this.logger.error(

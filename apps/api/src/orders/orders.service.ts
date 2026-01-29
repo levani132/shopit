@@ -769,9 +769,11 @@ export class OrdersService {
       ];
 
       for (const storeId of storeIds) {
-        const store = await this.storeModel.findById(storeId).populate('owner');
-        if (store && store.owner) {
-          const owner = store.owner as unknown as UserDocument;
+        const store = await this.storeModel
+          .findById(storeId)
+          .populate('ownerId');
+        if (store && store.ownerId) {
+          const owner = store.ownerId as unknown as UserDocument;
           if (owner.email) {
             await this.emailService.sendSellerNewOrderNotification(
               order,
@@ -785,11 +787,17 @@ export class OrdersService {
         }
       }
 
-      // 3. Send email to admin
-      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-      if (adminEmail) {
-        await this.emailService.sendAdminOrderNotification(order, adminEmail);
-        this.logger.log(`Admin order notification email sent to ${adminEmail}`);
+      // 3. Send email to admin(s) - supports comma-separated emails
+      const adminEmails = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmails) {
+        const emails = adminEmails
+          .split(',')
+          .map((e) => e.trim())
+          .filter(Boolean);
+        for (const email of emails) {
+          await this.emailService.sendAdminOrderNotification(order, email);
+          this.logger.log(`Admin order notification email sent to ${email}`);
+        }
       }
     } catch (error: any) {
       this.logger.error(

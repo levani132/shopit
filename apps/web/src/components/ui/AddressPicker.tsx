@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 
-// Tbilisi default coordinates
-const TBILISI_CENTER = { lat: 41.7151, lng: 44.8271 };
+// Tbilisi center coordinates (Freedom Square area - central Tbilisi)
+const TBILISI_CENTER = { lat: 41.6934, lng: 44.8015 };
 const DEFAULT_ZOOM = 13;
 
 // Georgia bounding box (approximate)
@@ -25,21 +25,6 @@ function isInGeorgia(location: { lat: number; lng: number }): boolean {
     location.lng >= GEORGIA_BOUNDS.minLng &&
     location.lng <= GEORGIA_BOUNDS.maxLng
   );
-}
-
-// Calculate distance between two points using Haversine formula (in km)
-function getDistanceFromTbilisi(lat: number, lng: number): number {
-  const R = 6371; // Earth's radius in km
-  const dLat = ((lat - TBILISI_CENTER.lat) * Math.PI) / 180;
-  const dLng = ((lng - TBILISI_CENTER.lng) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((TBILISI_CENTER.lat * Math.PI) / 180) *
-      Math.cos((lat * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
 }
 
 // CartoDB Voyager tiles - we'll use CSS filters for dark mode
@@ -239,25 +224,31 @@ function AddressPickerMap({
 
     setIsSearching(true);
     try {
-      // Bias results towards Georgia
+      // Bias results towards Tbilisi, fetch more to allow filtering
       const response = await fetch(
-        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=10&lang=en`,
+        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=20&lang=en`,
       );
       const data = await response.json();
       const features: PhotonFeature[] = data.features || [];
 
-      // Sort results by distance from Tbilisi center (closest first)
-      const sortedFeatures = features
-        .map((feature) => {
-          const [lng, lat] = feature.geometry.coordinates;
-          return {
-            feature,
-            distance: getDistanceFromTbilisi(lat, lng),
-          };
-        })
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, 5)
-        .map(({ feature }) => feature);
+      // Separate Tbilisi and other results, keeping API's native relevance order
+      // Photon API already ranks by: text relevance + OSM importance + location bias
+      const tbilisiResults: PhotonFeature[] = [];
+      const otherResults: PhotonFeature[] = [];
+
+      for (const feature of features) {
+        const city = (feature.properties.city || '').toLowerCase();
+        const state = (feature.properties.state || '').toLowerCase();
+
+        if (city === 'tbilisi' || city === 'თბილისი' || state === 'tbilisi') {
+          tbilisiResults.push(feature);
+        } else {
+          otherResults.push(feature);
+        }
+      }
+
+      // Tbilisi first (API's relevance order), then others (API's relevance order)
+      const sortedFeatures = [...tbilisiResults, ...otherResults].slice(0, 10);
 
       setSearchResults(sortedFeatures);
       setShowResults(true);

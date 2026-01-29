@@ -114,20 +114,26 @@ export class ContentService {
     const submission = new this.submissionModel(data);
     await submission.save();
 
-    // Send email notification to admin
+    // Send email notification to admin(s) - supports comma-separated emails
     try {
-      const adminEmail = this.configService.get<string>('ADMIN_EMAIL');
-      if (adminEmail) {
-        await this.emailService.sendContactFormEmail(
-          adminEmail,
-          data.name,
-          data.email,
-          data.subject,
-          data.message,
-        );
-        this.logger.log(
-          `Contact form email sent to admin for submission from ${data.email}`,
-        );
+      const adminEmails = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmails) {
+        const emails = adminEmails
+          .split(',')
+          .map((e) => e.trim())
+          .filter(Boolean);
+        for (const email of emails) {
+          await this.emailService.sendContactFormEmail(
+            email,
+            data.name,
+            data.email,
+            data.subject,
+            data.message,
+          );
+          this.logger.log(
+            `Contact form email sent to ${email} for submission from ${data.email}`,
+          );
+        }
       }
     } catch (error) {
       this.logger.error(
