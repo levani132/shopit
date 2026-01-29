@@ -7,6 +7,7 @@ import { StoreEditProvider } from '../../../../contexts/StoreEditContext';
 import { CartProvider } from '../../../../contexts/CartContext';
 import { CheckoutProvider } from '../../../../contexts/CheckoutContext';
 import { routing } from '../../../../i18n/routing';
+import { inter, notoSansGeorgian } from '../../../fonts';
 import '../../../global.css';
 
 interface StoreLayoutProps {
@@ -41,7 +42,7 @@ export default async function StoreLayout({
     .default;
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} ${notoSansGeorgian.variable}`} suppressHydrationWarning>
       <head>
         {/* Prevent theme flash - runs before React hydrates */}
         <script

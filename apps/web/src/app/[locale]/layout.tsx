@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '../../i18n/routing';
 import { ClientProviders } from '../../components/layout/ClientProviders';
 import { ConditionalLayout } from '../../components/layout/ConditionalLayout';
+import { inter, notoSansGeorgian } from '../fonts';
 import '../global.css';
 
 type Params = Promise<{ locale: string }>;
@@ -52,7 +53,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} ${notoSansGeorgian.variable}`} suppressHydrationWarning>
       <head>
         <meta
           name="viewport"

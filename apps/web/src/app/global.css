@@ -11,6 +11,8 @@
     -webkit-text-size-adjust: 100%;
     /* Prevent zoom on touch devices */
     touch-action: manipulation;
+    /* Apply fonts - Georgian font for Georgian text, Inter for Latin */
+    font-family: var(--font-georgian), var(--font-inter), system-ui, -apple-system, sans-serif;
     
     /* Default accent color (indigo) - will be overridden by AccentColorProvider */
     --accent-50: #eef2ff;
