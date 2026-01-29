@@ -990,6 +990,8 @@
     "homeDeliveryDescription": "We'll deliver your order to your address",
     "selfPickupDescription": "Pick up your order from the store address",
     "shippingTo": "Shipping to",
+    "noAddressSelected": "Please add a delivery address",
+    "addAddress": "Add Address",
     "change": "Change",
     "paymentMethod": "Payment Method",
     "bankOfGeorgia": "Bank of Georgia",
