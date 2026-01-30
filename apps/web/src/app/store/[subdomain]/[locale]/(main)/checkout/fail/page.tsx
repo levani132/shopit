@@ -9,7 +9,6 @@ export default function CheckoutFailPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'ka';
-  const subdomain = params?.subdomain as string;
   const errorMessage = searchParams.get('error');
 
   return (
@@ -62,4 +61,3 @@ export default function CheckoutFailPage() {
     </div>
   );
 }
-

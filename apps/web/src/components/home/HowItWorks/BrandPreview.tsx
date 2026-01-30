@@ -7,7 +7,7 @@ import {
 
 // Map of available accent colors for brand preview (subset of all accent colors)
 const BRAND_COLOR_OPTIONS: AccentColorName[] = [
-  'indigo',
+  'blue',
   'pink',
   'emerald',
   'amber',

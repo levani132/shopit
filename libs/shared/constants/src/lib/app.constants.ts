@@ -187,6 +187,20 @@ export const ACCENT_COLORS_FULL = STORE_BRAND_COLORS;
 
 // Main Site Accent Colors - Full palette for site-wide theming
 export const MAIN_SITE_ACCENT_COLORS = {
+  blue: {
+    name: 'blue',
+    hex: '#3b82f6',
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
+  },
   indigo: {
     name: 'indigo',
     hex: '#6366f1',
@@ -242,20 +256,6 @@ export const MAIN_SITE_ACCENT_COLORS = {
     700: '#b45309',
     800: '#92400e',
     900: '#78350f',
-  },
-  blue: {
-    name: 'blue',
-    hex: '#3b82f6',
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#3b82f6',
-    600: '#2563eb',
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
   },
   purple: {
     name: 'purple',

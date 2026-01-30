@@ -12,7 +12,6 @@ export default function CheckoutSuccessPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'ka';
-  const subdomain = params?.subdomain as string;
   const orderId = searchParams.get('orderId');
 
   const { clearCart } = useCart();
@@ -74,4 +73,3 @@ export default function CheckoutSuccessPage() {
     </div>
   );
 }
-
