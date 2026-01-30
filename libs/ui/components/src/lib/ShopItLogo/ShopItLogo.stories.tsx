@@ -109,6 +109,137 @@ export const Sizes: Story = {
 };
 
 /**
+ * Compare component with actual PNG icons side-by-side.
+ * This helps verify that the component matches the PWA icons.
+ */
+export const CompareWithPngIcons: Story = {
+  render: () => {
+    // Size mappings: component size -> pixel size
+    const sizes = [
+      { label: '48px', size: 48 },
+      { label: '72px', size: 72 },
+      { label: '96px', size: 96 },
+      { label: '128px', size: 128 },
+    ];
+
+    return (
+      <div className="flex flex-col gap-8">
+        <div className="text-sm text-gray-500 mb-2">
+          Left: Component | Right: PNG Icon
+        </div>
+        {sizes.map(({ label, size }) => (
+          <div key={label} className="flex items-center gap-8">
+            <span className="w-16 text-sm text-gray-500 font-mono">
+              {label}
+            </span>
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border">
+              <div className="flex flex-col items-center gap-1">
+                <ShopItIcon size={size} />
+                <span className="text-xs text-gray-400">Component</span>
+              </div>
+              <div className="w-px h-12 bg-gray-200" />
+              <div className="flex flex-col items-center gap-1">
+                <img
+                  src={`/icons/blue/pwa/icon-${size}x${size}.png`}
+                  alt={`${size}px icon`}
+                  width={size}
+                  height={size}
+                  style={{ width: size, height: size, marginTop: 5 }}
+                />
+                <span className="text-xs text-gray-400">PNG</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Direct comparison between the ShopItIcon component and actual PNG icons from /public/icons/. Border radius and font sizing should match.',
+      },
+    },
+  },
+};
+
+/**
+ * Compare all available icon colors with PNG versions.
+ */
+export const CompareAllColors: Story = {
+  render: () => {
+    const colors = [
+      'blue',
+      'rose',
+      'green',
+      'purple',
+      'orange',
+      'indigo',
+      'black',
+    ];
+    const size = 72;
+
+    // Color to CSS variable mapping
+    const colorCssVars: Record<string, { 500: string; 700: string }> = {
+      blue: { 500: '#3b82f6', 700: '#1d4ed8' },
+      rose: { 500: '#f43f5e', 700: '#be123c' },
+      green: { 500: '#22c55e', 700: '#15803d' },
+      purple: { 500: '#a855f7', 700: '#7e22ce' },
+      orange: { 500: '#f97316', 700: '#c2410c' },
+      indigo: { 500: '#6366f1', 700: '#4338ca' },
+      black: { 500: '#18181b', 700: '#09090b' },
+    };
+
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="text-sm text-gray-500 mb-2">
+          Each row: Component (left) vs PNG Icon (right) at 72px
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {colors.map((color) => (
+            <div
+              key={color}
+              className="flex flex-col items-center gap-3 p-4 bg-white rounded-lg border shadow-sm"
+              style={
+                {
+                  '--accent-500': colorCssVars[color][500],
+                  '--accent-700': colorCssVars[color][700],
+                } as React.CSSProperties
+              }
+            >
+              <div className="flex items-center gap-3">
+                <ShopItIcon size={size} />
+                <div className="w-px h-12 bg-gray-200" />
+                <img
+                  src={`/icons/${color}/pwa/icon-${size}x${size}.png`}
+                  alt={`${color} icon`}
+                  width={size}
+                  height={size}
+                  style={{ width: size, height: size, marginTop: 5 }}
+                />
+              </div>
+              <span className="text-sm font-medium capitalize text-gray-700">
+                {color}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  },
+  parameters: {
+    layout: 'padded',
+    docs: {
+      description: {
+        story:
+          'Compare ShopItIcon component rendering against all 7 available PNG color variants.',
+      },
+    },
+  },
+};
+
+/**
  * The three available color variants.
  */
 export const Variants: Story = {
@@ -176,19 +307,62 @@ export const WithAndWithoutText: Story = {
  */
 export const IconOnly: Story = {
   render: () => (
-    <div className="flex items-end gap-6">
-      <ShopItIcon size={24} />
-      <ShopItIcon size={32} />
-      <ShopItIcon size={40} />
-      <ShopItIcon size={52} />
-      <ShopItIcon size={64} />
+    <div className="flex flex-col gap-6">
+      <div className="text-sm text-gray-500">
+        Component sizes (24, 32, 40, 52, 64)
+      </div>
+      <div className="flex items-end gap-6">
+        <ShopItIcon size={24} />
+        <ShopItIcon size={32} />
+        <ShopItIcon size={40} />
+        <ShopItIcon size={52} />
+        <ShopItIcon size={64} />
+      </div>
+      <div className="text-sm text-gray-500 mt-4">Matching PNG icons</div>
+      <div className="flex items-end gap-6">
+        <img
+          src="/icons/blue/pwa/icon-48x48.png"
+          alt="48px"
+          width={24}
+          height={24}
+          style={{ width: 24, height: 24 }}
+        />
+        <img
+          src="/icons/blue/pwa/icon-48x48.png"
+          alt="48px"
+          width={32}
+          height={32}
+          style={{ width: 32, height: 32 }}
+        />
+        <img
+          src="/icons/blue/pwa/icon-48x48.png"
+          alt="48px"
+          width={40}
+          height={40}
+          style={{ width: 40, height: 40 }}
+        />
+        <img
+          src="/icons/blue/pwa/icon-72x72.png"
+          alt="72px"
+          width={52}
+          height={52}
+          style={{ width: 52, height: 52 }}
+        />
+        <img
+          src="/icons/blue/pwa/icon-72x72.png"
+          alt="72px"
+          width={64}
+          height={64}
+          style={{ width: 64, height: 64 }}
+        />
+      </div>
     </div>
   ),
   parameters: {
     docs: {
       description: {
         story:
-          'The ShopItIcon component is a standalone icon for favicons, app icons, and space-constrained layouts.',
+          'The ShopItIcon component is a standalone icon for favicons, app icons, and space-constrained layouts. Compare with PNG icons below.',
       },
     },
   },
