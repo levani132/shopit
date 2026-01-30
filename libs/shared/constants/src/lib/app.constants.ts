@@ -304,9 +304,11 @@ export const MAIN_SITE_ACCENT_COLORS = {
 export type MainSiteAccentColorName = keyof typeof MAIN_SITE_ACCENT_COLORS;
 
 // Default accent colors
-export const DEFAULT_ACCENT_COLOR = ACCENT_COLORS.indigo;
-export const DEFAULT_ACCENT_COLOR_NAME: AccentColorName = 'indigo';
-export const DEFAULT_MAIN_SITE_ACCENT = MAIN_SITE_ACCENT_COLORS.emerald;
+// Changed from indigo to blue for better cross-platform recognition and accessibility
+export const DEFAULT_ACCENT_COLOR = ACCENT_COLORS.blue;
+export const DEFAULT_ACCENT_COLOR_NAME: AccentColorName = 'blue';
+// Changed from emerald to blue to align with new default branding
+export const DEFAULT_MAIN_SITE_ACCENT = MAIN_SITE_ACCENT_COLORS.blue;
 
 /**
  * Get store brand colors as CSS variable definitions (for use in style props)

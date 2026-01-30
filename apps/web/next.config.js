@@ -1,9 +1,8 @@
 //@ts-check
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const createNextIntlPlugin = require('next-intl/plugin');
+const withSerwist = require('@serwist/next').default;
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -56,6 +55,15 @@ const plugins = [
   // Add more Next.js plugins to this list if needed.
   withNx,
   withNextIntl,
+  // PWA service worker - must be last to wrap properly
+  /** @param {import('next').NextConfig} config */
+  (config) =>
+    withSerwist({
+      swSrc: 'src/sw.ts',
+      swDest: 'public/sw.js',
+      // Disable in development
+      disable: process.env.NODE_ENV === 'development',
+    })(config),
 ];
 
 module.exports = composePlugins(...plugins)(nextConfig);

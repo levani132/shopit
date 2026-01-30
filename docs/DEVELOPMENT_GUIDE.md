@@ -176,6 +176,11 @@ const [data1, data2, data3] = await Promise.all([
 
 **The answer is YES 99% of the time!**
 
+## Related Documentation
+
+- [PWA Implementation](./PWA.md) - Multi-tenant PWA, service workers, manifest configuration
+- [Components](./COMPONENTS.md) - Shared component documentation
+
 ## Shared Components
 
 ### UserMenuDropdown
@@ -257,3 +262,31 @@ if (isImpersonating) {
 - `ADMIN` can impersonate any user
 - `COURIER_ADMIN` can ONLY impersonate `COURIER` users
 - JWT includes `impersonatedBy` claim for session tracking
+
+## Shared Constants
+
+Use `@shopit/constants` for shared constants across frontend and backend:
+
+```typescript
+import {
+  ACCENT_COLORS,
+  DEFAULT_ACCENT_COLOR_NAME,
+  STORE_BRAND_COLORS,
+  AccentColorName,
+} from '@shopit/constants';
+
+// Default accent color (blue)
+const defaultColor = DEFAULT_ACCENT_COLOR_NAME; // 'blue'
+
+// Get color palette
+const blueColors = ACCENT_COLORS.blue; // { 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+
+// Full shade palette for stores
+const fullPalette = STORE_BRAND_COLORS.blue; // { 50, 100, 200, ..., 900 }
+```
+
+### Available Accent Colors
+
+Colors with pre-generated icons: `blue`, `rose`, `green`, `purple`, `orange`, `indigo`, `black`
+
+See [PWA Documentation](./PWA.md) for icon color mapping.
