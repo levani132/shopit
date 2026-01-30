@@ -51,8 +51,8 @@ export async function generateMetadata({ params }: { params: Params }) {
       ],
       apple: [
         {
-          url: `/icons/${MAIN_SITE_COLOR}/ios/icon-180x180.png`,
-          sizes: '180x180',
+          url: `/icons/${MAIN_SITE_COLOR}/ios/icon-1024x1024.png`,
+          sizes: '1024x1024',
         },
       ],
       shortcut: `/icons/${MAIN_SITE_COLOR}/favicon/favicon.ico`,
