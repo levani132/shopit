@@ -49,6 +49,26 @@ const nextConfig = {
       },
     ];
   },
+
+  // Allow embedding in iframes from any origin
+  // WARNING: This removes clickjacking protection - only enable if you need iframe embedding
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: 'frame-ancestors *',
+          },
+        ],
+      },
+    ];
+  },
 };
 
 const plugins = [
