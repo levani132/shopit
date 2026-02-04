@@ -53,12 +53,9 @@ function StoresManagementContent() {
       if (search) params.append('search', search);
       if (statusFilter) params.append('publishStatus', statusFilter);
 
-      const response = await api.get(`/admin/stores?${params.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch stores');
-      }
-      const data = await response.json();
+      const data = await api.get<{ stores: any[]; pagination: any }>(
+        `/admin/stores?${params.toString()}`,
+      );
       setStores(data.stores);
       setPagination(data.pagination);
     } catch (err: any) {

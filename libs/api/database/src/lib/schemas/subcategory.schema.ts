@@ -1,18 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { BilingualText } from './store.schema';
 
 export type SubcategoryDocument = HydratedDocument<Subcategory>;
-
-/**
- * Bilingual text field - supports Georgian (ka) and English (en)
- */
-export class BilingualText {
-  @Prop({ trim: true })
-  ka?: string; // Georgian
-
-  @Prop({ trim: true })
-  en?: string; // English
-}
 
 @Schema({ timestamps: true, collection: 'subcategories' })
 export class Subcategory {

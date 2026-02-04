@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 
-// Tbilisi default coordinates
-const TBILISI_CENTER = { lat: 41.7151, lng: 44.8271 };
+// Tbilisi center coordinates (Freedom Square area - central Tbilisi)
+const TBILISI_CENTER = { lat: 41.6934, lng: 44.8015 };
 const DEFAULT_ZOOM = 13;
 
 // Georgia bounding box (approximate)
@@ -42,6 +42,7 @@ interface Location {
 
 interface AddressResult {
   address: string;
+  city: string;
   location: Location;
 }
 
@@ -67,6 +68,11 @@ interface AddressPickerProps {
   disabled?: boolean;
   error?: string;
   className?: string;
+}
+
+// Extract city from Photon properties
+function extractCity(props: PhotonFeature['properties']): string {
+  return props.city || props.state || 'Tbilisi'; // Default to Tbilisi if not found
 }
 
 // Format address from Photon result
@@ -104,6 +110,7 @@ function AddressPickerMap({
   const t = useTranslations('common');
   // Initialize searchQuery from value prop
   const [searchQuery, setSearchQuery] = useState(value?.address || '');
+  const [currentCity, setCurrentCity] = useState(value?.city || 'Tbilisi');
   const [searchResults, setSearchResults] = useState<PhotonFeature[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -217,12 +224,33 @@ function AddressPickerMap({
 
     setIsSearching(true);
     try {
-      // Bias results towards Georgia
+      // Bias results towards Tbilisi, fetch more to allow filtering
       const response = await fetch(
-        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=5&lang=en`,
+        `${PHOTON_API_SEARCH}?q=${encodeURIComponent(query)}&lat=${TBILISI_CENTER.lat}&lon=${TBILISI_CENTER.lng}&limit=20&lang=en`,
       );
       const data = await response.json();
-      setSearchResults(data.features || []);
+      const features: PhotonFeature[] = data.features || [];
+
+      // Separate Tbilisi and other results, keeping API's native relevance order
+      // Photon API already ranks by: text relevance + OSM importance + location bias
+      const tbilisiResults: PhotonFeature[] = [];
+      const otherResults: PhotonFeature[] = [];
+
+      for (const feature of features) {
+        const city = (feature.properties.city || '').toLowerCase();
+        const state = (feature.properties.state || '').toLowerCase();
+
+        if (city === 'tbilisi' || city === 'თბილისი' || state === 'tbilisi') {
+          tbilisiResults.push(feature);
+        } else {
+          otherResults.push(feature);
+        }
+      }
+
+      // Tbilisi first (API's relevance order), then others (API's relevance order)
+      const sortedFeatures = [...tbilisiResults, ...otherResults].slice(0, 10);
+
+      setSearchResults(sortedFeatures);
       setShowResults(true);
     } catch (err) {
       console.error('Address search error:', err);
@@ -250,8 +278,12 @@ function AddressPickerMap({
   // When user finishes editing (blur), save the manually typed address with current location
   const handleInputBlur = () => {
     if (isManuallyEdited && searchQuery.trim() && markerPosition) {
-      // User manually edited the text - save with current map location
-      onChange({ address: searchQuery.trim(), location: markerPosition });
+      // User manually edited the text - save with current map location and last known city
+      onChange({
+        address: searchQuery.trim(),
+        city: currentCity,
+        location: markerPosition,
+      });
     }
     setIsManuallyEdited(false);
   };
@@ -260,14 +292,16 @@ function AddressPickerMap({
   const handleSelectAddress = (feature: PhotonFeature) => {
     const [lng, lat] = feature.geometry.coordinates;
     const address = formatAddress(feature.properties);
+    const city = extractCity(feature.properties);
     const location = { lat, lng };
 
     setSearchQuery(address);
+    setCurrentCity(city);
     setMarkerPosition(location);
     setMapCenter(location);
     setShowResults(false);
     setIsManuallyEdited(false); // Reset - this was a selection, not manual edit
-    onChange({ address, location });
+    onChange({ address, city, location });
   };
 
   // Reverse geocode from coordinates
@@ -287,22 +321,26 @@ function AddressPickerMap({
         const data = await response.json();
         if (data.features && data.features.length > 0) {
           const address = formatAddress(data.features[0].properties);
+          const city = extractCity(data.features[0].properties);
           setSearchQuery(address);
+          setCurrentCity(city);
           setIsManuallyEdited(false); // Reset - this was from map click
-          onChange({ address, location });
+          onChange({ address, city, location });
         } else {
           // If no address found, use coordinates
           const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
           setSearchQuery(address);
+          setCurrentCity('Tbilisi');
           setIsManuallyEdited(false);
-          onChange({ address, location });
+          onChange({ address, city: 'Tbilisi', location });
         }
       } catch (err) {
         console.error('Reverse geocode error:', err);
         const address = `${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`;
         setSearchQuery(address);
+        setCurrentCity('Tbilisi');
         setIsManuallyEdited(false);
-        onChange({ address, location });
+        onChange({ address, city: 'Tbilisi', location });
       }
     },
     [onChange, t],
@@ -361,7 +399,7 @@ function AddressPickerMap({
         width: 32px;
         height: 42px;
         position: relative;
-        ${isDarkMode ? 'filter: invert(1) hue-rotate(180deg) brightness(1.1) contrast(1.05);' : ''}
+        ${isDarkMode ? 'filter: invert(1) hue-rotate(180deg) brightness(1.5) contrast(1.05);' : ''}
       ">
         <svg viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
           <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24c0-6.627-5.373-12-12-12z" fill="var(--accent-500, #6366f1)"/>
@@ -499,7 +537,7 @@ function AddressPickerMap({
                 // Clean dark theme - neutral invert with slight brightness/contrast adjustment
                 // Keeps natural colors (green forests, blue water) correct
                 filter:
-                  'invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95)',
+                  'invert(1) hue-rotate(180deg) brightness(3) contrast(0.95)',
               }
             : undefined
         }

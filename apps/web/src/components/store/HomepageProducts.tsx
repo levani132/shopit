@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { HomepageProduct } from '../../lib/api';
 import { ProductCard } from './ProductCard';
+import { useStoreEditOptional } from '../../contexts/StoreEditContext';
+import { getMainSiteUrl, getStoreUrl } from '../../utils/subdomain';
 
 interface HomepageProductsProps {
   products: HomepageProduct[];
@@ -23,9 +25,11 @@ export function HomepageProducts({
   storeName,
 }: HomepageProductsProps) {
   const t = useTranslations('store');
+  const storeEdit = useStoreEditOptional();
+  const isStoreOwner = storeEdit?.isStoreOwner ?? false;
 
-  // Don't render if no products
-  if (products.length === 0) {
+  // Don't render if no products and not store owner
+  if (products.length === 0 && !isStoreOwner) {
     return null;
   }
 
@@ -37,33 +41,56 @@ export function HomepageProducts({
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             {t('products')}
           </h2>
-          {hasMore && (
-            <Link
-              href={`/${locale}/products`}
-              className="text-sm font-medium transition-colors hover:opacity-80"
-              style={{ color: 'var(--store-accent-600)' }}
+          {/* Add Product button for store owner */}
+          {isStoreOwner && (
+            <a
+              href={`${getMainSiteUrl()}/${locale}/dashboard/products/new?returnUrl=${encodeURIComponent(getStoreUrl(subdomain) + '/' + locale)}`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-white transition-all hover:opacity-90"
+              style={{ backgroundColor: 'var(--store-accent-600)' }}
             >
-              {t('seeAll')} →
-            </Link>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t('addProduct') || 'Add Product'}
+            </a>
           )}
         </div>
 
         {/* Products Grid - 2x4 on desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product._id}
-              product={{
-                ...product,
-                variantsCount: product.variants?.length ?? 0,
-              }}
-              locale={locale}
-              subdomain={subdomain}
-              storeId={storeId}
-              storeName={storeName}
-            />
-          ))}
-        </div>
+        {products.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {products.map((product) => (
+              <ProductCard
+                key={product._id}
+                product={{
+                  ...product,
+                  variantsCount: product.variants?.length ?? 0,
+                }}
+                locale={locale}
+                subdomain={subdomain}
+                storeId={storeId}
+                storeName={storeName}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+            {t('noProducts') || 'No products yet'}
+          </div>
+        )}
+
+        {/* See All link at bottom */}
+        {hasMore && (
+          <div className="text-center mt-8">
+            <Link
+              href={`/${locale}/products`}
+              className="inline-flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
+              style={{ color: 'var(--store-accent-600)' }}
+            >
+              {t('seeAll')} →
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

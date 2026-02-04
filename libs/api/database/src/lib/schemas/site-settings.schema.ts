@@ -15,7 +15,7 @@ export interface VehicleShippingConfig {
 
 /**
  * Site Settings Schema
- * 
+ *
  * Stores all configurable constants for the platform.
  * There should only be ONE document of this type in the database.
  */
@@ -28,7 +28,7 @@ export class SiteSettings {
    * Applied to all sales regardless of delivery method
    * Default: 0.10 (10%)
    */
-  @Prop({ default: 0.10 })
+  @Prop({ default: 0.1 })
   siteCommissionRate: number;
 
   // ===== Shipping Rate Settings =====
@@ -137,8 +137,17 @@ export class SiteSettings {
    * Couriers receive this percentage of the delivery fee paid by customer
    * Default: 0.80 (80%)
    */
-  @Prop({ default: 0.80 })
+  @Prop({ default: 0.8 })
   courierEarningsPercentage: number;
+
+  /**
+   * Route generation algorithm to use
+   * - 'heuristic': Fast greedy algorithm (original)
+   * - 'optimal': Optimal/near-optimal algorithm (Held-Karp/Branch-and-Bound)
+   * Default: 'heuristic'
+   */
+  @Prop({ default: 'heuristic' })
+  routeAlgorithm: 'heuristic' | 'optimal';
 
   // ===== Withdrawal Settings =====
 
@@ -197,9 +206,10 @@ export class SiteSettings {
   /**
    * Maintenance message to display
    */
-  @Prop({ default: 'We are currently performing maintenance. Please check back soon.' })
+  @Prop({
+    default: 'We are currently performing maintenance. Please check back soon.',
+  })
   maintenanceMessage: string;
 }
 
 export const SiteSettingsSchema = SchemaFactory.createForClass(SiteSettings);
-

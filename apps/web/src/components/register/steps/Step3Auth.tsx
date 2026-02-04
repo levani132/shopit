@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect } from 'react';
 import { useRegistration } from '../RegistrationContext';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 // Build API base URL - use just the host, we'll add the prefix
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -54,20 +55,10 @@ export function Step3Auth() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Animate unblurring header + hero when entering this step (desktop only)
-  // On mobile, keep everything blurred since user already saw the preview
-  useEffect(() => {
-    if (isMobile) {
-      // On mobile, blur everything
-      setUnblurredSections([]);
-      return;
-    }
-    // On desktop, unblur header + hero
-    const timer = setTimeout(() => {
-      setUnblurredSections(['header', 'hero']);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [setUnblurredSections, isMobile]);
+  // Keep background blurred when entering step 3
+  useLayoutEffect(() => {
+    setUnblurredSections([]);
+  }, [setUnblurredSections]);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -123,23 +114,7 @@ export function Step3Auth() {
         formData.append('coverFile', data.coverFile);
       }
 
-      const response = await fetch(`${API_URL}/api/v1/auth/register`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies for auth
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 409) {
-          setErrors({ email: t('emailAlreadyExists') });
-        } else {
-          setErrors({ general: errorData.message || t('registrationFailed') });
-        }
-        return;
-      }
-
-      const result = await response.json();
+      const result = await api.post('/auth/register', formData);
       console.log('Registration successful:', result);
 
       // Update auth context
@@ -149,9 +124,13 @@ export function Step3Auth() {
       
       // Navigate to profile completion page
       router.push('/register/complete');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed:', error);
-      setErrors({ general: t('registrationFailed') });
+      if (error.status === 409) {
+        setErrors({ email: t('emailAlreadyExists') });
+      } else {
+        setErrors({ general: error.message || t('registrationFailed') });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -196,19 +175,7 @@ export function Step3Auth() {
       }
 
       // Call endpoint to create store for existing user
-      const response = await fetch(`${API_URL}/api/v1/auth/create-store`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include', // Include cookies for auth
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        setErrors({ general: errorData.message || t('registrationFailed') });
-        return;
-      }
-
-      const result = await response.json();
+      const result = await api.post('/auth/create-store', formData);
       console.log('Store creation successful:', result);
 
       // Update auth context
@@ -218,9 +185,9 @@ export function Step3Auth() {
       
       // Navigate to dashboard
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Store creation failed:', error);
-      setErrors({ general: t('registrationFailed') });
+      setErrors({ general: error.message || t('registrationFailed') });
     } finally {
       setIsLoading(false);
     }
@@ -240,8 +207,8 @@ export function Step3Auth() {
 
   return (
     <div
-      className={`relative z-10 min-h-screen flex flex-col items-center px-4 ${
-        isMobile ? 'justify-center' : 'justify-end pb-6'
+      className={`relative z-10 min-h-screen flex flex-col items-center justify-center px-4 ${
+        isMobile ? '' : 'py-6'
       }`}
     >
       {/* Step indicator */}
@@ -271,7 +238,7 @@ export function Step3Auth() {
       </div>
 
       {/* Main Form Card */}
-      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-5 w-full max-w-3xl">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-5 w-[calc(100%-2rem)] max-w-3xl mx-auto">
         {/* General error message */}
         {errors.general && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">

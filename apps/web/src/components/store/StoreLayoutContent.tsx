@@ -1,8 +1,12 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useEffect, useCallback } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { StoreHeader } from './StoreHeader';
 import { StoreFooter } from './StoreFooter';
+import { useStoreEditOptional } from '../../contexts/StoreEditContext';
+import { StoreEditModeToggle } from './StoreEditModeToggle';
+import { revalidateStorePage } from '../../lib/actions';
 
 // Routes that should NOT show header/footer (auth pages)
 const AUTH_ROUTES = ['/login', '/register'];
@@ -25,6 +29,7 @@ interface CategoryData {
 interface StoreLayoutContentProps {
   children: React.ReactNode;
   store: {
+    id?: string; // Store ID for edit context
     name: string;
     subdomain: string;
     description?: string;
@@ -55,6 +60,29 @@ export function StoreLayoutContent({
   locale,
 }: StoreLayoutContentProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const storeEdit = useStoreEditOptional();
+
+  // Callback to refresh the page when store data is updated
+  const handleStoreUpdated = useCallback(async () => {
+    // Revalidate the server cache for this store page
+    await revalidateStorePage(store.subdomain, locale);
+    // Then refresh the client
+    router.refresh();
+  }, [router, store.subdomain, locale]);
+
+  // Set the viewing store for edit context
+  useEffect(() => {
+    if (storeEdit && store.id) {
+      storeEdit.setViewingStore(store.id, store.subdomain);
+      storeEdit.setOnStoreUpdated(handleStoreUpdated);
+    }
+    return () => {
+      if (storeEdit) {
+        storeEdit.setViewingStore(null, null);
+      }
+    };
+  }, [storeEdit, store.id, store.subdomain, handleStoreUpdated]);
 
   // Check if current path is an auth route
   const isAuthRoute = AUTH_ROUTES.some((route) => pathname?.endsWith(route));
@@ -67,6 +95,9 @@ export function StoreLayoutContent({
       {!isAuthRoute && <StoreHeader store={store} />}
       <main className="flex-1">{children}</main>
       {!isAuthRoute && <StoreFooter store={store} locale={locale} />}
+      
+      {/* Edit mode toggle for store owner */}
+      <StoreEditModeToggle />
     </div>
   );
 }

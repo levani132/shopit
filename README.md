@@ -2,7 +2,16 @@
 
 A multi-vendor e-commerce platform where anyone can create their own online store with a custom subdomain.
 
-## 🚀 Quick Start
+## � Important for Developers
+
+**ALWAYS use the centralized API client for authenticated requests!**
+
+❌ **NEVER** use raw `fetch()` for API calls that require authentication  
+✅ **ALWAYS** use `api.get/post/put/patch/delete()` from `/apps/web/src/lib/api.ts`
+
+See [Development Guide](./docs/DEVELOPMENT_GUIDE.md) for details.
+
+## �🚀 Quick Start
 
 ### Prerequisites
 

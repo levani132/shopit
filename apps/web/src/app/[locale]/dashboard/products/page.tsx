@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../i18n/routing';
-import { apiUrl } from '../../../../lib/api';
+import { api } from '../../../../lib/api';
 
 interface ProductData {
   _id: string;
@@ -39,15 +39,7 @@ export default function ProductsPage() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const response = await fetch(`${apiUrl}/products/my-store`, {
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
-
-        const data = await response.json();
+        const data = await api.get<ProductData[]>('/api/v1/products/my-store');
         setProducts(data);
       } catch (err) {
         console.error('Error fetching products:', err);
@@ -80,15 +72,7 @@ export default function ProductsPage() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`${apiUrl}/products/${deleteProductId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to delete product');
-      }
+      await api.delete(`/api/v1/products/${deleteProductId}`);
 
       // Remove product from list
       setProducts(products.filter((p) => p._id !== deleteProductId));
@@ -219,7 +203,7 @@ export default function ProductsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
             {t('products')}
@@ -230,7 +214,7 @@ export default function ProductsPage() {
         </div>
         <Link
           href="/dashboard/products/new"
-          className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg
             className="w-5 h-5"

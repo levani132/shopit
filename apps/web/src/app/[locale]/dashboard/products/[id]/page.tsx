@@ -5,9 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 import VariantEditor from '../../../../../components/dashboard/VariantEditor';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../lib/api';
 
 interface Category {
   _id: string;
@@ -79,7 +77,9 @@ export default function EditProductPage() {
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [shippingSizes, setShippingSizes] = useState<ShippingSizes | null>(null);
+  const [shippingSizes, setShippingSizes] = useState<ShippingSizes | null>(
+    null,
+  );
   // Existing images from the server (URLs)
   const [existingImages, setExistingImages] = useState<string[]>([]);
   // New images to upload (File objects)
@@ -114,7 +114,9 @@ export default function EditProductPage() {
       isActive: boolean;
     }[]
   >([]);
-  const [variantImageFiles, setVariantImageFiles] = useState<Map<string, File[]>>(new Map());
+  const [variantImageFiles, setVariantImageFiles] = useState<
+    Map<string, File[]>
+  >(new Map());
 
   // Fetch product and categories
   useEffect(() => {
@@ -123,26 +125,14 @@ export default function EditProductPage() {
         setIsLoading(true);
 
         // Fetch product, categories, and shipping sizes in parallel
-        const [productRes, categoriesRes, shippingRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/products/${productId}`, {
-            credentials: 'include',
-          }),
-          fetch(`${API_URL}/api/v1/categories/my-store`, {
-            credentials: 'include',
-          }),
-          fetch(`${API_URL}/api/v1/settings/shipping-sizes`),
+        const [product, categoriesData, shippingData] = await Promise.all([
+          api.get<any>(`/api/v1/products/${productId}`),
+          api.get<Category[]>('/api/v1/categories/my-store'),
+          api.get<{ sizes: ShippingSizes }>('/api/v1/settings/shipping-sizes'),
         ]);
-        
-        if (shippingRes.ok) {
-          const shippingData = await shippingRes.json();
-          setShippingSizes(shippingData.sizes);
-        }
 
-        if (!productRes.ok) {
-          throw new Error('Product not found');
-        }
-
-        const product = await productRes.json();
+        setShippingSizes(shippingData.sizes);
+        setCategories(categoriesData);
 
         // Populate form with product data
         setFormData({
@@ -151,14 +141,16 @@ export default function EditProductPage() {
           nameEn: product.nameLocalized?.en || product.name || '',
           description: product.description || '',
           descriptionKa: product.descriptionLocalized?.ka || '',
-          descriptionEn: product.descriptionLocalized?.en || product.description || '',
+          descriptionEn:
+            product.descriptionLocalized?.en || product.description || '',
           price: String(product.price || ''),
           salePrice: product.salePrice ? String(product.salePrice) : '',
           isOnSale: product.isOnSale || false,
           isActive: product.isActive !== false,
           stock: String(product.stock || 0),
           categoryId: product.categoryId?._id || product.categoryId || '',
-          subcategoryId: product.subcategoryId?._id || product.subcategoryId || '',
+          subcategoryId:
+            product.subcategoryId?._id || product.subcategoryId || '',
           shippingSize: product.shippingSize || 'small',
         });
 
@@ -168,58 +160,63 @@ export default function EditProductPage() {
         // Set variant data
         setHasVariants(product.hasVariants || false);
         setProductAttributes(
-          (product.productAttributes || []).map((pa: { attributeId: string | { _id: string }; selectedValues: (string | { _id: string })[] }) => ({
-            attributeId: typeof pa.attributeId === 'string' ? pa.attributeId : pa.attributeId?._id,
-            selectedValues: (pa.selectedValues || []).map((v: string | { _id: string }) =>
-              typeof v === 'string' ? v : v?._id,
-            ),
-          })),
+          (product.productAttributes || []).map(
+            (pa: {
+              attributeId: string | { _id: string };
+              selectedValues: (string | { _id: string })[];
+            }) => ({
+              attributeId:
+                typeof pa.attributeId === 'string'
+                  ? pa.attributeId
+                  : pa.attributeId?._id,
+              selectedValues: (pa.selectedValues || []).map(
+                (v: string | { _id: string }) =>
+                  typeof v === 'string' ? v : v?._id,
+              ),
+            }),
+          ),
         );
         setVariants(
-          (product.variants || []).map((v: {
-            _id?: string | { toString: () => string };
-            sku?: string;
-            attributes?: {
-              attributeId: string | { _id: string; toString: () => string };
-              attributeName: string;
-              valueId: string | { _id: string; toString: () => string };
-              value: string;
-              colorHex?: string;
-            }[];
-            price?: number;
-            salePrice?: number;
-            stock?: number;
-            images?: string[];
-            isActive?: boolean;
-          }) => ({
-            _id: typeof v._id === 'string' ? v._id : v._id?.toString(),
-            sku: v.sku,
-            attributes: (v.attributes || []).map((attr) => ({
-              attributeId:
-                typeof attr.attributeId === 'string'
-                  ? attr.attributeId
-                  : attr.attributeId?.toString(),
-              attributeName: attr.attributeName,
-              valueId:
-                typeof attr.valueId === 'string'
-                  ? attr.valueId
-                  : attr.valueId?.toString(),
-              value: attr.value,
-              colorHex: attr.colorHex,
-            })),
-            price: v.price,
-            salePrice: v.salePrice,
-            stock: v.stock ?? 0,
-            images: v.images || [],
-            isActive: v.isActive !== false,
-          })),
+          (product.variants || []).map(
+            (v: {
+              _id?: string | { toString: () => string };
+              sku?: string;
+              attributes?: {
+                attributeId: string | { _id: string; toString: () => string };
+                attributeName: string;
+                valueId: string | { _id: string; toString: () => string };
+                value: string;
+                colorHex?: string;
+              }[];
+              price?: number;
+              salePrice?: number;
+              stock?: number;
+              images?: string[];
+              isActive?: boolean;
+            }) => ({
+              _id: typeof v._id === 'string' ? v._id : v._id?.toString(),
+              sku: v.sku,
+              attributes: (v.attributes || []).map((attr) => ({
+                attributeId:
+                  typeof attr.attributeId === 'string'
+                    ? attr.attributeId
+                    : attr.attributeId?.toString(),
+                attributeName: attr.attributeName,
+                valueId:
+                  typeof attr.valueId === 'string'
+                    ? attr.valueId
+                    : attr.valueId?.toString(),
+                value: attr.value,
+                colorHex: attr.colorHex,
+              })),
+              price: v.price,
+              salePrice: v.salePrice,
+              stock: v.stock ?? 0,
+              images: v.images || [],
+              isActive: v.isActive !== false,
+            }),
+          ),
         );
-
-        // Set categories
-        if (categoriesRes.ok) {
-          const categoriesData = await categoriesRes.json();
-          setCategories(categoriesData);
-        }
       } catch (err) {
         console.error('Error fetching product:', err);
         setError(err instanceof Error ? err.message : 'Failed to load product');
@@ -282,17 +279,20 @@ export default function EditProductPage() {
         JSON.stringify({
           ka: formData.nameKa,
           en: formData.nameEn || formData.name,
-        })
+        }),
       );
 
       if (formData.descriptionEn || formData.description) {
-        formDataToSend.append('description', formData.descriptionEn || formData.description);
+        formDataToSend.append(
+          'description',
+          formData.descriptionEn || formData.description,
+        );
         formDataToSend.append(
           'descriptionLocalized',
           JSON.stringify({
             ka: formData.descriptionKa,
             en: formData.descriptionEn || formData.description,
-          })
+          }),
         );
       }
 
@@ -348,19 +348,13 @@ export default function EditProductPage() {
             formDataToSend.append('variantImages', file);
           });
         });
-        formDataToSend.append('variantImageMapping', JSON.stringify(variantImageMapping));
+        formDataToSend.append(
+          'variantImageMapping',
+          JSON.stringify(variantImageMapping),
+        );
       }
 
-      const res = await fetch(`${API_URL}/api/v1/products/${productId}`, {
-        method: 'PATCH',
-        credentials: 'include',
-        body: formDataToSend,
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to update product');
-      }
+      await api.patch(`/api/v1/products/${productId}`, formDataToSend);
 
       // Success - redirect to products list
       router.push('/dashboard/products');
@@ -377,16 +371,7 @@ export default function EditProductPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/products/${productId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to delete product');
-      }
-
+      await api.delete(`/api/v1/products/${productId}`);
       router.push('/dashboard/products');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete product');
@@ -397,7 +382,9 @@ export default function EditProductPage() {
   };
 
   // Get subcategories for selected category
-  const selectedCategory = categories.find((c) => c._id === formData.categoryId);
+  const selectedCategory = categories.find(
+    (c) => c._id === formData.categoryId,
+  );
   const subcategories = selectedCategory?.subcategories || [];
 
   // Total images count
@@ -417,14 +404,24 @@ export default function EditProductPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard/products"
             className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-5 h-5 text-gray-600 dark:text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </Link>
           <div>
@@ -441,10 +438,20 @@ export default function EditProductPage() {
         <button
           type="button"
           onClick={() => setShowDeleteConfirm(true)}
-          className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center gap-2"
+          className="px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
           </svg>
           {t('delete')}
         </button>
@@ -474,9 +481,24 @@ export default function EditProductPage() {
               >
                 {isDeleting ? (
                   <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    <svg
+                      className="w-4 h-4 animate-spin"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
                     </svg>
                     {t('deleting')}
                   </>
@@ -512,13 +534,17 @@ export default function EditProductPage() {
               <input
                 type="checkbox"
                 checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, isActive: e.target.checked })
+                }
                 className="sr-only peer"
               />
               <div
                 className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-zinc-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-zinc-600"
                 style={{
-                  backgroundColor: formData.isActive ? 'var(--accent-500)' : undefined,
+                  backgroundColor: formData.isActive
+                    ? 'var(--accent-500)'
+                    : undefined,
                 }}
               />
             </label>
@@ -537,7 +563,10 @@ export default function EditProductPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             {/* Existing images */}
             {existingImages.map((url, index) => (
-              <div key={`existing-${index}`} className="relative aspect-square group">
+              <div
+                key={`existing-${index}`}
+                className="relative aspect-square group"
+              >
                 <img
                   src={url}
                   alt={`Product ${index + 1}`}
@@ -548,8 +577,18 @@ export default function EditProductPage() {
                   onClick={() => removeExistingImage(index)}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
                 {index === 0 && newImages.length === 0 && (
@@ -562,7 +601,10 @@ export default function EditProductPage() {
 
             {/* New image previews */}
             {newImagePreviews.map((preview, index) => (
-              <div key={`new-${index}`} className="relative aspect-square group">
+              <div
+                key={`new-${index}`}
+                className="relative aspect-square group"
+              >
                 <img
                   src={preview}
                   alt={`New ${index + 1}`}
@@ -574,8 +616,18 @@ export default function EditProductPage() {
                   onClick={() => removeNewImage(index)}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
                 {index === 0 && existingImages.length === 0 && (
@@ -583,7 +635,10 @@ export default function EditProductPage() {
                     {t('main')}
                   </span>
                 )}
-                <span className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white" style={{ backgroundColor: 'var(--accent-500)' }}>
+                <span
+                  className="absolute top-2 left-2 text-xs px-2 py-1 rounded text-white"
+                  style={{ backgroundColor: 'var(--accent-500)' }}
+                >
                   {t('new')}
                 </span>
               </div>
@@ -596,10 +651,22 @@ export default function EditProductPage() {
                 onClick={() => fileInputRef.current?.click()}
                 className="aspect-square border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 dark:hover:border-zinc-500 transition-colors"
               >
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
-                <span className="text-sm text-gray-500 mt-2">{t('addImage')}</span>
+                <span className="text-sm text-gray-500 mt-2">
+                  {t('addImage')}
+                </span>
               </button>
             )}
           </div>
@@ -629,7 +696,9 @@ export default function EditProductPage() {
               <input
                 type="text"
                 value={formData.nameKa}
-                onChange={(e) => setFormData({ ...formData, nameKa: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nameKa: e.target.value })
+                }
                 placeholder="პროდუქტის სახელი"
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
               />
@@ -641,7 +710,9 @@ export default function EditProductPage() {
               <input
                 type="text"
                 value={formData.nameEn}
-                onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nameEn: e.target.value })
+                }
                 placeholder="Product name"
                 required
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
@@ -657,7 +728,9 @@ export default function EditProductPage() {
               </label>
               <textarea
                 value={formData.descriptionKa}
-                onChange={(e) => setFormData({ ...formData, descriptionKa: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, descriptionKa: e.target.value })
+                }
                 placeholder="პროდუქტის აღწერა"
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white resize-none"
@@ -669,7 +742,9 @@ export default function EditProductPage() {
               </label>
               <textarea
                 value={formData.descriptionEn}
-                onChange={(e) => setFormData({ ...formData, descriptionEn: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, descriptionEn: e.target.value })
+                }
                 placeholder="Product description"
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white resize-none"
@@ -694,7 +769,9 @@ export default function EditProductPage() {
                 step="0.01"
                 min="0"
                 value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, price: e.target.value })
+                }
                 placeholder="0.00"
                 required
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
@@ -709,7 +786,9 @@ export default function EditProductPage() {
                 step="0.01"
                 min="0"
                 value={formData.salePrice}
-                onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, salePrice: e.target.value })
+                }
                 placeholder="0.00"
                 disabled={!formData.isOnSale}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white disabled:opacity-50"
@@ -723,7 +802,9 @@ export default function EditProductPage() {
                 type="number"
                 min="0"
                 value={formData.stock}
-                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock: e.target.value })
+                }
                 placeholder="0"
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
               />
@@ -735,7 +816,9 @@ export default function EditProductPage() {
               <input
                 type="checkbox"
                 checked={formData.isOnSale}
-                onChange={(e) => setFormData({ ...formData, isOnSale: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, isOnSale: e.target.checked })
+                }
                 className="w-5 h-5 rounded border-gray-300 dark:border-zinc-600"
                 style={{ accentColor: 'var(--accent-500)' }}
               />
@@ -765,7 +848,11 @@ export default function EditProductPage() {
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    shippingSize: e.target.value as 'small' | 'medium' | 'large' | 'extra_large',
+                    shippingSize: e.target.value as
+                      | 'small'
+                      | 'medium'
+                      | 'large'
+                      | 'extra_large',
                   })
                 }
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
@@ -773,7 +860,9 @@ export default function EditProductPage() {
                 <option value="small">{t('shippingSizeSmall')}</option>
                 <option value="medium">{t('shippingSizeMedium')}</option>
                 <option value="large">{t('shippingSizeLarge')}</option>
-                <option value="extra_large">{t('shippingSizeExtraLarge')}</option>
+                <option value="extra_large">
+                  {t('shippingSizeExtraLarge')}
+                </option>
               </select>
             </div>
           </div>
@@ -790,7 +879,8 @@ export default function EditProductPage() {
                 <span>
                   {shippingSizes && (
                     <span className="text-[var(--store-accent-600)] font-medium">
-                      ≤{shippingSizes.small.maxWeight}kg, ≤{shippingSizes.small.maxDimension}cm
+                      ≤{shippingSizes.small.maxWeight}kg, ≤
+                      {shippingSizes.small.maxDimension}cm
                     </span>
                   )}{' '}
                   — {t('shippingSizeSmallDesc')}
@@ -803,7 +893,8 @@ export default function EditProductPage() {
                 <span>
                   {shippingSizes && (
                     <span className="text-[var(--store-accent-600)] font-medium">
-                      ≤{shippingSizes.medium.maxWeight}kg, ≤{shippingSizes.medium.maxDimension}cm
+                      ≤{shippingSizes.medium.maxWeight}kg, ≤
+                      {shippingSizes.medium.maxDimension}cm
                     </span>
                   )}{' '}
                   — {t('shippingSizeMediumDesc')}
@@ -816,7 +907,8 @@ export default function EditProductPage() {
                 <span>
                   {shippingSizes && (
                     <span className="text-[var(--store-accent-600)] font-medium">
-                      ≤{shippingSizes.large.maxWeight}kg, ≤{shippingSizes.large.maxDimension}cm
+                      ≤{shippingSizes.large.maxWeight}kg, ≤
+                      {shippingSizes.large.maxDimension}cm
                     </span>
                   )}{' '}
                   — {t('shippingSizeLargeDesc')}
@@ -853,7 +945,11 @@ export default function EditProductPage() {
               <select
                 value={formData.categoryId}
                 onChange={(e) =>
-                  setFormData({ ...formData, categoryId: e.target.value, subcategoryId: '' })
+                  setFormData({
+                    ...formData,
+                    categoryId: e.target.value,
+                    subcategoryId: '',
+                  })
                 }
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white"
               >
@@ -871,7 +967,9 @@ export default function EditProductPage() {
               </label>
               <select
                 value={formData.subcategoryId}
-                onChange={(e) => setFormData({ ...formData, subcategoryId: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, subcategoryId: e.target.value })
+                }
                 disabled={!formData.categoryId || subcategories.length === 0}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-700 text-gray-900 dark:text-white disabled:opacity-50"
               >
@@ -888,7 +986,10 @@ export default function EditProductPage() {
           {categories.length === 0 && (
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
               {t('noCategoriesYet')}{' '}
-              <Link href="/dashboard/categories" className="text-[var(--accent-600)] hover:underline">
+              <Link
+                href="/dashboard/categories"
+                className="text-[var(--accent-600)] hover:underline"
+              >
                 {t('createCategories')}
               </Link>{' '}
               {t('toOrganizeProducts')}
@@ -924,16 +1025,41 @@ export default function EditProductPage() {
           >
             {isSaving ? (
               <>
-                <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <svg
+                  className="w-5 h-5 animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
                 </svg>
                 {t('saving')}
               </>
             ) : (
               <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 {t('saveChanges')}
               </>
@@ -944,4 +1070,3 @@ export default function EditProductPage() {
     </div>
   );
 }
-

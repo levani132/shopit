@@ -122,6 +122,9 @@ export class OrderItem {
   @Prop({ required: true })
   storeName!: string; // Denormalized
 
+  @Prop()
+  storeSubdomain?: string; // Denormalized for product links
+
   // Delivery info (denormalized from store at time of order)
   @Prop()
   courierType?: string; // 'shopit' or 'seller'
@@ -137,6 +140,13 @@ export class OrderItem {
 
   @Prop()
   deliveryMaxDays?: number;
+
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+    required: true,
+  })
+  shippingSize!: 'small' | 'medium' | 'large' | 'extra_large';
 }
 
 export const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
@@ -172,6 +182,20 @@ export class Order {
   @Prop()
   pickupPhoneNumber?: string;
 
+  // Pickup location coordinates (from store)
+  @Prop({ type: Object })
+  pickupLocation?: {
+    lat: number;
+    lng: number;
+  };
+
+  // Delivery location coordinates (from user's shipping address)
+  @Prop({ type: Object })
+  deliveryLocation?: {
+    lat: number;
+    lng: number;
+  };
+
   // Recipient name (denormalized for courier use)
   @Prop()
   recipientName?: string;
@@ -192,6 +216,9 @@ export class Order {
 
   @Prop({ required: true, default: 0, min: 0 })
   shippingPrice!: number; // Delivery fee
+
+  @Prop({ min: 0 })
+  distanceKm?: number; // Distance between pickup and delivery in kilometers
 
   @Prop({ required: true, default: 0, min: 0 })
   taxPrice!: number; // Tax (if applicable)
@@ -221,6 +248,17 @@ export class Order {
   @Prop()
   shippedAt?: Date;
 
+  // Courier pickup timestamp (when courier picked up the order from store)
+  @Prop()
+  pickedUpAt?: Date;
+
+  // Route tracking - which route was used for pickup/delivery
+  @Prop({ type: Types.ObjectId, ref: 'CourierRoute' })
+  pickedUpFromRouteId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'CourierRoute' })
+  deliveredFromRouteId?: Types.ObjectId;
+
   @Prop()
   cancelledAt?: Date;
 
@@ -231,8 +269,27 @@ export class Order {
   @Prop()
   courierAssignedAt?: Date;
 
-  // Required shipping size for this order (largest item size)
+  // Estimated shipping size for this order (auto-calculated from largest item size)
+  // Used as initial suggestion for vehicle type needed
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+    default: 'small',
+  })
+  estimatedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+
+  // Confirmed shipping size for this order (set by seller, can be different from estimated)
+  // If not set, estimatedShippingSize is used
   // Used to filter orders for couriers based on their vehicle type
+  @Prop({
+    type: String,
+    enum: ['small', 'medium', 'large', 'extra_large'],
+  })
+  confirmedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+
+  // Effective shipping size (confirmed if set, otherwise estimated)
+  // This is a virtual field computed at query time
+  // For backward compatibility, we also keep 'shippingSize' as a field that stores the effective value
   @Prop({
     type: String,
     enum: ['small', 'medium', 'large', 'extra_large'],

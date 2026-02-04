@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface AttributeValue {
   _id: string;
@@ -42,18 +40,10 @@ export default function AttributesPage() {
   const fetchAttributes = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(
-        `${API_URL}/api/v1/attributes/my-store?includeInactive=true`,
-        {
-          credentials: 'include',
-        },
+      const data = await api.get<Attribute[]>(
+        '/api/v1/attributes/my-store?includeInactive=true',
       );
-
-      if (!res.ok) {
-        throw new Error('Failed to fetch attributes');
-      }
-
-      const data = await res.json();
+      console.log('Fetched attributes:', data);
       setAttributes(data);
     } catch (err) {
       console.error('Error fetching attributes:', err);
@@ -72,14 +62,7 @@ export default function AttributesPage() {
   // Delete attribute
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`${API_URL}/api/v1/attributes/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to delete attribute');
-      }
+      await api.delete(`/api/v1/attributes/${id}`);
 
       setAttributes(attributes.filter((a) => a._id !== id));
       setDeleteConfirm(null);
@@ -137,7 +120,7 @@ export default function AttributesPage() {
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
             {t('attributes')}
@@ -148,7 +131,7 @@ export default function AttributesPage() {
         </div>
         <button
           onClick={handleCreate}
-          className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center gap-2"
+          className="px-4 py-2 bg-[var(--accent-600)] text-white rounded-lg hover:bg-[var(--accent-700)] transition-colors flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           <svg
             className="w-5 h-5"
@@ -442,12 +425,6 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
   const [showPalette, setShowPalette] = useState(false);
   const [showCustomColor, setShowCustomColor] = useState(false);
 
-  const API_URL_MODAL = (
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
-  )
-    .replace(/\/api\/v1\/?$/, '')
-    .replace(/\/$/, '');
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -476,25 +453,20 @@ function AttributeModal({ attribute, onClose, onSaved }: AttributeModalProps) {
         }),
       };
 
-      const url = attribute
-        ? `${API_URL_MODAL}/api/v1/attributes/${attribute._id}`
-        : `${API_URL_MODAL}/api/v1/attributes`;
+      console.log('Saving attribute:', { attribute, payload });
 
-      const res = await fetch(url, {
-        method: attribute ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to save attribute');
+      if (attribute) {
+        const result = await api.patch(`/api/v1/attributes/${attribute._id}`, payload);
+        console.log('Attribute updated:', result);
+      } else {
+        const result = await api.post('/api/v1/attributes', payload);
+        console.log('Attribute created:', result);
       }
 
       onSaved();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save');
+    } catch (err: any) {
+      console.error('Error saving attribute:', err);
+      setError(err?.message || (err instanceof Error ? err.message : 'Failed to save'));
     } finally {
       setIsSaving(false);
     }

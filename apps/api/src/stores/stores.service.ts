@@ -7,7 +7,17 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Store, StoreDocument, User, UserDocument } from '@shopit/api-database';
+import {
+  Store,
+  StoreDocument,
+  User,
+  UserDocument,
+  Product,
+  ProductDocument,
+  Order,
+  OrderDocument,
+  OrderStatus,
+} from '@shopit/api-database';
 
 export interface UpdateStoreDto {
   name?: string;
@@ -50,6 +60,8 @@ export class StoresService {
   constructor(
     @InjectModel(Store.name) private storeModel: Model<StoreDocument>,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
+    @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
   ) {}
 
   async findBySubdomain(subdomain: string): Promise<StoreDocument | null> {
@@ -465,5 +477,387 @@ export class StoresService {
       $unset: { storeId: 1 },
       $set: { role: Role.USER },
     });
+  }
+
+  /**
+   * Get store statistics for seller dashboard
+   */
+  async getStoreStats(ownerId: string): Promise<{
+    totalProducts: number;
+    totalOrders: number;
+    totalRevenue: number;
+    pendingOrders: number;
+  }> {
+    const store = await this.findByOwnerId(ownerId);
+
+    if (!store) {
+      return {
+        totalProducts: 0,
+        totalOrders: 0,
+        totalRevenue: 0,
+        pendingOrders: 0,
+      };
+    }
+
+    const storeId = store._id;
+
+    // Count total products
+    const totalProducts = await this.productModel.countDocuments({
+      store: storeId,
+      isDeleted: { $ne: true },
+    });
+
+    // Count orders and calculate revenue
+    const orders = await this.orderModel.find({
+      'orderItems.storeId': storeId,
+    });
+
+    let totalRevenue = 0;
+    let pendingOrders = 0;
+
+    for (const order of orders) {
+      // Sum revenue from order items belonging to this store
+      for (const item of order.orderItems) {
+        if (item.storeId?.toString() === storeId.toString()) {
+          totalRevenue += item.price * item.qty;
+        }
+      }
+
+      // Check if order has pending items for this store
+      const isPending = [
+        OrderStatus.PENDING,
+        OrderStatus.PAID,
+        OrderStatus.PROCESSING,
+      ].includes(order.status);
+      if (isPending) {
+        pendingOrders++;
+      }
+    }
+
+    return {
+      totalProducts,
+      totalOrders: orders.length,
+      totalRevenue,
+      pendingOrders,
+    };
+  }
+
+  /**
+   * Get comprehensive analytics for seller dashboard
+   */
+  async getStoreAnalytics(
+    ownerId: string,
+    period: 'week' | 'month' | 'year' = 'month',
+  ): Promise<{
+    overview: {
+      totalRevenue: number;
+      totalOrders: number;
+      averageOrderValue: number;
+      totalProductsSold: number;
+      conversionRate: number;
+    };
+    revenueOverTime: Array<{
+      date: string;
+      revenue: number;
+      orders: number;
+    }>;
+    orderStatusBreakdown: Record<string, number>;
+    topProducts: Array<{
+      productId: string;
+      name: string;
+      image?: string;
+      totalSold: number;
+      revenue: number;
+    }>;
+    customerInsights: {
+      totalCustomers: number;
+      repeatCustomers: number;
+      newCustomers: number;
+      repeatRate: number;
+    };
+    recentOrders: Array<{
+      orderId: string;
+      orderNumber: string;
+      customerName: string;
+      total: number;
+      status: string;
+      createdAt: Date;
+    }>;
+    periodComparison: {
+      revenueChange: number;
+      ordersChange: number;
+      customersChange: number;
+    };
+  }> {
+    const store = await this.findByOwnerId(ownerId);
+
+    if (!store) {
+      return {
+        overview: {
+          totalRevenue: 0,
+          totalOrders: 0,
+          averageOrderValue: 0,
+          totalProductsSold: 0,
+          conversionRate: 0,
+        },
+        revenueOverTime: [],
+        orderStatusBreakdown: {},
+        topProducts: [],
+        customerInsights: {
+          totalCustomers: 0,
+          repeatCustomers: 0,
+          newCustomers: 0,
+          repeatRate: 0,
+        },
+        recentOrders: [],
+        periodComparison: {
+          revenueChange: 0,
+          ordersChange: 0,
+          customersChange: 0,
+        },
+      };
+    }
+
+    const storeId = store._id;
+    const now = new Date();
+    let startDate: Date;
+    let previousStartDate: Date;
+
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        break;
+      case 'year':
+        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    }
+
+    // Get all orders for this store in the period
+    const orders = await this.orderModel.find({
+      'orderItems.storeId': storeId,
+      createdAt: { $gte: startDate },
+    });
+
+    // Get previous period orders for comparison
+    const previousOrders = await this.orderModel.find({
+      'orderItems.storeId': storeId,
+      createdAt: { $gte: previousStartDate, $lt: startDate },
+    });
+
+    // Calculate overview metrics
+    let totalRevenue = 0;
+    let totalProductsSold = 0;
+    const customerIds = new Set<string>();
+
+    for (const order of orders) {
+      for (const item of order.orderItems) {
+        if (item.storeId?.toString() === storeId.toString()) {
+          totalRevenue += item.price * item.qty;
+          totalProductsSold += item.qty;
+        }
+      }
+      if (order.user) {
+        customerIds.add(order.user.toString());
+      }
+    }
+
+    const totalOrders = orders.length;
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+    // Calculate previous period metrics for comparison
+    let previousRevenue = 0;
+    const previousCustomerIds = new Set<string>();
+
+    for (const order of previousOrders) {
+      for (const item of order.orderItems) {
+        if (item.storeId?.toString() === storeId.toString()) {
+          previousRevenue += item.price * item.qty;
+        }
+      }
+      if (order.user) {
+        previousCustomerIds.add(order.user.toString());
+      }
+    }
+
+    const previousOrderCount = previousOrders.length;
+
+    // Revenue over time aggregation
+    const revenueByDay = new Map<string, { revenue: number; orders: number }>();
+
+    for (const order of orders) {
+      const dateKey = order.createdAt.toISOString().split('T')[0];
+      const existing = revenueByDay.get(dateKey) || { revenue: 0, orders: 0 };
+
+      for (const item of order.orderItems) {
+        if (item.storeId?.toString() === storeId.toString()) {
+          existing.revenue += item.price * item.qty;
+        }
+      }
+      existing.orders += 1;
+      revenueByDay.set(dateKey, existing);
+    }
+
+    const revenueOverTime = Array.from(revenueByDay.entries())
+      .map(([date, data]) => ({
+        date,
+        revenue: data.revenue,
+        orders: data.orders,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Order status breakdown
+    const orderStatusBreakdown: Record<string, number> = {};
+    for (const order of orders) {
+      const status = order.status || 'pending';
+      orderStatusBreakdown[status] = (orderStatusBreakdown[status] || 0) + 1;
+    }
+
+    // Top products - aggregate from order items
+    const productSales = new Map<
+      string,
+      { name: string; image?: string; totalSold: number; revenue: number }
+    >();
+
+    for (const order of orders) {
+      for (const item of order.orderItems) {
+        if (item.storeId?.toString() === storeId.toString()) {
+          const productId = item.product?.toString() || item.name;
+          const existing = productSales.get(productId) || {
+            name: item.name,
+            image: item.image,
+            totalSold: 0,
+            revenue: 0,
+          };
+          existing.totalSold += item.qty;
+          existing.revenue += item.price * item.qty;
+          productSales.set(productId, existing);
+        }
+      }
+    }
+
+    const topProducts = Array.from(productSales.entries())
+      .map(([productId, data]) => ({
+        productId,
+        name: data.name,
+        image: data.image,
+        totalSold: data.totalSold,
+        revenue: data.revenue,
+      }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+
+    // Customer insights - find repeat customers
+    const allTimeOrders = await this.orderModel.find({
+      'orderItems.storeId': storeId,
+    });
+
+    const customerOrderCount = new Map<string, number>();
+    for (const order of allTimeOrders) {
+      if (order.user) {
+        const userId = order.user.toString();
+        customerOrderCount.set(
+          userId,
+          (customerOrderCount.get(userId) || 0) + 1,
+        );
+      }
+    }
+
+    const totalCustomers = customerIds.size;
+    let repeatCustomers = 0;
+    let newCustomers = 0;
+
+    for (const customerId of customerIds) {
+      const orderCount = customerOrderCount.get(customerId) || 0;
+      if (orderCount > 1) {
+        repeatCustomers++;
+      } else {
+        newCustomers++;
+      }
+    }
+
+    const repeatRate =
+      totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
+
+    // Recent orders (last 5)
+    const recentOrders = orders
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      )
+      .slice(0, 5)
+      .map((order) => {
+        let orderTotal = 0;
+        for (const item of order.orderItems) {
+          if (item.storeId?.toString() === storeId.toString()) {
+            orderTotal += item.price * item.qty;
+          }
+        }
+        return {
+          orderId: order._id.toString(),
+          orderNumber: order.orderNumber || order._id.toString().slice(-8),
+          customerName: order.shippingAddress?.recipientName || 'Customer',
+          total: orderTotal,
+          status: order.status,
+          createdAt: order.createdAt,
+        };
+      });
+
+    // Period comparison calculations
+    const revenueChange =
+      previousRevenue > 0
+        ? ((totalRevenue - previousRevenue) / previousRevenue) * 100
+        : totalRevenue > 0
+          ? 100
+          : 0;
+
+    const ordersChange =
+      previousOrderCount > 0
+        ? ((totalOrders - previousOrderCount) / previousOrderCount) * 100
+        : totalOrders > 0
+          ? 100
+          : 0;
+
+    const previousCustomersCount = previousCustomerIds.size;
+    const customersChange =
+      previousCustomersCount > 0
+        ? ((totalCustomers - previousCustomersCount) / previousCustomersCount) *
+          100
+        : totalCustomers > 0
+          ? 100
+          : 0;
+
+    return {
+      overview: {
+        totalRevenue,
+        totalOrders,
+        averageOrderValue,
+        totalProductsSold,
+        conversionRate: 0, // Would need view tracking to calculate this
+      },
+      revenueOverTime,
+      orderStatusBreakdown,
+      topProducts,
+      customerInsights: {
+        totalCustomers,
+        repeatCustomers,
+        newCustomers,
+        repeatRate,
+      },
+      recentOrders,
+      periodComparison: {
+        revenueChange,
+        ordersChange,
+        customersChange,
+      },
+    };
   }
 }

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 interface SiteSettings {
   siteCommissionRate: number;
@@ -15,9 +16,8 @@ export default function PricingPage() {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   useEffect(() => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    fetch(`${API_BASE}/api/v1/admin/settings/public`)
-      .then((res) => res.json())
+    api
+      .get('/admin/settings/public')
       .then((data) => setSettings(data))
       .catch(() => {
         // Fallback to defaults

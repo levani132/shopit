@@ -12,7 +12,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Response } from 'express';
+import * as express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../../auth/guards/optional-jwt-auth.guard';
@@ -30,7 +30,7 @@ export class BogAdminController {
     private readonly configService: ConfigService,
   ) {
     this.frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+      this.configService.get<string>('CORS_ORIGIN') || 'http://localhost:3000';
   }
 
   /**
@@ -40,7 +40,7 @@ export class BogAdminController {
   @Get('auth/authorize')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  async authorize(@Res() res: Response) {
+  async authorize(@Res() res: express.Response) {
     try {
       const authUrl = this.bogTransferService.getAuthorizationUrl();
       return res.redirect(authUrl);
@@ -59,7 +59,7 @@ export class BogAdminController {
   async callback(
     @Query('code') code: string,
     @Query('error') error: string,
-    @Res() res: Response,
+    @Res() res: express.Response,
   ) {
     try {
       if (error) {

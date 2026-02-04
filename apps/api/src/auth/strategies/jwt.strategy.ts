@@ -19,6 +19,7 @@ export interface JwtPayload {
   role: number; // Now a bitmask number
   type?: string;
   sessionId?: string;
+  impersonatedBy?: string; // Admin ID if this is an impersonation session
   iat: number;
   exp: number;
 }
@@ -55,7 +56,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(
     payload: JwtPayload,
-  ): Promise<UserDocument & { storeId?: string }> {
+  ): Promise<UserDocument & { storeId?: string; impersonatedBy?: string }> {
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token');
     }
@@ -66,23 +67,38 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found');
     }
 
-    // If user is a seller, also find their store (using bitmask check)
+    // If user is a seller or admin, also find their store
+    // We check for store ownership even for admins in case they also have a store
     let storeId: string | undefined;
-    if ((user.role & Role.SELLER) !== 0) {
+    const isSeller = (user.role & Role.SELLER) !== 0;
+    const isAdmin = (user.role & Role.ADMIN) !== 0;
+    console.log('JWT validate - user role:', user.role, 'isSeller:', isSeller, 'isAdmin:', isAdmin);
+    if (isSeller || isAdmin) {
       const store = await this.storeModel.findOne({
         ownerId: new Types.ObjectId(payload.sub),
       });
+      console.log('JWT validate - found store:', store?._id?.toString());
       if (store) {
         storeId = store._id.toString();
+        // If user has a store but doesn't have SELLER role, fix it
+        if (!isSeller) {
+          console.log('JWT validate - user has store but missing SELLER role, updating...');
+          await this.userModel.updateOne(
+            { _id: user._id },
+            { $bit: { role: { or: Role.SELLER } } }
+          );
+        }
       }
     }
 
-    // Extend the user object with storeId
-    const userWithStore = user.toObject() as UserDocument & {
+    // Extend the user object with storeId and impersonatedBy
+    const userWithExtras = user.toObject() as UserDocument & {
       storeId?: string;
+      impersonatedBy?: string;
     };
-    userWithStore.storeId = storeId;
+    userWithExtras.storeId = storeId;
+    userWithExtras.impersonatedBy = payload.impersonatedBy;
 
-    return userWithStore;
+    return userWithExtras;
   }
 }

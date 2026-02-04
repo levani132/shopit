@@ -43,12 +43,26 @@ export function getBaseDomain(): {
   isDev: boolean;
 } {
   if (typeof window === 'undefined') {
-    // SSR fallback - return production values
+    // SSR: determine from environment
+    const isLocalDev = process.env.NODE_ENV === 'development';
+    const isDev = process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview' || false;
+
+    if (isLocalDev) {
+      // Local development
+      return {
+        baseDomain: 'localhost',
+        port: '3000',
+        protocol: 'http:',
+        isDev: false,
+      };
+    }
+
+    // Production/preview
     return {
-      baseDomain: 'shopit.ge',
+      baseDomain: isDev ? 'dev.shopit.ge' : 'shopit.ge',
       port: '',
       protocol: 'https:',
-      isDev: false,
+      isDev,
     };
   }
 
@@ -192,11 +206,6 @@ export function getStoreProductUrl(
  * e.g., localhost:3000 -> http://couriers.localhost:3000
  */
 export function getCouriersUrl(): string {
-  if (typeof window === 'undefined') {
-    // SSR fallback
-    return 'https://couriers.shopit.ge';
-  }
-
   return getStoreUrl('couriers');
 }
 
@@ -280,7 +289,7 @@ export function getStoreSubdomain(): string | null {
 
   // For production domains (e.g., sample.shopit.ge)
   const parts = hostname.split('.');
-  if (parts.length >= 3 && parts[0] !== 'www') {
+  if (parts.length >= 3 && parts[0] !== 'www' && parts[0] !== 'dev') {
     return parts[0];
   }
 

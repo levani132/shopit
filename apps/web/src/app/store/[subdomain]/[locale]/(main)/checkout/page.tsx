@@ -13,10 +13,11 @@ import {
   GuestInfo,
 } from '../../../../../../contexts/CheckoutContext';
 import { getLocalizedText } from '../../../../../../lib/utils';
-import { AddressPicker, AddressResult } from '../../../../../../components/ui/AddressPicker';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import {
+  AddressPicker,
+  AddressResult,
+} from '../../../../../../components/ui/AddressPicker';
+import { api } from '../../../../../../lib/api';
 
 // Payment awaiting modal component
 function PaymentAwaitingModal({
@@ -69,28 +70,23 @@ function PaymentAwaitingModal({
     // Enhanced poll that handles window close
     const pollStatusWithRetry = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/payments/order-status/${orderId}`,
-          { credentials: 'include' },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.isPaid) {
-            setStatus('success');
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-            }
-            setTimeout(() => {
-              onPaymentComplete(true);
-            }, 2000);
-            return;
-          } else if (data.status === 'cancelled') {
-            setStatus('failed');
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-            }
-            return;
+        const data = await api.get(`/payments/order-status/${orderId}`);
+        if (data.isPaid) {
+          setStatus('success');
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
           }
+          setTimeout(() => {
+            onPaymentComplete(true);
+          }, 2000);
+          return;
+        }
+        if (data.status === 'cancelled') {
+          setStatus('failed');
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+          }
+          return;
         }
 
         // If window was closed and we've retried enough times, show closed status
@@ -392,20 +388,13 @@ export default function CheckoutPage() {
       if (!isAuthenticated || addressesLoaded) return;
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const addresses = await response.json();
-          setSavedAddresses(addresses);
+        const addresses = await api.get('/auth/addresses');
+        setSavedAddresses(addresses);
 
-          // Auto-select default address
-          const defaultAddr = addresses.find(
-            (a: ShippingAddress) => a.isDefault,
-          );
-          if (defaultAddr && !shippingAddress) {
-            setShippingAddress(defaultAddr);
-          }
+        // Auto-select default address
+        const defaultAddr = addresses.find((a: ShippingAddress) => a.isDefault);
+        if (defaultAddr && !shippingAddress) {
+          setShippingAddress(defaultAddr);
         }
       } catch (err) {
         console.error('Error fetching addresses:', err);
@@ -421,19 +410,14 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchStoreInfo = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/stores/subdomain/${subdomain}`,
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setStoreInfo({
-            id: data._id || data.id,
-            address: data.address,
-            location: data.location,
-            selfPickupEnabled: data.selfPickupEnabled,
-            courierType: data.courierType,
-          });
-        }
+        const data = await api.get(`/stores/subdomain/${subdomain}`);
+        setStoreInfo({
+          id: data._id || data.id,
+          address: data.address,
+          location: data.location,
+          selfPickupEnabled: data.selfPickupEnabled,
+          courierType: data.courierType,
+        });
       } catch (err) {
         console.error('Error fetching store info:', err);
       }
@@ -455,26 +439,32 @@ export default function CheckoutPage() {
 
     if (isAuthenticated) {
       if (!addressesLoaded) return;
-      // If self-pickup is available, go to delivery method selection first
-      if (selfPickupAvailable && currentStep === 'auth') {
-        setCurrentStep('delivery');
-      } else if (deliveryMethod === 'pickup') {
-        // For self-pickup, skip shipping address and go to review
+      // For self-pickup, go directly to review (no address needed)
+      if (deliveryMethod === 'pickup') {
         setCurrentStep('review');
       } else if (!shippingAddress) {
-        setCurrentStep('shipping');
+        // Need address for delivery, but if pickup is available, go to review first
+        // so user can choose pickup option
+        if (selfPickupAvailable) {
+          setCurrentStep('review');
+        } else {
+          setCurrentStep('shipping');
+        }
       } else {
         setCurrentStep('review');
       }
     } else if (isGuestCheckout) {
       if (!guestInfo) {
         setCurrentStep('guest');
-      } else if (selfPickupAvailable && currentStep === 'guest') {
-        setCurrentStep('delivery');
       } else if (deliveryMethod === 'pickup') {
         setCurrentStep('review');
       } else if (!shippingAddress) {
-        setCurrentStep('shipping');
+        // If pickup available, go to review so user can choose
+        if (selfPickupAvailable) {
+          setCurrentStep('review');
+        } else {
+          setCurrentStep('shipping');
+        }
       } else {
         setCurrentStep('review');
       }
@@ -488,19 +478,19 @@ export default function CheckoutPage() {
     guestInfo,
     shippingAddress,
     addressesLoaded,
-    selfPickupAvailable,
     deliveryMethod,
     currentStep,
     isEditingAddress,
+    selfPickupAvailable,
   ]);
 
   // Handle guest info submit
   const handleGuestSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setGuestInfo(guestForm);
-    // If self-pickup is available, go to delivery method selection
+    // If pickup available, go to review so user can choose; otherwise need address
     if (selfPickupAvailable) {
-      setCurrentStep('delivery');
+      setCurrentStep('review');
     } else {
       setCurrentStep('shipping');
     }
@@ -549,6 +539,7 @@ export default function CheckoutPage() {
     if (addr.location) {
       setAddressPickerValue({
         address: addr.address,
+        city: addr.city,
         location: addr.location,
       });
       // Calculate shipping for the existing address
@@ -568,40 +559,22 @@ export default function CheckoutPage() {
       try {
         if (editingAddressId) {
           // Update existing address
-          const response = await fetch(
-            `${API_URL}/api/v1/auth/addresses/${editingAddressId}`,
-            {
-              method: 'PUT',
-              credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(addressForm),
-            },
+          const updatedAddress = await api.put(
+            `/auth/addresses/${editingAddressId}`,
+            addressForm,
           );
-
-          if (response.ok) {
-            const updatedAddress = await response.json();
-            setSavedAddresses(
-              savedAddresses.map((a) =>
-                a._id === editingAddressId ? updatedAddress : a,
-              ),
-            );
-            selectAddress(updatedAddress);
-            setEditingAddressId(null);
-          }
+          setSavedAddresses(
+            savedAddresses.map((a) =>
+              a._id === editingAddressId ? updatedAddress : a,
+            ),
+          );
+          selectAddress(updatedAddress);
+          setEditingAddressId(null);
         } else if (saveNewAddress) {
           // Create new address
-        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(addressForm),
-        });
-
-        if (response.ok) {
-          const newAddress = await response.json();
+          const newAddress = await api.post('/auth/addresses', addressForm);
           setSavedAddresses([...savedAddresses, newAddress]);
           selectAddress(newAddress);
-          }
         } else {
           // Use address without saving
           selectAddress({ ...addressForm, _id: 'temp' });
@@ -640,7 +613,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      setShippingEstimate((prev) => ({ ...prev, isLoading: true, error: undefined }));
+      setShippingEstimate((prev) => ({
+        ...prev,
+        isLoading: true,
+        error: undefined,
+      }));
 
       // Send product IDs so backend fetches current sizes from database
       const products = storeItems.map((item) => ({
@@ -649,31 +626,17 @@ export default function CheckoutPage() {
       }));
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/orders/calculate-shipping`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            storeLocation: storeInfo.location,
-            customerLocation,
-            products, // Send product IDs for DB lookup
-          }),
+        const data = await api.post('/orders/calculate-shipping', {
+          storeLocation: storeInfo.location,
+          customerLocation,
+          products, // Send product IDs for DB lookup
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          setShippingEstimate({
-            fee: data.fee,
-            durationMinutes: data.durationMinutes,
-            distanceKm: data.distanceKm,
-            isLoading: false,
-          });
-        } else {
-          setShippingEstimate((prev) => ({
-            ...prev,
-            isLoading: false,
-            error: 'Failed to calculate shipping',
-          }));
-        }
+        setShippingEstimate({
+          fee: data.fee,
+          durationMinutes: data.durationMinutes,
+          distanceKm: data.distanceKm,
+          isLoading: false,
+        });
       } catch (err) {
         console.error('Error calculating shipping:', err);
         setShippingEstimate((prev) => ({
@@ -700,38 +663,11 @@ export default function CheckoutPage() {
   // Handle address picker change
   const handleAddressPickerChange = (result: AddressResult) => {
     setAddressPickerValue(result);
-    // Extract city from address (simple heuristic - look for common Georgian cities)
-    const addressParts = result.address.split(',').map((p) => p.trim());
-    let city = 'Tbilisi'; // Default
-    const georgianCities = [
-      'Tbilisi',
-      'თბილისი',
-      'Batumi',
-      'ბათუმი',
-      'Kutaisi',
-      'ქუთაისი',
-      'Rustavi',
-      'რუსთავი',
-      'Gori',
-      'გორი',
-      'Zugdidi',
-      'ზუგდიდი',
-      'Poti',
-      'ფოთი',
-      'Telavi',
-      'თელავი',
-    ];
-    for (const part of addressParts) {
-      if (georgianCities.some((c) => part.toLowerCase().includes(c.toLowerCase()))) {
-        city = part;
-        break;
-      }
-    }
 
     setAddressForm((prev) => ({
       ...prev,
       address: result.address,
-      city,
+      city: result.city,
       location: result.location,
     }));
 
@@ -784,8 +720,8 @@ export default function CheckoutPage() {
         shippingDetails:
           deliveryMethod === 'pickup'
             ? {
-                address: storeInfo?.address || 'Self Pickup',
-                city: 'Self Pickup',
+                address: storeInfo?.address || t('selfPickup'),
+                city: t('selfPickup'),
                 postalCode: '',
                 country: 'Georgia',
                 phoneNumber: guestInfo?.phoneNumber || user?.phoneNumber || '',
@@ -805,19 +741,7 @@ export default function CheckoutPage() {
         guestInfo: !isAuthenticated ? guestInfo : undefined,
       };
 
-      const orderResponse = await fetch(`${API_URL}/api/v1/orders`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderPayload),
-      });
-
-      if (!orderResponse.ok) {
-        const errorData = await orderResponse.json();
-        throw new Error(errorData.message || 'Failed to create order');
-      }
-
-      const order = await orderResponse.json();
+      const order = await api.post('/orders', orderPayload);
 
       // 2. Initiate payment
       const paymentPayload = {
@@ -841,26 +765,11 @@ export default function CheckoutPage() {
               email: guestInfo?.email,
               phone: guestInfo?.phoneNumber,
             },
-        successUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/success`,
-        failUrl: `${window.location.origin}/store/${subdomain}/${locale}/checkout/fail`,
+        successUrl: `${window.location.origin}/${locale}/checkout/success`,
+        failUrl: `${window.location.origin}/${locale}/checkout/fail`,
       };
 
-      const paymentResponse = await fetch(
-        `${API_URL}/api/v1/payments/initiate`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(paymentPayload),
-        },
-      );
-
-      if (!paymentResponse.ok) {
-        const errorData = await paymentResponse.json();
-        throw new Error(errorData.message || 'Failed to initiate payment');
-      }
-
-      const paymentData = await paymentResponse.json();
+      const paymentData = await api.post('/payments/initiate', paymentPayload);
 
       // 3. Open BOG payment page in popup/new tab
       if (paymentData.redirectUrl) {
@@ -1093,7 +1002,7 @@ export default function CheckoutPage() {
                   onClick={() => handleDeliveryMethodSelect('delivery')}
                   className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
                     deliveryMethod === 'delivery'
-                      ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/20'
+                      ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50'
                       : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                   }`}
                 >
@@ -1129,7 +1038,7 @@ export default function CheckoutPage() {
                   onClick={() => handleDeliveryMethodSelect('pickup')}
                   className={`w-full text-left p-4 rounded-lg border-2 transition-colors ${
                     deliveryMethod === 'pickup'
-                      ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]/20'
+                      ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50'
                       : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                   }`}
                 >
@@ -1199,7 +1108,7 @@ export default function CheckoutPage() {
                       key={addr._id}
                       className={`w-full p-4 rounded-lg border-2 transition-colors ${
                         shippingAddress?._id === addr._id
-                          ? 'border-[var(--store-accent-500)] bg-[var(--store-accent-50)] dark:bg-[var(--store-accent-900)]'
+                          ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50'
                           : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
                       }`}
                     >
@@ -1253,8 +1162,8 @@ export default function CheckoutPage() {
                             />
                           </svg>
                         </button>
-                        </div>
                       </div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1280,13 +1189,14 @@ export default function CheckoutPage() {
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {t('fullAddress')} *
-                      </label>
+                    </label>
                     <AddressPicker
                       value={
                         addressPickerValue ||
                         (addressForm.address && addressForm.location
                           ? {
                               address: addressForm.address,
+                              city: addressForm.city,
                               location: addressForm.location,
                             }
                           : undefined)
@@ -1332,8 +1242,12 @@ export default function CheckoutPage() {
                                   {t('estimatedDelivery')}:
                                 </span>{' '}
                                 {/* 1-3 days for Tbilisi, 3-5 days outside */}
-                                {addressForm.city.toLowerCase().includes('tbilisi') ||
-                                addressForm.city.toLowerCase().includes('თბილისი')
+                                {addressForm.city
+                                  .toLowerCase()
+                                  .includes('tbilisi') ||
+                                addressForm.city
+                                  .toLowerCase()
+                                  .includes('თბილისი')
                                   ? t('deliveryDays', { days: '1-3' })
                                   : t('deliveryDays', { days: '3-5' })}
                               </div>
@@ -1344,10 +1258,9 @@ export default function CheckoutPage() {
                           )}
                         </div>
                       )}
-                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {t('phone')} *
@@ -1405,7 +1318,9 @@ export default function CheckoutPage() {
                       type="submit"
                       className="flex-1 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
                     >
-                      {editingAddressId ? t('updateAddress') : t('useThisAddress')}
+                      {editingAddressId
+                        ? t('updateAddress')
+                        : t('useThisAddress')}
                     </button>
                     {(savedAddresses.length > 0 || editingAddressId) && (
                       <button
@@ -1429,38 +1344,54 @@ export default function CheckoutPage() {
                 {t('reviewOrder')}
               </h2>
 
-              {/* Delivery method summary */}
-              {deliveryMethod === 'pickup' ? (
-                <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <p className="font-medium text-green-800 dark:text-green-300">
-                          {tDashboard('selfPickupOption')}
-                        </p>
-                        <span className="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-                          {tDashboard('selfPickupFree')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-green-700 dark:text-green-400">
-                        {tDashboard('selfPickupAddress')}:
-                      </p>
-                      <p className="text-sm text-green-600 dark:text-green-500">
-                        {storeInfo?.address}
-                      </p>
-                    </div>
-                    {selfPickupAvailable && (
-                      <button
-                        onClick={() => {
-                          setIsEditingAddress(true);
-                          setCurrentStep('delivery');
-                        }}
-                        className="text-sm text-green-600 dark:text-green-400 hover:underline"
-                      >
-                        {t('change')}
-                      </button>
-                    )}
+              {/* Delivery Method Selection - inline toggle when pickup is available */}
+              {selfPickupAvailable && (
+                <div className="mb-6">
+                  <p className="font-medium text-gray-900 dark:text-white mb-3">
+                    {t('deliveryMethod')}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setDeliveryMethod('delivery');
+                        if (!shippingAddress) {
+                          setCurrentStep('shipping');
+                        }
+                      }}
+                      className={`flex-1 py-3 px-4 rounded-lg border-2 transition-colors text-sm font-medium ${
+                        deliveryMethod === 'delivery'
+                          ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {t('homeDelivery')}
+                    </button>
+                    <button
+                      onClick={() => setDeliveryMethod('pickup')}
+                      className={`flex-1 py-3 px-4 rounded-lg border-2 transition-colors text-sm font-medium flex items-center justify-center gap-2 ${
+                        deliveryMethod === 'pickup'
+                          ? 'border-[var(--store-accent-500)] bg-gray-50 dark:bg-zinc-700/50 text-gray-900 dark:text-white'
+                          : 'border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-zinc-600'
+                      }`}
+                    >
+                      {tDashboard('selfPickupOption')}
+                      <span className="px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded">
+                        {tDashboard('selfPickupFree')}
+                      </span>
+                    </button>
                   </div>
+                </div>
+              )}
+
+              {/* Delivery address or Pickup location */}
+              {deliveryMethod === 'pickup' ? (
+                <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {tDashboard('selfPickupAddress')}:
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {storeInfo?.address}
+                  </p>
                 </div>
               ) : shippingAddress ? (
                 <div className="mb-6 p-4 bg-gray-50 dark:bg-zinc-700/50 rounded-lg">
@@ -1502,13 +1433,29 @@ export default function CheckoutPage() {
                     <button
                       onClick={() => {
                         setIsEditingAddress(true);
-                        setCurrentStep(
-                          selfPickupAvailable ? 'delivery' : 'shipping',
-                        );
+                        setCurrentStep('shipping');
                       }}
-                      className="text-sm text-[var(--store-accent-600)] hover:underline"
+                      className="text-sm text-[var(--store-accent-600)] dark:text-[var(--store-accent-400)] hover:underline"
                     >
                       {t('change')}
+                    </button>
+                  </div>
+                </div>
+              ) : deliveryMethod === 'delivery' ? (
+                // No address selected for delivery - prompt to add
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm text-amber-700 dark:text-amber-400">
+                      {t('noAddressSelected')}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setIsEditingAddress(true);
+                        setCurrentStep('shipping');
+                      }}
+                      className="px-4 py-2 text-sm font-medium bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
+                    >
+                      {t('addAddress')}
                     </button>
                   </div>
                 </div>

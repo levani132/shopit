@@ -2,17 +2,20 @@
  * Bitmask-based Role System
  *
  * Each role is a power of 2, allowing users to have multiple roles:
- * - User = 1 (0001) - Basic user, can browse and buy
- * - Courier = 2 (0010) - Can deliver orders
- * - Seller = 4 (0100) - Can create store and sell products
- * - Admin = 8 (1000) - Can manage platform
+ * - User = 1 (00001) - Basic user, can browse and buy
+ * - Courier = 2 (00010) - Can deliver orders
+ * - Seller = 4 (00100) - Can create store and sell products
+ * - Admin = 8 (01000) - Can manage platform
+ * - CourierAdmin = 16 (10000) - Can manage couriers and view courier analytics
  *
  * Examples of combined roles:
- * - User + Courier = 3 (0011)
- * - User + Seller = 5 (0101)
- * - User + Admin = 9 (1001)
- * - User + Seller + Admin = 13 (1101)
- * - All roles = 15 (1111)
+ * - User + Courier = 3 (00011)
+ * - User + Seller = 5 (00101)
+ * - User + Admin = 9 (01001)
+ * - User + Seller + Admin = 13 (01101)
+ * - User + CourierAdmin = 17 (10001)
+ * - User + CourierAdmin + Courier = 19 (10011) - Courier admin who also delivers
+ * - All roles = 31 (11111)
  */
 
 // Role bit values
@@ -21,12 +24,14 @@ export const Role = {
   COURIER: 2,
   SELLER: 4,
   ADMIN: 8,
+  COURIER_ADMIN: 16,
 } as const;
 
 export type RoleValue = (typeof Role)[keyof typeof Role];
 
 // All possible roles
-export const ALL_ROLES = Role.USER | Role.COURIER | Role.SELLER | Role.ADMIN; // 15
+export const ALL_ROLES =
+  Role.USER | Role.COURIER | Role.SELLER | Role.ADMIN | Role.COURIER_ADMIN; // 31
 
 // Role names for display
 export const RoleNames: Record<RoleValue, string> = {
@@ -34,6 +39,7 @@ export const RoleNames: Record<RoleValue, string> = {
   [Role.COURIER]: 'Courier',
   [Role.SELLER]: 'Seller',
   [Role.ADMIN]: 'Admin',
+  [Role.COURIER_ADMIN]: 'Courier Admin',
 };
 
 // Role names in Georgian
@@ -42,6 +48,7 @@ export const RoleNamesKa: Record<RoleValue, string> = {
   [Role.COURIER]: 'კურიერი',
   [Role.SELLER]: 'გამყიდველი',
   [Role.ADMIN]: 'ადმინისტრატორი',
+  [Role.COURIER_ADMIN]: 'კურიერ ადმინი',
 };
 
 /**
@@ -130,6 +137,7 @@ export function getRoleList(userRoles: number): RoleValue[] {
   if (hasRole(userRoles, Role.COURIER)) roles.push(Role.COURIER);
   if (hasRole(userRoles, Role.SELLER)) roles.push(Role.SELLER);
   if (hasRole(userRoles, Role.ADMIN)) roles.push(Role.ADMIN);
+  if (hasRole(userRoles, Role.COURIER_ADMIN)) roles.push(Role.COURIER_ADMIN);
   return roles;
 }
 
@@ -176,7 +184,7 @@ export function legacyRoleToNumber(role: string): number {
 
 /**
  * Get the primary/highest role name for display
- * Priority: Admin > Seller > Courier > User
+ * Priority: Admin > CourierAdmin > Seller > Courier > User
  */
 export function getPrimaryRoleName(
   userRoles: number,
@@ -184,6 +192,7 @@ export function getPrimaryRoleName(
 ): string {
   const names = locale === 'ka' ? RoleNamesKa : RoleNames;
   if (hasRole(userRoles, Role.ADMIN)) return names[Role.ADMIN];
+  if (hasRole(userRoles, Role.COURIER_ADMIN)) return names[Role.COURIER_ADMIN];
   if (hasRole(userRoles, Role.SELLER)) return names[Role.SELLER];
   if (hasRole(userRoles, Role.COURIER)) return names[Role.COURIER];
   return names[Role.USER];

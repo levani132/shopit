@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
+import { api } from '../../../lib/api';
 
 interface ContactInfo {
   // These come from SiteSettings (public endpoint)
@@ -32,26 +33,22 @@ export default function ContactPage() {
   >('idle');
 
   useEffect(() => {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     const fetchContactData = async () => {
       try {
         // Fetch both contact content and public site settings in parallel
-        const [contactRes, settingsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/v1/content/contact`),
-          fetch(`${API_BASE}/api/v1/admin/settings/public`),
+        const [contactData, settingsData] = await Promise.all([
+          api.get('/api/v1/content/contact'),
+          api.get('/api/v1/admin/settings/public'),
         ]);
-
-        const contactData = contactRes.ok ? await contactRes.json() : {};
-        const settingsData = settingsRes.ok ? await settingsRes.json() : {};
 
         setContactInfo({
           // Email and phone from Site Settings (single source of truth)
           email: settingsData.supportEmail || 'support@shopit.ge',
           phone: settingsData.supportPhone || '',
           // Other contact info from ContactContent
-          address: contactData.address || '',
-          workingHours: contactData.workingHours || '',
-          socialLinks: contactData.socialLinks || {},
+          address: (contactData as any).address || '',
+          workingHours: (contactData as any).workingHours || '',
+          socialLinks: (contactData as any).socialLinks || {},
         });
       } catch {
         // Fallback defaults
@@ -72,23 +69,9 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      const response = await fetch(
-        `${API_BASE}/api/v1/content/contact/submit`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
-        },
-      );
-
-      if (response.ok) {
-        setSubmitStatus('success');
-        setFormData({ name: '', email: '', subject: '', message: '' });
-      } else {
-        setSubmitStatus('error');
-      }
+      await api.post('/api/v1/content/contact/submit', formData);
+      setSubmitStatus('success');
+      setFormData({ name: '', email: '', subject: '', message: '' });
     } catch {
       setSubmitStatus('error');
     } finally {

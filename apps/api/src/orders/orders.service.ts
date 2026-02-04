@@ -25,6 +25,9 @@ import { StockReservationService } from './stock-reservation.service';
 import { BalanceService } from './balance.service';
 import { SiteSettingsService } from '../admin/site-settings.service';
 import { DeliveryFeeService, ShippingSize } from './delivery-fee.service';
+import { RoutesService } from '../routes/routes.service';
+import { EmailService } from '../email/email.service';
+import { ConfigService } from '@nestjs/config';
 import {
   VehicleType,
   VEHICLE_CAPACITIES,
@@ -46,6 +49,10 @@ export class OrdersService {
     private balanceService: BalanceService,
     private siteSettingsService: SiteSettingsService,
     private deliveryFeeService: DeliveryFeeService,
+    @Inject(forwardRef(() => RoutesService))
+    private routesService: RoutesService,
+    private emailService: EmailService,
+    private configService: ConfigService,
   ) {}
 
   /**
@@ -262,6 +269,7 @@ export class OrdersService {
             variantAttributes: item.variantAttributes || [],
             storeId: new Types.ObjectId(item.storeId),
             storeName: store.name, // Use DB store name
+            storeSubdomain: store.subdomain, // For product links
             courierType: store.courierType,
             // If noPrepRequired is true, prep time is 0 (items ship same day)
             prepTimeMinDays: store.noPrepRequired
@@ -290,6 +298,7 @@ export class OrdersService {
         // - Self-delivery (seller handles): free (no extra fee, only site commission applies)
         // - ShopIt courier: based on location/distance
         let shippingPrice = 0;
+        let distanceKm: number | undefined;
         if (deliveryMethod === 'pickup') {
           // Self-pickup is always free
           shippingPrice = 0;
@@ -357,6 +366,7 @@ export class OrdersService {
                 );
 
               shippingPrice += deliveryResult.fee;
+              distanceKm = deliveryResult.distanceKm;
               this.logger.log(
                 `ShopIt delivery fee for store ${store.name}: ${deliveryResult.fee} GEL (${deliveryResult.durationMinutes} min, ${largestSize})`,
               );
@@ -393,6 +403,7 @@ export class OrdersService {
           deliveryMethod,
           itemsPrice,
           shippingPrice,
+          distanceKm,
           taxPrice,
           totalPrice,
           externalOrderId,
@@ -402,12 +413,16 @@ export class OrdersService {
           pickupAddress: pickupStore?.address,
           pickupCity: pickupStore?.city,
           pickupPhoneNumber: pickupStore?.phone,
+          // Pickup location coordinates (from store)
+          pickupLocation: pickupStore?.location,
+          // Delivery location coordinates (from shipping address)
+          deliveryLocation: dto.shippingDetails?.location,
           // Recipient name for courier display
           recipientName,
         };
 
         // Calculate the largest shipping size for the entire order
-        // This is used to filter which couriers can see/accept this order
+        // This is used as initial estimation for vehicle type needed
         const allSizes: ShippingSize[] = [
           'small',
           'medium',
@@ -420,7 +435,9 @@ export class OrdersService {
           const index = allSizes.indexOf(size);
           if (index > orderMaxSizeIndex) orderMaxSizeIndex = index;
         }
-        orderData.shippingSize = allSizes[orderMaxSizeIndex];
+        const estimatedSize = allSizes[orderMaxSizeIndex];
+        orderData.estimatedShippingSize = estimatedSize;
+        orderData.shippingSize = estimatedSize; // Effective size (will be updated when seller confirms)
 
         if (userId && !dto.isGuestOrder) {
           orderData.user = new Types.ObjectId(userId);
@@ -517,17 +534,63 @@ export class OrdersService {
       this.logger.log(`Order storeIds: ${storeIds.join(', ')}`);
     }
 
+    // Populate storeSubdomain for order items that don't have it (backwards compatibility)
+    await this.populateStoreSubdomains(orders);
+
     return orders;
+  }
+
+  /**
+   * Populate storeSubdomain for order items that don't have it (backwards compatibility)
+   */
+  private async populateStoreSubdomains(
+    orders: OrderDocument[],
+  ): Promise<void> {
+    // Collect unique storeIds that need subdomain lookup
+    const storeIdsToLookup = new Set<string>();
+    for (const order of orders) {
+      for (const item of order.orderItems) {
+        if (!item.storeSubdomain && item.storeId) {
+          storeIdsToLookup.add(item.storeId.toString());
+        }
+      }
+    }
+
+    // Fetch stores if needed
+    if (storeIdsToLookup.size > 0) {
+      const stores = await this.storeModel.find({
+        _id: {
+          $in: Array.from(storeIdsToLookup).map((id) => new Types.ObjectId(id)),
+        },
+      });
+      const storeMap = new Map(
+        stores.map((s) => [s._id.toString(), s.subdomain]),
+      );
+
+      // Populate storeSubdomain on order items
+      for (const order of orders) {
+        for (const item of order.orderItems) {
+          if (!item.storeSubdomain && item.storeId) {
+            item.storeSubdomain = storeMap.get(item.storeId.toString());
+          }
+        }
+      }
+    }
   }
 
   /**
    * Find orders for a store (seller view)
    */
   async findStoreOrders(storeId: string): Promise<OrderDocument[]> {
-    return this.orderModel
+    const orders = await this.orderModel
       .find({ 'orderItems.storeId': new Types.ObjectId(storeId) })
       .populate('courierId', 'firstName lastName phoneNumber')
       .sort({ createdAt: -1 });
+
+    // Populate storeSubdomain for order items that don't have it (backwards compatibility)
+    await this.populateStoreSubdomains(orders);
+
+    return orders;
   }
 
   /**
@@ -655,7 +718,93 @@ export class OrdersService {
     // Calculate delivery deadline based on store's prep and delivery times
     order.deliveryDeadline = this.calculateDeliveryDeadline(order);
 
-    return order.save();
+    const savedOrder = await order.save();
+
+    // Send order notification emails (async, don't block order completion)
+    this.sendOrderNotificationEmails(savedOrder).catch((error) => {
+      this.logger.error(
+        `Failed to send order notification emails: ${error.message}`,
+      );
+    });
+
+    return savedOrder;
+  }
+
+  /**
+   * Send order notification emails to buyer, seller(s), and admin
+   */
+  private async sendOrderNotificationEmails(
+    order: OrderDocument,
+  ): Promise<void> {
+    try {
+      // 1. Send email to buyer
+      let buyerEmail: string | undefined;
+      let buyerName: string | undefined;
+
+      if (order.user) {
+        const user = await this.userModel.findById(order.user);
+        if (user) {
+          buyerEmail = user.email;
+          buyerName =
+            `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+            user.email;
+        }
+      } else if (order.guestInfo) {
+        buyerEmail = order.guestInfo.email;
+        buyerName = order.guestInfo.fullName || 'მომხმარებელი';
+      }
+
+      if (buyerEmail) {
+        await this.emailService.sendBuyerOrderConfirmation(
+          order,
+          buyerEmail,
+          buyerName || 'მომხმარებელი',
+        );
+        this.logger.log(`Buyer order confirmation email sent to ${buyerEmail}`);
+      }
+
+      // 2. Send email to each store seller
+      const storeIds = [
+        ...new Set(order.orderItems.map((item) => item.storeId.toString())),
+      ];
+
+      for (const storeId of storeIds) {
+        const store = await this.storeModel
+          .findById(storeId)
+          .populate('ownerId');
+        if (store && store.ownerId) {
+          const owner = store.ownerId as unknown as UserDocument;
+          if (owner.email) {
+            await this.emailService.sendSellerNewOrderNotification(
+              order,
+              store,
+              owner.email,
+            );
+            this.logger.log(
+              `Seller order notification email sent to ${owner.email} for store ${store.name}`,
+            );
+          }
+        }
+      }
+
+      // 3. Send email to admin(s) - supports comma-separated emails
+      const adminEmails = this.configService.get<string>('ADMIN_EMAIL');
+      if (adminEmails) {
+        const emails = adminEmails
+          .split(',')
+          .map((e) => e.trim())
+          .filter(Boolean);
+        for (const email of emails) {
+          await this.emailService.sendAdminOrderNotification(order, email);
+          this.logger.log(`Admin order notification email sent to ${email}`);
+        }
+      }
+    } catch (error: any) {
+      this.logger.error(
+        `Error sending order notification emails: ${error.message}`,
+      );
+      // Don't throw - we don't want to fail the order because of email issues
+    }
   }
 
   /**
@@ -785,6 +934,11 @@ export class OrdersService {
 
     order.status = newStatus;
 
+    // Invalidate route caches when order becomes available for delivery
+    if (newStatus === OrderStatus.READY_FOR_DELIVERY) {
+      await this.routesService.invalidateAllCaches();
+    }
+
     if (newStatus === OrderStatus.DELIVERED) {
       order.isDelivered = true;
       order.deliveredAt = new Date();
@@ -792,8 +946,102 @@ export class OrdersService {
       // Process seller earnings when order is delivered
       await order.save();
       await this.balanceService.processOrderEarnings(order);
+
+      // Send delivery confirmation email to buyer
+      await this.sendDeliveryConfirmationEmail(order);
+
       return order;
     }
+
+    return order.save();
+  }
+
+  /**
+   * Send delivery confirmation email to buyer
+   */
+  private async sendDeliveryConfirmationEmail(
+    order: OrderDocument,
+  ): Promise<void> {
+    try {
+      let buyerEmail: string | undefined;
+      let buyerName: string | undefined;
+
+      if (order.userId) {
+        const user = await this.userModel.findById(order.userId).exec();
+        if (user) {
+          buyerEmail = user.email;
+          buyerName =
+            `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+            user.email;
+        }
+      } else if (order.guestInfo?.email) {
+        buyerEmail = order.guestInfo.email;
+        buyerName = order.guestInfo.name || 'მომხმარებელი';
+      }
+
+      if (buyerEmail) {
+        await this.emailService.sendDeliveryConfirmation(
+          order,
+          buyerEmail,
+          buyerName || 'მომხმარებელი',
+        );
+        this.logger.log(`Delivery confirmation email sent to ${buyerEmail}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to send delivery confirmation email: ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Update order shipping size (seller action)
+   * Allows seller to confirm or change the estimated shipping size
+   * Only allowed before order is assigned to a courier
+   */
+  async updateShippingSize(
+    orderId: string,
+    storeId: string,
+    newSize: 'small' | 'medium' | 'large' | 'extra_large',
+  ): Promise<OrderDocument> {
+    const order = await this.findById(orderId);
+
+    // Verify this store has items in the order
+    const hasStoreItems = order.orderItems.some(
+      (item) => item.storeId.toString() === storeId,
+    );
+
+    if (!hasStoreItems) {
+      throw new BadRequestException(
+        'You do not have permission to update this order.',
+      );
+    }
+
+    // Cannot update shipping size after courier is assigned
+    if (order.courierId) {
+      throw new BadRequestException(
+        'Cannot change shipping size after a courier has been assigned.',
+      );
+    }
+
+    // Cannot update if order is already delivered/cancelled/refunded
+    if (
+      order.status === OrderStatus.CANCELLED ||
+      order.status === OrderStatus.REFUNDED ||
+      order.status === OrderStatus.DELIVERED
+    ) {
+      throw new BadRequestException(
+        'Cannot change shipping size for completed or cancelled orders.',
+      );
+    }
+
+    // Update both confirmedShippingSize and shippingSize (effective)
+    order.confirmedShippingSize = newSize;
+    order.shippingSize = newSize;
+
+    this.logger.log(
+      `Order ${orderId} shipping size updated from ${order.estimatedShippingSize} to ${newSize} by seller`,
+    );
 
     return order.save();
   }
@@ -854,19 +1102,47 @@ export class OrdersService {
     }
 
     order.status = newStatus;
+    const now = new Date();
 
     if (newStatus === OrderStatus.SHIPPED) {
-      order.shippedAt = new Date();
+      order.shippedAt = now;
+      order.pickedUpAt = now; // Track pickup time
     }
 
     if (newStatus === OrderStatus.DELIVERED) {
       order.isDelivered = true;
-      order.deliveredAt = new Date();
+      order.deliveredAt = now;
 
       // Process seller earnings when order is delivered
       await order.save();
       await this.balanceService.processOrderEarnings(order);
+
+      // Update active route if this order is part of one
+      // This handles the case where courier delivers order early via deliveries page
+      try {
+        await this.routesService.markOrderDeliveredInRoute(courierId, orderId);
+      } catch (err) {
+        // Order might not be part of a route, that's okay
+        this.logger.debug(
+          `Order ${orderId} delivery - route update skipped: ${err}`,
+        );
+      }
+
+      // Send delivery confirmation email to buyer
+      await this.sendDeliveryConfirmationEmail(order);
+
       return order;
+    }
+
+    if (newStatus === OrderStatus.SHIPPED) {
+      // Update active route if this order is part of one (mark pickup as completed)
+      try {
+        await this.routesService.markOrderPickedUpInRoute(courierId, orderId);
+      } catch (err) {
+        this.logger.debug(
+          `Order ${orderId} pickup - route update skipped: ${err}`,
+        );
+      }
     }
 
     return order.save();
@@ -874,39 +1150,85 @@ export class OrdersService {
 
   /**
    * Get orders ready for delivery (for couriers)
-   * Returns orders with status READY_FOR_DELIVERY from ShopIt delivery stores
-   * Sorted by delivery deadline (most urgent first)
-   * Filtered by courier's vehicle capacity if vehicleType is provided
+   * Returns ALL orders with status READY_FOR_DELIVERY from ShopIt delivery stores
+   *
+   * Sorting priority:
+   * 1. By delivery deadline (earliest first - most urgent)
+   * 2. Orders that this vehicle can carry (matching size)
+   * 3. Orders smaller than this vehicle capacity
+   * 4. Everything else from smallest to biggest
    */
   async getOrdersReadyForDelivery(
     courierId?: string,
     vehicleType?: string,
   ): Promise<OrderDocument[]> {
-    // Build query for available orders
+    // Build query for ALL available orders (not filtered by vehicle)
     const query: Record<string, unknown> = {
       status: OrderStatus.READY_FOR_DELIVERY,
       courierId: { $exists: false },
     };
 
-    // If courier has a vehicle type, filter orders by compatible shipping sizes
-    if (vehicleType && this.isValidVehicleType(vehicleType)) {
-      const compatibleSizes = this.getCompatibleShippingSizes(
-        vehicleType as VehicleType,
-      );
-      if (compatibleSizes.length < 4) {
-        // Only add filter if not all sizes are compatible
-        query.shippingSize = { $in: compatibleSizes };
-      }
-    }
-
-    // Find orders that are ready for delivery and not yet assigned
+    // Find all orders that are ready for delivery and not yet assigned
     const orders = await this.orderModel
       .find(query)
       .sort({ deliveryDeadline: 1, createdAt: 1 }) // Most urgent first
-      .limit(50)
+      .limit(100)
       .exec();
 
-    return orders;
+    // If no vehicle type provided, return all orders sorted by deadline
+    if (!vehicleType || !this.isValidVehicleType(vehicleType)) {
+      return orders;
+    }
+
+    // Get compatible sizes for this vehicle
+    const compatibleSizes = this.getCompatibleShippingSizes(
+      vehicleType as VehicleType,
+    );
+
+    // Size priority (smallest to largest)
+    const sizeOrder: Record<string, number> = {
+      small: 1,
+      medium: 2,
+      large: 3,
+      extra_large: 4,
+    };
+
+    // Sort orders with custom logic:
+    // 1. First, orders are already sorted by deadline
+    // 2. Within similar deadlines, prioritize by vehicle compatibility
+    const sortedOrders = orders.sort((a, b) => {
+      // First compare by deadline (already done by DB, but keep for stability)
+      const deadlineA = a.deliveryDeadline?.getTime() || Infinity;
+      const deadlineB = b.deliveryDeadline?.getTime() || Infinity;
+
+      if (deadlineA !== deadlineB) {
+        return deadlineA - deadlineB;
+      }
+
+      // Get effective shipping size for each order
+      const sizeA =
+        a.confirmedShippingSize ||
+        a.estimatedShippingSize ||
+        a.shippingSize ||
+        'small';
+      const sizeB =
+        b.confirmedShippingSize ||
+        b.estimatedShippingSize ||
+        b.shippingSize ||
+        'small';
+
+      const canCarryA = compatibleSizes.includes(sizeA as ShippingSize);
+      const canCarryB = compatibleSizes.includes(sizeB as ShippingSize);
+
+      // Orders this vehicle can carry come first
+      if (canCarryA && !canCarryB) return -1;
+      if (!canCarryA && canCarryB) return 1;
+
+      // Within same category, sort by size (smaller first for can carry, then rest smallest to biggest)
+      return sizeOrder[sizeA] - sizeOrder[sizeB];
+    });
+
+    return sortedOrders;
   }
 
   /**
@@ -1000,6 +1322,54 @@ export class OrdersService {
 
     order.courierId = new Types.ObjectId(courierId);
     order.courierAssignedAt = new Date();
+
+    // Invalidate caches - order is now taken
+    await this.routesService.invalidateAllCaches();
+
+    return order.save();
+  }
+
+  /**
+   * Unassign an order from a courier (courier abandons the order)
+   * Only the assigned courier can abandon their order
+   * Also removes the order from any active route
+   */
+  async unassignCourier(
+    orderId: string,
+    courierId: string,
+  ): Promise<OrderDocument> {
+    const order = await this.findById(orderId);
+
+    // Only allow unassigning if the order is assigned to this courier
+    if (!order.courierId || order.courierId.toString() !== courierId) {
+      throw new BadRequestException('You are not assigned to this order.');
+    }
+
+    // Can only abandon orders that haven't been delivered yet
+    if (order.status === OrderStatus.DELIVERED) {
+      throw new BadRequestException('Cannot abandon a delivered order.');
+    }
+
+    // Remove order from any active route
+    try {
+      await this.routesService.removeOrderFromRoute(courierId, orderId);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      this.logger.warn(
+        `Failed to remove order ${orderId} from route: ${errorMessage}`,
+      );
+      // Continue with unassignment even if route update fails
+    }
+
+    // Reset courier assignment
+    order.courierId = undefined;
+    order.courierAssignedAt = undefined;
+
+    // If the order was shipped (in transit), reset to ready_for_delivery
+    if (order.status === OrderStatus.SHIPPED) {
+      order.status = OrderStatus.READY_FOR_DELIVERY;
+    }
+
     return order.save();
   }
 

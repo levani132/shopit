@@ -187,6 +187,20 @@ export const ACCENT_COLORS_FULL = STORE_BRAND_COLORS;
 
 // Main Site Accent Colors - Full palette for site-wide theming
 export const MAIN_SITE_ACCENT_COLORS = {
+  blue: {
+    name: 'blue',
+    hex: '#3b82f6',
+    50: '#eff6ff',
+    100: '#dbeafe',
+    200: '#bfdbfe',
+    300: '#93c5fd',
+    400: '#60a5fa',
+    500: '#3b82f6',
+    600: '#2563eb',
+    700: '#1d4ed8',
+    800: '#1e40af',
+    900: '#1e3a8a',
+  },
   indigo: {
     name: 'indigo',
     hex: '#6366f1',
@@ -243,20 +257,6 @@ export const MAIN_SITE_ACCENT_COLORS = {
     800: '#92400e',
     900: '#78350f',
   },
-  blue: {
-    name: 'blue',
-    hex: '#3b82f6',
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#3b82f6',
-    600: '#2563eb',
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
-  },
   purple: {
     name: 'purple',
     hex: '#a855f7',
@@ -304,9 +304,11 @@ export const MAIN_SITE_ACCENT_COLORS = {
 export type MainSiteAccentColorName = keyof typeof MAIN_SITE_ACCENT_COLORS;
 
 // Default accent colors
-export const DEFAULT_ACCENT_COLOR = ACCENT_COLORS.indigo;
-export const DEFAULT_ACCENT_COLOR_NAME: AccentColorName = 'indigo';
-export const DEFAULT_MAIN_SITE_ACCENT = MAIN_SITE_ACCENT_COLORS.emerald;
+// Changed from indigo to blue for better cross-platform recognition and accessibility
+export const DEFAULT_ACCENT_COLOR = ACCENT_COLORS.blue;
+export const DEFAULT_ACCENT_COLOR_NAME: AccentColorName = 'blue';
+// Changed from emerald to blue to align with new default branding
+export const DEFAULT_MAIN_SITE_ACCENT = MAIN_SITE_ACCENT_COLORS.blue;
 
 /**
  * Get store brand colors as CSS variable definitions (for use in style props)

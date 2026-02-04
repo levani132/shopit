@@ -9,9 +9,7 @@ import {
   detectBankFromIban,
   isValidGeorgianIban,
 } from '../../../../utils/georgian-banks';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface FormErrors {
   firstName?: string;
@@ -57,6 +55,10 @@ export default function ProfilePage() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isSavingCourier, setIsSavingCourier] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [personalSuccess, setPersonalSuccess] = useState(false);
+  const [_bankSuccess, _setBankSuccess] = useState(false);
+  // const [courierSuccess, setCourierSuccess] = useState(false);
+  // const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Initialize form with user data
   useEffect(() => {
@@ -85,16 +87,7 @@ export default function ProfilePage() {
 
     setIsDeletingStore(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/stores/my-store`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to delete store' });
-        return;
-      }
+      await api.delete('/api/v1/stores/my-store');
 
       await refreshAuth();
       showSuccess('Store deleted successfully');
@@ -102,7 +95,11 @@ export default function ProfilePage() {
       window.location.href = '/';
     } catch (err) {
       console.error('Error deleting store:', err);
-      setErrors({ general: 'Failed to delete store' });
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to delete store';
+      setErrors({ general: message });
     } finally {
       setIsDeletingStore(false);
     }
@@ -115,23 +112,18 @@ export default function ProfilePage() {
 
     setIsDeletingCourierRole(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/courier/remove`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to remove courier role' });
-        return;
-      }
+      await api.delete('/api/v1/auth/courier/remove');
 
       await refreshAuth();
       showSuccess('Courier account removed successfully');
       window.location.href = '/';
     } catch (err) {
       console.error('Error removing courier role:', err);
-      setErrors({ general: 'Failed to remove courier role' });
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to remove courier role';
+      setErrors({ general: message });
     } finally {
       setIsDeletingCourierRole(false);
     }
@@ -218,28 +210,24 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          phoneNumber: phoneNumber || undefined,
-          identificationNumber: identificationNumber || undefined,
-        }),
+      await api.patch('/api/v1/auth/me', {
+        firstName,
+        lastName,
+        phoneNumber: phoneNumber || undefined,
+        identificationNumber: identificationNumber || undefined,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to update profile' });
-        return;
-      }
 
       await refreshAuth();
       showSuccess('Personal information updated successfully!');
-    } catch {
-      setErrors({ general: 'Failed to update profile' });
+      setPersonalSuccess(true);
+      setTimeout(() => setPersonalSuccess(false), 3000);
+    } catch (err) {
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to update profile';
+      setErrors({ general: message });
+      setPersonalSuccess(false);
     } finally {
       setIsSavingPersonal(false);
     }
@@ -252,26 +240,19 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          accountNumber: accountNumber || undefined,
-          beneficiaryBankCode: beneficiaryBankCode || undefined,
-        }),
+      await api.patch('/api/v1/auth/me', {
+        accountNumber: accountNumber || undefined,
+        beneficiaryBankCode: beneficiaryBankCode || undefined,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to update banking info' });
-        return;
-      }
 
       await refreshAuth();
       showSuccess('Banking information updated successfully!');
-    } catch {
-      setErrors({ general: 'Failed to update banking info' });
+    } catch (err) {
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to update banking info';
+      setErrors({ general: message });
     } finally {
       setIsSavingBank(false);
     }
@@ -287,26 +268,19 @@ export default function ProfilePage() {
         .map((a) => a.trim())
         .filter((a) => a);
 
-      const response = await fetch(`${API_URL}/api/v1/auth/me`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          vehicleType: vehicleType || undefined,
-          workingAreas: areasArray.length > 0 ? areasArray : undefined,
-        }),
+      await api.patch('/api/v1/auth/me', {
+        vehicleType: vehicleType || undefined,
+        workingAreas: areasArray.length > 0 ? areasArray : undefined,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to save courier info' });
-        return;
-      }
 
       await refreshAuth();
       showSuccess('Courier information updated successfully!');
-    } catch {
-      setErrors({ general: 'Failed to save courier information' });
+    } catch (err) {
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to save courier information';
+      setErrors({ general: message });
     } finally {
       setIsSavingCourier(false);
     }
@@ -319,28 +293,21 @@ export default function ProfilePage() {
     setErrors({});
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+      await api.post('/api/v1/auth/change-password', {
+        currentPassword,
+        newPassword,
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setErrors({ general: data.message || 'Failed to change password' });
-        return;
-      }
 
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       showSuccess('Password changed successfully!');
-    } catch {
-      setErrors({ general: 'Failed to change password' });
+    } catch (err) {
+      const message =
+        err instanceof Error && 'message' in err
+          ? (err as any).message
+          : 'Failed to change password';
+      setErrors({ general: message });
     } finally {
       setIsSavingPassword(false);
     }
@@ -348,15 +315,64 @@ export default function ProfilePage() {
 
   const isGoogleUser = user?.authProvider === 'GOOGLE';
 
+  // Show navigation buttons only when profile is incomplete (onboarding)
+  const isProfileIncomplete = !user?.isProfileComplete;
+
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-          {t('profile')}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {t('profileDescription')}
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+            {t('profile')}
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {t('profileDescription')}
+          </p>
+        </div>
+        {isProfileIncomplete && (
+          <div className="flex gap-3">
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+              {t('backToOverview')}
+            </a>
+            {isSeller && (
+              <a
+                href="/dashboard/store"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[var(--accent-500)] hover:bg-[var(--accent-600)] rounded-lg transition-colors"
+              >
+                {t('nextStoreSettings')}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Success Message */}
@@ -522,6 +538,11 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {personalSuccess && (
+            <p className="text-green-600 dark:text-green-400 text-sm mb-2">
+              {t('personalInfoSaved')}
+            </p>
+          )}
           <button
             onClick={handleSavePersonalInfo}
             disabled={isSavingPersonal}

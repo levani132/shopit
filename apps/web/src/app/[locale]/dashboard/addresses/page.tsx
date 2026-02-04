@@ -7,9 +7,7 @@ import {
   AddressPicker,
   type AddressResult,
 } from '../../../../components/ui/AddressPicker';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface Address {
   _id: string;
@@ -56,13 +54,8 @@ export default function AddressesPage() {
 
     const fetchAddresses = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/auth/addresses`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setAddresses(data);
-        }
+        const data = await api.get('/api/v1/auth/addresses');
+        setAddresses(data);
       } catch (err) {
         console.error('Error fetching addresses:', err);
         setError('Failed to load addresses');
@@ -119,26 +112,17 @@ export default function AddressesPage() {
   };
 
   const handleSave = async () => {
-    if (!formData.address || !formData.city || !formData.phoneNumber) {
+    if (!formData.address || !formData.phoneNumber || !formData.location) {
       return;
     }
 
     setIsSaving(true);
     try {
-      const url = editingAddress
-        ? `${API_URL}/api/v1/auth/addresses/${editingAddress._id}`
-        : `${API_URL}/api/v1/auth/addresses`;
+      const data = editingAddress
+        ? await api.put(`/api/v1/auth/addresses/${editingAddress._id}`, formData)
+        : await api.post('/api/v1/auth/addresses', formData);
 
-      const response = await fetch(url, {
-        method: editingAddress ? 'PUT' : 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (editingAddress) {
+      if (editingAddress) {
           setAddresses((prev) =>
             prev.map((a) => {
               if (a._id === editingAddress._id) return data;
@@ -159,13 +143,10 @@ export default function AddressesPage() {
           });
         }
         closeModal();
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to save address');
-      }
     } catch (err) {
       console.error('Error saving address:', err);
-      setError('Failed to save address');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to save address';
+      setError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -174,20 +155,12 @@ export default function AddressesPage() {
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/addresses/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        setAddresses((prev) => prev.filter((a) => a._id !== id));
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to delete address');
-      }
+      await api.delete(`/api/v1/auth/addresses/${id}`);
+      setAddresses((prev) => prev.filter((a) => a._id !== id));
     } catch (err) {
       console.error('Error deleting address:', err);
-      setError('Failed to delete address');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to delete address';
+      setError(errorMessage);
     } finally {
       setDeletingId(null);
     }
@@ -195,19 +168,10 @@ export default function AddressesPage() {
 
   const handleSetDefault = async (id: string) => {
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/auth/addresses/${id}/default`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
+      await api.post(`/api/v1/auth/addresses/${id}/default`, {});
+      setAddresses((prev) =>
+        prev.map((a) => ({ ...a, isDefault: a._id === id })),
       );
-
-      if (response.ok) {
-        setAddresses((prev) =>
-          prev.map((a) => ({ ...a, isDefault: a._id === id })),
-        );
-      }
     } catch (err) {
       console.error('Error setting default address:', err);
     }
@@ -387,6 +351,7 @@ export default function AddressesPage() {
                     formData.address && formData.location
                       ? {
                           address: formData.address,
+                          city: formData.city,
                           location: formData.location,
                         }
                       : undefined
@@ -395,41 +360,25 @@ export default function AddressesPage() {
                     setFormData({
                       ...formData,
                       address: result.address,
+                      city: result.city,
                       location: result.location,
                     });
                   }}
                   placeholder={tCheckout('searchAddress')}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {tCheckout('city')} *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    required
-                    placeholder={t('enterCityManually')}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {tCheckout('postalCode')}
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.postalCode}
-                    onChange={(e) =>
-                      setFormData({ ...formData, postalCode: e.target.value })
-                    }
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {tCheckout('postalCode')}
+                </label>
+                <input
+                  type="text"
+                  value={formData.postalCode}
+                  onChange={(e) =>
+                    setFormData({ ...formData, postalCode: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[var(--accent-500)]"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

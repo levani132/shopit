@@ -1,18 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { BilingualText } from './store.schema';
 
 export type ProductDocument = HydratedDocument<Product>;
-
-/**
- * Bilingual text field - supports Georgian (ka) and English (en)
- */
-export class BilingualText {
-  @Prop({ trim: true })
-  ka?: string; // Georgian
-
-  @Prop({ trim: true })
-  en?: string; // English
-}
 
 /**
  * Selected attribute for a product
@@ -77,7 +67,8 @@ export class ProductVariant {
   isActive!: boolean;
 }
 
-export const ProductVariantSchema = SchemaFactory.createForClass(ProductVariant);
+export const ProductVariantSchema =
+  SchemaFactory.createForClass(ProductVariant);
 
 @Schema({ timestamps: true, collection: 'products' })
 export class Product {
@@ -137,7 +128,7 @@ export class Product {
   subcategoryId?: Types.ObjectId;
 
   // --- Variant Support ---
-  
+
   @Prop({ default: false })
   hasVariants!: boolean;
 
@@ -152,7 +143,7 @@ export class Product {
   totalStock!: number;
 
   // --- Popularity tracking ---
-  
+
   @Prop({ default: 0, min: 0 })
   viewCount!: number;
 

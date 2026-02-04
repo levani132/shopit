@@ -67,7 +67,7 @@ const AccentColorContext = createContext<AccentColorContextType | undefined>(
 
 export function AccentColorProvider({ children }: { children: ReactNode }) {
   const [accentColorName, setAccentColorName] =
-    useState<AccentColorName>('indigo');
+    useState<AccentColorName>('blue');
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
@@ -76,6 +76,16 @@ export function AccentColorProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+
+    // Migration: v2 changed default from indigo to blue
+    const migrationVersion = localStorage.getItem('accentColorVersion');
+    if (!migrationVersion || migrationVersion < '2') {
+      // Reset to new default for users who had old default
+      localStorage.setItem('accentColor', 'blue');
+      localStorage.setItem('accentColorVersion', '2');
+      setAccentColorName('blue');
+      return;
+    }
 
     // Load saved accent color from localStorage
     const savedColor = localStorage.getItem(

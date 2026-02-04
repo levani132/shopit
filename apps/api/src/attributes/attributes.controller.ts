@@ -46,6 +46,7 @@ export class AttributesController {
     @Request() req: { user: { storeId: string } },
     @Query('includeInactive') includeInactive?: string,
   ) {
+    console.log('getMyAttributes - storeId:', req.user.storeId);
     return this.attributesService.findAllByStore(
       req.user.storeId,
       includeInactive === 'true',
@@ -70,6 +71,7 @@ export class AttributesController {
     @Request() req: { user: { storeId: string } },
     @Body() dto: CreateAttributeDto,
   ) {
+    console.log('create attribute - storeId:', req.user.storeId);
     return this.attributesService.create(req.user.storeId, dto);
   }
 

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 interface AboutContent {
   missionKa: string;
@@ -30,9 +31,8 @@ export default function AboutPage() {
       setLocale(urlLocale);
     }
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    fetch(`${API_BASE}/api/v1/content/about`)
-      .then((res) => res.json())
+    api
+      .get('/content/about')
       .then((data) => setContent(data))
       .catch(() => setContent(null));
   }, []);

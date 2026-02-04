@@ -17,6 +17,19 @@ interface BogPaymentResponse {
   };
 }
 
+interface BogCallbackData {
+  body: {
+    external_order_id: string;
+    order_status: { key: string };
+    order_id: string;
+  };
+}
+
+interface BogPaymentStatus {
+  order_status?: { key?: string };
+  buyer?: { email?: string };
+}
+
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
@@ -25,6 +38,16 @@ export class PaymentsService {
     private readonly configService: ConfigService,
     private readonly ordersService: OrdersService,
   ) {}
+
+  /**
+   * Check if payment should be skipped (for dev/test environments)
+   * By default, SKIP_PAYMENT is false, meaning real payments are required.
+   * Set SKIP_PAYMENT=true to simulate payments without actual BOG processing.
+   */
+  private isPaymentSkipped(): boolean {
+    const skipPayment = this.configService.get<string>('SKIP_PAYMENT');
+    return skipPayment === 'true';
+  }
 
   /**
    * Get BOG access token
@@ -54,8 +77,9 @@ export class PaymentsService {
       );
 
       return response.data.access_token;
-    } catch (error: any) {
-      this.logger.error('BOG Token Error:', error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error('BOG Token Error:', message);
       throw error;
     }
   }
@@ -86,9 +110,52 @@ export class PaymentsService {
     redirectUrl: string;
     externalOrderId: string;
   }> {
+    const externalOrderId = uuidv4();
+
+    // If SKIP_PAYMENT is enabled, simulate successful payment immediately
+    if (this.isPaymentSkipped()) {
+      this.logger.warn(
+        `[DEV MODE] SKIP_PAYMENT is enabled - simulating payment for order ${data.orderId}`,
+      );
+
+      // Update order with external order ID
+      await this.ordersService.updateExternalOrderId(
+        data.orderId,
+        externalOrderId,
+      );
+
+      // Immediately mark order as paid
+      const paymentResult = {
+        id: `simulated_${externalOrderId}`,
+        status: 'COMPLETED',
+        updateTime: new Date().toISOString(),
+        emailAddress: data.customer?.email || 'simulated@dev.local',
+      };
+
+      await this.ordersService.markAsPaidByExternalId(
+        externalOrderId,
+        paymentResult,
+      );
+
+      this.logger.log(
+        `[DEV MODE] Order ${data.orderId} automatically marked as paid`,
+      );
+
+      // Return a fake redirect URL that goes directly to success page
+      const baseUrl =
+        this.configService.get('CORS_ORIGIN') || 'https://shopit.ge';
+      const successUrl = data.successUrl || `${baseUrl}/checkout/success`;
+
+      return {
+        orderId: data.orderId,
+        bogOrderId: `simulated_${uuidv4()}`,
+        redirectUrl: successUrl,
+        externalOrderId,
+      };
+    }
+
     try {
       const token = await this.getToken();
-      const externalOrderId = uuidv4();
 
       // Build basket items
       const basket = data.items.map((item) => ({
@@ -100,7 +167,7 @@ export class PaymentsService {
 
       const callbackUrl = this.configService.get('BOG_CALLBACK_URL');
       const baseUrl =
-        this.configService.get('FRONTEND_URL') || 'https://shopit.ge';
+        this.configService.get('CORS_ORIGIN') || 'https://shopit.ge';
 
       const payload = {
         callback_url: callbackUrl,
@@ -154,10 +221,10 @@ export class PaymentsService {
         redirectUrl: response.data._links.redirect.href,
         externalOrderId,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       this.logger.error('BOG Service Error:', error);
 
-      if (error.response) {
+      if (axios.isAxiosError(error) && error.response) {
         this.logger.error('BOG API Response:', error.response.data);
         this.logger.error('BOG API Status:', error.response.status);
 
@@ -166,7 +233,8 @@ export class PaymentsService {
         } else if (error.response.status === 400) {
           throw new Error(
             'Invalid payment data: ' +
-              (error.response.data?.message || 'Bad request'),
+              ((error.response.data as { message?: string })?.message ||
+                'Bad request'),
           );
         } else if (error.response.status >= 500) {
           throw new Error(
@@ -175,14 +243,14 @@ export class PaymentsService {
         }
       }
 
-      throw new Error(error.message || 'Payment service error');
+      throw new Error((error as Error).message || 'Payment service error');
     }
   }
 
   /**
    * Get payment status from BOG
    */
-  async getPaymentStatus(bogOrderId: string): Promise<any> {
+  async getPaymentStatus(bogOrderId: string): Promise<BogPaymentStatus> {
     const token = await this.getToken();
     const response = await axios.get(
       `https://api.bog.ge/payments/v1/receipt/${bogOrderId}`,
@@ -199,7 +267,7 @@ export class PaymentsService {
    * Handle BOG payment callback
    */
   async handlePaymentCallback(
-    callbackData: any,
+    callbackData: BogCallbackData,
   ): Promise<{ success: boolean; message: string }> {
     try {
       this.logger.log(
@@ -222,29 +290,42 @@ export class PaymentsService {
         `Processing payment for external_order_id: ${external_order_id}, order_id: ${order_id}, status: ${status}`,
       );
 
-      // Verify payment status with BOG API
-      let paymentStatus;
+      // SECURITY: Always verify payment status with BOG API
+      // Never trust callback data alone - a hacker could forge callbacks
+      let paymentStatus: BogPaymentStatus | undefined;
       try {
-        if (order_id) {
-          this.logger.log(`Fetching payment status for order_id: ${order_id}`);
-          paymentStatus = await this.getPaymentStatus(order_id);
-          this.logger.log(
-            'Payment status from BOG API:',
-            JSON.stringify(paymentStatus, null, 2),
+        if (!order_id) {
+          this.logger.error(
+            'SECURITY: No order_id in callback - cannot verify with BOG API',
           );
+          return {
+            success: false,
+            message: 'Cannot verify payment: missing order_id',
+          };
         }
-      } catch (error: any) {
+
+        this.logger.log(`Fetching payment status for order_id: ${order_id}`);
+        paymentStatus = await this.getPaymentStatus(order_id);
         this.logger.log(
-          'Error fetching payment status from BOG API:',
-          error.message,
+          'Payment status from BOG API:',
+          JSON.stringify(paymentStatus, null, 2),
         );
-        paymentStatus = { order_status: { key: status } };
+      } catch (error: unknown) {
+        // SECURITY: If we can't verify with BOG API, reject the callback
+        // Never fall back to trusting the callback data
+        this.logger.error(
+          'SECURITY: Failed to verify payment with BOG API - rejecting callback:',
+          (error as Error).message,
+        );
+        return {
+          success: false,
+          message: 'Cannot verify payment status with payment provider',
+        };
       }
 
       // BOG returns order_status.key = "completed"
-      const statusKey =
-        paymentStatus?.order_status?.key?.toLowerCase() ||
-        status?.toLowerCase();
+      // SECURITY: Only use the verified status from BOG API, not callback data
+      const statusKey = paymentStatus?.order_status?.key?.toLowerCase();
 
       const isPaymentSuccessful = statusKey === 'completed';
 
@@ -274,15 +355,16 @@ export class PaymentsService {
             success: true,
             message: 'Payment processed successfully and order updated',
           };
-        } catch (error: any) {
+        } catch (error: unknown) {
           this.logger.error(
             'Error updating order with payment result:',
-            error.message,
+            (error as Error).message,
           );
           return {
             success: false,
             message:
-              'Payment successful but failed to update order: ' + error.message,
+              'Payment successful but failed to update order: ' +
+              (error as Error).message,
           };
         }
       } else {
@@ -294,11 +376,15 @@ export class PaymentsService {
           message: 'Payment was not successful',
         };
       }
-    } catch (error: any) {
-      this.logger.error('Error processing payment callback:', error.message);
+    } catch (error: unknown) {
+      this.logger.error(
+        'Error processing payment callback:',
+        (error as Error).message,
+      );
       return {
         success: false,
-        message: 'Error processing payment callback: ' + error.message,
+        message:
+          'Error processing payment callback: ' + (error as Error).message,
       };
     }
   }

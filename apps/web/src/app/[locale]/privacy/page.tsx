@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 interface PrivacyContent {
   contentKa: string;
@@ -22,9 +23,8 @@ export default function PrivacyPage() {
       setLocale(urlLocale);
     }
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    fetch(`${API_BASE}/api/v1/content/privacy`)
-      .then((res) => res.json())
+    api
+      .get('/content/privacy')
       .then((data) => setContent(data))
       .catch(() => setContent(null));
   }, []);

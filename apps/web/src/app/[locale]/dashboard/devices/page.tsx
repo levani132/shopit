@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 interface Device {
   fingerprint: string;
@@ -35,14 +33,9 @@ export default function DevicesPage() {
 
     const fetchDevices = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/v1/auth/devices`, {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          // API returns { devices: [...] }
-          setDevices(Array.isArray(data) ? data : data.devices || []);
-        }
+        const data = await api.get('/api/v1/auth/devices');
+        // API returns { devices: [...] }
+        setDevices(Array.isArray(data) ? data : data.devices || []);
       } catch (err) {
         console.error('Error fetching devices:', err);
         setError('Failed to load devices');
@@ -139,20 +132,12 @@ export default function DevicesPage() {
   const handleRevokeDevice = async (fingerprint: string) => {
     setRevokingDevice(fingerprint);
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/devices/${fingerprint}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        setDevices((prev) => prev.filter((d) => d.fingerprint !== fingerprint));
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to revoke device');
-      }
+      await api.delete(`/api/v1/auth/devices/${fingerprint}`);
+      setDevices((prev) => prev.filter((d) => d.fingerprint !== fingerprint));
     } catch (err) {
       console.error('Error revoking device:', err);
-      setError('Failed to revoke device');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to revoke device';
+      setError(errorMessage);
     } finally {
       setRevokingDevice(null);
     }
@@ -163,21 +148,13 @@ export default function DevicesPage() {
 
     setIsRevokingAll(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/devices/revoke-all`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        // Keep only current device
-        setDevices((prev) => prev.filter((d) => d.isCurrent));
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to revoke devices');
-      }
+      await api.post('/api/v1/auth/devices/revoke-all', {});
+      // Keep only current device
+      setDevices((prev) => prev.filter((d) => d.isCurrent));
     } catch (err) {
       console.error('Error revoking all devices:', err);
-      setError('Failed to revoke devices');
+      const errorMessage = err && typeof err === 'object' && 'message' in err ? String(err.message) : 'Failed to revoke devices';
+      setError(errorMessage);
     } finally {
       setIsRevokingAll(false);
     }

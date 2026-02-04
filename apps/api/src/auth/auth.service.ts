@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -475,9 +476,11 @@ export class AuthService {
     const subdomain = await this.findAvailableSubdomain(dto.storeName);
     const hashedPassword = await this.hashPassword(dto.password);
 
-    const nameParts = dto.authorName.split(' ');
+    const nameParts = dto.authorName.trim().split(' ').filter(Boolean);
     const firstName = nameParts[0] || dto.authorName;
-    const lastName = nameParts.slice(1).join(' ') || '';
+    // If only one name part provided, use it as both first and last name
+    const lastName =
+      nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
 
     const user = new this.userModel({
       email: dto.email.toLowerCase(),
@@ -564,9 +567,9 @@ export class AuthService {
 
     await store.save();
 
-    // Upgrade user role to SELLER if they were a regular USER
-    if (user.role === Role.USER) {
-      user.role = Role.SELLER;
+    // Add SELLER role if user doesn't have it yet
+    if ((user.role & Role.SELLER) === 0) {
+      user.role = user.role | Role.SELLER;
       user.isProfileComplete = false; // They need to complete seller profile
       await user.save();
     }
@@ -1250,6 +1253,153 @@ export class AuthService {
       message:
         'Courier application submitted successfully. Please wait for admin approval.',
       status: 'pending',
+    };
+  }
+
+  /**
+   * Admin impersonation - generate tokens for another user
+   * Includes impersonation metadata in the token
+   */
+  async impersonateUser(
+    adminId: string,
+    targetUserId: string,
+    _deviceInfo?: DeviceInfo,
+  ): Promise<{ user: UserDocument; tokens: TokensDto }> {
+    // Get target user
+    const targetUser = await this.userModel.findById(targetUserId);
+    if (!targetUser) {
+      throw new NotFoundException('Target user not found');
+    }
+
+    // Get requesting user for role check
+    const requestingUser = await this.userModel.findById(adminId);
+    if (!requestingUser) {
+      throw new NotFoundException('Requesting user not found');
+    }
+
+    // Check if user can impersonate
+    const isCourierAdmin = hasRole(requestingUser.role, Role.COURIER_ADMIN);
+    const isAdmin = hasRole(requestingUser.role, Role.ADMIN);
+
+    if (isCourierAdmin && !isAdmin) {
+      // COURIER_ADMIN can only impersonate COURIER users
+      if (!hasRole(targetUser.role, Role.COURIER)) {
+        throw new ForbiddenException(
+          'Courier admins can only impersonate couriers',
+        );
+      }
+    } else if (!isAdmin) {
+      throw new ForbiddenException('Only admins can impersonate users');
+    }
+
+    // Log impersonation for audit trail
+    console.log(
+      `🔐 Admin ${adminId} is impersonating user ${targetUserId} (${targetUser.email})`,
+    );
+
+    // Generate tokens with impersonation metadata
+    const jti = randomUUID();
+    const sessionId = randomUUID();
+
+    const accessSecret =
+      this.configService.get('JWT_ACCESS_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-access-secret';
+    const refreshSecret =
+      this.configService.get('JWT_REFRESH_SECRET') ||
+      this.configService.get('JWT_SECRET') ||
+      'default-refresh-secret';
+    const sessionSecret =
+      this.configService.get('JWT_SESSION_SECRET') || accessSecret;
+
+    const [accessToken, refreshToken, sessionToken] = await Promise.all([
+      // Access token with impersonation flag
+      this.jwtService.signAsync(
+        {
+          sub: targetUser._id.toString(),
+          email: targetUser.email,
+          role: targetUser.role,
+          type: 'access',
+          sessionId,
+          impersonatedBy: adminId, // Mark as impersonation
+        } as TokenPayload & { impersonatedBy: string },
+        {
+          expiresIn: '1h',
+          secret: accessSecret,
+        },
+      ),
+      // Refresh token
+      this.jwtService.signAsync(
+        {
+          sub: targetUser._id.toString(),
+          email: targetUser.email,
+          role: targetUser.role,
+          type: 'refresh',
+          jti,
+          sessionId,
+          impersonatedBy: adminId,
+        } as TokenPayload & { impersonatedBy: string },
+        {
+          expiresIn: '8h', // Shorter expiry for impersonation
+          secret: refreshSecret,
+        },
+      ),
+      // Session token
+      this.jwtService.signAsync(
+        {
+          sub: targetUser._id.toString(),
+          email: targetUser.email,
+          role: targetUser.role,
+          type: 'session',
+          sessionId,
+          impersonatedBy: adminId,
+        } as TokenPayload & { impersonatedBy: string },
+        {
+          expiresIn: '8h',
+          secret: sessionSecret,
+        },
+      ),
+    ]);
+
+    return {
+      user: targetUser,
+      tokens: {
+        accessToken,
+        refreshToken,
+        sessionToken,
+      },
+    };
+  }
+
+  /**
+   * Stop impersonation and restore admin session
+   * Uses the impersonatedBy claim from the current token to identify the admin
+   */
+  async stopImpersonation(
+    adminId: string,
+    deviceInfo?: DeviceInfo,
+  ): Promise<{ user: UserDocument; tokens: TokensDto }> {
+    // Get admin user
+    const adminUser = await this.userModel.findById(adminId);
+    if (!adminUser) {
+      throw new NotFoundException('Admin user not found');
+    }
+
+    // Verify admin role
+    if (!hasRole(adminUser.role, Role.ADMIN)) {
+      throw new UnauthorizedException('Original user is not an admin');
+    }
+
+    console.log(
+      `🔐 Stopping impersonation - restoring admin session for ${adminId} (${adminUser.email})`,
+    );
+
+    // Generate new tokens for admin using standard method
+    const tokens = await this.generateTokens(adminUser, deviceInfo);
+
+    return {
+      user: adminUser,
+      tokens,
     };
   }
 }

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ProtectedRoute } from '../../../../../components/auth/ProtectedRoute';
 import { Role } from '@shopit/constants';
 import { api } from '../../../../../lib/api';
+import { useAuth } from '../../../../../contexts/AuthContext';
 
 // Role bitmask values
 const RoleBit = {
@@ -12,6 +13,7 @@ const RoleBit = {
   COURIER: 2,
   SELLER: 4,
   ADMIN: 8,
+  COURIER_ADMIN: 16,
 } as const;
 
 interface User {
@@ -34,6 +36,8 @@ interface Pagination {
 
 function UsersManagementContent() {
   const t = useTranslations('admin');
+  const nav = useTranslations('nav');
+  const { impersonateUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -62,12 +66,9 @@ function UsersManagementContent() {
       if (search) params.append('search', search);
       if (roleFilter) params.append('role', roleFilter);
 
-      const response = await api.get(`/admin/users?${params.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch users');
-      }
-      const data = await response.json();
+      const data = await api.get<{ users: any[]; pagination: any }>(
+        `/admin/users?${params.toString()}`,
+      );
       setUsers(data.users);
       setPagination(data.pagination);
     } catch (err: any) {
@@ -92,14 +93,9 @@ function UsersManagementContent() {
 
     setProcessingId(roleChangeModal.userId);
     try {
-      const response = await api.put(
-        `/admin/users/${roleChangeModal.userId}/role`,
-        { role: newRole },
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to change role');
-      }
+      await api.put(`/admin/users/${roleChangeModal.userId}/role`, {
+        role: newRole,
+      });
       setUsers(
         users.map((u) =>
           u._id === roleChangeModal.userId ? { ...u, role: newRole } : u,
@@ -133,6 +129,7 @@ function UsersManagementContent() {
   const getRoleNames = (role: number): string[] => {
     const roles: string[] = [];
     if ((role & RoleBit.ADMIN) !== 0) roles.push('Admin');
+    if ((role & RoleBit.COURIER_ADMIN) !== 0) roles.push('Courier Admin');
     if ((role & RoleBit.SELLER) !== 0) roles.push('Seller');
     if ((role & RoleBit.COURIER) !== 0) roles.push('Courier');
     if (roles.length === 0) roles.push('User');
@@ -142,6 +139,9 @@ function UsersManagementContent() {
   const getRoleBadgeColor = (role: number) => {
     if ((role & RoleBit.ADMIN) !== 0) {
       return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+    }
+    if ((role & RoleBit.COURIER_ADMIN) !== 0) {
+      return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400';
     }
     if ((role & RoleBit.SELLER) !== 0) {
       return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
@@ -190,6 +190,7 @@ function UsersManagementContent() {
           <option value="user">{t('roleUser')}</option>
           <option value="seller">{t('roleSeller')}</option>
           <option value="courier">{t('roleCourier')}</option>
+          <option value="courier_admin">{t('roleCourierAdmin')}</option>
           <option value="admin">{t('roleAdmin')}</option>
         </select>
       </div>
@@ -282,19 +283,28 @@ function UsersManagementContent() {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => {
-                          setRoleChangeModal({
-                            userId: user._id,
-                            userName: `${user.firstName} ${user.lastName}`,
-                            currentRole: user.role,
-                          });
-                          setNewRole(user.role);
-                        }}
-                        className="text-sm text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:underline"
-                      >
-                        {t('changeRole')}
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => impersonateUser(user._id)}
+                          className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                          title={nav('loginAsUser')}
+                        >
+                          {nav('loginAsUser')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setRoleChangeModal({
+                              userId: user._id,
+                              userName: `${user.firstName} ${user.lastName}`,
+                              currentRole: user.role,
+                            });
+                            setNewRole(user.role);
+                          }}
+                          className="text-sm text-[var(--accent-600)] dark:text-[var(--accent-400)] hover:underline"
+                        >
+                          {t('changeRole')}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -397,6 +407,18 @@ function UsersManagementContent() {
                   />
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     {t('roleAdmin')}
+                  </span>
+                </label>
+                {/* Courier Admin */}
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={(newRole & RoleBit.COURIER_ADMIN) !== 0}
+                    onChange={() => toggleRoleBit(RoleBit.COURIER_ADMIN)}
+                    className="w-4 h-4 rounded border-gray-300 dark:border-zinc-600 text-[var(--accent-500)] focus:ring-[var(--accent-500)]"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('roleCourierAdmin')}
                   </span>
                 </label>
               </div>

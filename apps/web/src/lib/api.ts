@@ -4,98 +4,214 @@ const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export const apiUrl = `${API_URL}/api/v1`;
 
+function buildUrl(path: string): string {
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/api/')) return `${API_URL}${path}`;
+  return `${apiUrl}${path}`;
+}
+
+/**
+ * Track if we're currently refreshing the token to prevent multiple refresh attempts
+ */
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+/**
+ * Attempt to refresh the access token using the refresh token
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  // If already refreshing, wait for that to complete
+  if (isRefreshing && refreshPromise) {
+    return refreshPromise;
+  }
+
+  isRefreshing = true;
+  refreshPromise = (async () => {
+    try {
+      const response = await fetch(`${apiUrl}/auth/refresh`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.ok;
+    } catch {
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+/**
+ * Make a fetch request with automatic token refresh on 401
+ */
+async function fetchWithRefresh(
+  url: string,
+  options: RequestInit,
+  retried = false,
+): Promise<Response> {
+  const response = await fetch(url, {
+    ...options,
+    credentials: 'include',
+  });
+
+  // If we get 401 and haven't retried yet, try to refresh the token
+  if (response.status === 401 && !retried) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      // Retry the original request
+      return fetchWithRefresh(url, options, true);
+    }
+  }
+
+  return response;
+}
+
 /**
  * API helper for making authenticated requests from client components
+ * Automatically refreshes access token on 401 and retries the request
  */
 export const api = {
   /**
    * GET request with credentials
    */
-  async get(path: string, options?: RequestInit): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+  async get<T = any>(path: string, options?: RequestInit): Promise<T> {
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'GET',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * POST request with credentials
    */
-  async post(
+  async post<T = any>(
     path: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+  ): Promise<T> {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: isFormData
+        ? {
+            ...options?.headers,
+          }
+        : {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+      body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * PUT request with credentials
    */
-  async put(
+  async put<T = any>(
     path: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+  ): Promise<T> {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'PUT',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers: isFormData
+        ? {
+            ...options?.headers,
+          }
+        : {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+          },
+      body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * PATCH request with credentials
    */
-  async patch(
+  async patch<T = any>(
     path: string,
     body?: unknown,
     options?: RequestInit,
-  ): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+  ): Promise<T> {
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+    
+    // For FormData, we must NOT set Content-Type - browser will set it with boundary
+    const headers = isFormData ? undefined : {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    };
+    
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'PATCH',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-      body: body ? JSON.stringify(body) : undefined,
+      headers,
+      body: isFormData ? (body as BodyInit) : body ? JSON.stringify(body) : undefined,
       ...options,
+      // Ensure headers from options don't override for FormData
+      ...(isFormData ? { headers: undefined } : {}),
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 
   /**
    * DELETE request with credentials
    */
-  async delete(path: string, options?: RequestInit): Promise<Response> {
-    return fetch(`${apiUrl}${path}`, {
+  async delete<T = any>(path: string, options?: RequestInit): Promise<T> {
+    const response = await fetchWithRefresh(buildUrl(path), {
       method: 'DELETE',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options?.headers,
       },
       ...options,
     });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw { ...error, status: response.status };
+    }
+
+    return response.json();
   },
 };
 
@@ -182,7 +298,10 @@ export async function getStoreBySubdomain(
 ): Promise<StoreData | null> {
   try {
     const response = await fetch(`${apiUrl}/stores/subdomain/${subdomain}`, {
-      next: { revalidate: 60 }, // Cache for 60 seconds
+      next: { 
+        revalidate: 60, // Cache for 60 seconds
+        tags: [`store-${subdomain}`], // Tag for targeted revalidation
+      },
     });
 
     if (!response.ok) {
@@ -209,7 +328,10 @@ export async function getStoreWithProducts(
     const response = await fetch(
       `${apiUrl}/stores/subdomain/${subdomain}/full`,
       {
-        next: { revalidate: 60 }, // Cache for 60 seconds
+        next: { 
+          revalidate: 60, // Cache for 60 seconds
+          tags: [`store-${subdomain}`], // Tag for targeted revalidation
+        },
       },
     );
 

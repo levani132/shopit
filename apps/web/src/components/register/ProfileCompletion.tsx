@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { useRegistration } from './RegistrationContext';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { GEORGIAN_BANKS, detectBankFromIban, isValidGeorgianIban } from '../../utils/georgian-banks';
+import {
+  GEORGIAN_BANKS,
+  detectBankFromIban,
+  isValidGeorgianIban,
+} from '../../utils/georgian-banks';
 import { useAuth } from '../../contexts/AuthContext';
 import { getLatinInitial } from '../../lib/utils';
-
-// Build API base URL - use just the host, we'll add the prefix
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-// Remove any trailing slash and any existing /api/v1 prefix to avoid duplication
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../lib/api';
 
 const BRAND_COLORS: Record<string, string> = {
   indigo: '#6366f1',
@@ -68,11 +68,11 @@ export function ProfileCompletion() {
       newErrors.phoneNumber = t('phoneRequired');
     } else {
       // Validate Georgian phone: +995XXXXXXXXX, 995XXXXXXXXX, or 5XXXXXXXX
-      const cleaned = data.phoneNumber.replace(/[\s\-\(\)]/g, '');
-      const isValid = 
+      const cleaned = data.phoneNumber.replace(/[\s\-()]/g, '');
+      const isValid =
         /^\+995[5]\d{8}$/.test(cleaned) || // +995 5XX XXX XXX
-        /^995[5]\d{8}$/.test(cleaned) ||   // 995 5XX XXX XXX  
-        /^5\d{8}$/.test(cleaned);          // 5XX XXX XXX (local)
+        /^995[5]\d{8}$/.test(cleaned) || // 995 5XX XXX XXX
+        /^5\d{8}$/.test(cleaned); // 5XX XXX XXX (local)
       if (!isValid) {
         newErrors.phoneNumber = t('phoneInvalid');
       }
@@ -106,41 +106,30 @@ export function ProfileCompletion() {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/auth/complete-profile`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for auth
-        body: JSON.stringify({
-          firstName: data.ownerFirstName,
-          lastName: data.ownerLastName,
-          phoneNumber: data.phoneNumber,
-          identificationNumber: data.identificationNumber,
-          accountNumber: data.accountNumber,
-          beneficiaryBankCode: data.beneficiaryBankCode,
-        }),
+      await api.post('/auth/complete-profile', {
+        firstName: data.ownerFirstName,
+        lastName: data.ownerLastName,
+        phoneNumber: data.phoneNumber,
+        identificationNumber: data.identificationNumber,
+        accountNumber: data.accountNumber,
+        beneficiaryBankCode: data.beneficiaryBankCode,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (response.status === 401) {
-          // User not authenticated, redirect to login
-          router.push('/login');
-          return;
-        }
-        setErrors({ general: errorData.message || t('profileCompletionFailed') });
-        return;
-      }
 
       // Refresh auth context to update user data
       await refreshAuth();
 
       // Redirect to dashboard
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Profile completion failed:', error);
-      setErrors({ general: t('profileCompletionFailed') });
+      if (error.status === 401) {
+        // User not authenticated, redirect to login
+        router.push('/login');
+        return;
+      }
+      setErrors({
+        general: error.message || t('profileCompletionFailed'),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -238,7 +227,9 @@ export function ProfileCompletion() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
               {errors.ownerFirstName && (
-                <p className="text-red-500 text-sm mt-1">{errors.ownerFirstName}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.ownerFirstName}
+                </p>
               )}
             </div>
 
@@ -258,7 +249,9 @@ export function ProfileCompletion() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
               {errors.ownerLastName && (
-                <p className="text-red-500 text-sm mt-1">{errors.ownerLastName}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.ownerLastName}
+                </p>
               )}
             </div>
           </div>
@@ -280,7 +273,9 @@ export function ProfileCompletion() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
               {errors.phoneNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.phoneNumber}
+                </p>
               )}
             </div>
 
@@ -296,14 +291,20 @@ export function ProfileCompletion() {
                 type="text"
                 value={data.identificationNumber}
                 onChange={(e) =>
-                  updateData({ identificationNumber: e.target.value.replace(/\D/g, '').slice(0, 11) })
+                  updateData({
+                    identificationNumber: e.target.value
+                      .replace(/\D/g, '')
+                      .slice(0, 11),
+                  })
                 }
                 placeholder="01234567890"
                 maxLength={11}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
               />
               {errors.identificationNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.identificationNumber}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.identificationNumber}
+                </p>
               )}
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
                 {t('idNumberHint')}
@@ -334,7 +335,9 @@ export function ProfileCompletion() {
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition font-mono"
               />
               {errors.accountNumber && (
-                <p className="text-red-500 text-sm mt-1">{errors.accountNumber}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.accountNumber}
+                </p>
               )}
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
                 {t('ibanHint')}
@@ -351,7 +354,9 @@ export function ProfileCompletion() {
               <select
                 id="bank"
                 value={data.beneficiaryBankCode}
-                onChange={(e) => updateData({ beneficiaryBankCode: e.target.value })}
+                onChange={(e) =>
+                  updateData({ beneficiaryBankCode: e.target.value })
+                }
                 disabled={!!detectBankFromIban(data.accountNumber)}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition disabled:opacity-60"
               >
@@ -363,7 +368,9 @@ export function ProfileCompletion() {
                 ))}
               </select>
               {errors.beneficiaryBankCode && (
-                <p className="text-red-500 text-sm mt-1">{errors.beneficiaryBankCode}</p>
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.beneficiaryBankCode}
+                </p>
               )}
               {detectBankFromIban(data.accountNumber) && (
                 <p className="text-green-600 dark:text-green-400 text-xs mt-1">
@@ -393,5 +400,3 @@ export function ProfileCompletion() {
     </div>
   );
 }
-
-

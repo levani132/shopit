@@ -12,7 +12,6 @@ export default function CheckoutSuccessPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params?.locale as string) || 'ka';
-  const subdomain = params?.subdomain as string;
   const orderId = searchParams.get('orderId');
 
   const { clearCart } = useCart();
@@ -58,14 +57,14 @@ export default function CheckoutSuccessPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Link
-          href={`/store/${subdomain}/${locale}/products`}
+          href={`/${locale}/products`}
           className="inline-block px-6 py-3 bg-[var(--store-accent-500)] text-white rounded-lg hover:bg-[var(--store-accent-600)] transition-colors"
         >
           {t('continueShopping')}
         </Link>
 
         <Link
-          href={`/store/${subdomain}/${locale}/orders`}
+          href={`/${locale}/orders`}
           className="inline-block px-6 py-3 border border-gray-300 dark:border-zinc-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
         >
           {t('viewOrders')}
@@ -74,4 +73,3 @@ export default function CheckoutSuccessPage() {
     </div>
   );
 }
-

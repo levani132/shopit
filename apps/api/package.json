@@ -88,12 +88,14 @@
     "@nestjs/core": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
     "@shopit/constants": "file:../../libs/shared/constants",
+    "nodemailer": "^6.9.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0",
     "axios": "^1.6.0"
   },
   "devDependencies": {
-    "@nestjs/testing": "^11.0.0"
+    "@nestjs/testing": "^11.0.0",
+    "@types/nodemailer": "^6.4.0"
   }
 }

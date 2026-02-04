@@ -4,9 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ProductCard } from '../../../../../../components/store/ProductCard';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../../lib/api';
 
 interface CategoryData {
   _id: string;
@@ -147,23 +145,17 @@ export default function StoreProductsPage() {
     const fetchStoreData = async () => {
       try {
         // Fetch store to get ID
-        const storeRes = await fetch(`${API_URL}/api/v1/stores/subdomain/${subdomain}`);
-        if (storeRes.ok) {
-          const storeData = await storeRes.json();
-          setStoreId(storeData.id);
-          const localizedName =
-            locale === 'ka'
-              ? storeData.nameLocalized?.ka || storeData.name
-              : storeData.nameLocalized?.en || storeData.name;
-          setStoreName(localizedName || subdomain);
+        const storeData = await api.get(`/stores/subdomain/${subdomain}`);
+        setStoreId(storeData.id);
+        const localizedName =
+          locale === 'ka'
+            ? storeData.nameLocalized?.ka || storeData.name
+            : storeData.nameLocalized?.en || storeData.name;
+        setStoreName(localizedName || subdomain);
 
-          // Fetch categories
-          const catRes = await fetch(`${API_URL}/api/v1/categories/store/${storeData.id}`);
-          if (catRes.ok) {
-            const catData = await catRes.json();
-            setCategories(catData);
-          }
-        }
+        // Fetch categories
+        const catData = await api.get(`/categories/store/${storeData.id}`);
+        setCategories(catData);
       } catch (err) {
         console.error('Error fetching store data:', err);
       }
@@ -179,17 +171,12 @@ export default function StoreProductsPage() {
     const fetchAttributeFilters = async () => {
       try {
         // Use category-specific filters if a category is selected, otherwise store-level
-        const filterUrl = categoryId
-          ? `${API_URL}/api/v1/categories/${subcategoryId || categoryId}/filters/${storeId}`
-          : `${API_URL}/api/v1/categories/filters/store/${storeId}`;
+        const filterPath = categoryId
+          ? `/categories/${subcategoryId || categoryId}/filters/${storeId}`
+          : `/categories/filters/store/${storeId}`;
 
-        const res = await fetch(filterUrl);
-        if (res.ok) {
-          const data = await res.json();
-          setAttributeFilters(data);
-        } else {
-          setAttributeFilters([]);
-        }
+        const data = await api.get(filterPath);
+        setAttributeFilters(data);
       } catch (err) {
         console.error('Error fetching attribute filters:', err);
         setAttributeFilters([]);
@@ -218,18 +205,15 @@ export default function StoreProductsPage() {
         if (attributes) queryParams.set('attributes', attributes);
         queryParams.set('page', page.toString());
 
-        const res = await fetch(
-          `${API_URL}/api/v1/products/store/${storeId}?${queryParams.toString()}`
+        const data = await api.get<ProductsResponse>(
+          `/products/store/${storeId}?${queryParams.toString()}`
         );
-        if (res.ok) {
-          const data: ProductsResponse = await res.json();
-          setProducts(data.products);
-          setPagination(data.pagination);
-          setPriceRange({
-            min: data.filters.priceRange.minPrice,
-            max: data.filters.priceRange.maxPrice,
-          });
-        }
+        setProducts(data.products);
+        setPagination(data.pagination);
+        setPriceRange({
+          min: data.filters.priceRange.minPrice,
+          max: data.filters.priceRange.maxPrice,
+        });
       } catch (err) {
         console.error('Error fetching products:', err);
       } finally {
@@ -306,7 +290,7 @@ export default function StoreProductsPage() {
   // Track product view
   const trackView = async (productId: string) => {
     try {
-      await fetch(`${API_URL}/api/v1/products/${productId}/view`, { method: 'POST' });
+      await api.post(`/products/${productId}/view`);
     } catch (err) {
       console.error('Error tracking view:', err);
     }

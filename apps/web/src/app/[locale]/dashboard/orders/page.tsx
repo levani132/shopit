@@ -5,9 +5,8 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useAuth } from '../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { getStoreProductUrl } from '../../../../utils/subdomain';
+import { api } from '../../../../lib/api';
 
 interface OrderItem {
   productId: string;
@@ -16,6 +15,7 @@ interface OrderItem {
   image: string;
   qty: number;
   price: number;
+  storeSubdomain?: string;
   variantAttributes?: Array<{
     attributeName: string;
     value: string;
@@ -63,7 +63,41 @@ interface Order {
   courierId?: Courier;
   courierAssignedAt?: string;
   deliveryDeadline?: string;
+  // Shipping size fields
+  estimatedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+  confirmedShippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
+  shippingSize?: 'small' | 'medium' | 'large' | 'extra_large';
 }
+
+type ShippingSize = 'small' | 'medium' | 'large' | 'extra_large';
+
+const shippingSizeLabels: Record<
+  ShippingSize,
+  { label: string; icon: string; color: string }
+> = {
+  small: {
+    label: 'sizeSmall',
+    icon: '🚲',
+    color:
+      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  },
+  medium: {
+    label: 'sizeMedium',
+    icon: '🚗',
+    color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  },
+  large: {
+    label: 'sizeLarge',
+    icon: '🚙',
+    color:
+      'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  },
+  extra_large: {
+    label: 'sizeExtraLarge',
+    icon: '🚐',
+    color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  },
+};
 
 const statusColors: Record<string, string> = {
   pending:
@@ -149,6 +183,8 @@ export default function DashboardOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [updating, setUpdating] = useState<string | null>(null);
+  const [showSizeEditor, setShowSizeEditor] = useState(false);
+  const [updatingSize, setUpdatingSize] = useState(false);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -159,14 +195,8 @@ export default function DashboardOrdersPage() {
       }
 
       try {
-        const response = await fetch(`${API_URL}/api/v1/orders/store-orders`, {
-          credentials: 'include',
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setOrders(data);
-        }
+        const data = await api.get<Order[]>('/api/v1/orders/store-orders');
+        setOrders(data);
       } catch (err) {
         console.error('Error fetching orders:', err);
       } finally {
@@ -180,48 +210,73 @@ export default function DashboardOrdersPage() {
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     setUpdating(orderId);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/orders/${orderId}/status`,
-        {
-          method: 'PATCH',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        },
-      );
+      await api.patch(`/api/v1/orders/${orderId}/status`, {
+        status: newStatus,
+      });
 
-      if (response.ok) {
-        setOrders(
-          orders.map((order) =>
-            order._id === orderId
-              ? {
-                  ...order,
-                  status: newStatus,
-                  isDelivered: newStatus === 'delivered',
-                  deliveredAt:
-                    newStatus === 'delivered'
-                      ? new Date().toISOString()
-                      : order.deliveredAt,
-                }
-              : order,
-          ),
-        );
-        if (selectedOrder?._id === orderId) {
-          setSelectedOrder({
-            ...selectedOrder,
-            status: newStatus,
-            isDelivered: newStatus === 'delivered',
-            deliveredAt:
-              newStatus === 'delivered'
-                ? new Date().toISOString()
-                : selectedOrder.deliveredAt,
-          });
-        }
+      setOrders(
+        orders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                status: newStatus,
+                isDelivered: newStatus === 'delivered',
+                deliveredAt:
+                  newStatus === 'delivered'
+                    ? new Date().toISOString()
+                    : order.deliveredAt,
+              }
+            : order,
+        ),
+      );
+      if (selectedOrder?._id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          status: newStatus,
+          isDelivered: newStatus === 'delivered',
+          deliveredAt:
+            newStatus === 'delivered'
+              ? new Date().toISOString()
+              : selectedOrder.deliveredAt,
+        });
       }
     } catch (err) {
       console.error('Error updating order status:', err);
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const updateShippingSize = async (orderId: string, newSize: ShippingSize) => {
+    setUpdatingSize(true);
+    try {
+      await api.patch(`/api/v1/orders/${orderId}/shipping-size`, {
+        shippingSize: newSize,
+      });
+
+      setOrders(
+        orders.map((order) =>
+          order._id === orderId
+            ? {
+                ...order,
+                confirmedShippingSize: newSize,
+                shippingSize: newSize,
+              }
+            : order,
+        ),
+      );
+      if (selectedOrder?._id === orderId) {
+        setSelectedOrder({
+          ...selectedOrder,
+          confirmedShippingSize: newSize,
+          shippingSize: newSize,
+        });
+      }
+      setShowSizeEditor(false);
+    } catch (err) {
+      console.error('Error updating shipping size:', err);
+    } finally {
+      setUpdatingSize(false);
     }
   };
 
@@ -255,7 +310,7 @@ export default function DashboardOrdersPage() {
           {t('orders')}
         </h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Manage your incoming orders and update their status.
+          {t('ordersDescription')}
         </p>
       </div>
 
@@ -269,7 +324,7 @@ export default function DashboardOrdersPage() {
               : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-zinc-700'
           }`}
         >
-          All ({orders.length})
+          {t('allFilter')} ({orders.length})
         </button>
         {statusOrder.map((status) => {
           const count = orders.filter((o) => o.status === status).length;
@@ -308,11 +363,10 @@ export default function DashboardOrdersPage() {
               </svg>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No Orders Yet
+              {t('noOrdersYet')}
             </h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-              When customers place orders, they&apos;ll appear here. Share your
-              store to start receiving orders!
+              {t('noOrdersYetDescription')}
             </p>
           </div>
         </div>
@@ -371,7 +425,7 @@ export default function DashboardOrdersPage() {
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {order.orderItems.reduce((sum, item) => sum + item.qty, 0)}{' '}
-                    items
+                    {t('items')}
                   </p>
                   <p className="font-semibold text-gray-900 dark:text-white">
                     ₾{order.totalPrice.toFixed(2)}
@@ -386,13 +440,13 @@ export default function DashboardOrdersPage() {
             {selectedOrder ? (
               <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700 p-6 sticky top-24">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                  Order Details
+                  {t('orderDetails')}
                 </h3>
 
                 <div className="space-y-4 mb-6">
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Order ID
+                      {t('orderId')}
                     </p>
                     <p className="font-mono text-sm text-gray-900 dark:text-white">
                       {selectedOrder._id}
@@ -401,7 +455,7 @@ export default function DashboardOrdersPage() {
 
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Customer
+                      {t('customer')}
                     </p>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {selectedOrder.isGuestOrder
@@ -417,7 +471,7 @@ export default function DashboardOrdersPage() {
 
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Shipping Address
+                      {t('shippingAddress')}
                     </p>
                     <p className="text-sm text-gray-900 dark:text-white">
                       {selectedOrder.shippingDetails.address}
@@ -458,50 +512,173 @@ export default function DashboardOrdersPage() {
                       )}
                     </div>
                   )}
+
+                  {/* Shipping Size Section */}
+                  {selectedOrder.estimatedShippingSize && (
+                    <div className="border border-gray-200 dark:border-zinc-700 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                          {t('orderShippingSize')}
+                        </p>
+                        {!selectedOrder.courierId && !showSizeEditor && (
+                          <button
+                            onClick={() => setShowSizeEditor(true)}
+                            className="text-xs text-[var(--accent-600)] hover:text-[var(--accent-700)] font-medium"
+                          >
+                            {t('changeSize')}
+                          </button>
+                        )}
+                      </div>
+
+                      {showSizeEditor && !selectedOrder.courierId ? (
+                        <div className="space-y-2">
+                          {(
+                            [
+                              'small',
+                              'medium',
+                              'large',
+                              'extra_large',
+                            ] as ShippingSize[]
+                          ).map((size) => {
+                            const sizeInfo = shippingSizeLabels[size];
+                            const currentSize =
+                              selectedOrder.confirmedShippingSize ||
+                              selectedOrder.estimatedShippingSize;
+                            const isSelected = currentSize === size;
+                            return (
+                              <button
+                                key={size}
+                                onClick={() =>
+                                  updateShippingSize(selectedOrder._id, size)
+                                }
+                                disabled={updatingSize}
+                                className={`w-full flex items-center gap-2 p-2 rounded-lg border transition-colors ${
+                                  isSelected
+                                    ? 'border-[var(--accent-500)] bg-[var(--accent-50)] dark:bg-[var(--accent-900)]/20'
+                                    : 'border-gray-200 dark:border-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'
+                                } ${updatingSize ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                <span className="text-lg">{sizeInfo.icon}</span>
+                                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {t(sizeInfo.label)}
+                                </span>
+                                {isSelected && (
+                                  <svg
+                                    className="w-4 h-4 ml-auto text-[var(--accent-600)]"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            );
+                          })}
+                          <button
+                            onClick={() => setShowSizeEditor(false)}
+                            className="w-full text-center text-xs text-gray-500 hover:text-gray-700 py-1"
+                          >
+                            {t('cancel')}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {/* Current/Confirmed Size */}
+                          {(() => {
+                            const currentSize =
+                              selectedOrder.confirmedShippingSize ||
+                              selectedOrder.estimatedShippingSize ||
+                              'small';
+                            const sizeInfo = shippingSizeLabels[currentSize];
+                            return (
+                              <div
+                                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${sizeInfo.color}`}
+                              >
+                                <span>{sizeInfo.icon}</span>
+                                <span className="text-sm font-medium">
+                                  {t(sizeInfo.label)}
+                                </span>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Show if it was estimated vs confirmed */}
+                          <p className="text-xs text-gray-400">
+                            {selectedOrder.confirmedShippingSize
+                              ? t('confirmedSize')
+                              : t('estimatedSize')}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Items */}
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 mb-6">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                    Items
+                    {t('orderItems')}
                   </p>
                   <div className="space-y-3">
-                    {selectedOrder.orderItems.map((item, idx) => (
-                      <div key={idx} className="flex gap-3">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
-                          <Image
-                            src={item.image || '/placeholder.webp'}
-                            alt={item.name}
-                            width={48}
-                            height={48}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {locale === 'en' && item.nameEn
-                              ? item.nameEn
-                              : item.name}
-                          </p>
-                          {item.variantAttributes &&
-                            item.variantAttributes.length > 0 && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.variantAttributes
-                                  .map((a) => `${a.attributeName}: ${a.value}`)
-                                  .join(', ')}
-                              </p>
-                            )}
-                          <div className="flex justify-between mt-1">
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              x{item.qty}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
-                              ₾{(item.price * item.qty).toFixed(2)}
-                            </span>
+                    {selectedOrder.orderItems.map((item, idx) => {
+                      // Build product URL using proper subdomain
+                      const productUrl = item.storeSubdomain
+                        ? getStoreProductUrl(
+                            item.storeSubdomain,
+                            item.productId,
+                            locale,
+                          )
+                        : `/${locale}/products/${item.productId}`;
+
+                      return (
+                        <a
+                          key={idx}
+                          href={productUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex gap-3 hover:bg-gray-50 dark:hover:bg-zinc-800 rounded-lg p-1 -m-1 transition-colors"
+                        >
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-zinc-700 flex-shrink-0">
+                            <Image
+                              src={item.image || '/placeholder.webp'}
+                              alt={item.name}
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                        </div>
-                      </div>
-                    ))}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate hover:text-cyan-600 dark:hover:text-cyan-400">
+                              {locale === 'en' && item.nameEn
+                                ? item.nameEn
+                                : item.name}
+                            </p>
+                            {item.variantAttributes &&
+                              item.variantAttributes.length > 0 && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {item.variantAttributes
+                                    .map(
+                                      (a) => `${a.attributeName}: ${a.value}`,
+                                    )
+                                    .join(', ')}
+                                </p>
+                              )}
+                            <div className="flex justify-between mt-1">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                x{item.qty}
+                              </span>
+                              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                ₾{(item.price * item.qty).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -509,7 +686,7 @@ export default function DashboardOrdersPage() {
                 <div className="border-t border-gray-200 dark:border-zinc-700 pt-4 mb-6 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      Subtotal
+                      {t('subtotal')}
                     </span>
                     <span className="text-gray-900 dark:text-white">
                       ₾
@@ -519,14 +696,14 @@ export default function DashboardOrdersPage() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">
-                      Shipping
+                      {t('shipping')}
                     </span>
                     <span className="text-gray-900 dark:text-white">
                       ₾{selectedOrder.shippingPrice?.toFixed(2) || '0.00'}
                     </span>
                   </div>
                   <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-200 dark:border-zinc-700">
-                    <span className="text-gray-900 dark:text-white">Total</span>
+                    <span className="text-gray-900 dark:text-white">{t('total')}</span>
                     <span className="text-gray-900 dark:text-white">
                       ₾{selectedOrder.totalPrice.toFixed(2)}
                     </span>
@@ -570,7 +747,7 @@ export default function DashboardOrdersPage() {
             ) : (
               <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700 p-6 text-center">
                 <p className="text-gray-500 dark:text-gray-400">
-                  Select an order to view details
+                  {t('selectOrderToView')}
                 </p>
               </div>
             )}

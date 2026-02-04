@@ -39,7 +39,12 @@ export function Step2Details() {
 
   // Auto-populate author name from logged-in user
   useEffect(() => {
-    if (isAuthenticated && user && !hasAutoFilledAuthor.current && !data.authorName) {
+    if (
+      isAuthenticated &&
+      user &&
+      !hasAutoFilledAuthor.current &&
+      !data.authorName
+    ) {
       const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
       if (fullName) {
         updateData({ authorName: fullName });
@@ -111,8 +116,16 @@ export function Step2Details() {
     if (!data.description.trim()) {
       newErrors.description = t('descriptionRequired');
     }
-    if (!data.authorName.trim()) {
+
+    const authorNameTrimmed = data.authorName.trim();
+    if (!authorNameTrimmed) {
       newErrors.authorName = t('authorNameRequired');
+    } else {
+      // Check if full name (first and last) is provided
+      const nameParts = authorNameTrimmed.split(' ').filter(Boolean);
+      if (nameParts.length < 2) {
+        newErrors.authorName = t('fullNameRequired');
+      }
     }
 
     if (Object.keys(newErrors).length > 0) {

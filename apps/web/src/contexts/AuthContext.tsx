@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { Role, RoleValue, hasAnyRole } from '@shopit/constants';
+import { api } from '../lib/api';
 
 // Types
 export interface User {
@@ -49,6 +50,7 @@ interface AuthState {
   store: Store | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isImpersonating: boolean; // Flag to indicate if admin is impersonating
 }
 
 interface AuthContextType extends AuthState {
@@ -56,13 +58,11 @@ interface AuthContextType extends AuthState {
   logout: (logoutAllDevices?: boolean) => Promise<void>;
   refreshAuth: () => Promise<void>;
   checkAuth: () => Promise<boolean>;
+  impersonateUser: (userId: string) => Promise<void>;
+  stopImpersonation: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Build API base URL - strip any existing prefix to avoid duplication
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     store: null,
     isLoading: true,
     isAuthenticated: false,
+    isImpersonating: false,
   });
 
   const router = useRouter();
@@ -78,62 +79,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Only run on client side
   useEffect(() => {
     setMounted(true);
+    // Check for impersonation state on mount
+    if (typeof window !== 'undefined') {
+      const impersonating = localStorage.getItem('impersonating') === 'true';
+      if (impersonating) {
+        setState((prev) => ({ ...prev, isImpersonating: true }));
+      }
+    }
   }, []);
-
-  // API helper
-  const apiCall = async (
-    endpoint: string,
-    options: RequestInit = {},
-  ): Promise<Response> => {
-    const url = `${API_URL}/api/v1${endpoint}`;
-    return fetch(url, {
-      ...options,
-      credentials: 'include', // Include cookies
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-  };
 
   // Check authentication status
   const checkAuth = useCallback(async (): Promise<boolean> => {
     try {
-      const response = await apiCall('/auth/me');
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.user) {
-          setState({
-            user: data.user,
-            store: data.store,
-            isLoading: false,
-            isAuthenticated: true,
-          });
-          return true;
-        }
-      }
-
-      // Try to refresh token
-      const refreshResponse = await apiCall('/auth/refresh', {
-        method: 'POST',
-      });
-
-      if (refreshResponse.ok) {
-        // Retry getting user
-        const retryResponse = await apiCall('/auth/me');
-        if (retryResponse.ok) {
-          const data = await retryResponse.json();
-          if (data.user) {
-            setState({
-              user: data.user,
-              store: data.store,
-              isLoading: false,
-              isAuthenticated: true,
-            });
-            return true;
-          }
-        }
+      const data = await api.get('/api/v1/auth/me');
+      if (data.user) {
+        setState({
+          user: data.user,
+          store: data.store,
+          isLoading: false,
+          isAuthenticated: true,
+          isImpersonating: localStorage.getItem('impersonating') === 'true',
+        });
+        return true;
       }
 
       // Not authenticated
@@ -142,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         store: null,
         isLoading: false,
         isAuthenticated: false,
+        isImpersonating: false,
       });
       return false;
     } catch (error) {
@@ -151,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         store: null,
         isLoading: false,
         isAuthenticated: false,
+        isImpersonating: false,
       });
       return false;
     }
@@ -162,23 +131,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState((prev) => ({ ...prev, isLoading: true }));
 
       try {
-        const response = await apiCall('/auth/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Login failed');
-        }
-
-        const data = await response.json();
+        const data = await api.post('/api/v1/auth/login', { email, password });
 
         setState({
           user: data.user,
           store: data.store,
           isLoading: false,
           isAuthenticated: true,
+          isImpersonating: false,
         });
       } catch (error) {
         setState((prev) => ({ ...prev, isLoading: false }));
@@ -192,19 +152,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(
     async (logoutAllDevices = false): Promise<void> => {
       try {
-        await apiCall('/auth/logout', {
-          method: 'POST',
-          body: JSON.stringify({ logoutAllDevices }),
-        });
+        await api.post('/api/v1/auth/logout', { logoutAllDevices });
       } catch (error) {
         console.error('Logout error:', error);
       }
 
+      localStorage.removeItem('impersonating');
       setState({
         user: null,
         store: null,
         isLoading: false,
         isAuthenticated: false,
+        isImpersonating: false,
       });
 
       router.push('/');
@@ -216,6 +175,102 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAuth = useCallback(async (): Promise<void> => {
     await checkAuth();
   }, [checkAuth]);
+
+  // Impersonate user (admin only)
+  const impersonateUser = useCallback(
+    async (userId: string): Promise<void> => {
+      if (typeof window === 'undefined') return;
+
+      setState((prev) => ({ ...prev, isLoading: true }));
+
+      try {
+        // Store current admin session flag
+        localStorage.setItem('impersonating', 'true');
+
+        // Call impersonation endpoint
+        const data = await api.post(`/api/v1/auth/impersonate/${userId}`, {});
+
+        setState({
+          user: data.user,
+          store: null, // Will be fetched if needed
+          isLoading: false,
+          isAuthenticated: true,
+          isImpersonating: true,
+        });
+
+        // Refresh to get user's store if they have one
+        await checkAuth();
+      } catch (error) {
+        console.error('Impersonation failed:', error);
+        localStorage.removeItem('impersonating');
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          isImpersonating: false,
+        }));
+        throw error;
+      }
+    },
+    [checkAuth],
+  );
+
+  // Stop impersonation and return as admin
+  const stopImpersonation = useCallback(async (): Promise<void> => {
+    if (typeof window === 'undefined') return;
+
+    setState((prev) => ({ ...prev, isLoading: true }));
+
+    try {
+      // Clear impersonation flag from local storage
+      localStorage.removeItem('impersonating');
+
+      // Call the stop-impersonation endpoint to restore admin session
+      const response = await api.post<{
+        message: string;
+        user: {
+          id: string;
+          email: string;
+          firstName?: string;
+          lastName?: string;
+          role: number;
+          isProfileComplete?: boolean;
+        };
+      }>('/api/v1/auth/stop-impersonation');
+
+      // Update state with admin user
+      setState({
+        user: {
+          id: response.user.id,
+          email: response.user.email,
+          firstName: response.user.firstName || '',
+          lastName: response.user.lastName || '',
+          role: response.user.role,
+          isProfileComplete: response.user.isProfileComplete,
+        },
+        store: null, // Will be fetched by checkAuth if admin has a store
+        isLoading: false,
+        isAuthenticated: true,
+        isImpersonating: false,
+      });
+
+      // Redirect to admin users page
+      router.push('/ka/dashboard/admin/users');
+    } catch (error) {
+      console.error('Stop impersonation failed:', error);
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        isImpersonating: false,
+      }));
+      // If stop impersonation fails, try to just logout and redirect
+      try {
+        await api.post('/api/v1/auth/logout', { logoutAllDevices: false });
+      } catch {
+        // Ignore logout errors
+      }
+      window.location.href = '/ka/login';
+    }
+  }, [router]);
 
   // Check auth on mount (only on client)
   useEffect(() => {
@@ -232,8 +287,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       refreshAuth,
       checkAuth,
+      impersonateUser,
+      stopImpersonation,
     }),
-    [state, login, logout, refreshAuth, checkAuth],
+    [
+      state,
+      login,
+      logout,
+      refreshAuth,
+      checkAuth,
+      impersonateUser,
+      stopImpersonation,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -245,6 +310,7 @@ const defaultAuthContext: AuthContextType = {
   store: null,
   isLoading: true,
   isAuthenticated: false,
+  isImpersonating: false,
   login: async () => {
     /* empty */
   },
@@ -255,6 +321,12 @@ const defaultAuthContext: AuthContextType = {
     /* empty */
   },
   checkAuth: async () => false,
+  impersonateUser: async () => {
+    /* empty */
+  },
+  stopImpersonation: async () => {
+    /* empty */
+  },
 };
 
 export function useAuth(): AuthContextType {

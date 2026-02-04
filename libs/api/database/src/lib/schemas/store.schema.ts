@@ -122,6 +122,9 @@ export class Store {
   @Prop()
   address?: string;
 
+  @Prop()
+  city?: string;
+
   /**
    * Store location coordinates for delivery distance calculation
    */
@@ -139,7 +142,7 @@ export class Store {
   homepageProductOrder!: string;
 
   // ================== SHIPPING SETTINGS ==================
-  
+
   /**
    * Courier type: 'shopit' or 'seller'
    * - 'shopit': ShopIt courier handles delivery (standard shipping fees apply)
@@ -235,7 +238,7 @@ export class Store {
   publishRejectionReason?: string;
 
   // ================== SELLER BANK DETAILS ==================
-  
+
   @Prop()
   bankAccountNumber?: string; // IBAN for withdrawals
 

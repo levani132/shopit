@@ -10,6 +10,7 @@ import {
 import { PaymentsService } from './payments.service';
 import { ServicePaymentService } from './service-payment.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BogWebhookGuard } from '../guards/bog-webhook.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import type { UserDocument } from '@shopit/api-database';
 
@@ -76,8 +77,13 @@ export class PaymentsController {
   /**
    * BOG Payment callback (webhook)
    * This is called by BOG when payment status changes
+   *
+   * SECURITY: Protected by BogWebhookGuard which:
+   * - Verifies the request comes from BOG's IP addresses
+   * - Validates the webhook signature (if BOG_WEBHOOK_SECRET is configured)
    */
   @Post('callback')
+  @UseGuards(BogWebhookGuard)
   async handleCallback(@Body() callbackData: BogCallbackData) {
     this.logger.log('Received BOG callback:', JSON.stringify(callbackData));
 

@@ -30,22 +30,12 @@ export default function PublishButton() {
   const fetchStatus = useCallback(async () => {
     try {
       setError(false);
-      const response = await api.get('/stores/publish/status');
-      if (response.ok) {
-        const data = await response.json();
-        // Ensure publishStatus defaults to 'draft' if null/undefined
-        setStatus({
-          ...data,
-          publishStatus: data.publishStatus || 'draft',
-        });
-      } else {
-        // API error - default to draft
-        setError(true);
-        setStatus({
-          publishStatus: 'draft',
-          missingFields: { profile: [], store: [], canPublish: false },
-        });
-      }
+      const data = await api.get('/stores/publish/status');
+      // Ensure publishStatus defaults to 'draft' if null/undefined
+      setStatus({
+        ...data,
+        publishStatus: data.publishStatus || 'draft',
+      });
     } catch (err) {
       console.error('[PublishButton] Failed to fetch publish status:', err);
       setError(true);
@@ -62,6 +52,14 @@ export default function PublishButton() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus, pathname]);
+
+  // Poll for updates every 5 seconds to catch changes after saving
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStatus();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchStatus]);
 
   // Also refetch when page becomes visible (user comes back to tab)
   useEffect(() => {
@@ -82,11 +80,9 @@ export default function PublishButton() {
 
     setSubmitting(true);
     try {
-      const response = await api.post('/stores/publish/request', { message });
-      if (response.ok) {
-        setShowModal(false);
-        fetchStatus();
-      }
+      await api.post('/stores/publish/request', { message });
+      setShowModal(false);
+      fetchStatus();
     } catch (err) {
       console.error('Failed to submit publish request:', err);
     } finally {

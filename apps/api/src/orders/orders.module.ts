@@ -23,6 +23,7 @@ import { BalanceService } from './balance.service';
 import { DeliveryFeeService } from './delivery-fee.service';
 import { PaymentsModule } from '../payments/payments.module';
 import { AdminModule } from '../admin/admin.module';
+import { RoutesModule } from '../routes/routes.module';
 
 @Module({
   imports: [
@@ -37,10 +38,20 @@ import { AdminModule } from '../admin/admin.module';
     ScheduleModule.forRoot(),
     forwardRef(() => PaymentsModule),
     forwardRef(() => AdminModule),
+    forwardRef(() => RoutesModule),
   ],
   controllers: [OrdersController, BalanceController],
-  providers: [OrdersService, StockReservationService, BalanceService, DeliveryFeeService],
-  exports: [OrdersService, StockReservationService, BalanceService, DeliveryFeeService],
+  providers: [
+    OrdersService,
+    StockReservationService,
+    BalanceService,
+    DeliveryFeeService,
+  ],
+  exports: [
+    OrdersService,
+    StockReservationService,
+    BalanceService,
+    DeliveryFeeService,
+  ],
 })
 export class OrdersModule {}
-

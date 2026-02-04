@@ -5,9 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { OrderCard, Order } from '../../../../components/orders';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../lib/api';
 
 export default function MyOrdersPage() {
   const t = useTranslations('dashboard');
@@ -23,19 +21,12 @@ export default function MyOrdersPage() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/orders/my-orders`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(Array.isArray(data) ? data : data.orders || []);
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to load orders');
-      }
+      const data = await api.get<Order[] | { orders: Order[] }>('/api/v1/orders/my-orders');
+      setOrders(Array.isArray(data) ? data : data.orders || []);
     } catch (err) {
       console.error('Error fetching orders:', err);
-      setError('Failed to load orders');
+      const message = err instanceof Error && 'message' in err ? (err as any).message : 'Failed to load orders';
+      setError(message);
     } finally {
       setLoading(false);
     }

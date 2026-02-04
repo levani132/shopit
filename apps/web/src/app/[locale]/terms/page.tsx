@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
+import { api } from '../../../lib/api';
 
 interface TermsContent {
   contentKa: string;
@@ -29,16 +30,15 @@ export default function TermsPage() {
       setLocale(urlLocale);
     }
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     // Fetch terms content
-    fetch(`${API_BASE}/api/v1/content/terms`)
-      .then((res) => res.json())
+    api
+      .get('/content/terms')
       .then((data) => setContent(data))
       .catch(() => setContent(null));
 
     // Fetch settings for dynamic values
-    fetch(`${API_BASE}/api/v1/admin/settings/public`)
-      .then((res) => res.json())
+    api
+      .get('/admin/settings/public')
       .then((data) => setSettings(data))
       .catch(() =>
         setSettings({

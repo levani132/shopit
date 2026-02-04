@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 import { useAuth } from '../../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../lib/api';
 
 type NotificationPreference = 'off' | 'important' | 'all';
 
@@ -36,17 +34,10 @@ export default function NotificationSettingsPage() {
       if (!isAuthenticated) return;
 
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/notifications/settings`,
-          {
-            credentials: 'include',
-          },
+        const data = await api.get<NotificationSettings>(
+          '/api/v1/notifications/settings',
         );
-
-        if (response.ok) {
-          const data = await response.json();
-          setSettings(data);
-        }
+        setSettings(data);
       } catch (error) {
         console.error('Failed to fetch notification settings:', error);
       } finally {
@@ -64,21 +55,13 @@ export default function NotificationSettingsPage() {
     setSuccessMessage(null);
 
     try {
-      const response = await fetch(`${API_URL}/api/v1/notifications/settings`, {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updates),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings(data);
-        setSuccessMessage(t('settingsSaved'));
-        setTimeout(() => setSuccessMessage(null), 3000);
-      }
+      const data = await api.patch<NotificationSettings>(
+        '/api/v1/notifications/settings',
+        updates,
+      );
+      setSettings(data);
+      setSuccessMessage(t('settingsSaved'));
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error('Failed to update notification settings:', error);
     } finally {

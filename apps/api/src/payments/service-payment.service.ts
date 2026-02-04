@@ -1,4 +1,9 @@
-import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
@@ -37,6 +42,16 @@ export class ServicePaymentService {
     private storeModel: Model<StoreDocument>,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Check if payment should be skipped (for dev/test environments)
+   * By default, SKIP_PAYMENT is false, meaning real payments are required.
+   * Set SKIP_PAYMENT=true to simulate payments without actual BOG processing.
+   */
+  private isPaymentSkipped(): boolean {
+    const skipPayment = this.configService.get<string>('SKIP_PAYMENT');
+    return skipPayment === 'true';
+  }
 
   /**
    * Get BOG access token
@@ -99,7 +114,9 @@ export class ServicePaymentService {
     // Check if subdomain change is free (first change)
     const changeCount = store.subdomainChangeCount || 0;
     if (changeCount === 0) {
-      throw new BadRequestException('First subdomain change is free. No payment required.');
+      throw new BadRequestException(
+        'First subdomain change is free. No payment required.',
+      );
     }
 
     // Validate new subdomain format and availability
@@ -109,7 +126,9 @@ export class ServicePaymentService {
     }
 
     // Check if subdomain is available
-    const existingStore = await this.storeModel.findOne({ subdomain: normalizedSubdomain });
+    const existingStore = await this.storeModel.findOne({
+      subdomain: normalizedSubdomain,
+    });
     if (existingStore) {
       throw new BadRequestException('This subdomain is already taken');
     }
@@ -126,7 +145,7 @@ export class ServicePaymentService {
       // Return existing pending payment
       if (pendingPayment.metadata?.newSubdomain === normalizedSubdomain) {
         throw new BadRequestException(
-          'You already have a pending payment for this subdomain change. Please complete or wait for it to expire.'
+          'You already have a pending payment for this subdomain change. Please complete or wait for it to expire.',
         );
       }
       // Cancel old pending payment if subdomain is different
@@ -153,6 +172,33 @@ export class ServicePaymentService {
     });
 
     await servicePayment.save();
+
+    // If SKIP_PAYMENT is enabled, simulate successful payment immediately
+    if (this.isPaymentSkipped()) {
+      this.logger.warn(
+        `[DEV MODE] SKIP_PAYMENT is enabled - simulating service payment for ${externalOrderId}`,
+      );
+
+      const paymentResult = {
+        id: `simulated_${externalOrderId}`,
+        status: 'COMPLETED',
+        updateTime: new Date().toISOString(),
+        emailAddress: 'simulated@dev.local',
+      };
+
+      // Handle the simulated successful payment
+      await this.handleSuccessfulPayment(externalOrderId, paymentResult);
+
+      this.logger.log(
+        `[DEV MODE] Service payment ${externalOrderId} automatically completed`,
+      );
+
+      return {
+        paymentId: servicePayment._id.toString(),
+        redirectUrl: successUrl,
+        externalOrderId,
+      };
+    }
 
     // Create BOG payment
     try {
@@ -275,7 +321,11 @@ export class ServicePaymentService {
       case ServiceType.SUBDOMAIN_CHANGE:
         return this.executeSubdomainChange(servicePayment);
       default:
-        return { success: true, message: 'Payment completed', serviceType: servicePayment.serviceType };
+        return {
+          success: true,
+          message: 'Payment completed',
+          serviceType: servicePayment.serviceType,
+        };
     }
   }
 
@@ -308,7 +358,8 @@ export class ServicePaymentService {
       // TODO: Handle refund scenario
       return {
         success: false,
-        message: 'Subdomain is no longer available. Please contact support for a refund.',
+        message:
+          'Subdomain is no longer available. Please contact support for a refund.',
         serviceType: ServiceType.SUBDOMAIN_CHANGE,
       };
     }
@@ -342,7 +393,9 @@ export class ServicePaymentService {
   /**
    * Get pending subdomain change payment for a store
    */
-  async getPendingSubdomainChange(storeId: string): Promise<ServicePaymentDocument | null> {
+  async getPendingSubdomainChange(
+    storeId: string,
+  ): Promise<ServicePaymentDocument | null> {
     return this.servicePaymentModel.findOne({
       storeId: new Types.ObjectId(storeId),
       serviceType: ServiceType.SUBDOMAIN_CHANGE,
@@ -354,8 +407,9 @@ export class ServicePaymentService {
   /**
    * Get service payment by external order ID
    */
-  async getByExternalOrderId(externalOrderId: string): Promise<ServicePaymentDocument | null> {
+  async getByExternalOrderId(
+    externalOrderId: string,
+  ): Promise<ServicePaymentDocument | null> {
     return this.servicePaymentModel.findOne({ externalOrderId });
   }
 }
-

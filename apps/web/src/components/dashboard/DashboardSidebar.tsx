@@ -7,14 +7,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Role, RoleValue, hasRole, hasAnyRole } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 
-interface NavItem {
+export interface NavItem {
   href: string;
   labelKey: string;
   icon: React.ReactNode;
   roles?: RoleValue[]; // If undefined, shown to all roles
 }
 
-interface NavSection {
+export interface NavSection {
   titleKey?: string;
   items: NavItem[];
   roles?: RoleValue[]; // If undefined, shown to all roles
@@ -197,6 +197,22 @@ const DeliveryIcon = (
   </svg>
 );
 
+const RouteIcon = (
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+    />
+  </svg>
+);
+
 const AddressIcon = (
   <svg
     className="w-5 h-5"
@@ -355,7 +371,7 @@ const NotificationsIcon = (
 );
 
 // Navigation sections - role-based (using bitmask)
-const NAV_SECTIONS: NavSection[] = [
+export const NAV_SECTIONS: NavSection[] = [
   // Overview and Notifications - for all roles
   {
     items: [
@@ -434,6 +450,11 @@ const NAV_SECTIONS: NavSection[] = [
         labelKey: 'deliveryOrders',
         icon: DeliveryIcon,
       },
+      {
+        href: '/dashboard/routes',
+        labelKey: 'planRoute',
+        icon: RouteIcon,
+      },
     ],
   },
   // Results section - sellers
@@ -506,6 +527,38 @@ const NAV_SECTIONS: NavSection[] = [
         href: '/dashboard/admin/analytics',
         labelKey: 'platformAnalytics',
         icon: ChartBarIcon,
+      },
+      {
+        href: '/dashboard/admin/dev-tools',
+        labelKey: 'devTools',
+        icon: SettingsIcon,
+      },
+    ],
+  },
+  // Courier Admin section - courier admin only
+  {
+    titleKey: 'sectionCourierAdmin',
+    roles: [Role.COURIER_ADMIN],
+    items: [
+      {
+        href: '/dashboard/courier-admin',
+        labelKey: 'courierAdminDashboard',
+        icon: ChartBarIcon,
+      },
+      {
+        href: '/dashboard/courier-admin/couriers',
+        labelKey: 'manageCouriers',
+        icon: UsersIcon,
+      },
+      {
+        href: '/dashboard/courier-admin/orders',
+        labelKey: 'allDeliveryOrders',
+        icon: OrdersIcon,
+      },
+      {
+        href: '/dashboard/courier-admin/pending-couriers',
+        labelKey: 'pendingCouriers',
+        icon: PendingIcon,
       },
     ],
   },

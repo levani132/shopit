@@ -5,9 +5,7 @@ import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useAuth } from '../../../../../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../../lib/api';
 
 interface WishlistItem {
   _id: string;
@@ -40,22 +38,13 @@ export default function StoreWishlistPage() {
   const fetchWishlist = useCallback(async () => {
     try {
       // Fetch wishlist filtered by current store
-      const response = await fetch(
-        `${API_URL}/api/v1/wishlist?storeSubdomain=${subdomain}`,
-        {
-          credentials: 'include',
-        },
+      const data = await api.get(
+        `/wishlist?storeSubdomain=${subdomain}`,
       );
-      if (response.ok) {
-        const data = await response.json();
-        setItems(Array.isArray(data) ? data : data.items || []);
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to load wishlist');
-      }
-    } catch (err) {
+      setItems(Array.isArray(data) ? data : data.items || []);
+    } catch (err: any) {
       console.error('Error fetching wishlist:', err);
-      setError('Failed to load wishlist');
+      setError(err?.message || 'Failed to load wishlist');
     } finally {
       setLoading(false);
     }
@@ -73,20 +62,11 @@ export default function StoreWishlistPage() {
   const handleRemove = async (productId: string) => {
     setRemovingId(productId);
     try {
-      const response = await fetch(`${API_URL}/api/v1/wishlist/${productId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        setItems((prev) => prev.filter((item) => item.productId !== productId));
-      } else {
-        const data = await response.json();
-        setError(data.message || 'Failed to remove item');
-      }
-    } catch (err) {
+      await api.delete(`/wishlist/${productId}`);
+      setItems((prev) => prev.filter((item) => item.productId !== productId));
+    } catch (err: any) {
       console.error('Error removing item:', err);
-      setError('Failed to remove item');
+      setError(err?.message || 'Failed to remove item');
     } finally {
       setRemovingId(null);
     }

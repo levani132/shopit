@@ -7,9 +7,8 @@ import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../lib/api';
+import { EditButton } from './EditButton';
 
 export interface ProductCardData {
   _id: string;
@@ -68,14 +67,8 @@ export function ProductCard({
 
     const checkWishlist = async () => {
       try {
-        const res = await fetch(
-          `${API_URL}/api/v1/wishlist/check/${product._id}`,
-          { credentials: 'include' },
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setIsInWishlist(data.isInWishlist);
-        }
+        const data = await api.get(`/wishlist/check/${product._id}`);
+        setIsInWishlist(data.isInWishlist);
       } catch (err) {
         // Silently fail
       }
@@ -95,18 +88,8 @@ export function ProductCard({
 
     setWishlistLoading(true);
     try {
-      const res = await fetch(
-        `${API_URL}/api/v1/wishlist/${product._id}/toggle`,
-        {
-          method: 'POST',
-          credentials: 'include',
-        },
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        setIsInWishlist(data.added);
-      }
+      const data = await api.post(`/wishlist/${product._id}/toggle`, {});
+      setIsInWishlist(data.added);
     } catch (err) {
       console.error('Error toggling wishlist:', err);
     } finally {
@@ -198,6 +181,15 @@ export function ProductCard({
       {/* Product Image - Clickable */}
       <Link href={`/${locale}/products/${product._id}`} className="block">
         <div className="aspect-square relative bg-gray-100 dark:bg-zinc-700 overflow-hidden">
+          {/* Edit Button - Always visible in edit mode */}
+          <EditButton
+            href={`/${locale}/dashboard/products/${product._id}`}
+            title={t('editProduct') || 'Edit Product'}
+            size="sm"
+            variant="icon-only"
+            className="absolute top-2 left-2 z-10"
+          />
+
           {/* Wishlist Button */}
           <button
             onClick={handleToggleWishlist}

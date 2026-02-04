@@ -133,6 +133,9 @@ export class User {
   @Prop({ default: false })
   isVerified!: boolean;
 
+  @Prop({ default: false })
+  isSeeded!: boolean; // Flag to indicate if user was created by dev tools seeding
+
   @Prop()
   verificationToken?: string;
 

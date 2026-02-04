@@ -1,25 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { hasRole, Role } from '@shopit/constants';
 import { useAuth } from '../../../contexts/AuthContext';
-import { Role, hasRole } from '@shopit/constants';
 import { api } from '../../../lib/api';
-import SetupRequirements from '../../../components/dashboard/SetupRequirements';
+import OnboardingWizard from '../../../components/dashboard/OnboardingWizard';
 import {
-  StatCard,
-  SectionCard,
-  QuickActionCard,
-  QuickActionButton,
   AlertBanner,
   BreakdownList,
   EmptyState,
-  OverviewSkeleton,
   Icons,
+  OverviewSkeleton,
+  QuickActionButton,
+  QuickActionCard,
+  SectionCard,
+  StatCard,
 } from '../../../components/dashboard/OverviewComponents';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 // ============================================
 // Types
@@ -74,16 +71,72 @@ interface RecentOrder {
 }
 
 // ============================================
+// Collapsible Section Header Component
+// ============================================
+interface CollapsibleHeaderProps {
+  icon: React.ReactNode;
+  title: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  bgColor: string;
+}
+
+function CollapsibleHeader({
+  icon,
+  title,
+  isOpen,
+  onToggle,
+  bgColor,
+}: CollapsibleHeaderProps) {
+  return (
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between gap-2 pb-2 border-b border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-900/50 px-2 py-2 -mx-2 rounded transition-colors"
+    >
+      <div className="flex items-center gap-2">
+        <div className={`p-1.5 rounded-lg ${bgColor}`}>{icon}</div>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {title}
+        </h2>
+      </div>
+      <svg
+        className={`w-5 h-5 text-gray-600 dark:text-gray-400 transition-transform ${
+          isOpen ? 'transform rotate-180' : ''
+        }`}
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M19 14l-7 7m0 0l-7-7m7 7V3"
+        />
+      </svg>
+    </button>
+  );
+}
+
+// ============================================
 // Admin Overview Section
 // ============================================
-function AdminOverview({ stats }: { stats: AdminStats }) {
+function AdminOverview({
+  stats,
+  isOpen,
+  onToggle,
+}: {
+  stats: AdminStats;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   const t = useTranslations('admin');
 
   return (
     <div className="space-y-6">
       {/* Section Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-zinc-700">
-        <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
+      <CollapsibleHeader
+        icon={
           <svg
             className="w-4 h-4 text-red-600 dark:text-red-400"
             fill="none"
@@ -97,134 +150,139 @@ function AdminOverview({ stats }: { stats: AdminStats }) {
               d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
             />
           </svg>
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {t('adminPanel')}
-        </h2>
-      </div>
+        }
+        title={t('adminPanel')}
+        isOpen={isOpen}
+        onToggle={onToggle}
+        bgColor="bg-red-100 dark:bg-red-900/30"
+      />
 
-      {/* Pending Approvals Alert */}
-      {(stats.pendingApprovals.stores > 0 ||
-        stats.pendingApprovals.couriers > 0) && (
-        <AlertBanner
-          type="warning"
-          message={t('pendingApprovalsAlert', {
-            stores: stats.pendingApprovals.stores,
-            couriers: stats.pendingApprovals.couriers,
-          })}
-          action={{
-            label: t('reviewNow'),
-            href: '/dashboard/admin/pending-stores',
-          }}
-        />
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={t('totalUsers')}
-          value={stats.users.total}
-          subtitle={`+${stats.users.todayNew} ${t('today')}`}
-          icon={Icons.users}
-          color="blue"
-        />
-        <StatCard
-          title={t('totalStores')}
-          value={stats.stores.total}
-          subtitle={`${stats.stores.published} ${t('published')}`}
-          icon={Icons.store}
-          color="purple"
-        />
-        <StatCard
-          title={t('totalOrders')}
-          value={stats.orders.total}
-          subtitle={`+${stats.orders.todayNew} ${t('today')}`}
-          icon={Icons.orders}
-          color="green"
-        />
-        <StatCard
-          title={t('totalRevenue')}
-          value={`₾${stats.revenue.total.toLocaleString()}`}
-          icon={Icons.revenue}
-          color="yellow"
-        />
-      </div>
-
-      {/* Breakdowns & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <SectionCard title={t('usersBreakdown')}>
-          <BreakdownList
-            items={[
-              { label: t('sellers'), value: stats.users.sellers },
-              { label: t('couriers'), value: stats.users.couriers },
-              {
-                label: t('regularUsers'),
-                value:
-                  stats.users.total -
-                  stats.users.sellers -
-                  stats.users.couriers,
-              },
-            ]}
-          />
-        </SectionCard>
-
-        <SectionCard title={t('ordersBreakdown')}>
-          <BreakdownList
-            items={[
-              {
-                label: t('pending'),
-                value: stats.orders.pending,
-                color: 'yellow',
-              },
-              { label: t('paid'), value: stats.orders.paid, color: 'blue' },
-              {
-                label: t('delivered'),
-                value: stats.orders.delivered,
-                color: 'green',
-              },
-            ]}
-          />
-        </SectionCard>
-
-        <SectionCard title={t('quickActions')}>
-          <div className="grid grid-cols-2 gap-2">
-            <QuickActionCard
-              href="/dashboard/admin/pending-stores"
-              label={t('reviewStores')}
-              icon={Icons.store}
-              badge={
-                stats.pendingApprovals.stores > 0
-                  ? stats.pendingApprovals.stores
-                  : undefined
-              }
-              color="purple"
+      {isOpen && (
+        <>
+          {/* Pending Approvals Alert */}
+          {(stats.pendingApprovals.stores > 0 ||
+            stats.pendingApprovals.couriers > 0) && (
+            <AlertBanner
+              type="warning"
+              message={t('pendingApprovalsAlert', {
+                stores: stats.pendingApprovals.stores,
+                couriers: stats.pendingApprovals.couriers,
+              })}
+              action={{
+                label: t('reviewNow'),
+                href: '/dashboard/admin/pending-stores',
+              }}
             />
-            <QuickActionCard
-              href="/dashboard/admin/pending-couriers"
-              label={t('reviewCouriers')}
-              icon={Icons.delivery}
-              badge={
-                stats.pendingApprovals.couriers > 0
-                  ? stats.pendingApprovals.couriers
-                  : undefined
-              }
+          )}
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title={t('totalUsers')}
+              value={stats.users.total}
+              subtitle={`+${stats.users.todayNew} ${t('today')}`}
+              icon={Icons.users}
               color="blue"
             />
-            <QuickActionCard
-              href="/dashboard/admin/settings"
-              label={t('siteSettings')}
-              icon={Icons.settings}
+            <StatCard
+              title={t('totalStores')}
+              value={stats.stores.total}
+              subtitle={`${stats.stores.published} ${t('published')}`}
+              icon={Icons.store}
+              color="purple"
+            />
+            <StatCard
+              title={t('totalOrders')}
+              value={stats.orders.total}
+              subtitle={`+${stats.orders.todayNew} ${t('today')}`}
+              icon={Icons.orders}
               color="green"
             />
-            <QuickActionCard
-              href="/dashboard/admin/analytics"
-              label={t('viewAnalytics')}
-              icon={Icons.analytics}
+            <StatCard
+              title={t('totalRevenue')}
+              value={`₾${stats.revenue.total.toLocaleString()}`}
+              icon={Icons.revenue}
               color="yellow"
             />
           </div>
-        </SectionCard>
-      </div>
+
+          {/* Breakdowns & Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <SectionCard title={t('usersBreakdown')}>
+              <BreakdownList
+                items={[
+                  { label: t('sellers'), value: stats.users.sellers },
+                  { label: t('couriers'), value: stats.users.couriers },
+                  {
+                    label: t('regularUsers'),
+                    value:
+                      stats.users.total -
+                      stats.users.sellers -
+                      stats.users.couriers,
+                  },
+                ]}
+              />
+            </SectionCard>
+
+            <SectionCard title={t('ordersBreakdown')}>
+              <BreakdownList
+                items={[
+                  {
+                    label: t('pending'),
+                    value: stats.orders.pending,
+                    color: 'yellow',
+                  },
+                  { label: t('paid'), value: stats.orders.paid, color: 'blue' },
+                  {
+                    label: t('delivered'),
+                    value: stats.orders.delivered,
+                    color: 'green',
+                  },
+                ]}
+              />
+            </SectionCard>
+
+            <SectionCard title={t('quickActions')}>
+              <div className="grid grid-cols-2 gap-2">
+                <QuickActionCard
+                  href="/dashboard/admin/pending-stores"
+                  label={t('reviewStores')}
+                  icon={Icons.store}
+                  badge={
+                    stats.pendingApprovals.stores > 0
+                      ? stats.pendingApprovals.stores
+                      : undefined
+                  }
+                  color="purple"
+                />
+                <QuickActionCard
+                  href="/dashboard/admin/pending-couriers"
+                  label={t('reviewCouriers')}
+                  icon={Icons.delivery}
+                  badge={
+                    stats.pendingApprovals.couriers > 0
+                      ? stats.pendingApprovals.couriers
+                      : undefined
+                  }
+                  color="blue"
+                />
+                <QuickActionCard
+                  href="/dashboard/admin/settings"
+                  label={t('siteSettings')}
+                  icon={Icons.settings}
+                  color="green"
+                />
+                <QuickActionCard
+                  href="/dashboard/admin/analytics"
+                  label={t('viewAnalytics')}
+                  icon={Icons.analytics}
+                  color="yellow"
+                />
+              </div>
+            </SectionCard>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -232,80 +290,91 @@ function AdminOverview({ stats }: { stats: AdminStats }) {
 // ============================================
 // Seller Overview Section
 // ============================================
-function SellerOverview({ stats }: { stats: SellerStats }) {
+function SellerOverview({
+  stats,
+  isOpen,
+  onToggle,
+}: {
+  stats: SellerStats;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   const t = useTranslations('dashboard');
 
   return (
     <div className="space-y-6">
       {/* Section Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-zinc-700">
-        <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-          {Icons.store}
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {t('sellerDashboard')}
-        </h2>
-      </div>
+      <CollapsibleHeader
+        icon={Icons.store}
+        title={t('sellerDashboard')}
+        isOpen={isOpen}
+        onToggle={onToggle}
+        bgColor="bg-purple-100 dark:bg-purple-900/30"
+      />
 
-      {/* Setup Requirements */}
-      <SetupRequirements />
+      {isOpen && (
+        <>
+          {/* Onboarding Wizard */}
+          <OnboardingWizard />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={t('totalProducts')}
-          value={stats.totalProducts}
-          icon={Icons.products}
-          color="blue"
-          href="/dashboard/products"
-        />
-        <StatCard
-          title={t('totalOrders')}
-          value={stats.totalOrders}
-          icon={Icons.orders}
-          color="green"
-          href="/dashboard/orders"
-        />
-        <StatCard
-          title={t('totalRevenue')}
-          value={`₾${stats.totalRevenue.toLocaleString()}`}
-          icon={Icons.revenue}
-          color="purple"
-        />
-        <StatCard
-          title={t('pendingOrders')}
-          value={stats.pendingOrders}
-          icon={Icons.clock}
-          color="orange"
-          href="/dashboard/orders?status=pending"
-        />
-      </div>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title={t('totalProducts')}
+              value={stats.totalProducts}
+              icon={Icons.products}
+              color="blue"
+              href="/dashboard/products"
+            />
+            <StatCard
+              title={t('totalOrders')}
+              value={stats.totalOrders}
+              icon={Icons.orders}
+              color="green"
+              href="/dashboard/orders"
+            />
+            <StatCard
+              title={t('totalRevenue')}
+              value={`₾${stats.totalRevenue.toLocaleString()}`}
+              icon={Icons.revenue}
+              color="purple"
+            />
+            <StatCard
+              title={t('pendingOrders')}
+              value={stats.pendingOrders}
+              icon={Icons.clock}
+              color="orange"
+              href="/dashboard/orders?status=pending"
+            />
+          </div>
 
-      {/* Quick Actions */}
-      <SectionCard title={t('quickActions')}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickActionButton
-            href="/dashboard/products/new"
-            label={t('addProduct')}
-            icon={Icons.plus}
-          />
-          <QuickActionButton
-            href="/dashboard/orders"
-            label={t('viewOrders')}
-            icon={Icons.orders}
-          />
-          <QuickActionButton
-            href="/dashboard/store"
-            label={t('editStore')}
-            icon={Icons.settings}
-          />
-          <QuickActionButton
-            href="/dashboard/analytics"
-            label={t('viewAnalytics')}
-            icon={Icons.analytics}
-          />
-        </div>
-      </SectionCard>
+          {/* Quick Actions */}
+          <SectionCard title={t('quickActions')}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <QuickActionButton
+                href="/dashboard/products/new"
+                label={t('addProduct')}
+                icon={Icons.plus}
+              />
+              <QuickActionButton
+                href="/dashboard/orders"
+                label={t('viewOrders')}
+                icon={Icons.orders}
+              />
+              <QuickActionButton
+                href="/dashboard/store"
+                label={t('editStore')}
+                icon={Icons.settings}
+              />
+              <QuickActionButton
+                href="/dashboard/analytics"
+                label={t('viewAnalytics')}
+                icon={Icons.analytics}
+              />
+            </div>
+          </SectionCard>
+        </>
+      )}
     </div>
   );
 }
@@ -313,76 +382,87 @@ function SellerOverview({ stats }: { stats: SellerStats }) {
 // ============================================
 // Courier Overview Section
 // ============================================
-function CourierOverview({ stats }: { stats: CourierStats }) {
+function CourierOverview({
+  stats,
+  isOpen,
+  onToggle,
+}: {
+  stats: CourierStats;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
   const t = useTranslations('dashboard');
 
   return (
     <div className="space-y-6">
       {/* Section Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-zinc-700">
-        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-          {Icons.delivery}
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {t('courierDashboard')}
-        </h2>
-      </div>
+      <CollapsibleHeader
+        icon={Icons.delivery}
+        title={t('courierDashboard')}
+        isOpen={isOpen}
+        onToggle={onToggle}
+        bgColor="bg-blue-100 dark:bg-blue-900/30"
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={t('availableDeliveries')}
-          value={stats.availableDeliveries}
-          icon={Icons.delivery}
-          color="blue"
-          href="/dashboard/deliveries"
-        />
-        <StatCard
-          title={t('myDeliveries')}
-          value={stats.myDeliveries}
-          icon={Icons.orders}
-          color="green"
-          href="/dashboard/deliveries?tab=my"
-        />
-        <StatCard
-          title={t('totalEarnings')}
-          value={`₾${stats.totalEarnings.toLocaleString()}`}
-          icon={Icons.revenue}
-          color="purple"
-        />
-        <StatCard
-          title={t('completedToday')}
-          value={stats.completedToday}
-          icon={Icons.check}
-          color="orange"
-        />
-      </div>
+      {isOpen && (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title={t('availableDeliveries')}
+              value={stats.availableDeliveries}
+              icon={Icons.delivery}
+              color="blue"
+              href="/dashboard/deliveries"
+            />
+            <StatCard
+              title={t('myDeliveries')}
+              value={stats.myDeliveries}
+              icon={Icons.orders}
+              color="green"
+              href="/dashboard/deliveries?tab=my"
+            />
+            <StatCard
+              title={t('totalEarnings')}
+              value={`₾${stats.totalEarnings.toLocaleString()}`}
+              icon={Icons.revenue}
+              color="purple"
+            />
+            <StatCard
+              title={t('completedToday')}
+              value={stats.completedToday}
+              icon={Icons.check}
+              color="orange"
+            />
+          </div>
 
-      {/* Quick Actions */}
-      <SectionCard title={t('quickActions')}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <QuickActionButton
-            href="/dashboard/deliveries"
-            label={t('viewAvailableDeliveries')}
-            icon={Icons.delivery}
-          />
-          <QuickActionButton
-            href="/dashboard/courier-balance"
-            label={t('viewBalance')}
-            icon={Icons.wallet}
-          />
-          <QuickActionButton
-            href="/dashboard/courier-analytics"
-            label={t('viewAnalytics')}
-            icon={Icons.analytics}
-          />
-          <QuickActionButton
-            href="/dashboard/profile"
-            label={t('editProfile')}
-            icon={Icons.profile}
-          />
-        </div>
-      </SectionCard>
+          {/* Quick Actions */}
+          <SectionCard title={t('quickActions')}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <QuickActionButton
+                href="/dashboard/deliveries"
+                label={t('viewAvailableDeliveries')}
+                icon={Icons.delivery}
+              />
+              <QuickActionButton
+                href="/dashboard/courier-balance"
+                label={t('viewBalance')}
+                icon={Icons.wallet}
+              />
+              <QuickActionButton
+                href="/dashboard/courier-analytics"
+                label={t('viewAnalytics')}
+                icon={Icons.analytics}
+              />
+              <QuickActionButton
+                href="/dashboard/profile"
+                label={t('editProfile')}
+                icon={Icons.profile}
+              />
+            </div>
+          </SectionCard>
+        </>
+      )}
     </div>
   );
 }
@@ -393,9 +473,15 @@ function CourierOverview({ stats }: { stats: CourierStats }) {
 function BuyerOverview({
   stats,
   recentOrders,
+  title,
+  isOpen,
+  onToggle,
 }: {
   stats: BuyerStats;
   recentOrders: RecentOrder[];
+  title: string;
+  isOpen: boolean;
+  onToggle: () => void;
 }) {
   const t = useTranslations('dashboard');
 
@@ -419,123 +505,126 @@ function BuyerOverview({
   return (
     <div className="space-y-6">
       {/* Section Header */}
-      <div className="flex items-center gap-2 pb-2 border-b border-gray-200 dark:border-zinc-700">
-        <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-          {Icons.shopping}
-        </div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-          {t('myAccount')}
-        </h2>
-      </div>
+      <CollapsibleHeader
+        icon={Icons.shopping}
+        title={title}
+        isOpen={isOpen}
+        onToggle={onToggle}
+        bgColor="bg-green-100 dark:bg-green-900/30"
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title={t('totalOrders')}
-          value={stats.totalOrders}
-          icon={Icons.orders}
-          color="blue"
-          href="/dashboard/my-orders"
-        />
-        <StatCard
-          title={t('activeOrders')}
-          value={stats.activeOrders}
-          icon={Icons.delivery}
-          color="green"
-          href="/dashboard/my-orders"
-        />
-        <StatCard
-          title={t('wishlistItems')}
-          value={stats.wishlistItems}
-          icon={Icons.heart}
-          color="red"
-          href="/dashboard/wishlist"
-        />
-        <StatCard
-          title={t('savedAddresses')}
-          value={stats.savedAddresses}
-          icon={Icons.address}
-          color="purple"
-          href="/dashboard/addresses"
-        />
-      </div>
-
-      {/* Recent Orders & Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <SectionCard
-          title={t('recentOrders')}
-          action={
-            recentOrders.length > 0
-              ? { label: t('viewAll'), href: '/dashboard/my-orders' }
-              : undefined
-          }
-        >
-          {recentOrders.length === 0 ? (
-            <EmptyState
+      {isOpen && (
+        <>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title={t('totalOrders')}
+              value={stats.totalOrders}
               icon={Icons.orders}
-              title={t('noOrders')}
-              description={t('noOrdersDescription')}
-              action={{ label: t('startShopping'), href: '/' }}
-            />
-          ) : (
-            <div className="space-y-3">
-              {recentOrders.slice(0, 3).map((order) => (
-                <a
-                  key={order._id}
-                  href={`/dashboard/my-orders#${order._id}`}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      #{order.orderNumber}
-                    </p>
-                    {order.storeName && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {order.storeName}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}
-                    >
-                      {t(`orderStatus.${order.status}`)}
-                    </span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-                      ₾{order.total.toFixed(2)}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-
-        <SectionCard title={t('quickActions')}>
-          <div className="grid grid-cols-2 gap-4">
-            <QuickActionButton
+              color="blue"
               href="/dashboard/my-orders"
-              label={t('viewMyOrders')}
-              icon={Icons.orders}
             />
-            <QuickActionButton
-              href="/dashboard/wishlist"
-              label={t('myWishlist')}
+            <StatCard
+              title={t('activeOrders')}
+              value={stats.activeOrders}
+              icon={Icons.delivery}
+              color="green"
+              href="/dashboard/my-orders"
+            />
+            <StatCard
+              title={t('wishlistItems')}
+              value={stats.wishlistItems}
               icon={Icons.heart}
+              color="red"
+              href="/dashboard/wishlist"
             />
-            <QuickActionButton
-              href="/dashboard/addresses"
-              label={t('manageAddresses')}
+            <StatCard
+              title={t('savedAddresses')}
+              value={stats.savedAddresses}
               icon={Icons.address}
-            />
-            <QuickActionButton
-              href="/dashboard/profile"
-              label={t('editProfile')}
-              icon={Icons.profile}
+              color="purple"
+              href="/dashboard/addresses"
             />
           </div>
-        </SectionCard>
-      </div>
+
+          {/* Recent Orders & Quick Actions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SectionCard
+              title={t('recentOrders')}
+              action={
+                recentOrders.length > 0
+                  ? { label: t('viewAll'), href: '/dashboard/my-orders' }
+                  : undefined
+              }
+            >
+              {recentOrders.length === 0 ? (
+                <EmptyState
+                  icon={Icons.orders}
+                  title={t('noOrders')}
+                  description={t('noOrdersDescription')}
+                  action={{ label: t('startShopping'), href: '/' }}
+                />
+              ) : (
+                <div className="space-y-3">
+                  {recentOrders.slice(0, 3).map((order) => (
+                    <a
+                      key={order._id}
+                      href={`/dashboard/my-orders#${order._id}`}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-zinc-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <div>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          #{order.orderNumber}
+                        </p>
+                        {order.storeName && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {order.storeName}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}
+                        >
+                          {t(`orderStatus.${order.status}`)}
+                        </span>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+                          ₾{(order.total ?? 0).toFixed(2)}
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+
+            <SectionCard title={t('quickActions')}>
+              <div className="grid grid-cols-2 gap-4">
+                <QuickActionButton
+                  href="/dashboard/my-orders"
+                  label={t('viewMyOrders')}
+                  icon={Icons.orders}
+                />
+                <QuickActionButton
+                  href="/dashboard/wishlist"
+                  label={t('myWishlist')}
+                  icon={Icons.heart}
+                />
+                <QuickActionButton
+                  href="/dashboard/addresses"
+                  label={t('manageAddresses')}
+                  icon={Icons.address}
+                />
+                <QuickActionButton
+                  href="/dashboard/profile"
+                  label={t('editProfile')}
+                  icon={Icons.profile}
+                />
+              </div>
+            </SectionCard>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -554,11 +643,38 @@ export default function DashboardPage() {
   const [buyerStats, setBuyerStats] = useState<BuyerStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+
+  const toggleSection = (section: string) => {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const userRole = user?.role ?? Role.USER;
   const isAdmin = hasRole(userRole, Role.ADMIN);
   const isSeller = hasRole(userRole, Role.SELLER);
   const isCourier = hasRole(userRole, Role.COURIER);
+  const hasMultipleRoles =
+    [isAdmin, isSeller, isCourier].filter(Boolean).length > 1;
+
+  // Determine the first section and initialize openSections accordingly
+  useEffect(() => {
+    const firstSection = isAdmin
+      ? 'admin'
+      : isSeller
+        ? 'seller'
+        : isCourier
+          ? 'courier'
+          : 'buyer';
+    setOpenSections({
+      admin: firstSection === 'admin',
+      seller: firstSection === 'seller',
+      courier: firstSection === 'courier',
+      buyer: firstSection === 'buyer',
+    });
+  }, [isAdmin, isSeller, isCourier]);
 
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
@@ -567,142 +683,103 @@ export default function DashboardPage() {
     setError(null);
 
     try {
-      const promises: Promise<void>[] = [];
-
-      // Fetch admin stats
       if (isAdmin) {
-        promises.push(
-          api.get('/admin/dashboard').then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              setAdminStats(data);
-            }
-          }),
-        );
+        const data = await api.get('/admin/dashboard');
+        setAdminStats(data);
       }
 
-      // Fetch seller stats
       if (isSeller) {
-        promises.push(
-          api.get('/stores/stats').then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              setSellerStats({
-                totalProducts: data.totalProducts || 0,
-                totalOrders: data.totalOrders || 0,
-                totalRevenue: data.totalRevenue || 0,
-                pendingOrders: data.pendingOrders || 0,
-              });
-            } else {
-              // Fallback to empty stats
-              setSellerStats({
-                totalProducts: 0,
-                totalOrders: 0,
-                totalRevenue: 0,
-                pendingOrders: 0,
-              });
-            }
-          }),
-        );
+        try {
+          const data = await api.get('/stores/stats');
+          setSellerStats({
+            totalProducts: data.totalProducts || 0,
+            totalOrders: data.totalOrders || 0,
+            totalRevenue: data.totalRevenue || 0,
+            pendingOrders: data.pendingOrders || 0,
+          });
+        } catch (err) {
+          console.error('Failed to fetch seller stats:', err);
+          setSellerStats({
+            totalProducts: 0,
+            totalOrders: 0,
+            totalRevenue: 0,
+            pendingOrders: 0,
+          });
+        }
       }
 
-      // Fetch courier stats
       if (isCourier) {
-        promises.push(
-          fetch(`${API_URL}/api/v1/deliveries/courier/stats`, {
-            credentials: 'include',
-          }).then(async (res) => {
-            if (res.ok) {
-              const data = await res.json();
-              setCourierStats({
-                availableDeliveries: data.availableDeliveries || 0,
-                myDeliveries: data.myDeliveries || 0,
-                totalEarnings: data.totalEarnings || 0,
-                completedToday: data.completedToday || 0,
-              });
-            } else {
-              setCourierStats({
-                availableDeliveries: 0,
-                myDeliveries: 0,
-                totalEarnings: 0,
-                completedToday: 0,
-              });
-            }
-          }),
-        );
+        try {
+          const data = await api.get('/analytics/courier');
+          setCourierStats({
+            availableDeliveries: data.thisWeek?.deliveries || 0,
+            myDeliveries: data.totalDeliveries || 0,
+            totalEarnings: data.totalEarnings || 0,
+            completedToday:
+              (data.dailyStats && data.dailyStats[0]?.deliveries) || 0,
+          });
+        } catch (err) {
+          console.error('Failed to fetch courier stats:', err);
+          setCourierStats({
+            availableDeliveries: 0,
+            myDeliveries: 0,
+            totalEarnings: 0,
+            completedToday: 0,
+          });
+        }
       }
 
-      // Fetch buyer stats (everyone is a buyer)
-      promises.push(
-        Promise.all([
-          fetch(`${API_URL}/api/v1/orders/my-orders`, {
-            credentials: 'include',
-          }).catch(() => null),
-          fetch(`${API_URL}/api/v1/wishlist`, { credentials: 'include' }).catch(
-            () => null,
-          ),
-          fetch(`${API_URL}/api/v1/users/addresses`, {
-            credentials: 'include',
-          }).catch(() => null),
-        ])
-          .then(async ([ordersRes, wishlistRes, addressesRes]) => {
-            const orders =
-              ordersRes && ordersRes.ok ? await ordersRes.json() : [];
-            const wishlist =
-              wishlistRes && wishlistRes.ok ? await wishlistRes.json() : [];
-            const addresses =
-              addressesRes && addressesRes.ok ? await addressesRes.json() : [];
+      try {
+        const [ordersRes, wishlistRes, addressesRes] = await Promise.allSettled(
+          [
+            api.get('/orders/my-orders'),
+            api.get('/wishlist'),
+            api.get('/auth/addresses'),
+          ],
+        );
 
-            const orderList = Array.isArray(orders)
-              ? orders
-              : orders.orders || [];
-            const wishlistItems = Array.isArray(wishlist)
-              ? wishlist
-              : wishlist.items || [];
-            const addressList = Array.isArray(addresses)
-              ? addresses
-              : addresses.addresses || [];
+        const orders = ordersRes.status === 'fulfilled' ? ordersRes.value : [];
+        const wishlist =
+          wishlistRes.status === 'fulfilled' ? wishlistRes.value : [];
+        const addresses =
+          addressesRes.status === 'fulfilled' ? addressesRes.value : [];
 
-            const activeStatuses = [
-              'pending',
-              'processing',
-              'paid',
-              'shipped',
-              'in_transit',
-            ];
-            const activeOrders = orderList.filter((o: RecentOrder) =>
-              activeStatuses.includes(o.status),
-            );
+        const orderList = Array.isArray(orders) ? orders : orders.orders || [];
+        const wishlistItems = Array.isArray(wishlist)
+          ? wishlist
+          : wishlist.items || [];
+        const addressList = Array.isArray(addresses)
+          ? addresses
+          : addresses.addresses || [];
 
-            setBuyerStats({
-              totalOrders: orderList.length,
-              activeOrders: activeOrders.length,
-              wishlistItems: wishlistItems.length,
-              savedAddresses: addressList.length,
-            });
+        const activeStatuses = [
+          'pending',
+          'processing',
+          'paid',
+          'shipped',
+          'in_transit',
+        ];
+        const activeOrders = orderList.filter((o: RecentOrder) =>
+          activeStatuses.includes(o.status),
+        );
 
-            // Get 3 most recent orders
-            const sortedOrders = orderList
-              .sort(
-                (a: RecentOrder, b: RecentOrder) =>
-                  new Date(b.createdAt).getTime() -
-                  new Date(a.createdAt).getTime(),
-              )
-              .slice(0, 3);
-            setRecentOrders(sortedOrders);
-          })
-          .catch(() => {
-            // Fallback to empty stats if everything fails
-            setBuyerStats({
-              totalOrders: 0,
-              activeOrders: 0,
-              wishlistItems: 0,
-              savedAddresses: 0,
-            });
-          }),
-      );
+        setBuyerStats({
+          totalOrders: orderList.length,
+          activeOrders: activeOrders.length,
+          wishlistItems: wishlistItems.length,
+          savedAddresses: addressList.length,
+        });
 
-      await Promise.allSettled(promises);
+        const sortedOrders = orderList
+          .sort(
+            (a: RecentOrder, b: RecentOrder) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )
+          .slice(0, 3);
+        setRecentOrders(sortedOrders);
+      } catch (err) {
+        console.error('Failed to fetch buyer data:', err);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setError(t('failedToLoadDashboard'));
@@ -762,17 +839,41 @@ export default function DashboardPage() {
       )}
 
       {/* Admin Section */}
-      {isAdmin && adminStats && <AdminOverview stats={adminStats} />}
+      {isAdmin && adminStats && (
+        <AdminOverview
+          stats={adminStats}
+          isOpen={openSections.admin}
+          onToggle={() => toggleSection('admin')}
+        />
+      )}
 
       {/* Seller Section */}
-      {isSeller && sellerStats && <SellerOverview stats={sellerStats} />}
+      {isSeller && sellerStats && (
+        <SellerOverview
+          stats={sellerStats}
+          isOpen={openSections.seller}
+          onToggle={() => toggleSection('seller')}
+        />
+      )}
 
       {/* Courier Section */}
-      {isCourier && courierStats && <CourierOverview stats={courierStats} />}
+      {isCourier && courierStats && (
+        <CourierOverview
+          stats={courierStats}
+          isOpen={openSections.courier}
+          onToggle={() => toggleSection('courier')}
+        />
+      )}
 
       {/* Buyer Section (everyone) */}
       {buyerStats && (
-        <BuyerOverview stats={buyerStats} recentOrders={recentOrders} />
+        <BuyerOverview
+          stats={buyerStats}
+          recentOrders={recentOrders}
+          title={hasMultipleRoles ? t('buyerAccount') : t('myAccount')}
+          isOpen={openSections.buyer}
+          onToggle={() => toggleSection('buyer')}
+        />
       )}
     </div>
   );

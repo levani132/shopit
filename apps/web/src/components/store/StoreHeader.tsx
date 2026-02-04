@@ -7,6 +7,7 @@ import { useTheme } from '../theme/ThemeProvider';
 import { ShopItBar } from '../ui/ShopItBar';
 import { LanguageSwitcher } from '../ui/LanguageSwitcher';
 import { CartButton } from './CartButton';
+import { EditButton } from './EditButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { Role, hasRole } from '@shopit/constants';
 import { getLatinInitial } from '../../lib/utils';
@@ -217,6 +218,16 @@ export function StoreHeader({ store }: StoreHeaderProps) {
                             )}
                           </div>
                         ))}
+                        {/* Edit Categories Link */}
+                        <EditButton
+                          href={`/${locale}/dashboard/categories`}
+                          title={t('editCategories') || 'Edit Categories'}
+                          variant="inline"
+                          size="sm"
+                          className="mx-4 my-2 w-[calc(100%-2rem)]"
+                        >
+                          {t('editCategories') || 'Edit Categories'}
+                        </EditButton>
                       </div>
                     </div>
                   )}
@@ -230,7 +241,7 @@ export function StoreHeader({ store }: StoreHeaderProps) {
               </a>
 
               <a
-                href="#about"
+                href={`/${locale}/about`}
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 {t('aboutUs')}
@@ -420,7 +431,8 @@ function MobileNav({
   onClose,
 }: MobileNavProps) {
   const t = useTranslations('store');
-  const { logout } = useAuth();
+  const tNav = useTranslations('nav');
+  const { logout, isImpersonating, stopImpersonation } = useAuth();
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const isSeller = hasRole(user?.role ?? 0, Role.SELLER);
   const isCourier = hasRole(user?.role ?? 0, Role.COURIER);
@@ -530,7 +542,7 @@ function MobileNav({
         )}
 
         <a
-          href="#about"
+          href={`/${locale}/about`}
           className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
           onClick={onClose}
         >
@@ -688,6 +700,32 @@ function MobileNav({
                 </svg>
                 {t('courierPending')}
               </div>
+            )}
+
+            {/* Return as Admin (shown only when impersonating) */}
+            {isImpersonating && (
+              <button
+                onClick={async () => {
+                  onClose();
+                  await stopImpersonation();
+                }}
+                className="flex items-center gap-3 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 12l3-3m0 0l-3-3m3 3H9a4 4 0 014 4v5"
+                  />
+                </svg>
+                {tNav('returnAsAdmin')}
+              </button>
             )}
 
             {/* Logout */}

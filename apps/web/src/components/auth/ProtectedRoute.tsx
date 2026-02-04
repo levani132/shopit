@@ -14,7 +14,13 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({
   children,
-  allowedRoles = [Role.ADMIN, Role.SELLER, Role.USER, Role.COURIER],
+  allowedRoles = [
+    Role.ADMIN,
+    Role.SELLER,
+    Role.USER,
+    Role.COURIER,
+    Role.COURIER_ADMIN,
+  ],
   redirectTo,
 }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated } = useAuth();

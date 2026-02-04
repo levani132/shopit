@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '../../../../../i18n/routing';
 import VariantEditor from '../../../../../components/dashboard/VariantEditor';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../lib/api';
 
 interface Category {
   _id: string;
@@ -56,6 +54,8 @@ interface ProductFormData {
 export default function NewProductPage() {
   const t = useTranslations('dashboard');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState<ProductFormData>({
@@ -114,20 +114,13 @@ export default function NewProductPage() {
         setIsLoading(true);
         
         // Fetch categories and shipping sizes in parallel
-        const [categoriesRes, shippingRes] = await Promise.all([
-          fetch(`${API_URL}/api/v1/categories/my-store`, { credentials: 'include' }),
-          fetch(`${API_URL}/api/v1/settings/shipping-sizes`),
+        const [categoriesData, shippingData] = await Promise.all([
+          api.get<Category[]>('/api/v1/categories/my-store'),
+          api.get<{ sizes: ShippingSizes }>('/api/v1/settings/shipping-sizes'),
         ]);
-        
-        if (categoriesRes.ok) {
-          const data = await categoriesRes.json();
-          setCategories(data);
-        }
-        
-        if (shippingRes.ok) {
-          const data = await shippingRes.json();
-          setShippingSizes(data.sizes);
-        }
+
+        setCategories(categoriesData);
+        setShippingSizes(shippingData.sizes);
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -246,19 +239,14 @@ export default function NewProductPage() {
         formDataToSend.append('variantImageMapping', JSON.stringify(variantImageMapping));
       }
 
-      const res = await fetch(`${API_URL}/api/v1/products`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formDataToSend,
-      });
+      await api.post('/api/v1/products', formDataToSend);
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || 'Failed to create product');
+      // Success - redirect to returnUrl or products list
+      if (returnUrl) {
+        window.location.href = returnUrl;
+      } else {
+        router.push('/dashboard/products');
       }
-
-      // Success - redirect to products list
-      router.push('/dashboard/products');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create product');
     } finally {

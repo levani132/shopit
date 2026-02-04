@@ -6,9 +6,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useAuth } from '../../../../../../contexts/AuthContext';
 import { OrderCard, Order } from '../../../../../../components/orders';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
+import { api } from '../../../../../../lib/api';
 
 // Payment awaiting modal component
 function PaymentAwaitingModal({
@@ -62,28 +60,23 @@ function PaymentAwaitingModal({
     // Enhanced poll that handles window close
     const pollStatusWithRetry = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/api/v1/payments/order-status/${orderId}`,
-          { credentials: 'include' },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.isPaid) {
-            setStatus('success');
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-            }
-            setTimeout(() => {
-              onPaymentComplete(orderId, 'paid');
-            }, 2000);
-            return;
-          } else if (data.status === 'cancelled') {
-            setStatus('failed');
-            if (pollIntervalRef.current) {
-              clearInterval(pollIntervalRef.current);
-            }
-            return;
+        const data = await api.get(`/payments/order-status/${orderId}`);
+        if (data.isPaid) {
+          setStatus('success');
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
           }
+          setTimeout(() => {
+            onPaymentComplete(orderId, 'paid');
+          }, 2000);
+          return;
+        }
+        if (data.status === 'cancelled') {
+          setStatus('failed');
+          if (pollIntervalRef.current) {
+            clearInterval(pollIntervalRef.current);
+          }
+          return;
         }
 
         // If window was closed and we've retried enough times, show closed status
@@ -305,23 +298,15 @@ export default function OrdersPage() {
     }
 
     try {
-      const url = subdomain
-        ? `${API_URL}/api/v1/orders/my-orders?storeSubdomain=${encodeURIComponent(subdomain)}`
-        : `${API_URL}/api/v1/orders/my-orders`;
+      const path = subdomain
+        ? `/orders/my-orders?storeSubdomain=${encodeURIComponent(subdomain)}`
+        : '/orders/my-orders';
 
-      const response = await fetch(url, {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data);
-      } else {
-        setError('Failed to load orders');
-      }
-    } catch (err) {
+      const data = await api.get(path);
+      setOrders(data);
+    } catch (err: any) {
       console.error('[Orders] Error fetching orders:', err);
-      setError('Failed to load orders');
+      setError(err?.message || 'Failed to load orders');
     } finally {
       setLoading(false);
     }
@@ -338,25 +323,10 @@ export default function OrdersPage() {
 
     try {
       // Get payment URL from API
-      const response = await fetch(
-        `${API_URL}/api/v1/payments/retry/${orderId}`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            successUrl: `${window.location.origin}/${locale}/orders?payment=success&orderId=${orderId}`,
-            failUrl: `${window.location.origin}/${locale}/orders?payment=failed&orderId=${orderId}`,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to initiate payment');
-      }
-
-      const data = await response.json();
+      const data = await api.post(`/payments/retry/${orderId}`, {
+        successUrl: `${window.location.origin}/${locale}/orders?payment=success&orderId=${orderId}`,
+        failUrl: `${window.location.origin}/${locale}/orders?payment=failed&orderId=${orderId}`,
+      });
 
       if (data.redirectUrl) {
         // Open payment in new tab/popup
@@ -379,11 +349,9 @@ export default function OrdersPage() {
         setPayingOrderId(orderId);
         setPaymentModalOpen(true);
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Payment error:', err);
-      setError(
-        err instanceof Error ? err.message : 'Failed to process payment',
-      );
+      setError(err?.message || 'Failed to process payment');
     } finally {
       setProcessingPayment(null);
     }

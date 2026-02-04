@@ -1,9 +1,11 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Viewport } from 'next';
 import { routing } from '../../i18n/routing';
 import { ClientProviders } from '../../components/layout/ClientProviders';
 import { ConditionalLayout } from '../../components/layout/ConditionalLayout';
+import { inter, notoSansGeorgian } from '../fonts';
 import '../global.css';
 
 type Params = Promise<{ locale: string }>;
@@ -11,6 +13,10 @@ type Params = Promise<{ locale: string }>;
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+// Main site uses blue accent color
+const MAIN_SITE_COLOR = 'blue';
+const MAIN_SITE_THEME_COLOR = '#2563eb'; // blue-600
 
 export async function generateMetadata({ params }: { params: Params }) {
   const { locale } = await params;
@@ -28,6 +34,43 @@ export async function generateMetadata({ params }: { params: Params }) {
   return {
     title: messages.metadata.title,
     description: messages.metadata.description,
+    // Icons - using PNG for crisp rendering
+    icons: {
+      icon: [
+        { url: `/icons/${MAIN_SITE_COLOR}/favicon/favicon.ico`, sizes: 'any' },
+        {
+          url: `/icons/${MAIN_SITE_COLOR}/favicon/icon-32x32.png`,
+          sizes: '32x32',
+          type: 'image/png',
+        },
+        {
+          url: `/icons/${MAIN_SITE_COLOR}/favicon/icon-16x16.png`,
+          sizes: '16x16',
+          type: 'image/png',
+        },
+      ],
+      apple: [
+        {
+          url: `/icons/${MAIN_SITE_COLOR}/ios/icon-1024x1024.png`,
+          sizes: '1024x1024',
+        },
+      ],
+      shortcut: `/icons/${MAIN_SITE_COLOR}/favicon/favicon.ico`,
+    },
+    manifest: '/manifest.json',
+  };
+}
+
+export function generateViewport(): Viewport {
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    themeColor: [
+      { media: '(prefers-color-scheme: light)', color: MAIN_SITE_THEME_COLOR },
+      { media: '(prefers-color-scheme: dark)', color: '#18181b' },
+    ],
   };
 }
 
@@ -52,12 +95,12 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={`${inter.variable} ${notoSansGeorgian.variable}`}
+      suppressHydrationWarning
+    >
       <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-        />
         {/* Prevent theme flash - runs before React hydrates */}
         <script
           dangerouslySetInnerHTML={{
@@ -84,8 +127,8 @@ export default async function LocaleLayout({
                     red: {50:'#fef2f2',100:'#fee2e2',200:'#fecaca',300:'#fca5a5',400:'#f87171',500:'#ef4444',600:'#dc2626',700:'#b91c1c',800:'#991b1b',900:'#7f1d1d'},
                     teal: {50:'#f0fdfa',100:'#ccfbf1',200:'#99f6e4',300:'#5eead4',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e',800:'#115e59',900:'#134e4a'}
                   };
-                  var savedAccent = localStorage.getItem('accentColor') || 'emerald';
-                  var color = accentColors[savedAccent] || accentColors.emerald;
+                  var savedAccent = localStorage.getItem('accentColor') || 'blue';
+                  var color = accentColors[savedAccent] || accentColors.blue;
                   Object.keys(color).forEach(function(shade) {
                     document.documentElement.style.setProperty('--accent-' + shade, color[shade]);
                   });

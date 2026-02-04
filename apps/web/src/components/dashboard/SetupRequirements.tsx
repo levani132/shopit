@@ -74,17 +74,12 @@ export default function SetupRequirements() {
   const fetchStatus = useCallback(async () => {
     try {
       setError(null);
-      const response = await api.get('/stores/publish/status');
-      if (response.ok) {
-        const data = await response.json();
-        // Ensure publishStatus defaults to 'draft' if null/undefined
-        setStatus({
-          ...data,
-          publishStatus: data.publishStatus || 'draft',
-        });
-      } else {
-        setError(`API error: ${response.status}`);
-      }
+      const data = await api.get('/stores/publish/status');
+      // Ensure publishStatus defaults to 'draft' if null/undefined
+      setStatus({
+        ...data,
+        publishStatus: data.publishStatus || 'draft',
+      });
     } catch (err) {
       console.error('[SetupRequirements] Failed to fetch publish status:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -97,6 +92,14 @@ export default function SetupRequirements() {
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus, pathname]);
+
+  // Poll for updates every 5 seconds to catch changes after saving
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStatus();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [fetchStatus]);
 
   // Also refetch when page becomes visible (user comes back to tab)
   useEffect(() => {

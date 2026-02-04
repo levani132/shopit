@@ -9,7 +9,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 // - techpoint.shopit.ge (store)
 // - etc.
 // The leading dot allows all subdomains to access the cookie
-const cookieDomain = process.env.COOKIE_DOMAIN;
+// In development, we use .localhost to share cookies across subdomains like berso.localhost:3000
+const cookieDomain = process.env.COOKIE_DOMAIN || (!isProduction ? '.localhost' : undefined);
 
 // SameSite setting:
 // - 'lax': Works for same-site requests (including subdomains of same root domain)

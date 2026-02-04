@@ -4,7 +4,16 @@ import { StoresController } from './stores.controller';
 import { StoresService } from './stores.service';
 import { PublishController } from './publish.controller';
 import { PublishService } from './publish.service';
-import { Store, StoreSchema, User, UserSchema } from '@shopit/api-database';
+import {
+  Store,
+  StoreSchema,
+  User,
+  UserSchema,
+  Product,
+  ProductSchema,
+  Order,
+  OrderSchema,
+} from '@shopit/api-database';
 import { UploadModule } from '../upload/upload.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -13,6 +22,8 @@ import { AuthModule } from '../auth/auth.module';
     MongooseModule.forFeature([
       { name: Store.name, schema: StoreSchema },
       { name: User.name, schema: UserSchema },
+      { name: Product.name, schema: ProductSchema },
+      { name: Order.name, schema: OrderSchema },
     ]),
     UploadModule,
     AuthModule,
@@ -22,5 +33,3 @@ import { AuthModule } from '../auth/auth.module';
   exports: [StoresService, PublishService],
 })
 export class StoresModule {}
-
-

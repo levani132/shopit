@@ -6,7 +6,7 @@ import { useAuth } from '../../../../contexts/AuthContext';
 
 export default function RegisterCompletePage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     // Wait for auth to load
@@ -18,15 +18,9 @@ export default function RegisterCompletePage() {
       return;
     }
 
-    // Check if profile is complete
-    if (user?.isProfileComplete) {
-      // Profile already complete, go to dashboard
-      router.push('/dashboard');
-    } else {
-      // Profile needs completion, redirect to dashboard profile page
-      router.push('/dashboard/profile');
-    }
-  }, [isAuthenticated, isLoading, user, router]);
+    // Always redirect to dashboard - the onboarding wizard will guide them
+    router.push('/dashboard');
+  }, [isAuthenticated, isLoading, router]);
 
   // Show loading while redirecting
   return (

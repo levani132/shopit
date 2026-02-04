@@ -38,12 +38,7 @@ function PendingStoresContent() {
 
   const fetchStores = async () => {
     try {
-      const response = await api.get('/admin/stores/pending');
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch pending stores');
-      }
-      const data = await response.json();
+      const data = await api.get<{ stores: any[] }>('/admin/stores/pending');
       setStores(data.stores);
     } catch (err: any) {
       console.error('Failed to fetch pending stores:', err);
@@ -60,11 +55,7 @@ function PendingStoresContent() {
   const handleApprove = async (storeId: string) => {
     setProcessingId(storeId);
     try {
-      const response = await api.post(`/admin/stores/${storeId}/approve`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to approve store');
-      }
+      await api.post(`/admin/stores/${storeId}/approve`);
       setStores(stores.filter((s) => s._id !== storeId));
     } catch (err: any) {
       console.error('Failed to approve store:', err);
@@ -79,16 +70,9 @@ function PendingStoresContent() {
 
     setProcessingId(rejectModal.storeId);
     try {
-      const response = await api.post(
-        `/admin/stores/${rejectModal.storeId}/reject`,
-        {
-          reason: rejectReason,
-        },
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to reject store');
-      }
+      await api.post(`/admin/stores/${rejectModal.storeId}/reject`, {
+        reason: rejectReason,
+      });
       setStores(stores.filter((s) => s._id !== rejectModal.storeId));
       setRejectModal(null);
       setRejectReason('');
@@ -181,7 +165,10 @@ function PendingStoresContent() {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {store.name}
                   </h3>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                  <span
+                    className="text-sm text-gray-500 dark:text-gray-400"
+                    suppressHydrationWarning
+                  >
                     ({store.subdomain}.{getBaseDomain().baseDomain})
                   </span>
                 </div>

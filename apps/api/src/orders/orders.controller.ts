@@ -228,6 +228,26 @@ export class OrdersController {
   }
 
   /**
+   * Update order shipping size (seller action)
+   * Allows seller to confirm or override the estimated vehicle size
+   */
+  @Patch(':id/shipping-size')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SELLER, Role.ADMIN)
+  async updateOrderShippingSize(
+    @Param('id') id: string,
+    @Body()
+    body: { shippingSize: 'small' | 'medium' | 'large' | 'extra_large' },
+    @CurrentUser() user: { storeId: string },
+  ) {
+    return this.ordersService.updateShippingSize(
+      id,
+      user.storeId,
+      body.shippingSize,
+    );
+  }
+
+  /**
    * Mark order as delivered (seller action)
    */
   @Patch(':id/delivered')
@@ -344,5 +364,19 @@ export class OrdersController {
   ) {
     const userId = user.id || user._id?.toString();
     return this.ordersService.assignCourier(id, userId);
+  }
+
+  /**
+   * Abandon/unassign order from courier (courier abandons the order)
+   */
+  @Patch(':id/unassign-courier')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.COURIER, Role.ADMIN)
+  async unassignOrderFromCourier(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string; _id?: { toString(): string } },
+  ) {
+    const userId = user.id || user._id?.toString();
+    return this.ordersService.unassignCourier(id, userId);
   }
 }

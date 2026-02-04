@@ -254,7 +254,7 @@ export class AdminController {
   // ===== Pending Courier Approvals =====
 
   @Get('couriers/pending')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.COURIER_ADMIN)
   @ApiOperation({ summary: 'Get pending courier applications' })
   @ApiResponse({ status: 200, description: 'Pending couriers retrieved' })
   async getPendingCouriers() {
@@ -273,7 +273,7 @@ export class AdminController {
   }
 
   @Post('couriers/:id/approve')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.COURIER_ADMIN)
   @ApiOperation({ summary: 'Approve courier application' })
   @ApiResponse({ status: 200, description: 'Courier approved' })
   async approveCourier(@Param('id') id: string) {
@@ -331,7 +331,7 @@ export class AdminController {
   }
 
   @Post('couriers/:id/reject')
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.COURIER_ADMIN)
   @ApiOperation({ summary: 'Reject courier application' })
   @ApiResponse({ status: 200, description: 'Courier rejected' })
   async rejectCourier(
@@ -401,8 +401,38 @@ export class AdminController {
 
     const filter: any = {};
 
+    // Handle role filter with bitmask operations
     if (role) {
-      filter.role = role;
+      switch (role) {
+        case 'user':
+          // Users with only USER role (role = 1)
+          filter.role = 1;
+          break;
+        case 'courier':
+          // Users with COURIER bit set (role & 2 !== 0)
+          filter.$expr = {
+            $ne: [{ $mod: [{ $floor: { $divide: ['$role', 2] } }, 2] }, 0],
+          };
+          break;
+        case 'seller':
+          // Users with SELLER bit set (role & 4 !== 0)
+          filter.$expr = {
+            $ne: [{ $mod: [{ $floor: { $divide: ['$role', 4] } }, 2] }, 0],
+          };
+          break;
+        case 'admin':
+          // Users with ADMIN bit set (role & 8 !== 0)
+          filter.$expr = {
+            $ne: [{ $mod: [{ $floor: { $divide: ['$role', 8] } }, 2] }, 0],
+          };
+          break;
+        case 'courier_admin':
+          // Users with COURIER_ADMIN bit set (role & 16 !== 0)
+          filter.$expr = {
+            $ne: [{ $mod: [{ $floor: { $divide: ['$role', 16] } }, 2] }, 0],
+          };
+          break;
+      }
     }
 
     if (search) {
@@ -480,11 +510,11 @@ export class AdminController {
       throw new NotFoundException('User not found');
     }
 
-    // Validate role is a valid bitmask (between 1 and 15)
+    // Validate role is a valid bitmask (between 1 and 31 - includes COURIER_ADMIN)
     const newRole = body.role;
-    if (typeof newRole !== 'number' || newRole < 1 || newRole > 15) {
+    if (typeof newRole !== 'number' || newRole < 1 || newRole > 31) {
       throw new BadRequestException(
-        'Invalid role value. Must be between 1 and 15.',
+        'Invalid role value. Must be between 1 and 31.',
       );
     }
 
