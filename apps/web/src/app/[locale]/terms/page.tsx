@@ -45,7 +45,7 @@ export default function TermsPage() {
 
   const commissionPercent = settings
     ? Math.round(settings.siteCommissionRate * 100)
-    : 10;
+    : 20;
   const courierPercent = settings
     ? Math.round(settings.courierEarningsPercentage * 100)
     : 80;
