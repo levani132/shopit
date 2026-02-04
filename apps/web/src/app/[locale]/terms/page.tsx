@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState, useEffect } from 'react';
 import { Link } from '../../../i18n/routing';
 import { api } from '../../../lib/api';
@@ -19,18 +19,12 @@ interface SiteSettings {
 
 export default function TermsPage() {
   const t = useTranslations('terms');
+  const locale = useLocale();
   const [content, setContent] = useState<TermsContent | null>(null);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [locale, setLocale] = useState('ka');
 
   useEffect(() => {
-    const path = window.location.pathname;
-    const urlLocale = path.split('/')[1];
-    if (urlLocale === 'en' || urlLocale === 'ka') {
-      setLocale(urlLocale);
-    }
-
-    // Fetch terms content
+    // Fetch terms content from API
     api
       .get('/content/terms')
       .then((data) => setContent(data))
@@ -49,24 +43,31 @@ export default function TermsPage() {
       );
   }, []);
 
-  const termsText = content
-    ? locale === 'ka'
-      ? content.contentKa
-      : content.contentEn
-    : null;
   const commissionPercent = settings
     ? Math.round(settings.siteCommissionRate * 100)
-    : 10;
+    : 20;
   const courierPercent = settings
     ? Math.round(settings.courierEarningsPercentage * 100)
     : 80;
   const minWithdrawal = settings?.minimumWithdrawalAmount || 20;
 
-  // Replace placeholders with actual values
-  const processedText = termsText
-    ?.replace(/\{commissionPercent\}/g, String(commissionPercent))
-    ?.replace(/\{courierPercent\}/g, String(courierPercent))
-    ?.replace(/\{minWithdrawal\}/g, String(minWithdrawal));
+  // Check if API content exists and has actual content
+  const hasApiContent =
+    content &&
+    ((locale === 'ka' &&
+      content.contentKa &&
+      content.contentKa.trim() !== '') ||
+      (locale === 'en' &&
+        content.contentEn &&
+        content.contentEn.trim() !== ''));
+
+  // Helper function to replace placeholders in text
+  const replacePlaceholders = (text: string) => {
+    return text
+      .replace(/\{commissionPercent\}/g, String(commissionPercent))
+      .replace(/\{courierPercent\}/g, String(courierPercent))
+      .replace(/\{minWithdrawal\}/g, String(minWithdrawal));
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-900">
@@ -90,35 +91,139 @@ export default function TermsPage() {
       {/* Content */}
       <section className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {processedText ? (
+          {hasApiContent && content ? (
+            // Render API content
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <div className="whitespace-pre-line text-gray-600 dark:text-gray-300 leading-relaxed">
-                {processedText}
+                {replacePlaceholders(
+                  locale === 'ka' ? content.contentKa : content.contentEn,
+                )}
               </div>
             </div>
           ) : (
+            // Render default content from translations
             <div className="prose prose-lg dark:prose-invert max-w-none">
-              {/* Default Terms Content */}
-              <h2>{t('sections.general.title')}</h2>
-              <p>{t('sections.general.content')}</p>
+              {/* Intro */}
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('intro')}
+              </p>
 
-              <h2>{t('sections.sellers.title')}</h2>
-              <p>{t('sections.sellers.content', { commissionPercent })}</p>
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
 
-              <h2>{t('sections.buyers.title')}</h2>
-              <p>{t('sections.buyers.content')}</p>
+              {/* Definitions */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.definitions.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.definitions.content')}
+              </p>
 
-              <h2>{t('sections.couriers.title')}</h2>
-              <p>{t('sections.couriers.content', { courierPercent })}</p>
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
 
-              <h2>{t('sections.payments.title')}</h2>
-              <p>{t('sections.payments.content', { minWithdrawal })}</p>
+              {/* Platform */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.platform.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.platform.content')}
+              </p>
 
-              <h2>{t('sections.liability.title')}</h2>
-              <p>{t('sections.liability.content')}</p>
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
 
-              <h2>{t('sections.changes.title')}</h2>
-              <p>{t('sections.changes.content')}</p>
+              {/* Account */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.account.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.account.content')}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Sellers */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.sellers.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {replacePlaceholders(t('sections.sellers.content'))}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Buyers */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.buyers.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.buyers.content')}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Couriers */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.couriers.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {replacePlaceholders(t('sections.couriers.content'))}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Payments */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.payments.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {replacePlaceholders(t('sections.payments.content'))}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Prohibited */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.prohibited.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.prohibited.content')}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Liability */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.liability.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.liability.content')}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Changes */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.changes.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.changes.content')}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Final */}
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-8">
+                {t('sections.final.title')}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
+                {t('sections.final.content')}
+              </p>
+
+              <hr className="my-8 border-gray-200 dark:border-zinc-700" />
+
+              {/* Footer */}
+              <p className="text-center text-gray-500 dark:text-gray-400 mt-8">
+                {t('footer')}
+              </p>
             </div>
           )}
 

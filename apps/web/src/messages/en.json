@@ -1720,36 +1720,54 @@
     "title": "Terms of Service",
     "lastUpdated": "Last updated",
     "backToHome": "Back to Home",
+    "intro": "Welcome to ShopIt (shopit.ge)!\n\nThese \"Terms of Service\" constitute a legally binding agreement between you and ShopIt and govern the use of the platform, website, software, subdomains, tools, and related services.\n\nBy registering on ShopIt, creating an account, setting up a store, or using any functionality of the platform, you fully agree to all the terms listed below.",
     "sections": {
-      "general": {
-        "title": "1. General Terms",
-        "content": "By using ShopIt, you agree to these terms of service. ShopIt provides an e-commerce platform that allows sellers to create online stores, buyers to purchase products, and couriers to deliver orders."
+      "definitions": {
+        "title": "1. General Definitions",
+        "content": "In these terms:\n\n• \"ShopIt\", \"we\", \"our\" – means the platform operator;\n• \"User\" – means any person who uses ShopIt;\n• \"Seller\" – a person or business that creates and manages an online store through ShopIt;\n• \"Buyer\" – a person who purchases a product from a store created on ShopIt;\n• \"Courier\" – a person or service that carries out deliveries within ShopIt;\n• \"Store\" – an individual website created on the ShopIt platform on a ShopIt subdomain."
+      },
+      "platform": {
+        "title": "2. Nature and Role of the Platform",
+        "content": "2.1. ShopIt is a technology platform that enables users to:\n\n• Create online stores;\n• List products;\n• Receive orders;\n• Optionally use courier services.\n\n2.2. ShopIt is not a seller, merchant, or marketplace. All sales and legal relationships occur directly between the seller and the buyer.\n\n2.3. ShopIt is responsible only for the proper functioning of the software and not for products, prices, quality, returns, or warranty conditions."
+      },
+      "account": {
+        "title": "3. Account Creation and Use",
+        "content": "3.1. To create an account, the user must provide accurate and complete information.\n\n3.2. Account creation is only permitted for persons who have reached 18 years of age.\n\n3.3. The user is responsible for protecting their account data (password, access).\n\n3.4. ShopIt reserves the right to refuse account creation or cancel an existing account in case of violation of terms."
       },
       "sellers": {
-        "title": "2. Seller Terms",
-        "content": "As a seller, you agree to provide accurate product information, fulfill orders promptly, and comply with all applicable laws. ShopIt charges a {commissionPercent}% commission on each sale, which is deducted from your earnings."
+        "title": "4. Seller Terms",
+        "content": "4.1. The seller is fully responsible for:\n\n• Accuracy of product descriptions;\n• Correct pricing;\n• Inventory management;\n• Timely order fulfillment;\n• Defining return and exchange policies.\n\n4.2. Return policy is determined individually by each store and must be publicly available in the store.\n\n4.3. ShopIt charges a {commissionPercent}% commission on each successfully completed sale.\n\n4.4. Using ShopIt is free for sellers, there is no subscription fee.\n\n4.5. The seller is responsible for all tax obligations arising from their sales."
       },
       "buyers": {
-        "title": "3. Buyer Terms",
-        "content": "As a buyer, you agree to provide accurate delivery information and complete payment for orders. Product quality and descriptions are the responsibility of individual sellers."
+        "title": "5. Buyer Terms",
+        "content": "5.1. The buyer must provide correct contact and delivery information.\n\n5.2. The buyer pays:\n\n• Product cost;\n• Delivery fee (if delivery is selected).\n\n5.3. ShopIt is not responsible for product quality, compliance, or returns."
       },
       "couriers": {
-        "title": "4. Courier Terms",
-        "content": "As a courier, you agree to deliver orders safely and on time. Couriers receive {courierPercent}% of the delivery fee for each completed delivery."
+        "title": "6. Courier Services",
+        "content": "6.1. ShopIt offers optional courier services to users.\n\n6.2. Delivery costs are paid by the buyer.\n\n6.3. The courier must ensure:\n\n• Safe;\n• Timely;\n• Undamaged delivery.\n\n6.4. The courier receives {courierPercent}% of the delivery fee for each completed delivery.\n\n6.5. ShopIt is not liable for disputes arising during the delivery process if they are caused by third-party actions."
       },
       "payments": {
-        "title": "5. Payments",
-        "content": "All payments are processed securely through our payment partners. Sellers can withdraw their earnings once the minimum withdrawal amount of {minWithdrawal} GEL is reached."
+        "title": "7. Payments and Withdrawals",
+        "content": "7.1. All payments are processed through secure payment partners.\n\n7.2. Sellers can withdraw earnings when the minimum amount is {minWithdrawal} GEL.\n\n7.3. ShopIt reserves the right to temporarily suspend payments in case of technical or legal necessity."
+      },
+      "prohibited": {
+        "title": "8. Prohibited Actions",
+        "content": "Prohibited:\n\n• Selling illegal products;\n• Posting false information;\n• Abusing the platform;\n• Violating third-party rights;\n• Bypassing system technical restrictions."
       },
       "liability": {
-        "title": "6. Liability",
-        "content": "ShopIt acts as a platform connecting buyers, sellers, and couriers. We are not responsible for the quality of products, delivery issues between parties, or disputes arising from transactions."
+        "title": "9. Limitation of Liability",
+        "content": "9.1. ShopIt is not responsible for:\n\n• Damages from sales;\n• Disputes between users;\n• Lost profits;\n• Damages caused by technical failures.\n\n9.2. The platform is provided on an \"as is\" basis."
       },
       "changes": {
-        "title": "7. Changes to Terms",
-        "content": "We may update these terms from time to time. Continued use of the platform constitutes acceptance of any changes."
+        "title": "10. Changes to Terms",
+        "content": "10.1. ShopIt reserves the right to change the terms of service at any time.\n\n10.2. Updated terms will be published on the website and will take effect immediately upon publication."
+      },
+      "final": {
+        "title": "11. Final Provisions",
+        "content": "11.1. These terms are governed by the current legislation of Georgia.\n\n11.2. Any dispute will be considered in the courts of Georgia."
       }
-    }
+    },
+    "footer": "© 2026 ShopIt – A platform where anyone can create their own online store"
   },
   "privacy": {
     "title": "Privacy Policy",
