@@ -577,6 +577,8 @@
       "in_transit": "გზაში",
       "delivered": "ჩაბარებული",
       "cancelled": "გაუქმებული"
+
+      
     }
   },
   "auth": {
