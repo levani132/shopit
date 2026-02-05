@@ -12,6 +12,8 @@ interface Store {
   nameEn: string;
   subdomain: string;
   publishStatus: 'draft' | 'pending_review' | 'published' | 'rejected';
+  isFeatured?: boolean;
+  isVerified?: boolean;
   ownerId: {
     _id: string;
     firstName: string;
@@ -43,6 +45,8 @@ function StoresManagementContent() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [togglingFeatured, setTogglingFeatured] = useState<string | null>(null);
+  const [togglingVerified, setTogglingVerified] = useState<string | null>(null);
 
   const fetchStores = async (page = 1) => {
     setLoading(true);
@@ -73,6 +77,44 @@ function StoresManagementContent() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     fetchStores(1);
+  };
+
+  const toggleFeatured = async (storeId: string, currentValue: boolean) => {
+    setTogglingFeatured(storeId);
+    try {
+      await api.patch(`/admin/stores/${storeId}/featured`, {
+        isFeatured: !currentValue,
+      });
+      setStores((prev) =>
+        prev.map((s) =>
+          s._id === storeId ? { ...s, isFeatured: !currentValue } : s,
+        ),
+      );
+    } catch (err: any) {
+      console.error('Failed to toggle featured:', err);
+      setError(err.message || 'Failed to toggle featured status');
+    } finally {
+      setTogglingFeatured(null);
+    }
+  };
+
+  const toggleVerified = async (storeId: string, currentValue: boolean) => {
+    setTogglingVerified(storeId);
+    try {
+      await api.patch(`/admin/stores/${storeId}/verified`, {
+        isVerified: !currentValue,
+      });
+      setStores((prev) =>
+        prev.map((s) =>
+          s._id === storeId ? { ...s, isVerified: !currentValue } : s,
+        ),
+      );
+    } catch (err: any) {
+      console.error('Failed to toggle verified:', err);
+      setError(err.message || 'Failed to toggle verified status');
+    } finally {
+      setTogglingVerified(null);
+    }
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -163,6 +205,12 @@ function StoresManagementContent() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {t('status')}
                   </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t('featured')}
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    {t('verified')}
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {t('createdAt')}
                   </th>
@@ -222,6 +270,64 @@ function StoresManagementContent() {
                           `status${(store.publishStatus || 'draft').charAt(0).toUpperCase() + (store.publishStatus || 'draft').slice(1).replace('_', '')}`,
                         )}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() =>
+                          toggleFeatured(store._id, store.isFeatured || false)
+                        }
+                        disabled={togglingFeatured === store._id}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)] focus:ring-offset-2 disabled:opacity-50 ${
+                          store.isFeatured
+                            ? 'bg-amber-500'
+                            : 'bg-gray-200 dark:bg-zinc-600'
+                        }`}
+                        title={
+                          store.isFeatured
+                            ? t('removeFeatured')
+                            : t('makeFeatured')
+                        }
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            store.isFeatured ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                        {togglingFeatured === store._id && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          </span>
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <button
+                        onClick={() =>
+                          toggleVerified(store._id, store.isVerified || false)
+                        }
+                        disabled={togglingVerified === store._id}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent-500)] focus:ring-offset-2 disabled:opacity-50 ${
+                          store.isVerified
+                            ? 'bg-blue-500'
+                            : 'bg-gray-200 dark:bg-zinc-600'
+                        }`}
+                        title={
+                          store.isVerified
+                            ? t('removeVerified')
+                            : t('makeVerified')
+                        }
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            store.isVerified ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                        {togglingVerified === store._id && (
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          </span>
+                        )}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                       {new Date(store.createdAt).toLocaleDateString()}

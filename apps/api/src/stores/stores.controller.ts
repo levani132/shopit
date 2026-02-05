@@ -28,7 +28,14 @@ import { CurrentUser } from '../decorators/current-user.decorator';
 import { UploadService } from '../upload/upload.service';
 import type { UserDocument } from '@shopit/api-database';
 import { Role } from '@shopit/api-database';
+import { STORE_BRAND_COLORS } from '@shopit/constants';
 import 'multer';
+
+// Helper to get hex color from brand color name
+const getAccentColorHex = (brandColor: string): string => {
+  const colors = STORE_BRAND_COLORS[brandColor as keyof typeof STORE_BRAND_COLORS];
+  return colors?.['500'] || '#6366f1';
+};
 
 @ApiTags('stores')
 @Controller('stores')
@@ -37,6 +44,68 @@ export class StoresController {
     private readonly storesService: StoresService,
     private readonly uploadService: UploadService,
   ) {}
+
+  @Get('featured')
+  @ApiOperation({ summary: 'Get featured stores for homepage' })
+  @ApiResponse({ status: 200, description: 'Featured stores returned' })
+  async getFeaturedStores(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? Math.min(parseInt(limit, 10) || 6, 12) : 6;
+    const stores = await this.storesService.getFeaturedStores(parsedLimit);
+
+    return {
+      stores: stores.map((store) => ({
+        id: store._id,
+        name: store.name,
+        subdomain: store.subdomain,
+        logo: store.logo,
+        coverImage: store.coverImage,
+        brandColor: store.brandColor || 'indigo',
+        accentColor: getAccentColorHex(store.brandColor || 'indigo'),
+        useInitialAsLogo: store.useInitialAsLogo ?? false,
+        isVerified: store.isVerified ?? false,
+        isFeatured: store.isFeatured ?? false,
+      })),
+    };
+  }
+
+  @Get('public')
+  @ApiOperation({ summary: 'Get all public stores with pagination' })
+  @ApiResponse({ status: 200, description: 'Public stores returned' })
+  async getPublicStores(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const parsedPage = page ? Math.max(parseInt(page, 10) || 1, 1) : 1;
+    const parsedLimit = limit
+      ? Math.min(Math.max(parseInt(limit, 10) || 12, 1), 48)
+      : 12;
+
+    const result = await this.storesService.getPublishedStores(
+      parsedPage,
+      parsedLimit,
+      search,
+    );
+
+    return {
+      stores: result.stores.map((store) => ({
+        id: store._id,
+        name: store.name,
+        subdomain: store.subdomain,
+        logo: store.logo,
+        coverImage: store.coverImage,
+        brandColor: store.brandColor || 'indigo',
+        accentColor: getAccentColorHex(store.brandColor || 'indigo'),
+        useInitialAsLogo: store.useInitialAsLogo ?? false,
+        isVerified: store.isVerified ?? false,
+        isFeatured: store.isFeatured ?? false,
+      })),
+      total: result.total,
+      page: parsedPage,
+      limit: parsedLimit,
+      totalPages: Math.ceil(result.total / parsedLimit),
+    };
+  }
 
   @Get('my-store')
   @UseGuards(JwtAuthGuard)

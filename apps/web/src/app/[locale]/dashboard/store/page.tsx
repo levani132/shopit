@@ -123,6 +123,7 @@ function StoreSettingsPageContent() {
 
   // Form state
   const [formData, setFormData] = useState<StoreData | null>(null);
+  const [initialFormData, setInitialFormData] = useState<StoreData | null>(null);
 
   // Check if a tab is complete based on required fields
   const isTabComplete = (tabId: TabId): boolean => {
@@ -297,6 +298,7 @@ function StoreSettingsPageContent() {
       try {
         const data = await api.get<StoreData>('/api/v1/stores/my-store');
         setFormData(data);
+        setInitialFormData(data);
         setLogoPreview(data.logo || null);
         setCoverPreview(data.coverImage || null);
       } catch (err) {
@@ -535,6 +537,7 @@ function StoreSettingsPageContent() {
         submitData,
       );
       setFormData(updatedStore);
+      setInitialFormData(updatedStore);
       setLogoFile(null);
       setCoverFile(null);
       setSuccess(t('settingsSavedSuccess'));
@@ -615,6 +618,13 @@ function StoreSettingsPageContent() {
 
   const accentColor =
     BRAND_COLORS.find((c) => c.name === formData.brandColor)?.hex || '#6366f1';
+
+  // Check if there are unsaved changes
+  const hasChanges = (() => {
+    if (!formData || !initialFormData) return false;
+    if (logoFile || coverFile) return true;
+    return JSON.stringify(formData) !== JSON.stringify(initialFormData);
+  })();
 
   // Tab icon components
   const TabIcon = ({ icon }: { icon: string }) => {
@@ -706,13 +716,24 @@ function StoreSettingsPageContent() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
-          {t('storeSettings')}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          {t('storeSettingsDescription')}
-        </p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+            {t('storeSettings')}
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
+            {t('storeSettingsDescription')}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleSubmit as unknown as React.MouseEventHandler}
+          disabled={isSaving || !hasChanges}
+          className="px-6 py-2.5 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          style={{ backgroundColor: hasChanges ? accentColor : undefined }}
+        >
+          {isSaving ? t('saving') : t('saveChanges')}
+        </button>
       </div>
 
       {/* Setup Requirements Banner */}
@@ -1953,22 +1974,12 @@ function StoreSettingsPageContent() {
           </div>
         )}
 
-        {/* Submit Button */}
-        <div className="flex flex-col items-end gap-4">
-          {success && (
-            <div className="w-full p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-              <p className="text-green-600 dark:text-green-400">{success}</p>
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="px-8 py-3 text-white font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: accentColor }}
-          >
-            {isSaving ? t('saving') : t('saveChanges')}
-          </button>
-        </div>
+        {/* Success Message */}
+        {success && (
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+            <p className="text-green-600 dark:text-green-400">{success}</p>
+          </div>
+        )}
       </form>
     </div>
   );

@@ -118,10 +118,29 @@ export class StoresService {
   }
 
   async getFeaturedStores(limit = 6): Promise<StoreDocument[]> {
-    return this.storeModel
-      .find({ isActive: true, isFeatured: true })
+    // First try to get featured stores
+    const featuredStores = await this.storeModel
+      .find({ isActive: true, isFeatured: true, publishStatus: 'published' })
       .limit(limit)
       .sort({ createdAt: -1 });
+
+    // If we have enough featured stores, return them
+    if (featuredStores.length >= limit) {
+      return featuredStores;
+    }
+
+    // Otherwise, fill with recently published stores
+    const existingIds = featuredStores.map((s) => s._id);
+    const additionalStores = await this.storeModel
+      .find({
+        isActive: true,
+        publishStatus: 'published',
+        _id: { $nin: existingIds },
+      })
+      .limit(limit - featuredStores.length)
+      .sort({ publishedAt: -1, createdAt: -1 });
+
+    return [...featuredStores, ...additionalStores];
   }
 
   async getAllActiveStores(
@@ -137,6 +156,34 @@ export class StoresService {
         .limit(limit)
         .sort({ createdAt: -1 }),
       this.storeModel.countDocuments({ isActive: true }),
+    ]);
+
+    return { stores, total };
+  }
+
+  async getPublishedStores(
+    page = 1,
+    limit = 12,
+    search?: string,
+  ): Promise<{ stores: StoreDocument[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {
+      isActive: true,
+      publishStatus: 'published',
+    };
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [{ name: searchRegex }, { subdomain: searchRegex }];
+    }
+
+    const [stores, total] = await Promise.all([
+      this.storeModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ isFeatured: -1, publishedAt: -1, createdAt: -1 }),
+      this.storeModel.countDocuments(query),
     ]);
 
     return { stores, total };
