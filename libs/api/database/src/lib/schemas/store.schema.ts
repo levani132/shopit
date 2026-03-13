@@ -247,6 +247,14 @@ export class Store {
 
   @Prop({ default: 'BAGAGE22' }) // Default to Bank of Georgia
   bankCode?: string; // SWIFT/BIC code
+
+  // ================== TEMPLATE SETTINGS ==================
+
+  @Prop({ default: 'default' })
+  templateId!: string;
+
+  @Prop({ type: Object, default: {} })
+  templateConfig?: Record<string, unknown>;
 }
 
 export const StoreSchema = SchemaFactory.createForClass(Store);

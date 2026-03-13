@@ -12,6 +12,8 @@ export interface Store {
   accentColor: string;
   isActive: boolean;
   ownerId: string;
+  templateId: string;
+  templateConfig: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +32,8 @@ export interface UpdateStoreDto {
   profileImage?: string;
   accentColor?: string;
   isActive?: boolean;
+  templateId?: string;
+  templateConfig?: Record<string, unknown>;
 }
 
 export interface StoreResponse {
@@ -41,6 +45,8 @@ export interface StoreResponse {
   profileImage: string | null;
   accentColor: string;
   isActive: boolean;
+  templateId: string;
+  templateConfig: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }

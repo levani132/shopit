@@ -3,40 +3,24 @@ import { Metadata } from 'next';
 import {
   getStoreBySubdomain as getStoreFromApi,
   getCategoriesByStoreId,
-  LocalizedText,
   CategoryData,
 } from '../../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../../data/mock-stores';
-import { StoreLayoutContent } from '../../../../../components/store/StoreLayoutContent';
 import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
 import { getLatinInitial } from '../../../../../lib/utils';
+import { getTemplate, getLocalizedText } from '../../../../../store-templates';
+import { TemplateProvider } from '../../../../../store-templates/TemplateContext';
 
 interface MainStoreLayoutProps {
   children: React.ReactNode;
   params: Promise<{ subdomain: string; locale: string }>;
 }
 
-// Helper to get localized text
-function getLocalizedText(
-  localized: LocalizedText | undefined,
-  fallback: string | undefined,
-  locale: string,
-): string {
-  if (localized) {
-    return (locale === 'ka' ? localized.ka : localized.en) || fallback || '';
-  }
-  return fallback || '';
-}
-
-// Helper to get store data from API or fallback to mock
 async function getStoreData(subdomain: string, locale: string) {
-  // Try API first
   const apiStore = await getStoreFromApi(subdomain);
   if (apiStore) {
-    // Fetch categories for this store
     const categories = await getCategoriesByStoreId(apiStore.id);
 
-    // Get English name for initial (fallback to store name, then subdomain)
     const englishName =
       apiStore.nameLocalized?.en || apiStore.name || subdomain;
     const initial = getLatinInitial(
@@ -44,7 +28,6 @@ async function getStoreData(subdomain: string, locale: string) {
       subdomain.charAt(0).toUpperCase(),
     );
 
-    // Get English author name for initial
     const englishAuthorName =
       apiStore.authorNameLocalized?.en || apiStore.authorName || '';
     const authorInitial = getLatinInitial(englishAuthorName, initial);
@@ -74,10 +57,11 @@ async function getStoreData(subdomain: string, locale: string) {
       categories,
       initial,
       authorInitial,
+      templateId: (apiStore as any).templateId as string | undefined,
+      templateConfig: (apiStore as any).templateConfig as Record<string, unknown> | undefined,
     };
   }
 
-  // Fallback to mock
   const mockStore = getMockStore(subdomain);
   if (mockStore) {
     const initial = getLatinInitial(
@@ -103,6 +87,8 @@ async function getStoreData(subdomain: string, locale: string) {
       categories: [] as CategoryData[],
       initial,
       authorInitial,
+      templateId: undefined as string | undefined,
+      templateConfig: undefined as Record<string, unknown> | undefined,
     };
   }
 
@@ -127,19 +113,20 @@ export default async function MainStoreLayout({
 }: MainStoreLayoutProps) {
   const { subdomain, locale } = await params;
 
-  // Get store data with localized content
   const store = await getStoreData(subdomain, locale);
 
   if (!store) {
     notFound();
   }
 
-  // Get accent colors for this store
   const accentColors = getAccentColorCssVars(
     store.accentColor as AccentColorName,
   );
 
-  // Store data for header/footer
+  const templateId = store.templateId || 'default';
+  const template = getTemplate(templateId);
+  const LayoutWrapper = template.layout.wrapper;
+
   const storeForComponents = {
     id: store.id,
     name: store.name,
@@ -158,13 +145,18 @@ export default async function MainStoreLayout({
   };
 
   return (
-    <StoreLayoutContent
-      store={storeForComponents}
-      accentColors={accentColors as React.CSSProperties}
-      locale={locale}
+    <TemplateProvider
+      templateId={templateId}
+      templateConfig={store.templateConfig}
     >
-      {children}
-    </StoreLayoutContent>
+      <LayoutWrapper
+        store={storeForComponents}
+        accentColors={accentColors as React.CSSProperties}
+        locale={locale}
+      >
+        {children}
+      </LayoutWrapper>
+    </TemplateProvider>
   );
 }
 
