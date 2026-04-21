@@ -33,6 +33,26 @@ import {
   PrivacyContent,
   PrivacyContentSchema,
 } from './schemas/content.schema';
+import {
+  DeveloperProfile,
+  DeveloperProfileSchema,
+} from './schemas/developer-profile.schema';
+import {
+  TemplateMarketplaceListing,
+  TemplateMarketplaceListingSchema,
+} from './schemas/template-marketplace-listing.schema';
+import {
+  TemplatePurchase,
+  TemplatePurchaseSchema,
+} from './schemas/template-purchase.schema';
+import {
+  DeveloperPayout,
+  DeveloperPayoutSchema,
+} from './schemas/developer-payout.schema';
+import {
+  TemplateReview,
+  TemplateReviewSchema,
+} from './schemas/template-review.schema';
 
 const schemas = MongooseModule.forFeature([
   { name: User.name, schema: UserSchema },
@@ -54,6 +74,11 @@ const schemas = MongooseModule.forFeature([
   { name: ContactSubmission.name, schema: ContactSubmissionSchema },
   { name: TermsContent.name, schema: TermsContentSchema },
   { name: PrivacyContent.name, schema: PrivacyContentSchema },
+  { name: DeveloperProfile.name, schema: DeveloperProfileSchema },
+  { name: TemplateMarketplaceListing.name, schema: TemplateMarketplaceListingSchema },
+  { name: TemplatePurchase.name, schema: TemplatePurchaseSchema },
+  { name: DeveloperPayout.name, schema: DeveloperPayoutSchema },
+  { name: TemplateReview.name, schema: TemplateReviewSchema },
 ]);
 
 @Global()

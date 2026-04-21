@@ -4,7 +4,7 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { UserDocument } from '@shopit/api-database';
+import type { UserDocument } from '@shopit/api-database';
 import { hasRole, Role } from '@shopit/constants';
 
 /**

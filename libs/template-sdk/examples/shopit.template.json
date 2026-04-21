@@ -1,0 +1,60 @@
+{
+  "$schema": "../schemas/shopit.template.schema.json",
+  "id": "modern-boutique",
+  "name": {
+    "en": "Modern Boutique",
+    "ka": "მოდერნული ბუტიკი"
+  },
+  "description": {
+    "en": "A clean, modern template perfect for fashion and lifestyle stores",
+    "ka": "სუფთა, მოდერნული შაბლონი, რომელიც იდეალურია მოდისა და ლაიფსტაილ მაღაზიებისთვის"
+  },
+  "version": "1.0.0",
+  "author": "ShopIt Templates",
+  "sdkVersion": "0.1.0",
+  "category": "fashion",
+  "tags": ["modern", "minimal", "fashion", "boutique"],
+  "pricing": {
+    "type": "one-time",
+    "price": 49.99
+  },
+  "assets": {
+    "thumbnail": "assets/thumbnail.png",
+    "screenshots": [
+      "assets/screenshots/home.png",
+      "assets/screenshots/products.png",
+      "assets/screenshots/detail.png"
+    ]
+  },
+  "main": "src/index.ts",
+  "pages": ["home", "products", "productDetail", "about"],
+  "optionalPages": ["cart", "wishlist"],
+  "attributes": [
+    {
+      "key": "heroLayout",
+      "label": { "en": "Hero Layout", "ka": "ჰეროს განლაგება" },
+      "type": "select",
+      "group": "Layout",
+      "default": "full-width",
+      "options": [
+        { "value": "full-width", "label": { "en": "Full Width", "ka": "სრული სიგანე" } },
+        { "value": "contained", "label": { "en": "Contained", "ka": "კონტეინერით" } }
+      ]
+    },
+    {
+      "key": "showCategories",
+      "label": { "en": "Show Categories on Home", "ka": "კატეგორიების ჩვენება მთავარზე" },
+      "type": "boolean",
+      "group": "Layout",
+      "default": true
+    },
+    {
+      "key": "productsPerRow",
+      "label": { "en": "Products Per Row", "ka": "პროდუქტი ხაზზე" },
+      "type": "number",
+      "group": "Layout",
+      "default": 3,
+      "validation": { "min": 2, "max": 5 }
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "name": "@shopit/template-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@shopit/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./mock": {
+      "@shopit/source": "./src/mock/index.ts",
+      "types": "./dist/mock/index.d.ts",
+      "import": "./dist/mock/index.js",
+      "default": "./dist/mock/index.js"
+    }
+  },
+  "nx": {
+    "name": "template-sdk",
+    "sourceRoot": "libs/template-sdk/src",
+    "targets": {
+      "build": {
+        "executor": "@nx/js:swc",
+        "outputs": [
+          "{options.outputPath}"
+        ],
+        "options": {
+          "outputPath": "libs/template-sdk/dist",
+          "main": "libs/template-sdk/src/index.ts",
+          "tsConfig": "libs/template-sdk/tsconfig.lib.json",
+          "skipTypeCheck": true,
+          "stripLeadingPaths": true
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "@swc/helpers": "~0.5.11"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}

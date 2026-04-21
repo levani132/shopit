@@ -7,7 +7,8 @@ import {
 } from '../../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../../data/mock-stores';
 import { getLatinInitial } from '../../../../../lib/utils';
-import { getTemplate, getLocalizedText } from '../../../../../store-templates';
+import { getLocalizedText } from '../../../../../store-templates';
+import { resolveTemplate } from '../../../../../lib/resolve-template';
 
 interface StorePageProps {
   params: Promise<{ subdomain: string; locale: string }>;
@@ -82,7 +83,8 @@ export default async function StorePage({ params }: StorePageProps) {
 
   // Resolve the template for this store (defaults to 'default')
   const templateId = (store as any).templateId as string | undefined;
-  const template = getTemplate(templateId);
+  const bundleUrl = (store as any).templateBundleUrl as string | undefined;
+  const template = await resolveTemplate(templateId, bundleUrl);
   const HomePage = template.pages.home;
 
   return (

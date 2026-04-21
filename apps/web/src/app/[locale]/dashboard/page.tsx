@@ -37,7 +37,7 @@ interface AdminStats {
     todayNew: number;
   };
   revenue: { total: number };
-  pendingApprovals: { stores: number; couriers: number };
+  pendingApprovals: { stores: number; couriers: number; developers: number };
 }
 
 interface SellerStats {
@@ -59,6 +59,19 @@ interface BuyerStats {
   activeOrders: number;
   wishlistItems: number;
   savedAddresses: number;
+}
+
+interface DeveloperStats {
+  templates: {
+    total: number;
+    published: number;
+    pendingReview: number;
+    draft: number;
+  };
+  earnings: { total: number; pending: number; withdrawn: number };
+  totalInstalls: number;
+  displayName: string;
+  status: string;
 }
 
 interface RecentOrder {
@@ -161,12 +174,14 @@ function AdminOverview({
         <>
           {/* Pending Approvals Alert */}
           {(stats.pendingApprovals.stores > 0 ||
-            stats.pendingApprovals.couriers > 0) && (
+            stats.pendingApprovals.couriers > 0 ||
+            stats.pendingApprovals.developers > 0) && (
             <AlertBanner
               type="warning"
               message={t('pendingApprovalsAlert', {
                 stores: stats.pendingApprovals.stores,
                 couriers: stats.pendingApprovals.couriers,
+                developers: stats.pendingApprovals.developers,
               })}
               action={{
                 label: t('reviewNow'),
@@ -265,6 +280,17 @@ function AdminOverview({
                       : undefined
                   }
                   color="blue"
+                />
+                <QuickActionCard
+                  href="/dashboard/admin/pending-developers"
+                  label={t('reviewDevelopers')}
+                  icon={Icons.settings}
+                  badge={
+                    stats.pendingApprovals.developers > 0
+                      ? stats.pendingApprovals.developers
+                      : undefined
+                  }
+                  color="orange"
                 />
                 <QuickActionCard
                   href="/dashboard/admin/settings"
@@ -468,6 +494,120 @@ function CourierOverview({
 }
 
 // ============================================
+// Developer Overview Section
+// ============================================
+function DeveloperOverview({
+  stats,
+  isOpen,
+  onToggle,
+}: {
+  stats: DeveloperStats;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const t = useTranslations('dashboard');
+
+  const codeIcon = (
+    <svg
+      className="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+      />
+    </svg>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Section Header */}
+      <CollapsibleHeader
+        icon={codeIcon}
+        title={t('developerDashboard')}
+        isOpen={isOpen}
+        onToggle={onToggle}
+        bgColor="bg-emerald-100 dark:bg-emerald-900/30"
+      />
+
+      {isOpen && (
+        <>
+          {/* Pending Review Alert */}
+          {stats.templates.pendingReview > 0 && (
+            <AlertBanner
+              type="info"
+              message={t('devTemplatesPendingReview', {
+                count: stats.templates.pendingReview,
+              })}
+            />
+          )}
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title={t('devTotalTemplates')}
+              value={stats.templates.total}
+              subtitle={`${stats.templates.published} ${t('devPublished')}`}
+              icon={Icons.products}
+              color="blue"
+            />
+            <StatCard
+              title={t('devTotalInstalls')}
+              value={stats.totalInstalls}
+              icon={Icons.users}
+              color="green"
+            />
+            <StatCard
+              title={t('devTotalEarnings')}
+              value={`₾${stats.earnings.total.toLocaleString()}`}
+              subtitle={`₾${stats.earnings.pending.toLocaleString()} ${t('devPending')}`}
+              icon={Icons.revenue}
+              color="purple"
+            />
+            <StatCard
+              title={t('devDraftTemplates')}
+              value={stats.templates.draft}
+              icon={Icons.clock}
+              color="orange"
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <SectionCard title={t('quickActions')}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <QuickActionButton
+                href="/developers/dashboard/templates"
+                label={t('devManageTemplates')}
+                icon={Icons.products}
+              />
+              <QuickActionButton
+                href="/developers/dashboard/earnings"
+                label={t('devViewEarnings')}
+                icon={Icons.wallet}
+              />
+              <QuickActionButton
+                href="/developers/dashboard"
+                label={t('devPortal')}
+                icon={codeIcon}
+              />
+              <QuickActionButton
+                href="/developers/dashboard/profile"
+                label={t('editProfile')}
+                icon={Icons.profile}
+              />
+            </div>
+          </SectionCard>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ============================================
 // Buyer Overview Section
 // ============================================
 function BuyerOverview({
@@ -640,6 +780,7 @@ export default function DashboardPage() {
   const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [sellerStats, setSellerStats] = useState<SellerStats | null>(null);
   const [courierStats, setCourierStats] = useState<CourierStats | null>(null);
+  const [developerStats, setDeveloperStats] = useState<DeveloperStats | null>(null);
   const [buyerStats, setBuyerStats] = useState<BuyerStats | null>(null);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -656,8 +797,9 @@ export default function DashboardPage() {
   const isAdmin = hasRole(userRole, Role.ADMIN);
   const isSeller = hasRole(userRole, Role.SELLER);
   const isCourier = hasRole(userRole, Role.COURIER);
+  const isDeveloper = hasRole(userRole, Role.DEVELOPER);
   const hasMultipleRoles =
-    [isAdmin, isSeller, isCourier].filter(Boolean).length > 1;
+    [isAdmin, isSeller, isCourier, isDeveloper].filter(Boolean).length > 1;
 
   // Determine the first section and initialize openSections accordingly
   useEffect(() => {
@@ -665,16 +807,19 @@ export default function DashboardPage() {
       ? 'admin'
       : isSeller
         ? 'seller'
-        : isCourier
-          ? 'courier'
-          : 'buyer';
+        : isDeveloper
+          ? 'developer'
+          : isCourier
+            ? 'courier'
+            : 'buyer';
     setOpenSections({
       admin: firstSection === 'admin',
       seller: firstSection === 'seller',
+      developer: firstSection === 'developer',
       courier: firstSection === 'courier',
       buyer: firstSection === 'buyer',
     });
-  }, [isAdmin, isSeller, isCourier]);
+  }, [isAdmin, isSeller, isDeveloper, isCourier]);
 
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
@@ -725,6 +870,22 @@ export default function DashboardPage() {
             myDeliveries: 0,
             totalEarnings: 0,
             completedToday: 0,
+          });
+        }
+      }
+
+      if (isDeveloper) {
+        try {
+          const data = await api.get('/developers/stats');
+          setDeveloperStats(data);
+        } catch (err) {
+          console.error('Failed to fetch developer stats:', err);
+          setDeveloperStats({
+            templates: { total: 0, published: 0, pendingReview: 0, draft: 0 },
+            earnings: { total: 0, pending: 0, withdrawn: 0 },
+            totalInstalls: 0,
+            displayName: '',
+            status: 'approved',
           });
         }
       }
@@ -786,7 +947,7 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, isAdmin, isSeller, isCourier, t]);
+  }, [user, isAdmin, isSeller, isCourier, isDeveloper, t]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -862,6 +1023,15 @@ export default function DashboardPage() {
           stats={courierStats}
           isOpen={openSections.courier}
           onToggle={() => toggleSection('courier')}
+        />
+      )}
+
+      {/* Developer Section */}
+      {isDeveloper && developerStats && (
+        <DeveloperOverview
+          stats={developerStats}
+          isOpen={openSections.developer}
+          onToggle={() => toggleSection('developer')}
         />
       )}
 

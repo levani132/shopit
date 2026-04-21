@@ -2,20 +2,22 @@
  * Bitmask-based Role System
  *
  * Each role is a power of 2, allowing users to have multiple roles:
- * - User = 1 (00001) - Basic user, can browse and buy
- * - Courier = 2 (00010) - Can deliver orders
- * - Seller = 4 (00100) - Can create store and sell products
- * - Admin = 8 (01000) - Can manage platform
- * - CourierAdmin = 16 (10000) - Can manage couriers and view courier analytics
+ * - User = 1 (000001) - Basic user, can browse and buy
+ * - Courier = 2 (000010) - Can deliver orders
+ * - Seller = 4 (000100) - Can create store and sell products
+ * - Admin = 8 (001000) - Can manage platform
+ * - CourierAdmin = 16 (010000) - Can manage couriers and view courier analytics
+ * - Developer = 32 (100000) - Can create and publish store templates
  *
  * Examples of combined roles:
- * - User + Courier = 3 (00011)
- * - User + Seller = 5 (00101)
- * - User + Admin = 9 (01001)
- * - User + Seller + Admin = 13 (01101)
- * - User + CourierAdmin = 17 (10001)
- * - User + CourierAdmin + Courier = 19 (10011) - Courier admin who also delivers
- * - All roles = 31 (11111)
+ * - User + Courier = 3 (000011)
+ * - User + Seller = 5 (000101)
+ * - User + Admin = 9 (001001)
+ * - User + Seller + Admin = 13 (001101)
+ * - User + CourierAdmin = 17 (010001)
+ * - User + CourierAdmin + Courier = 19 (010011) - Courier admin who also delivers
+ * - User + Developer = 33 (100001) - Template developer
+ * - All roles = 63 (111111)
  */
 
 // Role bit values
@@ -25,13 +27,14 @@ export const Role = {
   SELLER: 4,
   ADMIN: 8,
   COURIER_ADMIN: 16,
+  DEVELOPER: 32,
 } as const;
 
 export type RoleValue = (typeof Role)[keyof typeof Role];
 
 // All possible roles
 export const ALL_ROLES =
-  Role.USER | Role.COURIER | Role.SELLER | Role.ADMIN | Role.COURIER_ADMIN; // 31
+  Role.USER | Role.COURIER | Role.SELLER | Role.ADMIN | Role.COURIER_ADMIN | Role.DEVELOPER; // 63
 
 // Role names for display
 export const RoleNames: Record<RoleValue, string> = {
@@ -40,6 +43,7 @@ export const RoleNames: Record<RoleValue, string> = {
   [Role.SELLER]: 'Seller',
   [Role.ADMIN]: 'Admin',
   [Role.COURIER_ADMIN]: 'Courier Admin',
+  [Role.DEVELOPER]: 'Developer',
 };
 
 // Role names in Georgian
@@ -49,6 +53,7 @@ export const RoleNamesKa: Record<RoleValue, string> = {
   [Role.SELLER]: 'გამყიდველი',
   [Role.ADMIN]: 'ადმინისტრატორი',
   [Role.COURIER_ADMIN]: 'კურიერ ადმინი',
+  [Role.DEVELOPER]: 'დეველოპერი',
 };
 
 /**
@@ -138,6 +143,7 @@ export function getRoleList(userRoles: number): RoleValue[] {
   if (hasRole(userRoles, Role.SELLER)) roles.push(Role.SELLER);
   if (hasRole(userRoles, Role.ADMIN)) roles.push(Role.ADMIN);
   if (hasRole(userRoles, Role.COURIER_ADMIN)) roles.push(Role.COURIER_ADMIN);
+  if (hasRole(userRoles, Role.DEVELOPER)) roles.push(Role.DEVELOPER);
   return roles;
 }
 
@@ -193,6 +199,7 @@ export function getPrimaryRoleName(
   const names = locale === 'ka' ? RoleNamesKa : RoleNames;
   if (hasRole(userRoles, Role.ADMIN)) return names[Role.ADMIN];
   if (hasRole(userRoles, Role.COURIER_ADMIN)) return names[Role.COURIER_ADMIN];
+  if (hasRole(userRoles, Role.DEVELOPER)) return names[Role.DEVELOPER];
   if (hasRole(userRoles, Role.SELLER)) return names[Role.SELLER];
   if (hasRole(userRoles, Role.COURIER)) return names[Role.COURIER];
   return names[Role.USER];

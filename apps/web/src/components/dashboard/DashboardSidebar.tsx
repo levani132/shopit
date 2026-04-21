@@ -509,6 +509,11 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: PendingIcon,
       },
       {
+        href: '/dashboard/admin/pending-developers',
+        labelKey: 'pendingDevelopers',
+        icon: PendingIcon,
+      },
+      {
         href: '/dashboard/admin/users',
         labelKey: 'allUsers',
         icon: UsersIcon,

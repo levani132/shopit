@@ -21,3 +21,6 @@ export * from './lib/auth.types';
 
 // Common types
 export * from './lib/common.types';
+
+// Developer Portal & Template Marketplace types
+export * from './lib/developer.types';

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { OrderDocument, StoreDocument } from '@shopit/api-database';
+import type { OrderDocument, StoreDocument } from '@shopit/api-database';
 
 export interface EmailOptions {
   to: string;

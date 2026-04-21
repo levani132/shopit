@@ -20,6 +20,7 @@ import { ContentModule } from '../content/content.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RoutesModule } from '../routes/routes.module';
 import { EmailModule } from '../email/email.module';
+import { DevelopersModule } from '../developers/developers.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { EmailModule } from '../email/email.module';
     NotificationsModule,
     RoutesModule,
     EmailModule,
+    DevelopersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

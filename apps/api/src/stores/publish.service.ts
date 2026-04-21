@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Store, StoreDocument, User, UserDocument } from '@shopit/api-database';
+import { Store, type StoreDocument, User, type UserDocument } from '@shopit/api-database';
 
 /**
  * Validate Georgian IBAN

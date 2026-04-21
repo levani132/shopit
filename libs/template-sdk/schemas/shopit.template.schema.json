@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://shopit.ge/schemas/shopit.template.json",
+  "title": "ShopIt Template Manifest",
+  "description": "Schema for shopit.template.json — the manifest file for ShopIt store templates.",
+  "type": "object",
+  "required": ["id", "name", "description", "version", "author", "sdkVersion", "category", "pricing", "assets", "main", "pages"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference for editor validation."
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*[a-z0-9]$",
+      "minLength": 3,
+      "maxLength": 64,
+      "description": "Unique template identifier (slug-style, e.g. 'modern-boutique')."
+    },
+    "name": {
+      "$ref": "#/$defs/localizedText",
+      "description": "Template display name (bilingual)."
+    },
+    "description": {
+      "$ref": "#/$defs/localizedText",
+      "description": "Short description for marketplace listing (bilingual)."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+",
+      "description": "Template version (semver)."
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Template author display name."
+    },
+    "sdkVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+",
+      "description": "Minimum SDK version required."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["general", "fashion", "electronics", "food", "services", "handmade", "other"],
+      "description": "Template category for marketplace filtering."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "maxLength": 32 },
+      "maxItems": 10,
+      "description": "Tags for search."
+    },
+    "pricing": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["free", "one-time", "subscription"]
+        },
+        "price": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price in GEL for one-time purchase."
+        },
+        "monthlyPrice": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Monthly price in GEL for subscription."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "one-time" } } },
+          "then": { "required": ["price"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "subscription" } } },
+          "then": { "required": ["monthlyPrice"] }
+        }
+      ]
+    },
+    "assets": {
+      "type": "object",
+      "required": ["thumbnail"],
+      "properties": {
+        "thumbnail": {
+          "type": "string",
+          "description": "Path to thumbnail image (relative to project root)."
+        },
+        "screenshots": {
+          "type": "array",
+          "items": { "type": "string" },
+          "maxItems": 10,
+          "description": "Paths to screenshot images."
+        },
+        "previewVideo": {
+          "type": "string",
+          "description": "Preview video URL."
+        }
+      },
+      "additionalProperties": false
+    },
+    "main": {
+      "type": "string",
+      "description": "Entry point for the template bundle (relative path)."
+    },
+    "attributes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/attributeDefinition" },
+      "description": "Configurable settings for this template."
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["home", "products", "productDetail", "about"]
+      },
+      "minItems": 4,
+      "uniqueItems": true,
+      "description": "Required pages this template provides."
+    },
+    "optionalPages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["cart", "checkout", "wishlist", "orders", "checkoutSuccess", "checkoutFail", "login", "register", "comingSoon", "notFound"]
+      },
+      "uniqueItems": true,
+      "description": "Optional pages this template overrides."
+    },
+    "customPages": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+      "uniqueItems": true,
+      "description": "Custom page slugs this template introduces."
+    },
+    "changelog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["version", "date", "changes"],
+        "properties": {
+          "version": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "changes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "localizedText": {
+      "type": "object",
+      "properties": {
+        "ka": { "type": "string" },
+        "en": { "type": "string" }
+      },
+      "anyOf": [
+        { "required": ["en"] },
+        { "required": ["ka"] }
+      ],
+      "additionalProperties": false
+    },
+    "attributeDefinition": {
+      "type": "object",
+      "required": ["key", "label", "type", "default"],
+      "properties": {
+        "key": { "type": "string" },
+        "label": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/$defs/localizedText" }
+          ]
+        },
+        "description": {
+          "oneOf": [
+            { "type": "string" },
+            { "$ref": "#/$defs/localizedText" }
+          ]
+        },
+        "type": {
+          "type": "string",
+          "enum": ["boolean", "string", "number", "select", "color", "image", "rich-text", "font", "spacing"]
+        },
+        "group": { "type": "string" },
+        "default": {},
+        "options": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["value", "label"],
+                "properties": {
+                  "value": { "type": "string" },
+                  "label": { "$ref": "#/$defs/localizedText" }
+                },
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "validation": {
+          "type": "object",
+          "properties": {
+            "required": { "type": "boolean" },
+            "min": { "type": "number" },
+            "max": { "type": "number" },
+            "pattern": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "showIf": {
+          "type": "object",
+          "required": ["key", "value"],
+          "properties": {
+            "key": { "type": "string" },
+            "value": {}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

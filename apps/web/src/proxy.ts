@@ -210,6 +210,29 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
+  // Special handling for developer portal
+  if (subdomain === 'developers' || subdomain === 'developer') {
+    const url = request.nextUrl.clone();
+    const pathnameHasLocale = routing.locales.some(
+      (locale) =>
+        pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`,
+    );
+
+    if (pathnameHasLocale) {
+      const locale = pathname.split('/')[1];
+      const restPath = pathname.replace(`/${locale}`, '') || '/';
+      url.pathname = `/developers/${locale}${restPath}`;
+    } else {
+      const defaultLocale = routing.defaultLocale;
+      const normalizedPath = pathname === '/' ? '' : pathname;
+      url.pathname = `/developers/${defaultLocale}${normalizedPath}`;
+    }
+
+    const response = NextResponse.rewrite(url);
+    response.headers.set('x-pathname', pathname);
+    return response;
+  }
+
   if (subdomain) {
     // Handle manifest.webmanifest requests for store subdomains
     // This needs to be before the publish check since manifest should always be accessible

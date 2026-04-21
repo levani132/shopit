@@ -45,3 +45,10 @@ export * from './notification-settings.schema';
 // Courier Routes
 export * from './courier-route.schema';
 export * from './route-cache.schema';
+
+// Developer Portal & Template Marketplace
+export * from './developer-profile.schema';
+export * from './template-marketplace-listing.schema';
+export * from './template-purchase.schema';
+export * from './developer-payout.schema';
+export * from './template-review.schema';

@@ -42,6 +42,8 @@ import {
   OrderDocument,
   NotificationType,
   NotificationCategory,
+  DeveloperProfile,
+  DeveloperProfileDocument,
 } from '@shopit/api-database';
 import { BalanceService } from '../orders/balance.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -58,6 +60,8 @@ export class AdminController {
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Store.name) private readonly storeModel: Model<StoreDocument>,
     @InjectModel(Order.name) private readonly orderModel: Model<OrderDocument>,
+    @InjectModel(DeveloperProfile.name)
+    private readonly developerProfileModel: Model<DeveloperProfileDocument>,
     @Inject(forwardRef(() => BalanceService))
     private readonly balanceService: BalanceService,
     private readonly notificationsService: NotificationsService,
@@ -105,6 +109,7 @@ export class AdminController {
       paidOrders,
       deliveredOrders,
       pendingCourierApplications,
+      pendingDeveloperApplications,
     ] = await Promise.all([
       this.userModel.countDocuments(),
       this.userModel.countDocuments({ role: { $bitsAllSet: Role.SELLER } }),
@@ -120,6 +125,7 @@ export class AdminController {
         courierMotivationLetter: { $exists: true, $ne: '' },
         role: { $bitsAllClear: Role.COURIER },
       }),
+      this.developerProfileModel.countDocuments({ status: 'pending' }),
     ]);
 
     // Calculate total revenue from delivered orders
@@ -165,6 +171,7 @@ export class AdminController {
       pendingApprovals: {
         stores: pendingStores,
         couriers: pendingCourierApplications,
+        developers: pendingDeveloperApplications,
       },
     };
   }

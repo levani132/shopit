@@ -3,8 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "dependencies": {
+    "@babel/parser": "^7.29.0",
+    "@babel/traverse": "^7.29.0",
+    "@monaco-editor/react": "^4.7.0",
     "@types/leaflet": "^1.9.21",
     "leaflet": "^1.9.4",
+    "monaco-jsx-highlighter": "^2.77.77",
     "next": "~16.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

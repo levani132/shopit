@@ -32,6 +32,9 @@
     },
     {
       "path": "./libs/api/common"
+    },
+    {
+      "path": "./libs/template-sdk"
     }
   ]
 }

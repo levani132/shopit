@@ -4,3 +4,8 @@ declare module '*.svg' {
   export const ReactComponent: any;
   export default content;
 }
+
+declare module 'monaco-jsx-highlighter' {
+  const MonacoJsxHighlighter: any;
+  export default MonacoJsxHighlighter;
+}

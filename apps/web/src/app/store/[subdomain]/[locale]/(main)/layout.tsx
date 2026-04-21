@@ -8,7 +8,8 @@ import {
 import { getStoreBySubdomain as getMockStore } from '../../../../../data/mock-stores';
 import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
 import { getLatinInitial } from '../../../../../lib/utils';
-import { getTemplate, getLocalizedText } from '../../../../../store-templates';
+import { getLocalizedText } from '../../../../../store-templates';
+import { resolveTemplate } from '../../../../../lib/resolve-template';
 import { TemplateProvider } from '../../../../../store-templates/TemplateContext';
 
 interface MainStoreLayoutProps {
@@ -58,6 +59,7 @@ async function getStoreData(subdomain: string, locale: string) {
       initial,
       authorInitial,
       templateId: (apiStore as any).templateId as string | undefined,
+      templateBundleUrl: (apiStore as any).templateBundleUrl as string | undefined,
       templateConfig: (apiStore as any).templateConfig as Record<string, unknown> | undefined,
     };
   }
@@ -124,7 +126,7 @@ export default async function MainStoreLayout({
   );
 
   const templateId = store.templateId || 'default';
-  const template = getTemplate(templateId);
+  const template = await resolveTemplate(templateId, store.templateBundleUrl);
   const LayoutWrapper = template.layout.wrapper;
 
   const storeForComponents = {

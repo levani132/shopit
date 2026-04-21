@@ -8,9 +8,9 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { User, UserDocument, AuthProvider, Role } from '@shopit/api-database';
+import { User, type UserDocument, AuthProvider, Role } from '@shopit/api-database';
 import { hasRole } from '@shopit/constants';
-import { Store, StoreDocument } from '@shopit/api-database';
+import { Store, type StoreDocument } from '@shopit/api-database';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';

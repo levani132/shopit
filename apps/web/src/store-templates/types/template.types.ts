@@ -95,6 +95,8 @@ export interface HomePageProps {
 }
 
 export interface ProductsPageProps {
+  store: StoreData;
+  products: HomepageProduct[];
   locale: string;
   subdomain: string;
 }
@@ -246,15 +248,38 @@ export type TemplateAttributeType =
   | 'string'
   | 'number'
   | 'select'
-  | 'color';
+  | 'color'
+  | 'image'
+  | 'rich-text'
+  | 'font'
+  | 'spacing';
 
 export interface TemplateAttributeDefinition {
   key: string;
-  label: string;
-  description?: string;
+  /** Bilingual label for the attribute. Falls back to plain string for built-in templates. */
+  label: string | LocalizedText;
+  /** Bilingual description shown as helper text. */
+  description?: string | LocalizedText;
   type: TemplateAttributeType;
+  /** Grouping key for organizing attributes in the config panel (e.g. "Header", "Colors", "Layout"). */
+  group?: string;
   default: unknown;
-  options?: string[];
+  /** For 'select' type: option values with optional bilingual labels. */
+  options?: (string | { value: string; label: LocalizedText })[];
+  /** Validation rules applied in the config form. */
+  validation?: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+    pattern?: string;
+  };
+  /** Conditional display: only show this attribute when another attribute has a specific value. */
+  showIf?: {
+    key: string;
+    value: unknown;
+  };
+  /** @deprecated Use validation.min instead */
   min?: number;
+  /** @deprecated Use validation.max instead */
   max?: number;
 }

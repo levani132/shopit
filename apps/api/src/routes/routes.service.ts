@@ -21,8 +21,8 @@ import {
   RouteCache,
   RouteCacheDocument,
 } from '@shopit/api-database';
-import { Order, OrderDocument, OrderStatus } from '@shopit/api-database';
-import { User, UserDocument } from '@shopit/api-database';
+import { Order, type OrderDocument, OrderStatus } from '@shopit/api-database';
+import { User, type UserDocument } from '@shopit/api-database';
 import { VEHICLE_CAPACITIES } from '@shopit/constants';
 import {
   GenerateRoutesDto,

@@ -32,6 +32,8 @@ import {
   CourierRouteSchema,
   RouteCache,
   RouteCacheSchema,
+  DeveloperProfile,
+  DeveloperProfileSchema,
 } from '@shopit/api-database';
 import { OrdersModule } from '../orders/orders.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -52,6 +54,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       { name: Notification.name, schema: NotificationSchema },
       { name: CourierRoute.name, schema: CourierRouteSchema },
       { name: RouteCache.name, schema: RouteCacheSchema },
+      { name: DeveloperProfile.name, schema: DeveloperProfileSchema },
     ]),
     forwardRef(() => OrdersModule),
     NotificationsModule,

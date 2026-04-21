@@ -1,6 +1,7 @@
 import type { TemplateDefinition } from './types';
 
 const templates = new Map<string, TemplateDefinition>();
+const remoteTemplateCache = new Map<string, Promise<TemplateDefinition>>();
 
 export function registerTemplate(template: TemplateDefinition): void {
   templates.set(template.id, template);
@@ -78,4 +79,56 @@ export function getTemplateConfig(
     ...template.defaultAttributeValues,
     ...storeOverrides,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Remote template loading (for marketplace / external developer templates)
+// ---------------------------------------------------------------------------
+
+/**
+ * Load a template from a CDN bundle URL at runtime.
+ * The bundle must export a default TemplateDefinition.
+ * Results are cached so the same URL is only fetched once.
+ */
+export async function loadRemoteTemplate(
+  templateId: string,
+  bundleUrl: string,
+): Promise<TemplateDefinition> {
+  // Already registered locally (e.g. from a previous load)
+  const existing = templates.get(templateId);
+  if (existing) return existing;
+
+  // Deduplicate in-flight loads
+  const cached = remoteTemplateCache.get(bundleUrl);
+  if (cached) return cached;
+
+  const loadPromise = (async () => {
+    const mod = await import(/* webpackIgnore: true */ bundleUrl);
+    const template: TemplateDefinition = mod.default ?? mod;
+
+    if (!template.id || !template.pages) {
+      throw new Error(
+        `Remote template bundle at "${bundleUrl}" does not export a valid TemplateDefinition.`,
+      );
+    }
+
+    templates.set(template.id, template);
+    return template;
+  })();
+
+  remoteTemplateCache.set(bundleUrl, loadPromise);
+
+  // Clean cache on failure so it can be retried
+  loadPromise.catch(() => {
+    remoteTemplateCache.delete(bundleUrl);
+  });
+
+  return loadPromise;
+}
+
+/**
+ * Check whether a template is already registered (built-in or loaded remotely).
+ */
+export function hasTemplate(templateId: string): boolean {
+  return templates.has(templateId);
 }

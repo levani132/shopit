@@ -253,6 +253,9 @@ export class Store {
   @Prop({ default: 'default' })
   templateId!: string;
 
+  @Prop()
+  templateBundleUrl?: string;
+
   @Prop({ type: Object, default: {} })
   templateConfig?: Record<string, unknown>;
 }
