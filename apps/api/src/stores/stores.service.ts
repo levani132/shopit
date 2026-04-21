@@ -550,7 +550,7 @@ export class StoresService {
 
     // Count total products
     const totalProducts = await this.productModel.countDocuments({
-      store: storeId,
+      storeId: storeId,
       isDeleted: { $ne: true },
     });
 
