@@ -774,6 +774,8 @@
       "out_for_delivery": "მიტანის პროცესში",
       "delivered": "ჩაბარებული",
       "cancelled": "გაუქმებული"
+
+      
     }
   },
   "auth": {
