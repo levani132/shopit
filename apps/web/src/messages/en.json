@@ -57,6 +57,11 @@
     "returnAsAdmin": "Return as Admin",
     "loginAsUser": "Login as User"
   },
+  "comingSoonBanner": {
+    "title": "We're Building Something Great!",
+    "description": "ShopIt is currently under development and not yet fully operational.",
+    "tryDev": "Try the Dev Version"
+  },
   "hero": {
     "title": "Create Your Online Store in Minutes",
     "subtitle": "ShopIt empowers you to build a professional online store for free. Start selling today!",
@@ -259,7 +264,12 @@
     "useColoredBackground": "Use colored background",
     "coverFormatHint": "JPG, PNG, or WebP. Recommended: 1200×400px. Max 10MB.",
     "brandColor": "Brand Color",
-    "storeInformation": "Store Information",
+    "customColor": "Custom Color",
+    "customColorWarning": "Custom colors require careful selection. Make sure your shades progress from light (50) to dark (900) for proper contrast throughout your store.",
+    "customColorShades": "Color Shades",
+    "customColorSeedFrom": "Seed from a preset:",
+    "brandColorHistory": "Previous colors:",
+    "syncShadesFrom": "Generate all shades from this color",
     "storeName": "Store Name",
     "description": "Description",
     "aboutUs": "About Us",

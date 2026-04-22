@@ -11,6 +11,112 @@ import {
 } from '../../../../components/ui/AddressPicker';
 import { api } from '../../../../lib/api';
 import SetupRequirements from '../../../../components/dashboard/SetupRequirements';
+import { STORE_BRAND_COLORS } from '@shopit/constants';
+
+const COLOR_SHADES = [
+  '50',
+  '100',
+  '200',
+  '300',
+  '400',
+  '500',
+  '600',
+  '700',
+  '800',
+  '900',
+] as const;
+
+// Target lightness (0-100) for each shade — follows Tailwind's palette curve
+const SHADE_LIGHTNESS: Record<string, number> = {
+  '50': 97,
+  '100': 94,
+  '200': 86,
+  '300': 76,
+  '400': 65,
+  '500': 55,
+  '600': 44,
+  '700': 35,
+  '800': 27,
+  '900': 20,
+};
+
+function hexToHsl(hex: string): [number, number, number] | null {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return null;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, Math.round(l * 100)];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  h /= 360;
+  s /= 100;
+  l /= 100;
+  if (s === 0) {
+    const v = Math.round(l * 255)
+      .toString(16)
+      .padStart(2, '0');
+    return `#${v}${v}${v}`;
+  }
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return (
+    '#' +
+    [hue2rgb(p, q, h + 1 / 3), hue2rgb(p, q, h), hue2rgb(p, q, h - 1 / 3)]
+      .map((x) =>
+        Math.round(x * 255)
+          .toString(16)
+          .padStart(2, '0'),
+      )
+      .join('')
+  );
+}
+
+/**
+ * Given one hex color, generate a full 10-shade palette by keeping its
+ * hue & saturation and distributing lightness across the Tailwind scale.
+ */
+function generateShadesFromColor(hex: string): Record<string, string> {
+  const hsl = hexToHsl(hex);
+  if (!hsl) return {};
+  const [h, s] = hsl;
+  const result: Record<string, string> = {};
+  for (const shade of COLOR_SHADES) {
+    result[shade] = hslToHex(h, s, SHADE_LIGHTNESS[shade]);
+  }
+  return result;
+}
+
+function getDefaultCustomColors(fromColorName: string): Record<string, string> {
+  const palette =
+    (STORE_BRAND_COLORS as Record<string, Record<string, string>>)[
+      fromColorName
+    ] ||
+    (STORE_BRAND_COLORS as Record<string, Record<string, string>>)['indigo'];
+  const result: Record<string, string> = {};
+  for (const shade of COLOR_SHADES) {
+    result[shade] = palette[shade] || '#6366f1';
+  }
+  return result;
+}
 
 // Tab definitions
 const TABS = [
@@ -47,6 +153,12 @@ interface StoreData {
   authorName?: string;
   authorNameLocalized?: { ka?: string; en?: string };
   brandColor: string;
+  customBrandColors?: Record<string, string> | null;
+  brandColorHistory?: Array<{
+    brandColor: string;
+    customBrandColors?: Record<string, string>;
+    changedAt: string;
+  }>;
   logo?: string;
   coverImage?: string;
   useInitialAsLogo: boolean;
@@ -123,7 +235,14 @@ function StoreSettingsPageContent() {
 
   // Form state
   const [formData, setFormData] = useState<StoreData | null>(null);
-  const [initialFormData, setInitialFormData] = useState<StoreData | null>(null);
+  const [initialFormData, setInitialFormData] = useState<StoreData | null>(
+    null,
+  );
+
+  // Custom brand color editing state
+  const [customColors, setCustomColors] = useState<Record<string, string>>(() =>
+    getDefaultCustomColors('indigo'),
+  );
 
   // Check if a tab is complete based on required fields
   const isTabComplete = (tabId: TabId): boolean => {
@@ -301,6 +420,12 @@ function StoreSettingsPageContent() {
         setInitialFormData(data);
         setLogoPreview(data.logo || null);
         setCoverPreview(data.coverImage || null);
+        // Initialize custom colors from saved data or last preset
+        if (data.brandColor === 'custom' && data.customBrandColors) {
+          setCustomColors(data.customBrandColors as Record<string, string>);
+        } else if (data.brandColor && data.brandColor !== 'custom') {
+          setCustomColors(getDefaultCustomColors(data.brandColor));
+        }
       } catch (err) {
         if ((err as any)?.status === 404) {
           setError('no-store');
@@ -464,6 +589,9 @@ function StoreSettingsPageContent() {
         formData.authorNameLocalized?.en || formData.authorName || '',
       );
       submitData.append('brandColor', formData.brandColor);
+      if (formData.brandColor === 'custom') {
+        submitData.append('customBrandColors', JSON.stringify(customColors));
+      }
       submitData.append('useInitialAsLogo', String(formData.useInitialAsLogo));
       submitData.append('useDefaultCover', String(formData.useDefaultCover));
       submitData.append('showAuthorName', String(formData.showAuthorName));
@@ -617,7 +745,10 @@ function StoreSettingsPageContent() {
   }
 
   const accentColor =
-    BRAND_COLORS.find((c) => c.name === formData.brandColor)?.hex || '#6366f1';
+    formData.brandColor === 'custom'
+      ? customColors['500'] || '#6366f1'
+      : BRAND_COLORS.find((c) => c.name === formData.brandColor)?.hex ||
+        '#6366f1';
 
   // Check if there are unsaved changes
   const hasChanges = (() => {
@@ -758,8 +889,16 @@ function StoreSettingsPageContent() {
                 }`}
               >
                 {complete ? (
-                  <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  <svg
+                    className="w-5 h-5 text-green-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 ) : (
                   <TabIcon icon={tab.icon} />
@@ -932,7 +1071,13 @@ function StoreSettingsPageContent() {
                     <button
                       key={color.name}
                       type="button"
-                      onClick={() => updateField('brandColor', color.name)}
+                      onClick={() => {
+                        updateField('brandColor', color.name);
+                        // If currently on custom, reset custom to this color as base
+                        if (formData.brandColor === 'custom') {
+                          setCustomColors(getDefaultCustomColors(color.name));
+                        }
+                      }}
                       className={`w-10 h-10 rounded-xl transition-all ${
                         formData.brandColor === color.name
                           ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-110'
@@ -942,7 +1087,203 @@ function StoreSettingsPageContent() {
                       title={color.name}
                     />
                   ))}
+                  {/* Custom color button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (formData.brandColor !== 'custom') {
+                        // Initialize custom colors from current preset or saved customBrandColors
+                        const base = formData.customBrandColors
+                          ? (formData.customBrandColors as Record<
+                              string,
+                              string
+                            >)
+                          : getDefaultCustomColors(formData.brandColor);
+                        setCustomColors(base);
+                        updateField('brandColor', 'custom');
+                      }
+                    }}
+                    className={`w-10 h-10 rounded-xl border-2 transition-all flex items-center justify-center text-xs font-bold ${
+                      formData.brandColor === 'custom'
+                        ? 'ring-2 ring-offset-2 ring-gray-900 dark:ring-white scale-110 border-gray-900 dark:border-white bg-gradient-to-br from-red-400 via-green-400 to-blue-400 text-white'
+                        : 'border-gray-400 dark:border-zinc-500 hover:scale-105 bg-gradient-to-br from-red-300 via-green-300 to-blue-300 text-gray-700'
+                    }`}
+                    title={t('customColor')}
+                  >
+                    ✦
+                  </button>
                 </div>
+
+                {/* Custom color shade editor */}
+                {formData.brandColor === 'custom' && (
+                  <div className="mt-5 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+                    {/* Warning */}
+                    <div className="flex gap-2 mb-4">
+                      <span className="text-amber-500 text-lg">⚠️</span>
+                      <p className="text-sm text-amber-800 dark:text-amber-300">
+                        {t('customColorWarning')}
+                      </p>
+                    </div>
+
+                    {/* Shade inputs */}
+                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3 uppercase tracking-wide">
+                      {t('customColorShades')}
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                      {COLOR_SHADES.map((shade) => {
+                        const hexVal = customColors[shade] || '#6366f1';
+                        return (
+                          <div key={shade} className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                {shade}
+                              </label>
+                              {/* Sync button: generate all shades from this color */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const generated =
+                                    generateShadesFromColor(hexVal);
+                                  if (Object.keys(generated).length > 0) {
+                                    setCustomColors(generated);
+                                  }
+                                }}
+                                title={t('syncShadesFrom')}
+                                className="text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 16 16"
+                                  fill="currentColor"
+                                  className="w-3.5 h-3.5"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.932.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-1.242l.842.84V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.241l-.84-.84v1.371a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.841.841a4.5 4.5 0 0 0 7.08-.932.75.75 0 0 1 1.025-.273Z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="color"
+                                value={hexVal}
+                                onChange={(e) =>
+                                  setCustomColors((prev) => ({
+                                    ...prev,
+                                    [shade]: e.target.value,
+                                  }))
+                                }
+                                className="w-8 h-8 rounded cursor-pointer border border-gray-300 dark:border-zinc-600 p-0.5"
+                              />
+                              <input
+                                type="text"
+                                value={hexVal}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (/^#[0-9a-fA-F]{0,6}$/.test(val)) {
+                                    setCustomColors((prev) => ({
+                                      ...prev,
+                                      [shade]: val,
+                                    }));
+                                  }
+                                }}
+                                maxLength={7}
+                                placeholder="#000000"
+                                className="w-full text-xs px-2 py-1.5 border border-gray-300 dark:border-zinc-600 rounded bg-white dark:bg-zinc-800 text-gray-900 dark:text-white font-mono"
+                              />
+                            </div>
+                            {/* Preview swatch */}
+                            <div
+                              className="h-4 rounded"
+                              style={{ backgroundColor: hexVal }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Base color presets to seed from */}
+                    <div className="mt-4 pt-4 border-t border-amber-200 dark:border-amber-700">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        {t('customColorSeedFrom')}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {BRAND_COLORS.map((color) => (
+                          <button
+                            key={color.name}
+                            type="button"
+                            onClick={() =>
+                              setCustomColors(
+                                getDefaultCustomColors(color.name),
+                              )
+                            }
+                            className="w-7 h-7 rounded-lg hover:scale-110 transition-all ring-1 ring-gray-300 dark:ring-zinc-600"
+                            style={{ backgroundColor: color.hex }}
+                            title={`Seed from ${color.name}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Color history */}
+                    {formData.brandColorHistory &&
+                      formData.brandColorHistory.length > 0 && (
+                        <div className="mt-4 pt-4 border-t border-amber-200 dark:border-amber-700">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            {t('brandColorHistory')}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {formData.brandColorHistory
+                              .slice()
+                              .reverse()
+                              .map((entry, i) => (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => {
+                                    if (
+                                      entry.brandColor === 'custom' &&
+                                      entry.customBrandColors
+                                    ) {
+                                      setCustomColors(
+                                        entry.customBrandColors as Record<
+                                          string,
+                                          string
+                                        >,
+                                      );
+                                    } else {
+                                      setCustomColors(
+                                        getDefaultCustomColors(
+                                          entry.brandColor,
+                                        ),
+                                      );
+                                    }
+                                  }}
+                                  className="w-7 h-7 rounded-lg hover:scale-110 transition-all ring-1 ring-gray-300 dark:ring-zinc-600"
+                                  style={{
+                                    backgroundColor:
+                                      entry.brandColor === 'custom' &&
+                                      entry.customBrandColors
+                                        ? (
+                                            entry.customBrandColors as Record<
+                                              string,
+                                              string
+                                            >
+                                          )['500'] || '#6366f1'
+                                        : BRAND_COLORS.find(
+                                            (c) => c.name === entry.brandColor,
+                                          )?.hex || '#6366f1',
+                                  }}
+                                  title={`${entry.brandColor} (${new Date(entry.changedAt).toLocaleDateString()})`}
+                                />
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                )}
               </div>
             </div>
           </>
@@ -1790,8 +2131,12 @@ function StoreSettingsPageContent() {
                   {(formData.subdomainChangeCount || 0) > 0 && (
                     <span className="text-xs text-gray-400 dark:text-gray-500">
                       {(formData.subdomainChangeCount || 0) > 1
-                        ? t('changedTimesPlural', { count: formData.subdomainChangeCount ?? 0 })
-                        : t('changedTimes', { count: formData.subdomainChangeCount ?? 0 })}
+                        ? t('changedTimesPlural', {
+                            count: formData.subdomainChangeCount ?? 0,
+                          })
+                        : t('changedTimes', {
+                            count: formData.subdomainChangeCount ?? 0,
+                          })}
                     </span>
                   )}
                 </div>
@@ -1938,9 +2283,7 @@ function StoreSettingsPageContent() {
               </div>
 
               <div className="text-xs text-gray-500 dark:text-gray-400 mb-6">
-                <p className="mb-1">
-                  {t('subdomainWarningTitle')}
-                </p>
+                <p className="mb-1">{t('subdomainWarningTitle')}</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>{t('subdomainWarning1')}</li>
                   <li>{t('subdomainWarning2')}</li>

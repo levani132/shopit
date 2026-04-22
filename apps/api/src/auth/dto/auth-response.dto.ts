@@ -46,6 +46,16 @@ export class StoreResponseDto {
 
   @ApiProperty({ required: false })
   description?: string;
+
+  @ApiProperty({ required: false })
+  customBrandColors?: Record<string, string> | null;
+
+  @ApiProperty({ required: false })
+  brandColorHistory?: Array<{
+    brandColor: string;
+    customBrandColors?: Record<string, string>;
+    changedAt: Date;
+  }>;
 }
 
 export class AuthResponseDto {

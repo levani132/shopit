@@ -335,6 +335,37 @@ export function getAccentColorCssVars(
   };
 }
 
+/**
+ * Get CSS variable definitions from custom brand colors (stored in DB).
+ * Falls back to preset color if customColors is not provided.
+ */
+export function getCustomColorCssVars(
+  brandColor: string,
+  customBrandColors?: Record<string, string> | null,
+  prefix = '--store-accent',
+): Record<string, string> {
+  if (brandColor === 'custom' && customBrandColors) {
+    const shades = [
+      '50',
+      '100',
+      '200',
+      '300',
+      '400',
+      '500',
+      '600',
+      '700',
+      '800',
+      '900',
+    ];
+    const result: Record<string, string> = {};
+    for (const shade of shades) {
+      result[`${prefix}-${shade}`] = customBrandColors[shade] || '#6366f1';
+    }
+    return result;
+  }
+  return getAccentColorCssVars(brandColor as AccentColorName, prefix);
+}
+
 // Routes
 export const ROUTES = {
   HOME: '/',

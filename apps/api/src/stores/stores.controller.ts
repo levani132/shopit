@@ -33,7 +33,8 @@ import 'multer';
 
 // Helper to get hex color from brand color name
 const getAccentColorHex = (brandColor: string): string => {
-  const colors = STORE_BRAND_COLORS[brandColor as keyof typeof STORE_BRAND_COLORS];
+  const colors =
+    STORE_BRAND_COLORS[brandColor as keyof typeof STORE_BRAND_COLORS];
   return colors?.['500'] || '#6366f1';
 };
 
@@ -61,6 +62,7 @@ export class StoresController {
         coverImage: store.coverImage,
         brandColor: store.brandColor || 'indigo',
         accentColor: getAccentColorHex(store.brandColor || 'indigo'),
+        customBrandColors: store.customBrandColors || null,
         useInitialAsLogo: store.useInitialAsLogo ?? false,
         isVerified: store.isVerified ?? false,
         isFeatured: store.isFeatured ?? false,
@@ -96,6 +98,7 @@ export class StoresController {
         coverImage: store.coverImage,
         brandColor: store.brandColor || 'indigo',
         accentColor: getAccentColorHex(store.brandColor || 'indigo'),
+        customBrandColors: store.customBrandColors || null,
         useInitialAsLogo: store.useInitialAsLogo ?? false,
         isVerified: store.isVerified ?? false,
         isFeatured: store.isFeatured ?? false,
@@ -451,6 +454,7 @@ export class StoresController {
       useDefaultCover: store.useDefaultCover ?? true,
       brandColor: store.brandColor || 'indigo',
       accentColor: store.accentColor || '#6366f1',
+      customBrandColors: store.customBrandColors || null,
       useInitialAsLogo: store.useInitialAsLogo ?? false,
       authorName: store.authorName,
       authorNameLocalized: store.authorNameLocalized || {
@@ -508,6 +512,7 @@ export class StoresController {
         useDefaultCover: store.useDefaultCover ?? true,
         brandColor: store.brandColor || 'indigo',
         accentColor: store.accentColor || '#6366f1',
+        customBrandColors: store.customBrandColors || null,
         useInitialAsLogo: store.useInitialAsLogo ?? false,
         authorName: store.authorName,
         authorNameLocalized: store.authorNameLocalized || {

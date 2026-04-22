@@ -33,6 +33,7 @@ export interface UpdateStoreDto {
   authorNameKa?: string;
   authorNameEn?: string;
   brandColor?: string;
+  customBrandColors?: Record<string, string>;
   useInitialAsLogo?: boolean;
   useDefaultCover?: boolean;
   showAuthorName?: boolean;
@@ -203,7 +204,32 @@ export class StoresService {
 
     // Update basic fields
     if (dto.name) store.name = dto.name;
-    if (dto.brandColor) store.brandColor = dto.brandColor;
+    if (dto.brandColor) {
+      // Save current color to history before changing
+      if (store.brandColor !== dto.brandColor || dto.brandColor === 'custom') {
+        if (!store.brandColorHistory) store.brandColorHistory = [];
+        store.brandColorHistory.push({
+          brandColor: store.brandColor,
+          customBrandColors: store.customBrandColors,
+          changedAt: new Date(),
+        });
+        // Keep last 10 entries
+        if (store.brandColorHistory.length > 10) {
+          store.brandColorHistory = store.brandColorHistory.slice(-10);
+        }
+      }
+      store.brandColor = dto.brandColor;
+    }
+    if (dto.customBrandColors) {
+      try {
+        store.customBrandColors =
+          typeof dto.customBrandColors === 'string'
+            ? JSON.parse(dto.customBrandColors as unknown as string)
+            : dto.customBrandColors;
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
     if (dto.phone !== undefined) store.phone = dto.phone;
     if (dto.email !== undefined) store.email = dto.email;
     if (dto.address !== undefined) store.address = dto.address;
