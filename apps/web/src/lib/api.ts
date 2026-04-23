@@ -238,6 +238,7 @@ export interface StoreData {
   useDefaultCover: boolean;
   brandColor: string;
   accentColor: string;
+  customBrandColors?: Record<string, string> | null;
   useInitialAsLogo: boolean;
   authorName?: string;
   authorNameLocalized?: LocalizedText;

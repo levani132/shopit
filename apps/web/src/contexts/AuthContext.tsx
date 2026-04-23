@@ -43,6 +43,12 @@ export interface Store {
   name: string;
   brandColor: string;
   description?: string;
+  customBrandColors?: Record<string, string> | null;
+  brandColorHistory?: Array<{
+    brandColor: string;
+    customBrandColors?: Record<string, string>;
+    changedAt: string;
+  }>;
 }
 
 interface AuthState {

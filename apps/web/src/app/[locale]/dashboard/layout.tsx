@@ -5,7 +5,7 @@ import { DashboardSidebar } from '../../../components/dashboard/DashboardSidebar
 import { DashboardHeader } from '../../../components/dashboard/DashboardHeader';
 import { DashboardProtectedRoute } from '../../../components/auth/ProtectedRoute';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
+import { getCustomColorCssVars } from '@shopit/constants';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -15,7 +15,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { store, isLoading } = useAuth();
 
   // Get accent colors based on store's brand color (default to indigo)
-  const brandColor = (store?.brandColor || 'indigo') as AccentColorName;
+  const brandColor = store?.brandColor || 'indigo';
+  const customBrandColors = store?.customBrandColors;
 
   // Debug logging
   console.log('[Dashboard Layout] Auth state:', {
@@ -30,14 +31,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // AccentColorProvider skips dashboard pages, so we're in control here
   useEffect(() => {
     console.log('[Dashboard Layout] Setting accent colors for:', brandColor);
-    const accentColors = getAccentColorCssVars(brandColor, '--accent');
+    const accentColors = getCustomColorCssVars(
+      brandColor,
+      customBrandColors,
+      '--accent',
+    );
     console.log('[Dashboard Layout] CSS vars:', accentColors);
 
     // Apply to document root
     Object.entries(accentColors).forEach(([varName, value]) => {
       document.documentElement.style.setProperty(varName, value);
     });
-  }, [brandColor]);
+  }, [brandColor, customBrandColors]);
 
   return (
     <DashboardProtectedRoute>

@@ -620,6 +620,72 @@ export class AdminController {
     };
   }
 
+  @Patch('stores/:id/featured')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Toggle store featured status' })
+  @ApiResponse({ status: 200, description: 'Store featured status toggled' })
+  async toggleStoreFeatured(
+    @Param('id') id: string,
+    @Body() body: { isFeatured: boolean },
+  ) {
+    const store = await this.storeModel.findById(id);
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    store.isFeatured = body.isFeatured;
+    await store.save();
+
+    this.logger.log(
+      `Store ${store.subdomain} featured status set to ${body.isFeatured}`,
+    );
+
+    return {
+      message: body.isFeatured
+        ? 'Store is now featured'
+        : 'Store removed from featured',
+      store: {
+        id: store._id,
+        name: store.name,
+        subdomain: store.subdomain,
+        isFeatured: store.isFeatured,
+      },
+    };
+  }
+
+  @Patch('stores/:id/verified')
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Toggle store verified status' })
+  @ApiResponse({ status: 200, description: 'Store verified status toggled' })
+  async toggleStoreVerified(
+    @Param('id') id: string,
+    @Body() body: { isVerified: boolean },
+  ) {
+    const store = await this.storeModel.findById(id);
+    if (!store) {
+      throw new NotFoundException('Store not found');
+    }
+
+    store.isVerified = body.isVerified;
+    await store.save();
+
+    this.logger.log(
+      `Store ${store.subdomain} verified status set to ${body.isVerified}`,
+    );
+
+    return {
+      message: body.isVerified
+        ? 'Store is now verified'
+        : 'Store verification removed',
+      store: {
+        id: store._id,
+        name: store.name,
+        subdomain: store.subdomain,
+        isVerified: store.isVerified,
+      },
+    };
+  }
+
   // ===== Orders Overview =====
 
   @Get('orders')

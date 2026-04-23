@@ -81,6 +81,8 @@ export async function generateMetadata({
       // Shortcut icon
       shortcut: iconPaths.favicon.ico,
     },
+    // PWA manifest - points to the dynamic manifest for this store
+    manifest: '/manifest.webmanifest',
     // Open Graph
     openGraph: {
       title,

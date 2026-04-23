@@ -13,8 +13,7 @@ import {
   RoleValue,
   hasRole,
   hasAnyRole,
-  getAccentColorCssVars,
-  AccentColorName,
+  getCustomColorCssVars,
 } from '@shopit/constants';
 import { getStoreUrl } from '../../utils/subdomain';
 import PublishButton from './PublishButton';
@@ -30,8 +29,12 @@ export function DashboardHeader() {
   const { user, store, logout } = useAuth();
 
   // Get accent colors for mobile menu (to ensure they work in fixed position)
-  const brandColor = (store?.brandColor || 'indigo') as AccentColorName;
-  const accentColors = getAccentColorCssVars(brandColor, '--accent');
+  const brandColor = store?.brandColor || 'indigo';
+  const accentColors = getCustomColorCssVars(
+    brandColor,
+    store?.customBrandColors,
+    '--accent',
+  );
 
   // Debug log
   console.log(

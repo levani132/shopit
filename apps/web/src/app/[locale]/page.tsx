@@ -5,6 +5,7 @@ import { HowItWorks } from '../../components/home/HowItWorks';
 import { PaymentMethods } from '../../components/home/PaymentMethods';
 import { Delivery } from '../../components/home/Delivery';
 import { Analytics } from '../../components/home/Analytics';
+import { ComingSoonBanner } from '../../components/home/ComingSoonBanner';
 
 type Params = Promise<{ locale: string }>;
 
@@ -16,6 +17,7 @@ export default async function HomePage({ params }: { params: Params }) {
 
   return (
     <>
+      <ComingSoonBanner />
       <Hero />
       <FeaturedStores />
       <HowItWorks />
