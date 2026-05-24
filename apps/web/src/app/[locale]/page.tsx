@@ -17,7 +17,7 @@ export default async function HomePage({ params }: { params: Params }) {
 
   return (
     <>
-      <ComingSoonBanner />
+      {process.env.NODE_ENV === 'production' && <ComingSoonBanner />}
       <Hero />
       <FeaturedStores />
       <HowItWorks />
