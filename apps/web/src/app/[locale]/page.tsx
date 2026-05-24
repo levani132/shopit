@@ -17,7 +17,7 @@ export default async function HomePage({ params }: { params: Params }) {
 
   return (
     <>
-      {process.env.NODE_ENV === 'production' && <ComingSoonBanner />}
+      {process.env.NEXT_PUBLIC_HIDE_COMING_SOON !== '1' && <ComingSoonBanner />}
       <Hero />
       <FeaturedStores />
       <HowItWorks />
