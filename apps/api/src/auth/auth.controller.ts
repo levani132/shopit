@@ -186,6 +186,7 @@ export class AuthController {
         name: result.store.name,
         brandColor: result.store.brandColor,
         coverImage: result.store.coverImage,
+        customBrandColors: result.store.customBrandColors || null,
       },
     };
   }
@@ -328,6 +329,7 @@ export class AuthController {
         brandColor: result.store.brandColor,
         logo: result.store.logo,
         coverImage: result.store.coverImage,
+        customBrandColors: result.store.customBrandColors || null,
       },
     };
   }
@@ -558,6 +560,8 @@ export class AuthController {
             name: store.name,
             brandColor: store.brandColor,
             description: store.description,
+            customBrandColors: store.customBrandColors || null,
+            brandColorHistory: store.brandColorHistory || [],
           }
         : null,
     };

@@ -43,7 +43,7 @@ export function Header() {
               {t('nav.features')}
             </a>
             <a
-              href="#featured-stores"
+              href="/stores"
               className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               {t('nav.stores')}
@@ -185,7 +185,7 @@ export function Header() {
                 {t('nav.features')}
               </a>
               <a
-                href="#featured-stores"
+                href="/stores"
                 className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >

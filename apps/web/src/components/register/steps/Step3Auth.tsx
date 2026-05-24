@@ -55,9 +55,9 @@ export function Step3Auth() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Keep background blurred when entering step 3
+  // Show header + hero (cover) unblurred on step 3; only the lower sections stay blurred
   useLayoutEffect(() => {
-    setUnblurredSections([]);
+    setUnblurredSections(['header', 'hero']);
   }, [setUnblurredSections]);
 
   const validateEmail = (email: string) => {
@@ -207,8 +207,8 @@ export function Step3Auth() {
 
   return (
     <div
-      className={`relative z-10 min-h-screen flex flex-col items-center justify-center px-4 ${
-        isMobile ? '' : 'py-6'
+      className={`relative z-10 min-h-screen flex flex-col items-center justify-end px-4 ${
+        isMobile ? 'pb-6' : 'pb-10'
       }`}
     >
       {/* Step indicator */}

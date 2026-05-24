@@ -10,6 +10,7 @@ const LOCALE_COOKIE = 'NEXT_LOCALE';
 const MAIN_DOMAINS = [
   'localhost',
   'dev.localhost',
+  'lvh.me',
   'shopit.ge',
   'www.shopit.ge',
   'dev.shopit.ge',
@@ -83,6 +84,15 @@ async function getStorePublishStatus(
       cache: 'no-store',
     });
 
+    console.log('[Middleware] status check', {
+      subdomain,
+      apiUrl,
+      hasAuth,
+      cookieHeaderRaw: cookieHeader,
+      cookieNames: cookieHeader?.split(';').map((c) => c.trim().split('=')[0]),
+      responseStatus: response.status,
+    });
+
     if (!response.ok) {
       // Store not found
       storeStatusCache.set(cacheKey, {
@@ -96,6 +106,13 @@ async function getStorePublishStatus(
     const data = await response.json();
     const publishStatus = data.publishStatus || 'draft';
     const canBypass = data.canBypassPublishStatus || false;
+
+    console.log('[Middleware] status response', {
+      subdomain,
+      publishStatus,
+      canBypass,
+      raw: data,
+    });
 
     // Cache the result
     storeStatusCache.set(cacheKey, {
@@ -135,6 +152,11 @@ function getSubdomain(hostname: string): string | null {
   // For localhost subdomains (e.g., sample.localhost)
   if (host.endsWith('.localhost')) {
     return host.replace('.localhost', '');
+  }
+
+  // For lvh.me subdomains (e.g., sample.lvh.me) - used for local dev so cookies work across subdomains
+  if (host.endsWith('.lvh.me')) {
+    return host.replace('.lvh.me', '');
   }
 
   // For dev.shopit.ge subdomains (e.g., sample.dev.shopit.ge)
@@ -211,6 +233,14 @@ export default async function proxy(request: NextRequest) {
   }
 
   if (subdomain) {
+    // Handle manifest.webmanifest requests for store subdomains
+    // This needs to be before the publish check since manifest should always be accessible
+    if (pathname === '/manifest.webmanifest' || pathname === '/manifest.json') {
+      const url = request.nextUrl.clone();
+      url.pathname = `/store/${subdomain}/manifest.webmanifest`;
+      return NextResponse.rewrite(url);
+    }
+
     // Get cookies from request to forward to API for auth check
     const cookieHeader = request.headers.get('cookie') || undefined;
 
@@ -364,6 +394,7 @@ export const config = {
   // - _next (Next.js internals)
   // - static files (images, fonts, etc.)
   // - service worker files (sw.js, sw-new.js, etc.)
+  // Note: We explicitly include manifest.webmanifest and manifest.json for subdomain handling
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
@@ -374,5 +405,8 @@ export const config = {
      * - files with extensions (e.g., .js, .json, .png, etc.)
      */
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\.).*)',
+    // Also match manifest files for subdomain PWA support
+    '/manifest.webmanifest',
+    '/manifest.json',
   ],
 };

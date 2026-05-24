@@ -8,7 +8,7 @@ import {
 } from '../../../../../lib/api';
 import { getStoreBySubdomain as getMockStore } from '../../../../../data/mock-stores';
 import { StoreLayoutContent } from '../../../../../components/store/StoreLayoutContent';
-import { getAccentColorCssVars, AccentColorName } from '@shopit/constants';
+import { getCustomColorCssVars } from '@shopit/constants';
 import { getLatinInitial } from '../../../../../lib/utils';
 
 interface MainStoreLayoutProps {
@@ -61,6 +61,7 @@ async function getStoreData(subdomain: string, locale: string) {
       logo: apiStore.logo,
       brandColor: apiStore.brandColor,
       accentColor: apiStore.brandColor,
+      customBrandColors: apiStore.customBrandColors,
       authorName: getLocalizedText(
         apiStore.authorNameLocalized,
         apiStore.authorName,
@@ -135,8 +136,9 @@ export default async function MainStoreLayout({
   }
 
   // Get accent colors for this store
-  const accentColors = getAccentColorCssVars(
-    store.accentColor as AccentColorName,
+  const accentColors = getCustomColorCssVars(
+    store.brandColor || 'indigo',
+    store.customBrandColors,
   );
 
   // Store data for header/footer
@@ -167,4 +169,3 @@ export default async function MainStoreLayout({
     </StoreLayoutContent>
   );
 }
-

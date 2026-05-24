@@ -33,6 +33,7 @@ export interface UpdateStoreDto {
   authorNameKa?: string;
   authorNameEn?: string;
   brandColor?: string;
+  customBrandColors?: Record<string, string>;
   useInitialAsLogo?: boolean;
   useDefaultCover?: boolean;
   showAuthorName?: boolean;
@@ -118,10 +119,29 @@ export class StoresService {
   }
 
   async getFeaturedStores(limit = 6): Promise<StoreDocument[]> {
-    return this.storeModel
-      .find({ isActive: true, isFeatured: true })
+    // First try to get featured stores
+    const featuredStores = await this.storeModel
+      .find({ isActive: true, isFeatured: true, publishStatus: 'published' })
       .limit(limit)
       .sort({ createdAt: -1 });
+
+    // If we have enough featured stores, return them
+    if (featuredStores.length >= limit) {
+      return featuredStores;
+    }
+
+    // Otherwise, fill with recently published stores
+    const existingIds = featuredStores.map((s) => s._id);
+    const additionalStores = await this.storeModel
+      .find({
+        isActive: true,
+        publishStatus: 'published',
+        _id: { $nin: existingIds },
+      })
+      .limit(limit - featuredStores.length)
+      .sort({ publishedAt: -1, createdAt: -1 });
+
+    return [...featuredStores, ...additionalStores];
   }
 
   async getAllActiveStores(
@@ -142,6 +162,34 @@ export class StoresService {
     return { stores, total };
   }
 
+  async getPublishedStores(
+    page = 1,
+    limit = 12,
+    search?: string,
+  ): Promise<{ stores: StoreDocument[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const query: Record<string, unknown> = {
+      isActive: true,
+      publishStatus: 'published',
+    };
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [{ name: searchRegex }, { subdomain: searchRegex }];
+    }
+
+    const [stores, total] = await Promise.all([
+      this.storeModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ isFeatured: -1, publishedAt: -1, createdAt: -1 }),
+      this.storeModel.countDocuments(query),
+    ]);
+
+    return { stores, total };
+  }
+
   async updateStore(
     ownerId: string,
     dto: UpdateStoreDto,
@@ -156,7 +204,32 @@ export class StoresService {
 
     // Update basic fields
     if (dto.name) store.name = dto.name;
-    if (dto.brandColor) store.brandColor = dto.brandColor;
+    if (dto.brandColor) {
+      // Save current color to history before changing
+      if (store.brandColor !== dto.brandColor || dto.brandColor === 'custom') {
+        if (!store.brandColorHistory) store.brandColorHistory = [];
+        store.brandColorHistory.push({
+          brandColor: store.brandColor,
+          customBrandColors: store.customBrandColors,
+          changedAt: new Date(),
+        });
+        // Keep last 10 entries
+        if (store.brandColorHistory.length > 10) {
+          store.brandColorHistory = store.brandColorHistory.slice(-10);
+        }
+      }
+      store.brandColor = dto.brandColor;
+    }
+    if (dto.customBrandColors) {
+      try {
+        store.customBrandColors =
+          typeof dto.customBrandColors === 'string'
+            ? JSON.parse(dto.customBrandColors as unknown as string)
+            : dto.customBrandColors;
+      } catch {
+        // Invalid JSON, ignore
+      }
+    }
     if (dto.phone !== undefined) store.phone = dto.phone;
     if (dto.email !== undefined) store.email = dto.email;
     if (dto.address !== undefined) store.address = dto.address;
@@ -503,7 +576,7 @@ export class StoresService {
 
     // Count total products
     const totalProducts = await this.productModel.countDocuments({
-      store: storeId,
+      storeId: storeId,
       isDeleted: { $ne: true },
     });
 

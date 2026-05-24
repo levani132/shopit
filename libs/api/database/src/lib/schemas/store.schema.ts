@@ -56,11 +56,29 @@ export class Store {
   @Prop()
   coverImage?: string;
 
-  @Prop({ default: 'indigo' }) // Brand color name (e.g., 'indigo', 'rose', 'blue')
+  @Prop({ default: 'indigo' }) // Brand color name (e.g., 'indigo', 'rose', 'blue') or 'custom'
   brandColor!: string;
 
   @Prop({ default: '#6366f1' }) // Fallback hex color
   accentColor!: string;
+
+  /**
+   * Custom brand color palette when brandColor is 'custom'.
+   * Contains shades 50-900 as key-value pairs.
+   */
+  @Prop({ type: Object })
+  customBrandColors?: Record<string, string>;
+
+  /**
+   * History of brand colors the user has used (preset names or 'custom').
+   * Allows reverting to a previously selected color.
+   */
+  @Prop({ type: [Object], default: [] })
+  brandColorHistory?: Array<{
+    brandColor: string;
+    customBrandColors?: Record<string, string>;
+    changedAt: Date;
+  }>;
 
   @Prop({ default: false })
   useInitialAsLogo!: boolean; // Use colored initial instead of logo

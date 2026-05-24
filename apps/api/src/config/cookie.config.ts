@@ -2,15 +2,13 @@ import { CookieOptions } from 'express';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Cookie domain for cross-subdomain authentication
-// Set COOKIE_DOMAIN=.shopit.ge in production to share cookies across:
-// - api.shopit.ge (API)
-// - soulart.shopit.ge (store)
-// - techpoint.shopit.ge (store)
-// - etc.
-// The leading dot allows all subdomains to access the cookie
-// In development, we use .localhost to share cookies across subdomains like berso.localhost:3000
-const cookieDomain = process.env.COOKIE_DOMAIN || (!isProduction ? '.localhost' : undefined);
+// Cookie domain for cross-subdomain authentication.
+// Leading dot allows all subdomains to share the cookie, e.g. cookies set on
+// dev.shopit.ge are also sent on mystore.dev.shopit.ge — required for the
+// owner-bypass on unpublished stores to work.
+// In development we use .localhost so berso.localhost:3000 sees the cookie too.
+const cookieDomain =
+  process.env.COOKIE_DOMAIN || (isProduction ? '.shopit.ge' : '.localhost');
 
 // SameSite setting:
 // - 'lax': Works for same-site requests (including subdomains of same root domain)

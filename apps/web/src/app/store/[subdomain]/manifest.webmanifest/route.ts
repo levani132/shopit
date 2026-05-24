@@ -1,13 +1,13 @@
-import { MetadataRoute } from 'next';
-import { getStoreBySubdomain } from '../../../lib/api';
+import { NextRequest, NextResponse } from 'next/server';
+import { getStoreBySubdomain } from '../../../../lib/api';
 import {
   buildTenantConfig,
   getTenantIconPaths,
   mapToAccentColor,
-} from '../../../lib/tenant-config';
+} from '../../../../lib/tenant-config';
 
 /**
- * Dynamic Web App Manifest for each store subdomain
+ * Dynamic Web App Manifest Route Handler for each store subdomain
  *
  * Each subdomain generates its own manifest with:
  * - Store-specific name and branding
@@ -15,12 +15,14 @@ import {
  * - Standalone PWA configuration
  *
  * This makes each store installable as a separate PWA.
+ *
+ * We use a route handler instead of the manifest.ts convention
+ * because the convention doesn't work reliably with dynamic segments.
  */
-export default async function manifest({
-  params,
-}: {
-  params: Promise<{ subdomain: string }>;
-}): Promise<MetadataRoute.Manifest> {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ subdomain: string }> },
+) {
   const { subdomain } = await params;
 
   // Fetch store data for proper naming and branding
@@ -41,11 +43,10 @@ export default async function manifest({
   const themeColor = tenantConfig.colors[600];
 
   // Background color - using white for light mode
-  // Note: manifest can't switch dynamically based on user's color scheme
   const backgroundColor = '#ffffff';
 
   // Build the manifest
-  return {
+  const manifest = {
     name: `${tenantConfig.displayName} • ShopIt`,
     short_name: tenantConfig.displayName,
     description: store?.description || `Shop at ${tenantConfig.displayName}`,
@@ -56,7 +57,6 @@ export default async function manifest({
     theme_color: themeColor,
     background_color: backgroundColor,
     categories: ['shopping', 'business'],
-    // PWA icons - using existing icon files
     icons: [
       {
         src: `${iconPaths.pwa['192x192']}?v=1`,
@@ -70,7 +70,6 @@ export default async function manifest({
         type: 'image/png',
         purpose: 'any',
       },
-      // Maskable icons for Android adaptive icons
       {
         src: `${iconPaths.pwa['192x192']}?v=1`,
         sizes: '192x192',
@@ -83,7 +82,6 @@ export default async function manifest({
         type: 'image/png',
         purpose: 'maskable',
       },
-      // Additional sizes for better device coverage
       {
         src: `${iconPaths.pwa['48x48']}?v=1`,
         sizes: '48x48',
@@ -121,4 +119,11 @@ export default async function manifest({
       },
     ],
   };
+
+  return NextResponse.json(manifest, {
+    headers: {
+      'Content-Type': 'application/manifest+json',
+      'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+    },
+  });
 }
