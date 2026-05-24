@@ -1,5 +1,10 @@
-// Build API base URL - strip any existing prefix to avoid duplication
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// In the browser, use relative URLs so requests stay first-party and ride the
+// Next.js rewrite in next.config.js (/api/* -> backend). This keeps cookies same-origin.
+// On the server (SSR / route handlers), use the absolute URL since there's no host context.
+const API_BASE =
+  typeof window === 'undefined'
+    ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    : '';
 const API_URL = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 
 export const apiUrl = `${API_URL}/api/v1`;

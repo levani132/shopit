@@ -10,6 +10,7 @@ const LOCALE_COOKIE = 'NEXT_LOCALE';
 const MAIN_DOMAINS = [
   'localhost',
   'dev.localhost',
+  'lvh.me',
   'shopit.ge',
   'www.shopit.ge',
   'dev.shopit.ge',
@@ -83,6 +84,15 @@ async function getStorePublishStatus(
       cache: 'no-store',
     });
 
+    console.log('[Middleware] status check', {
+      subdomain,
+      apiUrl,
+      hasAuth,
+      cookieHeaderRaw: cookieHeader,
+      cookieNames: cookieHeader?.split(';').map((c) => c.trim().split('=')[0]),
+      responseStatus: response.status,
+    });
+
     if (!response.ok) {
       // Store not found
       storeStatusCache.set(cacheKey, {
@@ -96,6 +106,13 @@ async function getStorePublishStatus(
     const data = await response.json();
     const publishStatus = data.publishStatus || 'draft';
     const canBypass = data.canBypassPublishStatus || false;
+
+    console.log('[Middleware] status response', {
+      subdomain,
+      publishStatus,
+      canBypass,
+      raw: data,
+    });
 
     // Cache the result
     storeStatusCache.set(cacheKey, {
@@ -135,6 +152,11 @@ function getSubdomain(hostname: string): string | null {
   // For localhost subdomains (e.g., sample.localhost)
   if (host.endsWith('.localhost')) {
     return host.replace('.localhost', '');
+  }
+
+  // For lvh.me subdomains (e.g., sample.lvh.me) - used for local dev so cookies work across subdomains
+  if (host.endsWith('.lvh.me')) {
+    return host.replace('.lvh.me', '');
   }
 
   // For dev.shopit.ge subdomains (e.g., sample.dev.shopit.ge)
